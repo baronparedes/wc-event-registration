@@ -5,6 +5,23 @@ import { getPrimaryRole } from './roles.ts';
 import { describeDateRange, formatDate, getPhNow, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
 
+type TimeSlot = '9AM' | '12NN' | '3PM';
+type RoleForecast = {
+  target: number;
+  committed: number;
+  excused: number;
+  expectedTurnup: number;
+};
+type SlotForecast = {
+  totalTarget: number;
+  totalCommitted: number;
+  totalExcused: number;
+  totalExpectedTurnup: number;
+  totalNeeded: number;
+  totalSurplus: number;
+  roles: Record<string, RoleForecast>;
+};
+
 type SlotRoleTargets = Record<string, number>;
 
 type VolunteerTargetsBySlot = {
@@ -52,7 +69,7 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
         'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes to a concrete date before calling this tool.',
       ),
     targetsOverride: z
-      .record(z.record(z.number()))
+      .record(z.string(), z.record(z.string(), z.number()))
       .optional()
       .describe(
         'Optional override for volunteer target numbers. Format should be { "9AM": { "Usher": 12, "IMT Support": 2 }, "12NN": { ... } }.',
@@ -66,7 +83,7 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
     execute: async ({ targetStartDate, targetEndDate, targetsOverride }) => {
       const now = getPhNow();
       // Default to upcoming sunday if not provided
-      const range = resolveDateRange(targetStartDate, targetEndDate, 'upcoming_sunday', now);
+      const range = resolveDateRange(targetStartDate, targetEndDate, 'previous_sunday', now);
 
       console.log('[chat:tool:getServiceAttendanceForecast] Executing', {
         targetStartDate,
@@ -81,26 +98,94 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
         return { error: 'Could not resolve a date range for the forecast query.' };
       }
 
-      const startStr = formatDate(range.start);
-      const endStr = formatDate(range.end);
-
       const targetsToUse =
         (targetsOverride as VolunteerTargetsBySlot) || DEFAULT_VOLUNTEER_TARGETS_BY_SLOT;
 
       try {
-        // 1. Fetch Member Schedules for the date range
-        const { data: schedules, error: schedulesError } = await client
-          .from('member_schedules')
-          .select('user_id, service_date, time_slots, users!inner(role, member_id)')
-          .gte('service_date', startStr)
-          .lte('service_date', endStr);
+        // 1. Fetch Active Members (where their schedules are stored in metadata)
+        const { data: users, error: usersError } = await client
+          .from('users')
+          .select('id, member_id, role, metadata')
+          .eq('is_active', true);
 
-        if (schedulesError) {
-          console.error(
-            '[chat:tool:getServiceAttendanceForecast] Schedules query error',
-            schedulesError,
-          );
-          return { error: `Failed to retrieve member schedules: ${schedulesError.message}` };
+        if (usersError) {
+          console.error('[chat:tool:getServiceAttendanceForecast] Users query error', usersError);
+          return { error: `Failed to retrieve users: ${usersError.message}` };
+        }
+
+        // Parse schedules from metadata for the target date range
+        // Since we don't know the exact sundays easily, we will generate the sunday keys for the range
+        // and match against the users' schedule.
+        const SUNDAY_KEYS = [
+          'first_sunday',
+          'second_sunday',
+          'third_sunday',
+          'fourth_sunday',
+          'fifth_sunday',
+        ];
+
+        type MemberSchedule = {
+          user_id: string;
+          member_id: string | null;
+          role: string;
+          service_date: string;
+          time_slots: TimeSlot[];
+        };
+        const schedules: MemberSchedule[] = [];
+
+        // Find all sundays in the range
+        const sundays: { dateStr: string; key: string }[] = [];
+        const currDate = new Date(range.start);
+
+        // Align to start of first month
+        let monthIter = currDate.getMonth();
+
+        let sundayIndex = 0;
+
+        const iterLimit = new Date(range.end);
+
+        while (currDate <= iterLimit) {
+          if (currDate.getMonth() !== monthIter) {
+            monthIter = currDate.getMonth();
+
+            sundayIndex = 0;
+          }
+          if (currDate.getDay() === 0) {
+            // Sunday
+            const key = SUNDAY_KEYS[sundayIndex] || 'fifth_sunday';
+            sundays.push({ dateStr: formatDate(currDate), key });
+            sundayIndex++;
+          }
+          currDate.setDate(currDate.getDate() + 1);
+        }
+
+        for (const user of users) {
+          const metadata = (user.metadata as Record<string, unknown>) || {};
+          const role = typeof user.role === 'string' ? user.role : '';
+
+          for (const sunday of sundays) {
+            const scheduleStr = metadata[sunday.key];
+            if (typeof scheduleStr === 'string' && scheduleStr.trim().length > 0) {
+              const times = scheduleStr
+                .split(',')
+                .map((t) => t.trim().toUpperCase().replace(' ', ''));
+              const slots: TimeSlot[] = [];
+              for (const t of times) {
+                if (t === '9AM' || t === '12NN' || t === '3PM') {
+                  slots.push(t as TimeSlot);
+                }
+              }
+              if (slots.length > 0) {
+                schedules.push({
+                  user_id: user.id,
+                  member_id: user.member_id,
+                  role,
+                  service_date: sunday.dateStr,
+                  time_slots: slots,
+                });
+              }
+            }
+          }
         }
 
         // 2. Fetch Excused Members for the months covered by the date range
@@ -225,8 +310,8 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
             };
           }
 
-          const usersArray = Array.isArray(schedule.users) ? schedule.users : [schedule.users];
-          const userRole = usersArray[0]?.role;
+          const userRole = schedule.role;
+
           const normalizedRole = getPrimaryRole(userRole);
           const userTurnup = statsMap.get(schedule.user_id)?.turnupRate ?? DEFAULT_TURNUP_RATE;
 
