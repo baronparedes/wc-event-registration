@@ -203,7 +203,7 @@ export function SundayCommitmentChart({
             return (
               <div
                 key={session.slot}
-                className="flex flex-col justify-between rounded-xl border border-border/80 bg-surface-hover/20 p-3.5 transition-all shadow-2xs hover:border-border"
+                className="flex flex-col justify-between rounded-xl border border-border/80 bg-surface-hover/20 p-3.5 transition-all shadow-xs hover:border-border"
               >
                 {/* Slot Card Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-border/50">

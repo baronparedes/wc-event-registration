@@ -21,7 +21,7 @@ export function ForecastMonthNavigator({
   evaluationWindow,
 }: ForecastMonthNavigatorProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 sm:p-4 shadow-2xs">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 sm:p-4 shadow-xs">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Calendar className="h-5 w-5" aria-hidden="true" />

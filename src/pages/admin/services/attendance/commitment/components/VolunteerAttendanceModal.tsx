@@ -345,8 +345,8 @@ export function VolunteerAttendanceModal({
                       </div>
                     }
                     defaultExpanded={true}
-                    wrapperClassName="overflow-hidden rounded-lg border border-border bg-white shadow-xs"
-                    headerWrapperClassName="px-3 py-2 border-b border-border bg-slate-50/50"
+                    wrapperClassName="overflow-hidden rounded-lg border border-border bg-surface shadow-xs"
+                    headerWrapperClassName="px-3 py-2 border-b border-border bg-surface-hover/50"
                     titleClassName="w-full"
                   >
                     <ListTable density="dense" className="table-fixed text-sm">
@@ -422,7 +422,7 @@ export function VolunteerAttendanceModal({
           </TabsContent>
 
           <TabsContent value="MATRIX" className="mt-4 min-w-0 max-w-full">
-            <div className="overflow-x-auto rounded-lg border border-border bg-white shadow-xs min-w-0 max-w-full">
+            <div className="overflow-x-auto rounded-lg border border-border bg-surface shadow-xs min-w-0 max-w-full">
               <ListTable density="dense" className="table-fixed text-sm min-w-[1120px]">
                 <ListTableHead>
                   <ListTableHeaderRow>

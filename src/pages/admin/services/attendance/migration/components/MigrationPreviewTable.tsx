@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import { AlertCircle, AlertTriangle, Download } from 'lucide-react';
 
 import { Badge, Spinner } from '@/components/ui';
@@ -27,10 +28,6 @@ interface MigrationPreviewTableProps {
   onToggleIgnoreFailed?: (ignore: boolean) => void;
   onExportFailedRows?: () => void;
   onEditRow?: (row: EnrichedServiceAttendanceRow) => void;
-}
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ');
 }
 
 export function MigrationPreviewTable({
@@ -63,7 +60,7 @@ export function MigrationPreviewTable({
           </h3>
           {invalidRowCount > 0 && (
             <span
-              className={cx(
+              className={clsx(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
                 isIgnoringFailed
                   ? 'bg-amber-500/15 text-amber-800 border border-amber-500/30'
@@ -87,14 +84,14 @@ export function MigrationPreviewTable({
             </TabsTrigger>
             <TabsTrigger
               value="failed"
-              className={cx(
+              className={clsx(
                 '!px-3 !py-1.5 !text-xs',
                 statusFilter === 'failed' ? '!bg-danger text-white shadow-xs' : 'hover:text-danger',
               )}
             >
               <span>Failed</span>
               <span
-                className={cx(
+                className={clsx(
                   'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
                   statusFilter === 'failed'
                     ? 'bg-white/25 text-white'
@@ -110,7 +107,7 @@ export function MigrationPreviewTable({
             </TabsTrigger>
             <TabsTrigger
               value="valid"
-              className={cx(
+              className={clsx(
                 '!px-3 !py-1.5 !text-xs',
                 statusFilter === 'valid'
                   ? '!bg-primary text-white shadow-xs'
@@ -119,7 +116,7 @@ export function MigrationPreviewTable({
             >
               <span>Valid</span>
               <span
-                className={cx(
+                className={clsx(
                   'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
                   statusFilter === 'valid'
                     ? 'bg-white/25 text-white'
@@ -135,7 +132,7 @@ export function MigrationPreviewTable({
 
       {invalidRowCount > 0 && (
         <div
-          className={cx(
+          className={clsx(
             'mb-4 flex flex-col gap-3 rounded-xl border p-3.5 text-xs sm:flex-row sm:items-center sm:justify-between',
             isIgnoringFailed
               ? 'border-amber-200 bg-amber-50/90 text-amber-900'
@@ -172,7 +169,7 @@ export function MigrationPreviewTable({
               <button
                 type="button"
                 onClick={() => onStatusFilterChange('failed')}
-                className={cx(
+                className={clsx(
                   'font-semibold underline cursor-pointer',
                   isIgnoringFailed
                     ? 'text-amber-900 hover:text-amber-950'
@@ -188,7 +185,7 @@ export function MigrationPreviewTable({
                 size="sm"
                 variant="outline"
                 onClick={onExportFailedRows}
-                className={cx(
+                className={clsx(
                   'h-7 bg-surface text-xs shadow-xs',
                   isIgnoringFailed
                     ? 'border-amber-300 text-amber-900 hover:bg-amber-100'
@@ -205,7 +202,7 @@ export function MigrationPreviewTable({
                 size="sm"
                 variant={isIgnoringFailed ? 'outline' : 'destructive'}
                 onClick={() => onToggleIgnoreFailed(!isIgnoringFailed)}
-                className={cx(
+                className={clsx(
                   'h-7 text-xs shadow-xs',
                   isIgnoringFailed
                     ? 'border-amber-300 bg-surface text-amber-900 hover:bg-amber-100'

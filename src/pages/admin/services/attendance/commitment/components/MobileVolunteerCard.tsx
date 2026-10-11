@@ -22,7 +22,11 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
   return (
     <div
       onClick={() => onClick?.(stat)}
-      className={onClick ? 'cursor-pointer' : ''}
+      className={
+        onClick
+          ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-2xl'
+          : ''
+      }
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={(e) => {
@@ -32,7 +36,7 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
         }
       }}
     >
-      <MobileCard className={onClick ? 'transition-colors hover:bg-slate-50' : ''}>
+      <MobileCard className={onClick ? 'transition-colors hover:bg-surface-hover' : ''}>
         <MobileCardBody>
           <MobileCardHeader>
             <div className="flex min-w-0 items-center gap-3">
@@ -43,12 +47,10 @@ export function MobileVolunteerCard({ stat, onClick }: MobileVolunteerCardProps)
                 className="shrink-0"
               />
               <div className="min-w-0">
-                <h2 className="truncate text-[17px] font-semibold leading-snug text-[#0f172a]">
+                <h2 className="truncate text-[17px] font-semibold leading-snug text-text">
                   {stat.full_name}
                 </h2>
-                {stat.nickname && (
-                  <p className="truncate text-sm text-slate-500">({stat.nickname})</p>
-                )}
+                {stat.nickname && <p className="truncate text-sm text-muted">({stat.nickname})</p>}
                 <div className="flex flex-wrap gap-2 pt-1 pb-2 text-xs text-muted">
                   <p>
                     {stat.role || '-'} • {stat.category || '-'}

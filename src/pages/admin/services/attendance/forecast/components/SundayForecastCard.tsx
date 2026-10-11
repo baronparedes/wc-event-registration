@@ -37,9 +37,9 @@ export function SundayForecastCard({
   const resolvedTableTitle = tableTitle ?? 'ALL VOLUNTEER COMMITMENTS';
 
   return (
-    <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
+    <article className="flex flex-col rounded-xl border border-border bg-surface shadow-xs overflow-hidden transition-all">
       {/* Header */}
-      <div className="flex flex-col gap-2.5 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-white dark:bg-surface">
+      <div className="flex flex-col gap-2.5 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-surface">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Calendar className="h-5 w-5" aria-hidden="true" />
@@ -68,7 +68,7 @@ export function SundayForecastCard({
               type="button"
               onClick={() => setViewMode('table')}
               aria-pressed={viewMode === 'table'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                 viewMode === 'table'
                   ? 'bg-primary text-white shadow-xs font-bold'
                   : 'text-muted hover:text-text hover:bg-surface-hover/80'
@@ -81,7 +81,7 @@ export function SundayForecastCard({
               type="button"
               onClick={() => setViewMode('chart')}
               aria-pressed={viewMode === 'chart'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
                 viewMode === 'chart'
                   ? 'bg-primary text-white shadow-xs font-bold'
                   : 'text-muted hover:text-text hover:bg-surface-hover/80'

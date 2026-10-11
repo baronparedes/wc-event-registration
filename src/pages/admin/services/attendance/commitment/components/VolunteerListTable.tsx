@@ -247,11 +247,11 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           <ListTable>
             <ListTableHead>
               <ListTableHeaderRow>
-                <ListTableHeaderCell className="sticky left-0 z-20 bg-white shadow-[1px_0_0_0_var(--color-border)]">
+                <ListTableHeaderCell className="sticky left-0 z-20 bg-surface shadow-[1px_0_0_0_var(--color-border)]">
                   <button
                     type="button"
                     onClick={() => handleSort('full_name')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Volunteer</span>
                     {renderSortIcon('full_name')}
@@ -261,7 +261,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('start_date')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Start Date</span>
                     {renderSortIcon('start_date')}
@@ -271,7 +271,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('attendance_score')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Attendance</span>
                     {renderSortIcon('attendance_score')}
@@ -281,7 +281,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('committed')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Committed</span>
                     {renderSortIcon('committed')}
@@ -291,7 +291,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('attended')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Attended</span>
                     {renderSortIcon('attended')}
@@ -301,7 +301,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('absences')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Absences</span>
                     {renderSortIcon('absences')}
@@ -311,7 +311,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('excused')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>Excused</span>
                     {renderSortIcon('excused')}
@@ -321,7 +321,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('wi_9am_3pm')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>WI 9AM/3PM</span>
                     {renderSortIcon('wi_9am_3pm')}
@@ -331,7 +331,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('wi_12nn')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>WI 12NN</span>
                     {renderSortIcon('wi_12nn')}
@@ -341,7 +341,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   <button
                     type="button"
                     onClick={() => handleSort('wi_5th_sunday')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus:outline-none"
+                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
                   >
                     <span>WI 5th Sun</span>
                     {renderSortIcon('wi_5th_sunday')}
@@ -357,7 +357,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
                   onClick={() => onRowClick?.(stat)}
                 >
                   <ListTableCell
-                    className={`sticky left-0 z-10 bg-white group-even:bg-slate-100 group-hover:bg-slate-300 shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors ${onRowClick ? 'group-hover:bg-slate-200' : ''}`}
+                    className={`sticky left-0 z-10 bg-surface group-even:bg-surface-hover/30 group-hover:bg-surface-hover shadow-[1px_0_0_0_var(--color-border)] whitespace-nowrap transition-colors`}
                   >
                     <div className="flex items-center gap-3">
                       <Avatar
@@ -434,7 +434,7 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
 
               {sortedStats.length === 0 && !isLoading && (
                 <ListTableRow hover="none">
-                  <ListTableCell colSpan={12} className="py-12">
+                  <ListTableCell colSpan={10} className="py-12">
                     <EmptyState
                       icon={<Users className="h-8 w-8 text-muted" />}
                       title="No volunteers found"
