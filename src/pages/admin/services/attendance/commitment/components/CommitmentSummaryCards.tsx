@@ -1,58 +1,13 @@
-import { type ReactNode, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { Clock, Handshake, TrendingUp, UserCheck, UserX, Users } from 'lucide-react';
 
+import { StatCard, type StatCardProps, type StatCardVariant } from '@/components/ui';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 
-export type StatCardVariant = 'primary' | 'secondary' | 'danger' | 'accent';
-
-export interface CommitmentSummaryCardProps {
-  title: string;
-  value: number | string;
-  subtitle?: string;
-  icon?: ReactNode;
-  variant?: StatCardVariant;
-  className?: string;
-}
-
-const variantIconStyles: Record<StatCardVariant, string> = {
-  primary: 'bg-primary/10 text-primary',
-  secondary: 'bg-secondary/15 text-secondary',
-  danger: 'bg-danger/10 text-danger',
-  accent: 'bg-accent/20 text-text',
-};
-
-export function CommitmentSummaryCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  variant = 'primary',
-  className = '',
-}: CommitmentSummaryCardProps) {
-  return (
-    <div
-      className={`flex flex-col justify-between rounded-2xl border border-border bg-surface p-4 shadow-xs ${className}`.trim()}
-    >
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
-        <span className="font-heading text-xs font-bold uppercase tracking-wider text-muted">
-          {title}
-        </span>
-        {icon && (
-          <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${variantIconStyles[variant]}`}
-          >
-            {icon}
-          </div>
-        )}
-      </div>
-      <div className="mt-3">
-        <div className="font-heading text-2xl sm:text-3xl font-bold text-text">{value}</div>
-        {subtitle && <p className="mt-1 text-xs text-muted">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
+export type { StatCardVariant };
+export type CommitmentSummaryCardProps = StatCardProps;
+export const CommitmentSummaryCard = StatCard;
 
 interface CommitmentSummaryCardsProps {
   stats: CommitmentDashboardStat[];

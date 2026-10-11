@@ -1,6 +1,6 @@
 import { forwardRef, useMemo, useState } from 'react';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 import { Avatar, Badge, EmptyState, Spinner } from '@/components/ui';
 import { AdminInfiniteScrollFooter } from '@/components/ui/AdminInfiniteScrollFooter';
@@ -11,9 +11,9 @@ import {
   ListTableBody,
   ListTableCell,
   ListTableHead,
-  ListTableHeaderCell,
   ListTableHeaderRow,
   ListTableRow,
+  SortableTableHeaderCell,
 } from '@/components/ui/ListTable';
 import { SearchInputField } from '@/components/ui/SearchInputField';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -163,17 +163,6 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
       });
     }, [stats, sortBy, sortOrder]);
 
-    const renderSortIcon = (field: VolunteerSortField) => {
-      if (sortBy === field) {
-        return sortOrder === 'asc' ? (
-          <ArrowUp className="h-3.5 w-3.5 text-primary" />
-        ) : (
-          <ArrowDown className="h-3.5 w-3.5 text-primary" />
-        );
-      }
-      return <ArrowUpDown className="h-3.5 w-3.5 opacity-30 group-hover:opacity-100" />;
-    };
-
     const categoryOptions = useMemo(
       () => [
         { value: 'All Categories', label: 'All Categories' },
@@ -254,106 +243,85 @@ export const VolunteerListTable = forwardRef<HTMLDivElement, VolunteerListTableP
           <ListTable>
             <ListTableHead>
               <ListTableHeaderRow>
-                <ListTableHeaderCell className="sticky left-0 z-20 bg-surface shadow-[1px_0_0_0_var(--color-border)]">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('full_name')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Volunteer</span>
-                    {renderSortIcon('full_name')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell>
-                  <button
-                    type="button"
-                    onClick={() => handleSort('start_date')}
-                    className="group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Start Date</span>
-                    {renderSortIcon('start_date')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('attendance_score')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Attendance</span>
-                    {renderSortIcon('attendance_score')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('committed')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Committed</span>
-                    {renderSortIcon('committed')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('attended')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Attended</span>
-                    {renderSortIcon('attended')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('absences')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Absences</span>
-                    {renderSortIcon('absences')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('excused')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>Excused</span>
-                    {renderSortIcon('excused')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('wi_9am_3pm')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>WI 9AM/3PM</span>
-                    {renderSortIcon('wi_9am_3pm')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('wi_12nn')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>WI 12NN</span>
-                    {renderSortIcon('wi_12nn')}
-                  </button>
-                </ListTableHeaderCell>
-                <ListTableHeaderCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('wi_5th_sunday')}
-                    className="group inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none"
-                  >
-                    <span>WI 5th Sun</span>
-                    {renderSortIcon('wi_5th_sunday')}
-                  </button>
-                </ListTableHeaderCell>
+                <SortableTableHeaderCell
+                  active={sortBy === 'full_name'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('full_name')}
+                  className="sticky left-0 z-20 bg-surface shadow-[1px_0_0_0_var(--color-border)]"
+                >
+                  Volunteer
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  active={sortBy === 'start_date'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('start_date')}
+                >
+                  Start Date
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'attendance_score'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('attendance_score')}
+                >
+                  Attendance
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'committed'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('committed')}
+                >
+                  Committed
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'attended'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('attended')}
+                >
+                  Attended
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'absences'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('absences')}
+                >
+                  Absences
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'excused'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('excused')}
+                >
+                  Excused
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'wi_9am_3pm'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('wi_9am_3pm')}
+                >
+                  WI 9AM/3PM
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'wi_12nn'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('wi_12nn')}
+                >
+                  WI 12NN
+                </SortableTableHeaderCell>
+                <SortableTableHeaderCell
+                  align="center"
+                  active={sortBy === 'wi_5th_sunday'}
+                  direction={sortOrder}
+                  onSort={() => handleSort('wi_5th_sunday')}
+                >
+                  WI 5th Sun
+                </SortableTableHeaderCell>
               </ListTableHeaderRow>
             </ListTableHead>
             <ListTableBody>
