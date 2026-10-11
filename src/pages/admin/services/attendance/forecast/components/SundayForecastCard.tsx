@@ -29,6 +29,8 @@ export function SundayForecastCard({
     totalScheduled,
     totalConfirmed,
     totalOverShort,
+    totalDeficit,
+    totalSurplus,
     hasDeficit,
     forecast,
   } = sunday;
@@ -93,11 +95,11 @@ export function SundayForecastCard({
 
           {/* Overall Deficit / Target Badge */}
           {hasDeficit ? (
-            <Badge variant="accent">{Math.abs(totalOverShort)} Short</Badge>
+            <Badge variant="accent">{totalDeficit} Short</Badge>
           ) : (
             <Badge>
               <CheckCircle2 className="mr-1 h-3.5 w-3.5 inline" />
-              Target Met (+{totalOverShort})
+              Target Met{totalSurplus > 0 ? ` (+${totalSurplus})` : ''}
             </Badge>
           )}
         </div>
@@ -113,6 +115,8 @@ export function SundayForecastCard({
             totalScheduled={totalScheduled}
             totalConfirmed={totalConfirmed}
             totalOverShort={totalOverShort}
+            totalDeficit={totalDeficit}
+            totalSurplus={totalSurplus}
           />
         ) : (
           <SundayCommitmentChart
@@ -122,6 +126,8 @@ export function SundayForecastCard({
             totalScheduled={totalScheduled}
             totalConfirmed={totalConfirmed}
             totalOverShort={totalOverShort}
+            totalDeficit={totalDeficit}
+            totalSurplus={totalSurplus}
           />
         )}
 

@@ -39,6 +39,7 @@ describe('SundayCommitmentTable', () => {
         totalScheduled={109}
         totalConfirmed={74}
         totalOverShort={-15}
+        totalDeficit={15}
       />,
     );
 
@@ -51,7 +52,7 @@ describe('SundayCommitmentTable', () => {
     expect(screen.getByText('-1')).toBeInTheDocument();
     expect(screen.getByText('-3')).toBeInTheDocument();
     expect(screen.getByText('-11')).toBeInTheDocument();
-    expect(screen.getByText('-15')).toBeInTheDocument();
+    expect(screen.getByText('-15 Short')).toBeInTheDocument();
   });
 
   it('renders positive surplus numbers with plus prefix and emerald styling', () => {

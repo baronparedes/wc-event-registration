@@ -19,6 +19,8 @@ export type SundayCommitmentTableProps = {
   totalScheduled: number;
   totalConfirmed: number;
   totalOverShort: number;
+  totalDeficit?: number;
+  totalSurplus?: number;
 };
 
 export function SundayCommitmentTable({
@@ -28,6 +30,8 @@ export function SundayCommitmentTable({
   totalScheduled,
   totalConfirmed,
   totalOverShort,
+  totalDeficit,
+  totalSurplus,
 }: SundayCommitmentTableProps) {
   const isTotalNegative = totalOverShort < 0;
   const isTotalPositive = totalOverShort > 0;
@@ -116,17 +120,30 @@ export function SundayCommitmentTable({
               {totalConfirmed}
             </ListTableCell>
             <ListTableCell className="w-1/5 text-center text-sm font-bold tabular-nums">
-              <span
-                className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-bold tabular-nums ${
-                  isTotalNegative
-                    ? 'bg-danger/15 text-danger'
-                    : isTotalPositive
-                      ? 'bg-primary/15 text-primary'
-                      : 'bg-muted/15 text-text font-bold'
-                }`}
-              >
-                {isTotalPositive ? `+${totalOverShort}` : totalOverShort}
-              </span>
+              {totalDeficit !== undefined && totalDeficit > 0 ? (
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
+                    -{totalDeficit} Short
+                  </span>
+                  {totalSurplus !== undefined && totalSurplus > 0 && (
+                    <span className="text-[10px] text-muted font-medium">
+                      (+{totalSurplus} surplus)
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-bold tabular-nums ${
+                    isTotalNegative
+                      ? 'bg-danger/15 text-danger'
+                      : isTotalPositive
+                        ? 'bg-primary/15 text-primary'
+                        : 'bg-muted/15 text-text font-bold'
+                  }`}
+                >
+                  {isTotalPositive ? `+${totalOverShort}` : totalOverShort}
+                </span>
+              )}
             </ListTableCell>
           </ListTableRow>
         </ListTableBody>

@@ -82,7 +82,11 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
                 : 'bg-muted/10 text-muted'
           }`}
         >
-          {isPositive ? `+${data.overShort}` : data.overShort} var
+          {isPositive
+            ? `+${data.overShort} surplus`
+            : isNegative
+              ? `${data.overShort} deficit`
+              : 'Target Met'}
         </span>
       </div>
 
@@ -164,32 +168,51 @@ export function ForecastMonthlyTrendChart({
     let totalTarget = 0;
     let totalScheduled = 0;
     let totalExpected = 0;
+    let totalDeficit = 0;
+    let totalSurplus = 0;
 
     for (const s of sundays) {
       if (selectedSlot === 'ALL') {
         totalTarget += s.totalTarget;
         totalScheduled += s.totalScheduled;
         totalExpected += s.totalConfirmed;
+        totalDeficit += s.totalDeficit;
+        totalSurplus += s.totalSurplus;
       } else {
         const session = s.sessions.find((sess) => sess.slot === selectedSlot);
-        totalTarget += session?.target ?? 0;
-        totalScheduled += session?.scheduled ?? 0;
-        totalExpected += session?.confirmed ?? 0;
+        const target = session?.target ?? 0;
+        const scheduled = session?.scheduled ?? 0;
+        const expected = session?.confirmed ?? 0;
+        const overShort = session?.overShort ?? 0;
+
+        totalTarget += target;
+        totalScheduled += scheduled;
+        totalExpected += expected;
+        if (overShort < 0) {
+          totalDeficit += Math.abs(overShort);
+        } else if (overShort > 0) {
+          totalSurplus += overShort;
+        }
       }
     }
 
     const totalVariance = totalExpected - totalTarget;
     const fulfillmentRate = totalTarget > 0 ? Math.round((totalExpected / totalTarget) * 100) : 100;
 
-    return { totalTarget, totalScheduled, totalExpected, totalVariance, fulfillmentRate };
+    return {
+      totalTarget,
+      totalScheduled,
+      totalExpected,
+      totalVariance,
+      totalDeficit,
+      totalSurplus,
+      fulfillmentRate,
+    };
   }, [sundays, selectedSlot]);
 
   if (!sundays.length) {
     return null;
   }
-
-  const isTotalNegative = totals.totalVariance < 0;
-  const isTotalPositive = totals.totalVariance > 0;
 
   return (
     <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
@@ -330,19 +353,17 @@ export function ForecastMonthlyTrendChart({
             </div>
           </div>
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Net Variance</div>
+            <div className="text-[11px] font-bold text-muted uppercase">Staffing Deficit</div>
             <div className="mt-0.5">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${
-                  isTotalNegative
-                    ? 'bg-danger/15 text-danger'
-                    : isTotalPositive
-                      ? 'bg-primary/15 text-primary'
-                      : 'bg-muted/15 text-text font-bold'
-                }`}
-              >
-                {isTotalPositive ? `+${totals.totalVariance}` : totals.totalVariance}
-              </span>
+              {totals.totalDeficit > 0 ? (
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
+                  -{totals.totalDeficit} Needed
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-primary/15 text-primary">
+                  All Targets Met{totals.totalSurplus > 0 ? ` (+${totals.totalSurplus})` : ''}
+                </span>
+              )}
             </div>
           </div>
         </div>

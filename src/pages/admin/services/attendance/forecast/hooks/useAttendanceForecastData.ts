@@ -104,6 +104,8 @@ export type SundayForecastData = {
   totalTarget: number;
   totalConfirmed: number;
   totalOverShort: number;
+  totalDeficit: number;
+  totalSurplus: number;
   hasDeficit: boolean;
   forecast: SlotStaffingForecast;
 };
@@ -276,7 +278,16 @@ export function useAttendanceForecastData({
       const totalTarget = sessions.reduce((acc, s) => acc + s.target, 0);
       const totalConfirmed = sessions.reduce((acc, s) => acc + s.confirmed, 0);
       const totalOverShort = totalConfirmed - totalTarget;
-      const hasDeficit = totalOverShort < 0;
+
+      const totalDeficit = sessions.reduce(
+        (acc, s) => acc + (s.overShort < 0 ? Math.abs(s.overShort) : 0),
+        0,
+      );
+      const totalSurplus = sessions.reduce(
+        (acc, s) => acc + (s.overShort > 0 ? s.overShort : 0),
+        0,
+      );
+      const hasDeficit = totalDeficit > 0;
 
       // Legacy fallback forecast for slot view if still used
       const forecast =
@@ -312,6 +323,8 @@ export function useAttendanceForecastData({
         totalTarget,
         totalConfirmed,
         totalOverShort,
+        totalDeficit,
+        totalSurplus,
         hasDeficit,
         forecast,
       };
@@ -337,8 +350,8 @@ export function useAttendanceForecastData({
     for (const item of sundayForecasts) {
       totalTarget += item.totalTarget;
       totalExpectedTurnup += item.totalConfirmed;
-      if (item.totalOverShort < 0) {
-        totalNeeded += Math.abs(item.totalOverShort);
+      if (item.hasDeficit) {
+        totalNeeded += item.totalDeficit;
         sundaysWithDeficit++;
       } else if (item.totalTarget > 0) {
         sundaysMeetingTarget++;

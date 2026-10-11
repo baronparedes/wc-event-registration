@@ -39,6 +39,8 @@ describe('SundayForecastCard', () => {
     totalTarget: 15,
     totalConfirmed: 8,
     totalOverShort: -7,
+    totalDeficit: 7,
+    totalSurplus: 0,
     hasDeficit: true,
     forecast: {
       roleBreakdown: [{ role: 'Usher', target: 15, scheduled: 10, expectedTurnup: 8, needed: 7 }],

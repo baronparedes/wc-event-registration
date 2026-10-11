@@ -53,6 +53,8 @@ describe('ForecastMonthlyTrendChart', () => {
       totalTarget: 243,
       totalConfirmed: 210,
       totalOverShort: -33,
+      totalDeficit: 33,
+      totalSurplus: 0,
       hasDeficit: true,
       forecast: {} as never,
     },
@@ -73,7 +75,9 @@ describe('ForecastMonthlyTrendChart', () => {
       totalTarget: 243,
       totalConfirmed: 245,
       totalOverShort: 2,
-      hasDeficit: false,
+      totalDeficit: 11,
+      totalSurplus: 13,
+      hasDeficit: true,
       forecast: {} as never,
     },
   ];
@@ -89,8 +93,8 @@ describe('ForecastMonthlyTrendChart', () => {
     expect(screen.getByText('510')).toBeInTheDocument(); // 250 + 260
     expect(screen.getByText('Month Expected')).toBeInTheDocument();
     expect(screen.getByText('455')).toBeInTheDocument(); // 210 + 245
-    expect(screen.getByText('Net Variance')).toBeInTheDocument();
-    expect(screen.getByText('-31')).toBeInTheDocument(); // 455 - 486
+    expect(screen.getByText('Staffing Deficit')).toBeInTheDocument();
+    expect(screen.getByText('-44 Needed')).toBeInTheDocument(); // 33 + 11
 
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
@@ -115,6 +119,7 @@ describe('ForecastMonthlyTrendChart', () => {
     expect(screen.getByText('174')).toBeInTheDocument();
     // 9 AM expected across the two Sundays: 70 + 85 = 155
     expect(screen.getByText('155')).toBeInTheDocument();
+    expect(screen.getByText('-11 Needed')).toBeInTheDocument();
 
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');

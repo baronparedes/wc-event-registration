@@ -22,6 +22,8 @@ export type SundayCommitmentChartProps = {
   totalScheduled: number;
   totalConfirmed: number;
   totalOverShort: number;
+  totalDeficit?: number;
+  totalSurplus?: number;
 };
 
 interface TooltipPayloadItem {
@@ -104,6 +106,8 @@ export function SundayCommitmentChart({
   totalScheduled,
   totalConfirmed,
   totalOverShort,
+  totalDeficit,
+  totalSurplus,
 }: SundayCommitmentChartProps) {
   const chartData = useMemo(() => {
     return sessions.map((s) => ({
@@ -207,19 +211,31 @@ export function SundayCommitmentChart({
             </div>
           </div>
           <div>
-            <div className="text-[11px] font-bold text-muted uppercase">Total Variance</div>
+            <div className="text-[11px] font-bold text-muted uppercase">Staffing Status</div>
             <div className="mt-0.5">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${
-                  isTotalNegative
-                    ? 'bg-danger/15 text-danger'
-                    : isTotalPositive
+              {totalDeficit !== undefined && totalDeficit > 0 ? (
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
+                  -{totalDeficit} Short
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${
+                    totalSurplus !== undefined && totalSurplus > 0
                       ? 'bg-primary/15 text-primary'
-                      : 'bg-muted/15 text-text font-bold'
-                }`}
-              >
-                {isTotalPositive ? `+${totalOverShort}` : totalOverShort}
-              </span>
+                      : isTotalNegative
+                        ? 'bg-danger/15 text-danger'
+                        : isTotalPositive
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-muted/15 text-text font-bold'
+                  }`}
+                >
+                  {totalSurplus !== undefined && totalSurplus > 0
+                    ? `+${totalSurplus}`
+                    : isTotalPositive
+                      ? `+${totalOverShort}`
+                      : totalOverShort}
+                </span>
+              )}
             </div>
           </div>
         </div>

@@ -47,6 +47,7 @@ describe('SundayCommitmentChart', () => {
         totalScheduled={252}
         totalConfirmed={183}
         totalOverShort={-60}
+        totalDeficit={60}
       />,
     );
 
@@ -57,7 +58,7 @@ describe('SundayCommitmentChart', () => {
     expect(screen.getByText('252')).toBeInTheDocument();
     expect(screen.getByText('Total Expected')).toBeInTheDocument();
     expect(screen.getByText('183')).toBeInTheDocument();
-    expect(screen.getByText('-60')).toBeInTheDocument();
+    expect(screen.getByText('-60 Short')).toBeInTheDocument();
 
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
