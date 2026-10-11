@@ -2,18 +2,37 @@ import { useState } from 'react';
 
 import { Check, Copy } from 'lucide-react';
 
-type CopyButtonProps = {
-  content: string;
+export type CopyButtonProps = {
+  content?: string;
+  getText?: () => string;
+  className?: string;
+  showLabel?: boolean;
+  copyLabel?: string;
+  copiedLabel?: string;
+  iconSize?: string;
+  title?: string;
+  'aria-label'?: string;
 };
 
-export function CopyButton({ content }: CopyButtonProps) {
+export function CopyButton({
+  content,
+  getText,
+  className = '',
+  showLabel = false,
+  copyLabel = 'Copy',
+  copiedLabel = 'Copied',
+  iconSize = 'h-4 w-4',
+  title = 'Copy response',
+  'aria-label': ariaLabel = 'Copy response',
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    if (!content) return;
+    const textToCopy = (getText ? getText() : content)?.trim();
+    if (!textToCopy) return;
 
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -21,15 +40,29 @@ export function CopyButton({ content }: CopyButtonProps) {
     }
   };
 
+  const defaultClasses = showLabel
+    ? 'inline-flex items-center gap-1 rounded-md border border-border bg-surface/90 backdrop-blur-sm px-2 py-1 text-xs text-muted hover:text-text hover:bg-muted/20 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
+    : 'inline-flex items-center justify-center p-1.5 text-muted hover:text-text hover:bg-muted/10 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
+
   return (
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center justify-center p-1.5 text-muted hover:text-text hover:bg-muted/10 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-      title="Copy response"
-      aria-label="Copy response"
+      className={className ? `${defaultClasses} ${className}` : defaultClasses}
+      title={title}
+      aria-label={ariaLabel}
     >
-      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      {copied ? (
+        <>
+          <Check className={`${iconSize} text-primary`} />
+          {showLabel && <span className="text-[10px] text-primary font-medium">{copiedLabel}</span>}
+        </>
+      ) : (
+        <>
+          <Copy className={iconSize} />
+          {showLabel && <span className="text-[10px]">{copyLabel}</span>}
+        </>
+      )}
     </button>
   );
 }

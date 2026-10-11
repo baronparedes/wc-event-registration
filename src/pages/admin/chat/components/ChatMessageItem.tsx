@@ -4,14 +4,11 @@ import { Avatar, BrandAvatar, Spinner } from '@/components/ui';
 import { useResolveUserTokensQuery } from '@/hooks/domain/chat';
 import { untokenizeUserText } from '@/lib/domain/chat';
 
+import type { ChatMessageItemData } from '../types';
 import { ChatMessageContent } from './ChatMessageContent';
 import { CopyButton } from './CopyButton';
 
-export type ChatMessageItemData = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
+export type { ChatMessageItemData };
 
 interface ChatMessageItemProps {
   message: ChatMessageItemData;
