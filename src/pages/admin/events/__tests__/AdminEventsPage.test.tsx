@@ -281,11 +281,15 @@ describe('AdminEventsPage', () => {
       screen.queryByRole('link', { name: 'Attendance for Sample Event' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Fields for Sample Event' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Attendee Details for Sample Event' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Attendees for Sample Event' })).toHaveAttribute(
       'href',
       '/admin/events/event-1/attendance/data',
     );
-    expect(screen.getByRole('link', { name: 'Registrations for Sample Event' })).toHaveAttribute(
+    const moreButtons = screen.getAllByRole('button', { name: /More actions/i });
+    fireEvent.click(moreButtons[0]);
+    // The dropdown menu items don't typically set 'aria-label' with 'for Sample Event' since the dropdown context applies to that row.
+    // They just have the text content 'Registrations'.
+    expect(screen.getByRole('link', { name: /Registrations/i })).toHaveAttribute(
       'href',
       '/admin/events/event-1/registrations',
     );
