@@ -6,6 +6,7 @@ import { createGetCommitmentSummaryStatsTool } from './getCommitmentSummaryStats
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
 import { createGetInactiveVolunteersTool } from './getInactiveVolunteers.ts';
+import { createGetServiceAttendanceForecastTool } from './getServiceAttendanceForecast.ts';
 import { createGetServiceDashboardStatsTool } from './getServiceDashboardStats.ts';
 import { createGetTopVolunteersByCommitmentTool } from './getTopVolunteersByCommitment.ts';
 import { createGetUnexcusedVolunteersTool } from './getUnexcusedVolunteers.ts';
@@ -23,6 +24,7 @@ export * from './createForm.ts';
 export * from './getEvents.ts';
 export * from './getExcusedMembers.ts';
 export * from './getServiceDashboardStats.ts';
+export * from './getServiceAttendanceForecast.ts';
 export * from './getUpcomingMilestones.ts';
 export * from './getUserCommitments.ts';
 export * from './getUserDemographics.ts';
@@ -41,6 +43,7 @@ export function createChatTools(context: ToolContext) {
     createForm: createCreateFormTool(context),
     getExcusedMembers: createGetExcusedMembersTool(context),
     getServiceDashboardStats: createGetServiceDashboardStatsTool(context),
+    getServiceAttendanceForecast: createGetServiceAttendanceForecastTool(context),
     getUpcomingMilestones: createGetUpcomingMilestonesTool(context),
     getUserCommitments: createGetUserCommitmentsTool(context),
     getUserDemographics: createGetUserDemographicsTool(context),
