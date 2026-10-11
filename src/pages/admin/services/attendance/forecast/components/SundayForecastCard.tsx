@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
-import { Calendar, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { BarChart3, Calendar, CheckCircle2, ChevronDown, ChevronUp, Table } from 'lucide-react';
 
 import { Badge, Button } from '@/components/ui';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
+import { SundayCommitmentChart } from './SundayCommitmentChart';
 import { SundayCommitmentTable } from './SundayCommitmentTable';
 
 export type SundayForecastCardProps = {
@@ -18,6 +19,7 @@ export function SundayForecastCard({
   tableTitle,
   showRoleBreakdownOption = true,
 }: SundayForecastCardProps) {
+  const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
   const [showRoleBreakdown, setShowRoleBreakdown] = useState(false);
   const {
     ordinalLabel,
@@ -54,7 +56,42 @@ export function SundayForecastCard({
           </div>
         </div>
 
-        <div className="shrink-0 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+          {/* Table / Chart View Mode Toggle */}
+          <div
+            role="group"
+            aria-label="View mode toggle"
+            className="inline-flex items-center rounded-lg border border-border bg-surface-hover/50 p-0.5"
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              aria-pressed={viewMode === 'table'}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-surface text-text shadow-2xs font-bold'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              <Table className="h-3.5 w-3.5" />
+              <span>Table</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('chart')}
+              aria-pressed={viewMode === 'chart'}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'chart'
+                  ? 'bg-surface text-text shadow-2xs font-bold'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Chart</span>
+            </button>
+          </div>
+
+          {/* Overall Deficit / Target Badge */}
           {hasDeficit ? (
             <Badge variant="accent">{Math.abs(totalOverShort)} Short</Badge>
           ) : (
@@ -66,16 +103,27 @@ export function SundayForecastCard({
         </div>
       </div>
 
-      {/* Body: Simplified Commitment Table */}
+      {/* Body: Table or Chart Layout */}
       <div className="p-4 sm:p-5 space-y-3">
-        <SundayCommitmentTable
-          title={resolvedTableTitle}
-          sessions={sessions}
-          totalTarget={totalTarget}
-          totalScheduled={totalScheduled}
-          totalConfirmed={totalConfirmed}
-          totalOverShort={totalOverShort}
-        />
+        {viewMode === 'table' ? (
+          <SundayCommitmentTable
+            title={resolvedTableTitle}
+            sessions={sessions}
+            totalTarget={totalTarget}
+            totalScheduled={totalScheduled}
+            totalConfirmed={totalConfirmed}
+            totalOverShort={totalOverShort}
+          />
+        ) : (
+          <SundayCommitmentChart
+            title={resolvedTableTitle}
+            sessions={sessions}
+            totalTarget={totalTarget}
+            totalScheduled={totalScheduled}
+            totalConfirmed={totalConfirmed}
+            totalOverShort={totalOverShort}
+          />
+        )}
 
         <p className="text-[11px] text-muted text-center">
           * <span className="font-semibold">EXPECTED</span> represents expected attendance turnup
