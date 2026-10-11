@@ -30,7 +30,7 @@ import {
 
 export function AdminServiceAttendanceForecastPage() {
   const [viewDate, setViewDate] = useState(() => new Date());
-  const [activeRoleGroup, setActiveRoleGroup] = useState<ForecastRoleGroup>('USHER_BACKROOM');
+  const [activeRoleGroup, setActiveRoleGroup] = useState<ForecastRoleGroup>('ALL');
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false);
 
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>

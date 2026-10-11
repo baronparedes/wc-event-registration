@@ -30,12 +30,12 @@ import {
 } from '@/pages/admin/hub-calendar/utils/volunteerStaffingUtils';
 
 export type ForecastRoleGroup =
-  | 'USHER_BACKROOM'
-  | 'PRAYER_COACH'
-  | 'IMT_VMT'
   | 'ALL'
+  | 'PRAYER_COACH'
   | 'USHER'
-  | 'BACKROOM';
+  | 'BACKROOM'
+  | 'IMT_SUPPORT'
+  | 'VMT_SUPPORT';
 
 export interface RoleGroupOption {
   id: ForecastRoleGroup;
@@ -46,10 +46,10 @@ export interface RoleGroupOption {
 
 export const FORECAST_ROLE_GROUPS: RoleGroupOption[] = [
   {
-    id: 'USHER_BACKROOM',
-    label: 'Usher & Backroom',
-    tableTitle: 'USHER/BACKROOM COMMITMENTS',
-    roles: ['Usher', 'Backroom Support'],
+    id: 'ALL',
+    label: 'All Roles',
+    tableTitle: 'ALL VOLUNTEER COMMITMENTS',
+    roles: ['Prayer Coach', 'Usher', 'Backroom Support', 'IMT Support', 'VMT Support'],
   },
   {
     id: 'PRAYER_COACH',
@@ -58,28 +58,28 @@ export const FORECAST_ROLE_GROUPS: RoleGroupOption[] = [
     roles: ['Prayer Coach'],
   },
   {
-    id: 'IMT_VMT',
-    label: 'IMT & VMT',
-    tableTitle: 'IMT/VMT COMMITMENTS',
-    roles: ['IMT Support', 'VMT Support'],
-  },
-  {
-    id: 'ALL',
-    label: 'All Roles',
-    tableTitle: 'ALL VOLUNTEER COMMITMENTS',
-    roles: ['Usher', 'Backroom Support', 'Prayer Coach', 'IMT Support', 'VMT Support'],
-  },
-  {
     id: 'USHER',
-    label: 'Usher Only',
+    label: 'Usher',
     tableTitle: 'USHER COMMITMENTS',
     roles: ['Usher'],
   },
   {
     id: 'BACKROOM',
-    label: 'Backroom Only',
+    label: 'Backroom',
     tableTitle: 'BACKROOM COMMITMENTS',
     roles: ['Backroom Support'],
+  },
+  {
+    id: 'IMT_SUPPORT',
+    label: 'IMT Support',
+    tableTitle: 'IMT SUPPORT COMMITMENTS',
+    roles: ['IMT Support'],
+  },
+  {
+    id: 'VMT_SUPPORT',
+    label: 'VMT Support',
+    tableTitle: 'VMT SUPPORT COMMITMENTS',
+    roles: ['VMT Support'],
   },
 ];
 
@@ -172,7 +172,7 @@ export function useAttendanceForecastData({
   viewYear,
   viewMonthIndex,
   activeSlot = 'ALL',
-  activeRoleGroup = 'USHER_BACKROOM',
+  activeRoleGroup = 'ALL',
   targets = DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   thresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 }: UseAttendanceForecastDataParams) {

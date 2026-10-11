@@ -26,7 +26,7 @@ export function SundayForecastCard({ sunday, tableTitle }: SundayForecastCardPro
   } = sunday;
 
   const totalScheduled = sessions.reduce((acc, s) => acc + s.scheduled, 0);
-  const resolvedTableTitle = tableTitle ?? 'USHER/BACKROOM COMMITMENTS';
+  const resolvedTableTitle = tableTitle ?? 'ALL VOLUNTEER COMMITMENTS';
 
   return (
     <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
@@ -73,7 +73,7 @@ export function SundayForecastCard({ sunday, tableTitle }: SundayForecastCardPro
         />
 
         <p className="text-[11px] text-muted text-center">
-          * <span className="font-semibold">CONFIRMED</span> represents expected attendance turnup
+          * <span className="font-semibold">EXPECTED</span> represents expected attendance turnup
           forecasted from 3-month attendance confidence scores.
         </p>
 

@@ -117,17 +117,19 @@ describe('AdminServiceAttendanceForecastPage', () => {
     renderPage();
 
     // Check Role Group tabs using accessible role="tab"
-    expect(screen.getByRole('tab', { name: /Usher & Backroom/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Prayer Coach/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /IMT & VMT/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /All Roles/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Prayer Coach/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Usher/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Backroom/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /IMT Support/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /VMT Support/i })).toBeInTheDocument();
 
     expect(screen.getByText(/Sundays in Month/i)).toBeInTheDocument();
     expect(screen.getByText(/Total Monthly Quota/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Expected Turnup/i).length).toBeGreaterThanOrEqual(1);
 
     // Check simplified commitment table matching user specification
-    expect(screen.getAllByText(/USHER\/BACKROOM COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/ALL VOLUNTEER COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/SESSION/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/TARGET/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/SCHEDULED/i).length).toBeGreaterThanOrEqual(1);
