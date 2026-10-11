@@ -28,6 +28,7 @@ vi.mock('recharts', async () => ({
   ),
   Bar: () => <div data-testid="bar" />,
   Line: () => <div data-testid="line" />,
+  Area: () => <div data-testid="area" />,
   XAxis: () => <div data-testid="xaxis" />,
   YAxis: () => <div data-testid="yaxis" />,
   Tooltip: () => <div data-testid="tooltip" />,
@@ -199,16 +200,21 @@ describe('AdminServiceAttendanceForecastPage', () => {
 
     const allSundaysTab = screen.getByRole('tab', { name: /All Sundays/i });
     expect(allSundaysTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getAllByRole('heading', { level: 3 }).length).toBeGreaterThan(1);
+    expect(screen.getByRole('heading', { name: /Monthly Attendance Trend/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 3, name: /October/i }).length).toBeGreaterThan(
+      1,
+    );
 
     const firstSundayTab = screen.getByRole('tab', { name: /1st Sunday/i });
     fireEvent.click(firstSundayTab);
 
     expect(firstSundayTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
+    expect(screen.getAllByRole('heading', { level: 3, name: /October/i })).toHaveLength(1);
 
     fireEvent.click(allSundaysTab);
-    expect(screen.getAllByRole('heading', { level: 3 }).length).toBeGreaterThan(1);
+    expect(screen.getAllByRole('heading', { level: 3, name: /October/i }).length).toBeGreaterThan(
+      1,
+    );
   });
 
   it('opens and closes Configure Targets modal', () => {

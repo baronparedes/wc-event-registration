@@ -6,3 +6,4 @@ export * from './ForecastSundaySelector';
 export * from './SundayCommitmentTable';
 export * from './SundayCommitmentChart';
 export * from './SundayForecastCard';
+export * from './ForecastMonthlyTrendChart';

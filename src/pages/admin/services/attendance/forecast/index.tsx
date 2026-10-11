@@ -20,6 +20,7 @@ import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 import {
   ForecastMonthNavigator,
   ForecastMonthSummaryBar,
+  ForecastMonthlyTrendChart,
   ForecastRoleGroupSelector,
   ForecastSundaySelector,
   SundayForecastCard,
@@ -141,6 +142,12 @@ export function AdminServiceAttendanceForecastPage() {
             <ForecastRoleGroupSelector
               activeGroup={activeRoleGroup}
               onChangeGroup={setActiveRoleGroup}
+            />
+
+            {/* Monthly Attendance Trendline Chart */}
+            <ForecastMonthlyTrendChart
+              sundays={sundayForecasts}
+              roleGroupLabel={selectedRoleGroup.label}
             />
 
             {/* Chronological Sunday Cards with Simplified Tables */}
