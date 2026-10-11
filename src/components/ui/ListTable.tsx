@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+
 type ListTableDensity = 'default' | 'dense';
 type ListTableHeaderVariant = 'default' | 'muted' | 'plain';
 type ListTableBodyDivider = 'default' | 'none';
@@ -121,4 +123,63 @@ export function ListTableCell({ className, density, ...props }: ListTableCellPro
   };
 
   return <td className={joinClasses(densityStyles[resolvedDensity], className)} {...props} />;
+}
+
+export type SortableTableHeaderCellProps = Omit<ComponentPropsWithoutRef<'th'>, 'children'> & {
+  active?: boolean;
+  direction?: 'asc' | 'desc';
+  onSort?: () => void;
+  align?: 'left' | 'center' | 'right';
+  density?: ListTableDensity;
+  children: ReactNode;
+  buttonClassName?: string;
+};
+
+export function SortableTableHeaderCell({
+  children,
+  className,
+  buttonClassName,
+  active = false,
+  direction = 'asc',
+  onSort,
+  align = 'left',
+  density,
+  ...props
+}: SortableTableHeaderCellProps) {
+  const alignClass =
+    align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
+  const buttonJustifyClass =
+    align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+
+  return (
+    <ListTableHeaderCell
+      className={joinClasses(alignClass, className)}
+      density={density}
+      {...props}
+    >
+      <button
+        type="button"
+        onClick={onSort}
+        className={joinClasses(
+          'group inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-muted hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm focus:outline-none',
+          buttonJustifyClass,
+          buttonClassName,
+        )}
+      >
+        <span>{children}</span>
+        {active ? (
+          direction === 'asc' ? (
+            <ArrowUp className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          )
+        ) : (
+          <ArrowUpDown
+            className="h-3.5 w-3.5 text-muted/40 group-hover:text-muted transition-colors"
+            aria-hidden="true"
+          />
+        )}
+      </button>
+    </ListTableHeaderCell>
+  );
 }

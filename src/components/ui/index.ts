@@ -18,6 +18,8 @@ export {
   ListTableHeaderRow,
   ListTableCell,
   ListTableHeaderCell,
+  SortableTableHeaderCell,
+  type SortableTableHeaderCellProps,
 } from './ListTable';
 export { Skeleton } from './Skeleton';
 export { Spinner, type SpinnerProps, type SpinnerSize } from './Spinner';
@@ -156,3 +158,4 @@ export {
   type ContactButtonsSize,
   type ContactButtonsVariant,
 } from './ContactButtons';
+export { StatCard, type StatCardProps, type StatCardVariant } from './StatCard';
