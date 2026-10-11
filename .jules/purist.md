@@ -33,3 +33,9 @@
 **Deviation:** `useForm` initialization in `src/pages/admin/members/[id]/index.tsx` used a `useEffect` block with `reset()` to sync asynchronously loaded React Query data.
 **Learning:** React Hook Form's newer versions support natively reacting to external asynchronous data changes via the `values` prop, entirely replacing the imperative `useEffect` pattern.
 **Standard:** Pass the computed async data directly into the `values` prop of `useForm()` instead of using `useEffect` with `reset()`.
+
+## 2026-10-11 - Purist: Align useForm with Style Guide in AdminEventAttendancePageState
+
+**Deviation:** `useForm` initialization in `src/pages/admin/events/[id]/attendance/hooks/useAdminEventAttendancePageState.ts` used a `useEffect` block with `reset()` to sync asynchronously loaded React Query data.
+**Learning:** React Hook Form's newer versions support natively reacting to external asynchronous data changes via the `values` prop, entirely replacing the imperative `useEffect` pattern.
+**Standard:** Pass the computed async data directly into the `values` prop of `useForm()` instead of using `useEffect` with `reset()`.

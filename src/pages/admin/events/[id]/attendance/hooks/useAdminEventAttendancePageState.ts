@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -74,13 +72,12 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     control,
     formState: { errors, isDirty },
   } = useForm<AttendanceSettingsFormInput>({
     resolver: zodResolver(updateAttendanceSettingsSchema),
-    defaultValues: {
+    values: settings ?? {
       event_id: eventId ?? '',
       attendance_enabled: false,
       timeslot_enabled: false,
@@ -88,12 +85,6 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
       timeslots: [],
     },
   });
-
-  useEffect(() => {
-    if (!settings) return;
-
-    reset(settings);
-  }, [settings, reset]);
 
   const attendanceEnabled = useWatch({ control, name: 'attendance_enabled' });
   const timeslotEnabled = useWatch({ control, name: 'timeslot_enabled' });
