@@ -3,28 +3,23 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
-import { Badge, BrandAvatar, Button } from '@/components/ui';
+import { Badge, Button } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useChatStreamQuery, useUserTokenMapQuery } from '@/hooks/domain/chat';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { tokenizeUserText } from '@/lib/domain/chat';
 
-import { ChatInputForm, ChatMessageItem, type ChatMessageItemData } from './components';
+import {
+  ChatInputForm,
+  type ChatMessageItemData,
+  ChatMessageList,
+  storedChatMessagesSchema,
+} from './components';
 
 type Message = ChatMessageItemData;
 
 const CHAT_STORAGE_KEY = 'wc_admin_chat_messages';
 const MAX_CONTEXT_MESSAGES = 20;
-
-function isValidMessage(item: unknown): item is Message {
-  if (typeof item !== 'object' || item === null) return false;
-  const candidate = item as Record<string, unknown>;
-  return (
-    typeof candidate.id === 'string' &&
-    typeof candidate.content === 'string' &&
-    (candidate.role === 'user' || candidate.role === 'assistant')
-  );
-}
 
 function loadStoredMessages(): Message[] {
   if (typeof window === 'undefined') return [];
@@ -32,8 +27,9 @@ function loadStoredMessages(): Message[] {
     const saved = window.sessionStorage.getItem(CHAT_STORAGE_KEY);
     if (saved) {
       const parsed: unknown = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(isValidMessage);
+      const result = storedChatMessagesSchema.safeParse(parsed);
+      if (result.success) {
+        return result.data;
       }
     }
   } catch (error) {
@@ -209,10 +205,10 @@ export function AdminChatPage() {
           </Badge>
         }
         description={
-          <p className="text-xs opacity-90 leading-relaxed italic">
+          <span className="text-xs opacity-90 leading-relaxed italic block">
             AI responses can be inaccurate. Always verify critical data independently. This tool is
             for informational purposes and does not replace human judgment.
-          </p>
+          </span>
         }
         actions={
           messages.length > 0 ? (
@@ -233,33 +229,14 @@ export function AdminChatPage() {
 
       <AdminPageShell.Content isLoading={false} loadingMessage="">
         <div className="flex h-[calc(100vh-14rem)] min-h-[520px] max-h-[820px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-            {messages.length === 0 && (
-              <div className="flex h-full flex-col items-center justify-center text-center text-muted">
-                <BrandAvatar size="md" className="mb-4" />
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-medium text-text">Hi! I'm your AI assistant.</p>
-                  <Badge
-                    variant="outline"
-                    className="border-secondary/50 bg-secondary/10 text-secondary text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
-                  >
-                    Beta
-                  </Badge>
-                </div>
-                <p className="text-sm">Ask me questions about data and events.</p>
-              </div>
-            )}
-            {messages.map((m) => (
-              <ChatMessageItem
-                key={m.id}
-                message={m}
-                displayName={displayName}
-                avatarObjectKey={avatarObjectKey}
-                isLoading={isLoading && m.id === messages[messages.length - 1]?.id}
-              />
-            ))}
-            {messages.length > 0 && <div ref={bottomRef} className="h-1" />}
-          </div>
+          <ChatMessageList
+            messages={messages}
+            displayName={displayName}
+            avatarObjectKey={avatarObjectKey}
+            isLoading={isLoading}
+            scrollRef={scrollRef}
+            bottomRef={bottomRef}
+          />
 
           <div className="border-t border-border bg-background p-4">
             <ChatInputForm
