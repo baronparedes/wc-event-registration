@@ -1,7 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { PAGINATION_DEFAULTS, QUERY_STALE_TIME_MS } from '@/config/constants';
-import { type AdminMember, fetchAdminMembersPage } from '@/lib/domain/members';
+import {
+  type AdminMember,
+  type MemberAttributeFilter,
+  fetchAdminMembersPage,
+} from '@/lib/domain/members';
 import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 
 function readMetadataString(value: unknown): string {
@@ -15,12 +19,22 @@ export const adminMembersPageQueryKey = (
   cursor: string | null,
   searchTerm: string,
   statusFilter: 'active' | 'deleted' | 'all',
-) => [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, cursor, searchTerm, statusFilter] as const;
+  attributeFilter: MemberAttributeFilter = 'all',
+) =>
+  [
+    ...ADMIN_MEMBERS_QUERY_KEY(),
+    pageSize,
+    cursor,
+    searchTerm,
+    statusFilter,
+    attributeFilter,
+  ] as const;
 
 export interface AdminMembersPageParams {
   pageSize?: number;
   searchTerm?: string;
   statusFilter?: 'active' | 'deleted' | 'all';
+  attributeFilter?: MemberAttributeFilter;
 }
 
 export interface AdminMembersPage {
@@ -39,10 +53,11 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminMembersPageSize;
   const searchTerm = params?.searchTerm?.trim() ?? '';
   const statusFilter = params?.statusFilter ?? 'active';
+  const attributeFilter = params?.attributeFilter ?? 'all';
   const searchTokens = searchTerm.split(/\s+/).filter((token) => token.length > 0);
 
   return useInfiniteQuery<AdminMembersPage, Error>({
-    queryKey: [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, searchTerm, statusFilter],
+    queryKey: [...ADMIN_MEMBERS_QUERY_KEY(), pageSize, searchTerm, statusFilter, attributeFilter],
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: AdminMembersPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminMembersPage> => {
@@ -53,6 +68,7 @@ export function useAdminMembersQuery(params?: AdminMembersPageParams) {
         searchTerm,
         searchTokens,
         statusFilter,
+        attributeFilter,
       });
       const totalCount = count ?? 0;
       if (!members?.length) {

@@ -35,6 +35,7 @@ export type {
   MemberMetadataRow,
   MemberUpdatePayload,
   MemberStatusFilter,
+  MemberAttributeFilter,
   MemberAttendanceStats,
 } from './api';
 export {

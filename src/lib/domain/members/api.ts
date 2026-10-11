@@ -56,6 +56,13 @@ export type MemberUpdatePayload = {
 };
 
 export type MemberStatusFilter = 'active' | 'deleted' | 'all';
+export type MemberAttributeFilter =
+  | 'all'
+  | 'verified_email'
+  | 'no_mobile'
+  | 'no_email'
+  | 'with_mobile'
+  | 'with_email';
 
 const MEMBER_USER_SELECT =
   'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, has_account';
@@ -70,8 +77,16 @@ export async function fetchAdminMembersPage(params: {
   searchTerm: string;
   searchTokens: string[];
   statusFilter: MemberStatusFilter;
+  attributeFilter?: MemberAttributeFilter;
 }): Promise<{ rows: MemberUserListRow[]; count: number | null }> {
-  const { offset, pageSize, searchTerm, searchTokens, statusFilter } = params;
+  const {
+    offset,
+    pageSize,
+    searchTerm,
+    searchTokens,
+    statusFilter,
+    attributeFilter = 'all',
+  } = params;
   let query = supabase
     .from('users')
     .select(
@@ -83,6 +98,18 @@ export async function fetchAdminMembersPage(params: {
     query = query.eq('is_active', true);
   } else if (statusFilter === 'deleted') {
     query = query.eq('is_active', false);
+  }
+
+  if (attributeFilter === 'verified_email') {
+    query = query.eq('has_account', true).not('email', 'is', null).neq('email', '');
+  } else if (attributeFilter === 'no_mobile') {
+    query = query.or('phone.is.null,phone.eq.');
+  } else if (attributeFilter === 'no_email') {
+    query = query.or('email.is.null,email.eq.');
+  } else if (attributeFilter === 'with_mobile') {
+    query = query.not('phone', 'is', null).neq('phone', '');
+  } else if (attributeFilter === 'with_email') {
+    query = query.not('email', 'is', null).neq('email', '');
   }
 
   query = query
