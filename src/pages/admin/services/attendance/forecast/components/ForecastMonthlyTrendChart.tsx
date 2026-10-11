@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { format } from 'date-fns';
-import { TrendingUp } from 'lucide-react';
+import { AlertCircle, TrendingUp } from 'lucide-react';
 import {
   Area,
   CartesianGrid,
@@ -37,14 +37,18 @@ interface TooltipPayloadItem {
   value: number;
   dataKey: string;
   payload: {
+    id: string;
     label: string;
-    fullLabel: string;
+    shortLabel: string;
+    sundayLabel: string;
     formattedDate: string;
+    session: TimeSlot;
     sessionLabel: string;
     target: number;
     scheduled: number;
     expected: number;
     overShort: number;
+    hasDeficit: boolean;
     fulfillmentRate: number;
   };
 }
@@ -60,15 +64,15 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
   }
 
   const data = payload[0].payload;
-  const isNegative = data.overShort < 0;
+  const isNegative = data.hasDeficit;
   const isPositive = data.overShort > 0;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-3 text-xs shadow-md space-y-2 min-w-[210px]">
+    <div className="rounded-xl border border-border bg-surface p-3 text-xs shadow-md space-y-2 min-w-[220px]">
       <div className="flex items-center justify-between border-b border-border pb-1.5 font-bold">
         <div>
           <div className="flex items-center gap-1">
-            <span className="text-text">{data.fullLabel}</span>
+            <span className="text-text">{data.sundayLabel}</span>
             <span className="text-muted font-normal text-[11px]">({data.formattedDate})</span>
           </div>
           <div className="text-[11px] text-primary font-semibold mt-0.5">{data.sessionLabel}</div>
@@ -82,10 +86,10 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
                 : 'bg-muted/10 text-muted'
           }`}
         >
-          {isPositive
-            ? `+${data.overShort} surplus`
-            : isNegative
-              ? `${data.overShort} deficit`
+          {isNegative
+            ? `${data.overShort} Short`
+            : isPositive
+              ? `+${data.overShort} Surplus`
               : 'Target Met'}
         </span>
       </div>
@@ -109,7 +113,9 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
 
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span
+              className={`h-2 w-2 rounded-full ${isNegative ? 'bg-rose-500' : 'bg-emerald-500'}`}
+            />
             <span>Expected Turnup:</span>
           </span>
           <span className="font-bold text-text tabular-nums">{data.expected}</span>
@@ -124,6 +130,41 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
   );
 }
 
+function renderExpectedDot(props: {
+  cx?: number;
+  cy?: number;
+  payload?: { hasDeficit: boolean; session: string };
+}) {
+  const { cx, cy, payload } = props;
+  if (cx === undefined || cy === undefined || !payload) return null;
+
+  if (payload.hasDeficit) {
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill="#f43f5e"
+        stroke="#ffffff"
+        strokeWidth={2}
+        key={`expected-dot-${cx}-${cy}`}
+      />
+    );
+  }
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={3.5}
+      fill="#10b981"
+      stroke="#ffffff"
+      strokeWidth={1.5}
+      key={`expected-dot-${cx}-${cy}`}
+    />
+  );
+}
+
 export function ForecastMonthlyTrendChart({
   sundays,
   roleGroupLabel = 'All Roles',
@@ -132,36 +173,56 @@ export function ForecastMonthlyTrendChart({
   const [selectedSlot, setSelectedSlot] = useState<'ALL' | TimeSlot>(initialSlot);
 
   const chartData = useMemo(() => {
-    const sessionLabel = selectedSlot === 'ALL' ? 'All Sessions' : `${selectedSlot} Session`;
+    const points: Array<{
+      id: string;
+      label: string;
+      shortLabel: string;
+      sundayLabel: string;
+      formattedDate: string;
+      session: TimeSlot;
+      sessionLabel: string;
+      target: number;
+      scheduled: number;
+      expected: number;
+      overShort: number;
+      hasDeficit: boolean;
+      fulfillmentRate: number;
+    }> = [];
 
-    return sundays.map((s) => {
-      let target = s.totalTarget;
-      let scheduled = s.totalScheduled;
-      let expected = s.totalConfirmed;
-      let overShort = s.totalOverShort;
+    for (const s of sundays) {
+      const activeSessions =
+        selectedSlot === 'ALL'
+          ? s.sessions
+          : s.sessions.filter((sess) => sess.slot === selectedSlot);
 
-      if (selectedSlot !== 'ALL') {
-        const session = s.sessions.find((sess) => sess.slot === selectedSlot);
-        target = session?.target ?? 0;
-        scheduled = session?.scheduled ?? 0;
-        expected = session?.confirmed ?? 0;
-        overShort = session?.overShort ?? 0;
+      for (const sess of activeSessions) {
+        const target = sess.target;
+        const scheduled = sess.scheduled;
+        const expected = sess.confirmed;
+        const overShort = sess.overShort;
+        const hasDeficit = overShort < 0;
+        const fulfillmentRate = target > 0 ? Math.round((expected / target) * 100) : 100;
+        const slotShort = sess.slot === '9AM' ? '9A' : sess.slot === '12NN' ? '12N' : '3P';
+
+        points.push({
+          id: `${s.isoDateKey}-${sess.slot}`,
+          label: `${format(s.date, 'MMM d')} ${sess.slot}`,
+          shortLabel: `${format(s.date, 'M/d')} ${slotShort}`,
+          sundayLabel: s.ordinalLabel,
+          formattedDate: format(s.date, 'MMMM d, yyyy'),
+          session: sess.slot,
+          sessionLabel: `${sess.slot} Session`,
+          target,
+          scheduled,
+          expected,
+          overShort,
+          hasDeficit,
+          fulfillmentRate,
+        });
       }
+    }
 
-      const fulfillmentRate = target > 0 ? Math.round((expected / target) * 100) : 100;
-
-      return {
-        label: `${s.ordinalLabel.replace(' Sunday', ' Sun')} (${format(s.date, 'MMM d')})`,
-        fullLabel: s.ordinalLabel,
-        formattedDate: format(s.date, 'MMMM d, yyyy'),
-        sessionLabel,
-        target,
-        scheduled,
-        expected,
-        overShort,
-        fulfillmentRate,
-      };
-    });
+    return points;
   }, [sundays, selectedSlot]);
 
   const totals = useMemo(() => {
@@ -170,29 +231,17 @@ export function ForecastMonthlyTrendChart({
     let totalExpected = 0;
     let totalDeficit = 0;
     let totalSurplus = 0;
+    let sessionsWithDeficit = 0;
 
-    for (const s of sundays) {
-      if (selectedSlot === 'ALL') {
-        totalTarget += s.totalTarget;
-        totalScheduled += s.totalScheduled;
-        totalExpected += s.totalConfirmed;
-        totalDeficit += s.totalDeficit;
-        totalSurplus += s.totalSurplus;
-      } else {
-        const session = s.sessions.find((sess) => sess.slot === selectedSlot);
-        const target = session?.target ?? 0;
-        const scheduled = session?.scheduled ?? 0;
-        const expected = session?.confirmed ?? 0;
-        const overShort = session?.overShort ?? 0;
-
-        totalTarget += target;
-        totalScheduled += scheduled;
-        totalExpected += expected;
-        if (overShort < 0) {
-          totalDeficit += Math.abs(overShort);
-        } else if (overShort > 0) {
-          totalSurplus += overShort;
-        }
+    for (const point of chartData) {
+      totalTarget += point.target;
+      totalScheduled += point.scheduled;
+      totalExpected += point.expected;
+      if (point.hasDeficit) {
+        totalDeficit += Math.abs(point.overShort);
+        sessionsWithDeficit++;
+      } else if (point.overShort > 0) {
+        totalSurplus += point.overShort;
       }
     }
 
@@ -206,9 +255,10 @@ export function ForecastMonthlyTrendChart({
       totalVariance,
       totalDeficit,
       totalSurplus,
+      sessionsWithDeficit,
       fulfillmentRate,
     };
-  }, [sundays, selectedSlot]);
+  }, [chartData]);
 
   if (!sundays.length) {
     return null;
@@ -228,9 +278,16 @@ export function ForecastMonthlyTrendChart({
               <Badge variant="outline" className="text-xs font-semibold">
                 {roleGroupLabel}
               </Badge>
+              {totals.sessionsWithDeficit > 0 && (
+                <Badge variant="accent" className="text-xs font-bold">
+                  <AlertCircle className="mr-1 h-3 w-3 inline" />
+                  {totals.sessionsWithDeficit} Session
+                  {totals.sessionsWithDeficit > 1 ? 's' : ''} Short
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted mt-0.5">
-              Comparing volunteer targets, scheduled roster, and expected turnup across all Sundays
+              Service sessions (9 AM, 12 NN, 3 PM) compared against target staffing quotas
             </p>
           </div>
         </div>
@@ -281,7 +338,7 @@ export function ForecastMonthlyTrendChart({
                 dataKey="label"
                 tickLine={false}
                 axisLine={{ stroke: 'var(--color-border)' }}
-                tick={{ fill: 'var(--color-text)', fontSize: 12, fontWeight: 600 }}
+                tick={{ fill: 'var(--color-text)', fontSize: 11, fontWeight: 600 }}
                 dy={6}
               />
               <YAxis
@@ -306,7 +363,7 @@ export function ForecastMonthlyTrendChart({
                 strokeWidth={2.5}
                 fill="#10b981"
                 fillOpacity={0.15}
-                dot={{ r: 4, fill: '#10b981', stroke: '#ffffff', strokeWidth: 2 }}
+                dot={renderExpectedDot}
                 activeDot={{ r: 6 }}
               />
               <Line
@@ -315,7 +372,7 @@ export function ForecastMonthlyTrendChart({
                 name="Scheduled"
                 stroke="#0284c7"
                 strokeWidth={2.5}
-                dot={{ r: 4, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2 }}
+                dot={{ r: 3.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 1.5 }}
                 activeDot={{ r: 6 }}
               />
               <Line
@@ -325,7 +382,7 @@ export function ForecastMonthlyTrendChart({
                 stroke="#f59e0b"
                 strokeWidth={2.5}
                 strokeDasharray="5 5"
-                dot={{ r: 4, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+                dot={{ r: 3.5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 1.5 }}
                 activeDot={{ r: 6 }}
               />
             </ComposedChart>
@@ -357,7 +414,7 @@ export function ForecastMonthlyTrendChart({
             <div className="mt-0.5">
               {totals.totalDeficit > 0 ? (
                 <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
-                  -{totals.totalDeficit} Needed
+                  -{totals.totalDeficit} Needed ({totals.sessionsWithDeficit} Short)
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-primary/15 text-primary">

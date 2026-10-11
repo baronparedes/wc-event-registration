@@ -17,7 +17,14 @@ vi.mock('recharts', async () => {
       data,
     }: {
       children: React.ReactNode;
-      data: Array<{ label: string; target: number; scheduled: number; expected: number }>;
+      data: Array<{
+        label: string;
+        target: number;
+        scheduled: number;
+        expected: number;
+        sessionLabel: string;
+        overShort: number;
+      }>;
     }) => (
       <div data-testid="composed-chart" data-items={JSON.stringify(data)}>
         {children}
@@ -82,11 +89,13 @@ describe('ForecastMonthlyTrendChart', () => {
     },
   ];
 
-  it('renders monthly trend header, badge, chart, and footer summary', () => {
+  it('renders chronological sessions and alerts on sessions with deficits', () => {
     render(<ForecastMonthlyTrendChart sundays={sampleSundays} roleGroupLabel="All Roles" />);
 
     expect(screen.getByText(/Monthly Attendance Trend/i)).toBeInTheDocument();
     expect(screen.getByText('All Roles')).toBeInTheDocument();
+    expect(screen.getByText(/4 Sessions Short/i)).toBeInTheDocument();
+
     expect(screen.getByText('Month Target')).toBeInTheDocument();
     expect(screen.getByText('486')).toBeInTheDocument(); // 243 + 243
     expect(screen.getByText('Month Scheduled')).toBeInTheDocument();
@@ -94,15 +103,20 @@ describe('ForecastMonthlyTrendChart', () => {
     expect(screen.getByText('Month Expected')).toBeInTheDocument();
     expect(screen.getByText('455')).toBeInTheDocument(); // 210 + 245
     expect(screen.getByText('Staffing Deficit')).toBeInTheDocument();
-    expect(screen.getByText('-44 Needed')).toBeInTheDocument(); // 33 + 11
+    expect(screen.getByText(/-44 Needed \(4 Short\)/i)).toBeInTheDocument();
 
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
-    expect(items).toHaveLength(2);
-    expect(items[0].target).toBe(243);
-    expect(items[0].scheduled).toBe(250);
-    expect(items[0].expected).toBe(210);
-    expect(items[0].overShort).toBe(-33);
+    // 2 Sundays * 3 sessions = 6 chronological data points
+    expect(items).toHaveLength(6);
+    expect(items[0].label).toBe('Oct 4 9AM');
+    expect(items[0].target).toBe(81);
+    expect(items[0].scheduled).toBe(84);
+    expect(items[0].expected).toBe(70);
+
+    expect(items[2].label).toBe('Oct 4 3PM');
+    expect(items[2].target).toBe(91);
+    expect(items[2].expected).toBe(70);
   });
 
   it('allows filtering by session slot', () => {
@@ -119,10 +133,12 @@ describe('ForecastMonthlyTrendChart', () => {
     expect(screen.getByText('174')).toBeInTheDocument();
     // 9 AM expected across the two Sundays: 70 + 85 = 155
     expect(screen.getByText('155')).toBeInTheDocument();
-    expect(screen.getByText('-11 Needed')).toBeInTheDocument();
+    expect(screen.getByText(/-11 Needed \(1 Short\)/i)).toBeInTheDocument();
 
     const chart = screen.getByTestId('composed-chart');
     const items = JSON.parse(chart.getAttribute('data-items') || '[]');
+    // Filtered to 9AM: 2 data points
+    expect(items).toHaveLength(2);
     expect(items[0].sessionLabel).toBe('9AM Session');
     expect(items[0].target).toBe(81);
     expect(items[0].scheduled).toBe(84);
