@@ -1,7 +1,11 @@
+import { useState } from 'react';
+
 import {
+  BarChart3,
   ClipboardList,
   Copy,
   FormInput,
+  MoreHorizontal,
   QrCode,
   Settings,
   Share2,
@@ -9,7 +13,8 @@ import {
   Users,
 } from 'lucide-react';
 
-import { ActionButton, ActionLink } from '@/components/ui/ActionLink';
+import { Button, DropdownMenu, DropdownMenuItem } from '@/components/ui';
+import { ActionLink } from '@/components/ui/ActionLink';
 import {
   ListTable,
   ListTableBody,
@@ -25,6 +30,139 @@ import { formatDateOnly } from '@/lib/infrastructure';
 
 import { DuplicatePolicyLabel } from './DuplicatePolicyLabel';
 import { EventStatusBadge } from './EventStatusBadge';
+
+type AdminEventTableActionsProps = {
+  event: AdminEvent;
+  canWrite: boolean;
+  canRead: boolean;
+  canAccessCheckIn: boolean;
+  onDuplicateClick?: (event: AdminEvent) => void;
+  onShareClick?: (event: AdminEvent) => void;
+};
+
+function AdminEventTableActions({
+  event,
+  canWrite,
+  canRead,
+  canAccessCheckIn,
+  onDuplicateClick,
+  onShareClick,
+}: AdminEventTableActionsProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  return (
+    <div className="flex items-center gap-4">
+      {canWrite && (
+        <ActionLink
+          to={toRoute('adminEventDetail', { id: event.id })}
+          title="Edit"
+          aria-label={`Edit ${event.title}`}
+          className="flex items-center gap-1.5 text-sm font-medium"
+        >
+          <Settings className="h-4 w-4" />
+          Edit
+        </ActionLink>
+      )}
+      {canRead && (
+        <ActionLink
+          to={toRoute('adminAttendanceData', { id: event.id })}
+          title="Attendees"
+          aria-label={`Attendees for ${event.title}`}
+          className="flex items-center gap-1.5 text-sm font-medium"
+        >
+          <Users className="h-4 w-4" />
+          Attendees
+        </ActionLink>
+      )}
+      <DropdownMenu
+        open={isMenuOpen}
+        onOpenChange={setIsMenuOpen}
+        trigger={
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMenuOpen((isOpen) => !isOpen);
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded p-0 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            aria-label={`More actions for ${event.title}`}
+            title="More actions"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        }
+      >
+        {canWrite && onDuplicateClick && (
+          <DropdownMenuItem
+            onClick={() => {
+              onDuplicateClick(event);
+              setIsMenuOpen(false);
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <Copy className="h-4 w-4" />
+              Duplicate
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canRead && onShareClick && (
+          <DropdownMenuItem
+            onClick={() => {
+              onShareClick(event);
+              setIsMenuOpen(false);
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              Share schedule
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canWrite && (
+          <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
+            <span className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Attendance settings
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canWrite && (
+          <DropdownMenuItem to={toRoute('adminEventFields', { id: event.id })}>
+            <span className="flex items-center gap-2">
+              <FormInput className="h-4 w-4" />
+              Registration fields
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canRead && (
+          <DropdownMenuItem to={toRoute('adminRegistrations', { id: event.id })}>
+            <span className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Registrations
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canRead && (
+          <DropdownMenuItem to={toRoute('adminAttendanceDashboard', { id: event.id })}>
+            <span className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Attendance dashboard
+            </span>
+          </DropdownMenuItem>
+        )}
+        {canAccessCheckIn && (
+          <DropdownMenuItem to={toRoute('adminAttendanceCheckIn', { id: event.id })}>
+            <span className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              Check-in
+            </span>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenu>
+    </div>
+  );
+}
 
 type AdminEventsTableProps = {
   events: AdminEvent[];
@@ -103,86 +241,14 @@ export function AdminEventsTable({
                 </div>
               </ListTableCell>
               <ListTableCell onClick={(eventClick) => eventClick.stopPropagation()}>
-                <div className="flex items-center gap-3">
-                  {canWrite && (
-                    <ActionLink
-                      to={toRoute('adminEventDetail', { id: event.id })}
-                      title="Edit"
-                      aria-label={`Edit ${event.title}`}
-                    >
-                      <Settings className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                  {canWrite && onDuplicateClick && (
-                    <ActionButton
-                      title="Duplicate"
-                      aria-label={`Duplicate ${event.title}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicateClick(event);
-                      }}
-                    >
-                      <Copy className="h-5 w-5" />
-                    </ActionButton>
-                  )}
-                  {canRead && onShareClick && (
-                    <ActionButton
-                      title="Share Schedule"
-                      aria-label={`Share schedule for ${event.title}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onShareClick(event);
-                      }}
-                    >
-                      <Share2 className="h-5 w-5" />
-                    </ActionButton>
-                  )}
-                  {canWrite && (
-                    <ActionLink
-                      to={toRoute('adminEventAttendance', { id: event.id })}
-                      title="Attendance"
-                      aria-label={`Attendance for ${event.title}`}
-                    >
-                      <UserCheck className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                  {canWrite && (
-                    <ActionLink
-                      to={toRoute('adminEventFields', { id: event.id })}
-                      title="Fields"
-                      aria-label={`Fields for ${event.title}`}
-                    >
-                      <FormInput className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                  {canRead && (
-                    <ActionLink
-                      to={toRoute('adminAttendanceData', { id: event.id })}
-                      title="Attendee Details"
-                      aria-label={`Attendee Details for ${event.title}`}
-                    >
-                      <Users className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                  {canRead && (
-                    <ActionLink
-                      to={toRoute('adminRegistrations', { id: event.id })}
-                      title="Registrations"
-                      aria-label={`Registrations for ${event.title}`}
-                    >
-                      <ClipboardList className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                  {canAccessCheckIn && (
-                    <ActionLink
-                      to={toRoute('adminAttendanceCheckIn', { id: event.id })}
-                      title="Check-In"
-                      aria-label={`Check-In for ${event.title}`}
-                    >
-                      <QrCode className="h-5 w-5" />
-                    </ActionLink>
-                  )}
-                </div>
+                <AdminEventTableActions
+                  event={event}
+                  canWrite={canWrite}
+                  canRead={canRead}
+                  canAccessCheckIn={canAccessCheckIn}
+                  onDuplicateClick={onDuplicateClick}
+                  onShareClick={onShareClick}
+                />
               </ListTableCell>
             </ListTableRow>
           ))}
