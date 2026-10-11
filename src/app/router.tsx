@@ -252,6 +252,11 @@ const AdminServiceAttendanceCommitmentPage = lazy(() =>
     default: module.AdminServiceAttendanceCommitmentPage,
   })),
 );
+const AdminServiceAttendanceForecastPage = lazy(() =>
+  import('../pages/admin/services/attendance/forecast').then((module) => ({
+    default: module.AdminServiceAttendanceForecastPage,
+  })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -334,6 +339,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminServiceAttendanceMigration: AdminServiceAttendanceMigrationPage,
   adminServiceAttendanceData: AdminServiceAttendanceDataPage,
   adminServiceAttendanceCommitment: AdminServiceAttendanceCommitmentPage,
+  adminServiceAttendanceForecast: AdminServiceAttendanceForecastPage,
   adminNotifications: AdminNotificationsPage,
   adminNotificationsDashboard: AdminNotificationsDashboardPage,
   adminSundayReminders: AdminSundayRemindersPage,

@@ -50,4 +50,5 @@ export {
   updateMember,
   setMemberActiveStatus,
   fetchMembersAttendanceScores,
+  type FetchMembersAttendanceScoresOptions,
 } from './api';

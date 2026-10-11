@@ -27,6 +27,7 @@ describe('route constants and builders', () => {
     expect(ROUTE_PATHS.adminServiceAttendanceMigration).toBe(
       '/admin/services/attendance/migration',
     );
+    expect(ROUTE_PATHS.adminServiceAttendanceForecast).toBe('/admin/services/attendance/forecast');
     expect(ROUTE_PREFIXES.admin).toBe('/admin/');
   });
 
@@ -36,6 +37,7 @@ describe('route constants and builders', () => {
     expect(toRoute('adminMembersImport')).toBe('/admin/members/import');
     expect(toRoute('adminServices')).toBe('/admin/services');
     expect(toRoute('adminServiceAttendanceMigration')).toBe('/admin/services/attendance/migration');
+    expect(toRoute('adminServiceAttendanceForecast')).toBe('/admin/services/attendance/forecast');
 
     expect(toRoute('adminMemberDetail', { id: 'member-1' })).toBe('/admin/members/member-1');
     expect(toRoute('adminEventDetail', { id: 'event-1' })).toBe('/admin/events/event-1');

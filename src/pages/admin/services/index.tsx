@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 
 import { endOfMonth, format, parseISO } from 'date-fns';
-import { ChartArea, SearchX, Table, Upload } from 'lucide-react';
+import { ChartArea, SearchX, Table, TrendingUp, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
+import { AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, LoadingState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -14,6 +14,7 @@ import {
   ServiceDashboardFilters,
   ServiceDashboardMetrics,
   ServiceDashboardRoleBreakdown,
+  ServiceNavigationLinks,
 } from './components';
 import { type FilterMode, getLastSundayOfYear, getNearestPreviousSunday } from './constants';
 
@@ -82,6 +83,13 @@ export function AdminServicesPage() {
             )}
             <Button
               className="w-full sm:w-auto sm:inline-flex"
+              onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceForecast)}
+            >
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Attendance Forecast
+            </Button>
+            <Button
+              className="w-full sm:w-auto sm:inline-flex"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceCommitment)}
             >
               <ChartArea className="mr-2 h-4 w-4" />
@@ -97,7 +105,7 @@ export function AdminServicesPage() {
           </>
         }
       />
-      <AdminBaseNavigation />
+      <ServiceNavigationLinks />
       <AdminPageShell.Content>
         <ServiceDashboardFilters
           filterMode={filterMode}

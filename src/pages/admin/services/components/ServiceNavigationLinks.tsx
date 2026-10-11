@@ -9,6 +9,9 @@ export function ServiceNavigationLinks() {
         Commitment Dashboard
       </AdminSubNavLink>
       <AdminSubNavLink to={ROUTE_PATHS.adminServiceAttendanceData}>Attendance Data</AdminSubNavLink>
+      <AdminSubNavLink to={ROUTE_PATHS.adminServiceAttendanceForecast}>
+        Attendance Forecast
+      </AdminSubNavLink>
       <AdminSubNavLink to={ROUTE_PATHS.adminServiceAttendanceMigration}>
         Attendance Migration
       </AdminSubNavLink>

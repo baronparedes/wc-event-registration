@@ -36,8 +36,8 @@ describe('VolunteerStaffingTargetsModal', () => {
     expect(screen.getByRole('tab', { name: '9:00 AM' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '12:00 NN' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '3:00 PM' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Usher')).toHaveValue('15');
-    expect(screen.getByLabelText('Backroom Support')).toHaveValue('10');
+    expect(screen.getByLabelText('Usher')).toHaveValue('17');
+    expect(screen.getByLabelText('Backroom Support')).toHaveValue('11');
     expect(screen.getByLabelText('Prayer Coach')).toHaveValue('50');
   });
 
@@ -60,9 +60,9 @@ describe('VolunteerStaffingTargetsModal', () => {
     const slot12NNTab = screen.getByRole('tab', { name: '12:00 NN' });
     fireEvent.click(slot12NNTab);
 
-    // 12NN Usher should still be 15
+    // 12NN Usher should still be 17
     const usherInput12NN = screen.getByLabelText('Usher');
-    expect(usherInput12NN).toHaveValue('15');
+    expect(usherInput12NN).toHaveValue('17');
     fireEvent.change(usherInput12NN, { target: { value: '40' } });
 
     const saveBtn = screen.getByRole('button', { name: /Save Settings/i });
@@ -71,7 +71,7 @@ describe('VolunteerStaffingTargetsModal', () => {
     expect(onSaveMock).toHaveBeenCalledWith({
       '9AM': expect.objectContaining({ Usher: 30 }),
       '12NN': expect.objectContaining({ Usher: 40 }),
-      '3PM': expect.objectContaining({ Usher: 15 }),
+      '3PM': expect.objectContaining({ Usher: 17 }),
     });
     expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
@@ -117,7 +117,7 @@ describe('VolunteerStaffingTargetsModal', () => {
     const resetBtn = screen.getByRole('button', { name: /Reset Quotas/i });
     fireEvent.click(resetBtn);
 
-    expect(screen.getByLabelText('Usher')).toHaveValue('15');
+    expect(screen.getByLabelText('Usher')).toHaveValue('17');
   });
 
   it('switches to Turnup Thresholds tab, edits thresholds, and saves them', () => {

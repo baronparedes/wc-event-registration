@@ -12,8 +12,8 @@ export type SlotRoleTargets = Record<string, number>;
 export type VolunteerTargetsBySlot = Record<TimeSlot, SlotRoleTargets>;
 
 export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
-  Usher: 15,
-  'Backroom Support': 10,
+  Usher: 17,
+  'Backroom Support': 11,
   'Prayer Coach': 50,
   'IMT Support': 4,
   'VMT Support': 2,
@@ -21,8 +21,13 @@ export const DEFAULT_VOLUNTEER_ROLE_TARGETS: SlotRoleTargets = {
 
 export const DEFAULT_VOLUNTEER_TARGETS_BY_SLOT: VolunteerTargetsBySlot = {
   '9AM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS },
-  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 40 },
-  '3PM': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 60 },
+  '12NN': { ...DEFAULT_VOLUNTEER_ROLE_TARGETS, 'Prayer Coach': 40, Usher: 15 },
+  '3PM': {
+    ...DEFAULT_VOLUNTEER_ROLE_TARGETS,
+    'Prayer Coach': 60,
+    Usher: 19,
+    'Backroom Support': 13,
+  },
 };
 
 export const ORDERED_STANDARD_ROLES = [
@@ -43,7 +48,7 @@ export function normalizeStaffingRole(rawRole?: string | null): string {
   const firstPart = trimmed.split(/\s*[/,]\s*/)[0].trim();
 
   if (/^usher/i.test(firstPart)) return 'Usher';
-  if (/^backroom/i.test(firstPart)) return 'Backroom Support';
+  if (/^(?:backroom|bkrm)/i.test(firstPart)) return 'Backroom Support';
   if (/^prayer\s*coach|^pc\b/i.test(firstPart)) return 'Prayer Coach';
   if (/^imt/i.test(firstPart)) return 'IMT Support';
   if (/^vmt/i.test(firstPart)) return 'VMT Support';
