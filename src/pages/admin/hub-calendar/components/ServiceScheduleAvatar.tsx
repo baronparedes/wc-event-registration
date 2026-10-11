@@ -89,9 +89,9 @@ export function ServiceScheduleAvatar({
       />
       <span
         title={tooltip ? undefined : 'Excused'}
-        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses}`}
+        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses[size]}`}
       >
-        <CalendarOff className={`${iconSizeClasses} shrink-0`} />
+        <CalendarOff className={`${iconSizeClasses[size]} shrink-0`} />
       </span>
     </div>
   );

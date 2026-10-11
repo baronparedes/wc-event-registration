@@ -21,18 +21,26 @@ describe('ServiceScheduleAvatar', () => {
     render(<ServiceScheduleAvatar name="Sample Member" excused size="sm" />);
 
     expect(screen.getByText('SM')).toBeInTheDocument();
-    expect(screen.getByTitle('Excused')).toBeInTheDocument();
+    const badge = screen.getByTitle('Excused');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass('-bottom-0.5', '-right-0.5', 'h-4', 'w-4');
   });
 
   it('renders excused badge with md, lg, and 2xl size classes', () => {
     const { rerender } = render(<ServiceScheduleAvatar name="Test Alpha" excused size="md" />);
-    expect(screen.getByTitle('Excused')).toBeInTheDocument();
+    const badgeMd = screen.getByTitle('Excused');
+    expect(badgeMd).toBeInTheDocument();
+    expect(badgeMd).toHaveClass('bottom-0', 'right-0', 'h-6', 'w-6');
 
     rerender(<ServiceScheduleAvatar name="Test Alpha" excused size="lg" />);
-    expect(screen.getByTitle('Excused')).toBeInTheDocument();
+    const badgeLg = screen.getByTitle('Excused');
+    expect(badgeLg).toBeInTheDocument();
+    expect(badgeLg).toHaveClass('bottom-1', 'right-1', 'h-9', 'w-9');
 
     rerender(<ServiceScheduleAvatar name="Test Alpha" excused size="2xl" />);
-    expect(screen.getByTitle('Excused')).toBeInTheDocument();
+    const badge2xl = screen.getByTitle('Excused');
+    expect(badge2xl).toBeInTheDocument();
+    expect(badge2xl).toHaveClass('bottom-1', 'right-1', 'h-14', 'w-14');
   });
 
   it('applies custom className correctly', () => {
