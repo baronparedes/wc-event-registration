@@ -10,7 +10,12 @@ import {
   useGetExcusedMembers,
   useMembersAttendanceScoresQuery,
 } from '@/hooks/domain/members';
-import { SUNDAY_KEYS, buildExcusedMap, toIsoDateKey } from '@/lib/domain/hub-calendar';
+import {
+  SUNDAY_KEYS,
+  buildExcusedMap,
+  isMemberExcused,
+  toIsoDateKey,
+} from '@/lib/domain/hub-calendar';
 import {
   type ConfidenceThresholds,
   DEFAULT_CONFIDENCE_THRESHOLDS,
@@ -21,7 +26,70 @@ import {
   type VolunteerTargetsBySlot,
   calculateAllSundayStaffingNeeds,
   calculateSlotStaffingNeeds,
+  normalizeStaffingRole,
 } from '@/pages/admin/hub-calendar/utils/volunteerStaffingUtils';
+
+export type ForecastRoleGroup =
+  | 'USHER_BACKROOM'
+  | 'PRAYER_COACH'
+  | 'IMT_VMT'
+  | 'ALL'
+  | 'USHER'
+  | 'BACKROOM';
+
+export interface RoleGroupOption {
+  id: ForecastRoleGroup;
+  label: string;
+  tableTitle: string;
+  roles: string[];
+}
+
+export const FORECAST_ROLE_GROUPS: RoleGroupOption[] = [
+  {
+    id: 'USHER_BACKROOM',
+    label: 'Usher & Backroom',
+    tableTitle: 'USHER/BACKROOM COMMITMENTS',
+    roles: ['Usher', 'Backroom Support'],
+  },
+  {
+    id: 'PRAYER_COACH',
+    label: 'Prayer Coach',
+    tableTitle: 'PRAYER COACH COMMITMENTS',
+    roles: ['Prayer Coach'],
+  },
+  {
+    id: 'IMT_VMT',
+    label: 'IMT & VMT',
+    tableTitle: 'IMT/VMT COMMITMENTS',
+    roles: ['IMT Support', 'VMT Support'],
+  },
+  {
+    id: 'ALL',
+    label: 'All Roles',
+    tableTitle: 'ALL VOLUNTEER COMMITMENTS',
+    roles: ['Usher', 'Backroom Support', 'Prayer Coach', 'IMT Support', 'VMT Support'],
+  },
+  {
+    id: 'USHER',
+    label: 'Usher Only',
+    tableTitle: 'USHER COMMITMENTS',
+    roles: ['Usher'],
+  },
+  {
+    id: 'BACKROOM',
+    label: 'Backroom Only',
+    tableTitle: 'BACKROOM COMMITMENTS',
+    roles: ['Backroom Support'],
+  },
+];
+
+export interface SundaySessionForecast {
+  slot: TimeSlot;
+  target: number;
+  scheduled: number;
+  confirmed: number; // expected turnup
+  overShort: number; // confirmed - target
+}
 
 export type SundayForecastData = {
   date: Date;
@@ -32,6 +100,11 @@ export type SundayForecastData = {
   formattedDate: string;
   entriesByTimeSlot: Record<TimeSlot, MemberScheduleEntry[]>;
   totalScheduled: number;
+  sessions: SundaySessionForecast[];
+  totalTarget: number;
+  totalConfirmed: number;
+  totalOverShort: number;
+  hasDeficit: boolean;
   forecast: SlotStaffingForecast;
 };
 
@@ -48,7 +121,8 @@ export type MonthForecastSummary = {
 export type UseAttendanceForecastDataParams = {
   viewYear: number;
   viewMonthIndex: number;
-  activeSlot: TimeSlot | 'ALL';
+  activeSlot?: TimeSlot | 'ALL';
+  activeRoleGroup?: ForecastRoleGroup;
   targets?: VolunteerTargetsBySlot;
   thresholds?: ConfidenceThresholds;
 };
@@ -97,13 +171,20 @@ export function getSundaysOfMonth(year: number, monthIndex: number) {
 export function useAttendanceForecastData({
   viewYear,
   viewMonthIndex,
-  activeSlot,
+  activeSlot = 'ALL',
+  activeRoleGroup = 'USHER_BACKROOM',
   targets = DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   thresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 }: UseAttendanceForecastDataParams) {
   const evaluationWindow = useMemo(() => {
     return getForecastEvaluationWindow(viewYear, viewMonthIndex);
   }, [viewYear, viewMonthIndex]);
+
+  const selectedRoleGroup = useMemo(() => {
+    return (
+      FORECAST_ROLE_GROUPS.find((group) => group.id === activeRoleGroup) ?? FORECAST_ROLE_GROUPS[0]
+    );
+  }, [activeRoleGroup]);
 
   const schedulesQuery = useAdminMembersSchedulesQuery();
   const attendanceScoresQuery = useMembersAttendanceScoresQuery({
@@ -126,6 +207,8 @@ export function useAttendanceForecastData({
   }, [viewYear, viewMonthIndex]);
 
   const sundayForecasts = useMemo<SundayForecastData[]>(() => {
+    const timeSlots: TimeSlot[] = ['9AM', '12NN', '3PM'];
+
     return sundaysList.map((sunday) => {
       const matchingEntries = scheduleEntries.filter(
         (entry) => entry.sundayKey === sunday.sundayKey,
@@ -143,6 +226,59 @@ export function useAttendanceForecastData({
         }
       }
 
+      // Calculate session-level forecast for 9AM, 12NN, 3PM
+      const sessions: SundaySessionForecast[] = timeSlots.map((slot) => {
+        const slotTargets = targets[slot] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT[slot];
+
+        // Determine target for selected role group
+        let sessionTarget = 0;
+        if (selectedRoleGroup.id === 'ALL') {
+          sessionTarget = Object.values(slotTargets).reduce((acc, val) => acc + val, 0);
+        } else {
+          for (const role of selectedRoleGroup.roles) {
+            sessionTarget += slotTargets[role] ?? 0;
+          }
+        }
+
+        // Filter scheduled entries matching the selected role group
+        const slotEntries = entriesByTimeSlot[slot] || [];
+        const relevantEntries = slotEntries.filter((entry) => {
+          if (selectedRoleGroup.id === 'ALL') return true;
+          const normalized = normalizeStaffingRole(entry.member.role);
+          return selectedRoleGroup.roles.includes(normalized);
+        });
+
+        const scheduled = relevantEntries.length;
+
+        // Sum turnup probabilities for non-excused entries
+        let probSum = 0;
+        for (const entry of relevantEntries) {
+          if (isMemberExcused(excusedMap, sunday.isoDateKey, entry.member, slot)) {
+            continue;
+          }
+          const stat = attendanceScoreMap?.get(entry.member.id);
+          const rate = stat !== undefined ? stat.turnupRate : thresholds.defaultTurnupRate;
+          probSum += rate;
+        }
+
+        const confirmed = Math.round(probSum);
+        const overShort = confirmed - sessionTarget;
+
+        return {
+          slot,
+          target: sessionTarget,
+          scheduled,
+          confirmed,
+          overShort,
+        };
+      });
+
+      const totalTarget = sessions.reduce((acc, s) => acc + s.target, 0);
+      const totalConfirmed = sessions.reduce((acc, s) => acc + s.confirmed, 0);
+      const totalOverShort = totalConfirmed - totalTarget;
+      const hasDeficit = totalOverShort < 0;
+
+      // Legacy fallback forecast for slot view if still used
       const forecast =
         activeSlot === 'ALL'
           ? calculateAllSundayStaffingNeeds(
@@ -172,12 +308,18 @@ export function useAttendanceForecastData({
         ...sunday,
         entriesByTimeSlot,
         totalScheduled,
+        sessions,
+        totalTarget,
+        totalConfirmed,
+        totalOverShort,
+        hasDeficit,
         forecast,
       };
     });
   }, [
     sundaysList,
     scheduleEntries,
+    selectedRoleGroup,
     activeSlot,
     excusedMap,
     targets,
@@ -193,14 +335,13 @@ export function useAttendanceForecastData({
     let sundaysWithDeficit = 0;
 
     for (const item of sundayForecasts) {
-      totalTarget += item.forecast.totalTarget;
-      totalExpectedTurnup += item.forecast.totalExpectedTurnup;
-      totalNeeded += item.forecast.totalNeeded;
-
-      if (item.forecast.totalNeeded === 0 && item.forecast.totalTarget > 0) {
-        sundaysMeetingTarget++;
-      } else if (item.forecast.totalNeeded > 0) {
+      totalTarget += item.totalTarget;
+      totalExpectedTurnup += item.totalConfirmed;
+      if (item.totalOverShort < 0) {
+        totalNeeded += Math.abs(item.totalOverShort);
         sundaysWithDeficit++;
+      } else if (item.totalTarget > 0) {
+        sundaysMeetingTarget++;
       }
     }
 
@@ -235,6 +376,7 @@ export function useAttendanceForecastData({
   return {
     sundayForecasts,
     monthSummary,
+    selectedRoleGroup,
     isLoading,
     isError,
     error,

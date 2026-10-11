@@ -232,4 +232,46 @@ describe('useAttendanceForecastData', () => {
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isError).toBe(false);
   });
+
+  it('computes session-level forecasts (9AM, 12NN, 3PM) and totals for Usher & Backroom', () => {
+    const { result } = renderHook(() =>
+      useAttendanceForecastData({
+        viewYear: 2026,
+        viewMonthIndex: 9,
+        activeRoleGroup: 'USHER_BACKROOM',
+      }),
+    );
+
+    const firstSunday = result.current.sundayForecasts[0];
+    expect(firstSunday.sessions).toHaveLength(3);
+
+    const nineAmSession = firstSunday.sessions.find((s) => s.slot === '9AM')!;
+    expect(nineAmSession).toBeDefined();
+    // dummyMember is Usher with 9AM commitment on 1st Sunday
+    expect(nineAmSession.scheduled).toBe(1);
+    expect(nineAmSession.confirmed).toBe(1); // turnup rate 0.9 -> round(0.9) = 1
+    // Usher target is 15 + Backroom target is 10 = 25
+    expect(nineAmSession.target).toBe(25);
+    expect(nineAmSession.overShort).toBe(1 - 25); // -24
+
+    expect(result.current.selectedRoleGroup.tableTitle).toBe('USHER/BACKROOM COMMITMENTS');
+  });
+
+  it('filters by Prayer Coach role group when activeRoleGroup is PRAYER_COACH', () => {
+    const { result } = renderHook(() =>
+      useAttendanceForecastData({
+        viewYear: 2026,
+        viewMonthIndex: 9,
+        activeRoleGroup: 'PRAYER_COACH',
+      }),
+    );
+
+    const firstSunday = result.current.sundayForecasts[0];
+    const nineAmSession = firstSunday.sessions.find((s) => s.slot === '9AM')!;
+    // dummyMember is an Usher, so for Prayer Coach scheduled count is 0
+    expect(nineAmSession.scheduled).toBe(0);
+    expect(nineAmSession.confirmed).toBe(0);
+    expect(nineAmSession.target).toBe(50); // Default PC target for 9AM
+    expect(nineAmSession.overShort).toBe(-50);
+  });
 });

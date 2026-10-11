@@ -113,17 +113,26 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.getByRole('link', { name: /Attendance Forecast/i })).toBeInTheDocument();
   });
 
-  it('renders month navigator, slot filter tabs, and month summary', () => {
+  it('renders month navigator, role group tabs, month summary, and commitment table', () => {
     renderPage();
 
-    expect(screen.getByText(/All Sunday Slots/i)).toBeInTheDocument();
-    expect(screen.getByText('9:00 AM')).toBeInTheDocument();
-    expect(screen.getByText('12:00 NN')).toBeInTheDocument();
-    expect(screen.getByText('3:00 PM')).toBeInTheDocument();
+    // Check Role Group tabs
+    expect(screen.getByRole('button', { name: /Usher & Backroom/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Prayer Coach/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /IMT & VMT/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /All Roles/i })).toBeInTheDocument();
 
     expect(screen.getByText(/Sundays in Month/i)).toBeInTheDocument();
     expect(screen.getByText(/Total Monthly Quota/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Expected Turnup/i).length).toBeGreaterThanOrEqual(1);
+
+    // Check simplified commitment table matching user specification
+    expect(screen.getAllByText(/USHER\/BACKROOM COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/SESSION/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/TARGET/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/SCHEDULED/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/CONFIRMED/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Over/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('allows navigating to previous and next months', () => {
@@ -140,13 +149,14 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.queryByRole('button', { name: /This Month/i })).not.toBeInTheDocument();
   });
 
-  it('allows changing time slot tabs', () => {
+  it('allows changing role group tabs and updates table header', () => {
     renderPage();
 
-    const nineAmTab = screen.getByRole('button', { name: '9:00 AM' });
-    fireEvent.click(nineAmTab);
+    const pcTab = screen.getByRole('button', { name: /Prayer Coach/i });
+    fireEvent.click(pcTab);
 
-    expect(nineAmTab).toHaveClass('text-primary');
+    expect(pcTab).toHaveClass('text-primary');
+    expect(screen.getAllByText(/PRAYER COACH COMMITMENTS/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('opens and closes Configure Targets modal', () => {

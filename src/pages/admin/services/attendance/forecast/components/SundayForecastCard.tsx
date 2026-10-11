@@ -1,16 +1,32 @@
-import { Calendar, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 
-import { Badge } from '@/components/ui';
+import { Calendar, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+
+import { Badge, Button } from '@/components/ui';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
+import { SundayCommitmentTable } from './SundayCommitmentTable';
 
 export type SundayForecastCardProps = {
   sunday: SundayForecastData;
+  tableTitle?: string;
 };
 
-export function SundayForecastCard({ sunday }: SundayForecastCardProps) {
-  const { forecast, totalScheduled, ordinalLabel, formattedDate } = sunday;
-  const hasDeficit = forecast.totalNeeded > 0;
+export function SundayForecastCard({ sunday, tableTitle }: SundayForecastCardProps) {
+  const [showRoleBreakdown, setShowRoleBreakdown] = useState(false);
+  const {
+    ordinalLabel,
+    formattedDate,
+    sessions,
+    totalTarget,
+    totalConfirmed,
+    totalOverShort,
+    hasDeficit,
+    forecast,
+  } = sunday;
+
+  const totalScheduled = sessions.reduce((acc, s) => acc + s.scheduled, 0);
+  const resolvedTableTitle = tableTitle ?? 'USHER/BACKROOM COMMITMENTS';
 
   return (
     <article className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-2xs overflow-hidden transition-all">
@@ -35,110 +51,87 @@ export function SundayForecastCard({ sunday }: SundayForecastCardProps) {
 
         <div className="shrink-0 self-start sm:self-auto">
           {hasDeficit ? (
-            <Badge variant="accent">{forecast.totalNeeded} Still Needed</Badge>
+            <Badge variant="accent">{Math.abs(totalOverShort)} Short</Badge>
           ) : (
             <Badge>
               <CheckCircle2 className="mr-1 h-3.5 w-3.5 inline" />
-              Target Met
+              Target Met (+{totalOverShort})
             </Badge>
           )}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-4 space-y-4">
-        {/* Overall Summary Bar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 rounded-xl bg-surface-hover/40 border border-border/60 p-3.5 text-xs">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-muted">Total Target:</span>
-              <strong className="font-semibold text-text">{forecast.totalTarget}</strong>
-            </div>
+      {/* Body: Simplified Commitment Table */}
+      <div className="p-4 sm:p-5 space-y-3">
+        <SundayCommitmentTable
+          title={resolvedTableTitle}
+          sessions={sessions}
+          totalTarget={totalTarget}
+          totalScheduled={totalScheduled}
+          totalConfirmed={totalConfirmed}
+          totalOverShort={totalOverShort}
+        />
 
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-muted">Expected Turnup:</span>
-              <strong className="font-semibold text-text">~{forecast.totalExpectedTurnup}</strong>
-              <span className="text-[11px] text-muted">
-                ({forecast.totalCommitted} scheduled
-                {forecast.totalExcused > 0 ? `, ${forecast.totalExcused} excused` : ''})
-              </span>
-            </div>
-          </div>
+        <p className="text-[11px] text-muted text-center">
+          * <span className="font-semibold">CONFIRMED</span> represents expected attendance turnup
+          forecasted from 3-month attendance confidence scores.
+        </p>
 
-          <div className="flex items-center justify-between sm:justify-start gap-2 pt-1 lg:pt-0 shrink-0">
-            <span className="text-muted">Fulfillment:</span>
-            <div className="h-2 flex-1 sm:w-36 rounded-full bg-border overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  !hasDeficit ? 'bg-emerald-500' : 'bg-primary'
-                }`}
-                style={{
-                  width: `${Math.min(100, Math.max(0, forecast.overallFulfillmentPercentage))}%`,
-                }}
-              />
-            </div>
-            <strong className="font-semibold text-text tabular-nums">
-              {forecast.overallFulfillmentPercentage}%
-            </strong>
-          </div>
-        </div>
+        {/* Optional Collapsible Detail for Individual Roles */}
+        {forecast?.roleBreakdown && forecast.roleBreakdown.length > 0 && (
+          <div className="pt-2 border-t border-border/60">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRoleBreakdown((prev) => !prev)}
+              className="w-full text-xs text-muted hover:text-text flex items-center justify-center gap-1.5 py-1"
+            >
+              <span>{showRoleBreakdown ? 'Hide' : 'Show'} Individual Role Breakdown</span>
+              {showRoleBreakdown ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </Button>
 
-        {/* Role Breakdown Grid */}
-        {totalScheduled === 0 && forecast.totalCommitted === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/80 bg-surface-hover/20 p-6 text-center text-xs text-muted">
-            No volunteer commitments scheduled for this Sunday yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {forecast.roleBreakdown.map((item) => {
-              const isFilled = item.needed === 0 && item.target > 0;
-              const roleDeficit = item.needed > 0;
+            {showRoleBreakdown && (
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mt-3 pt-2">
+                {forecast.roleBreakdown.map((item) => {
+                  const isFilled = item.needed === 0 && item.target > 0;
+                  const roleDeficit = item.needed > 0;
 
-              return (
-                <div
-                  key={item.role}
-                  className="flex flex-col justify-between rounded-xl border border-border bg-white dark:bg-surface p-3.5 transition-colors shadow-2xs"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-semibold text-xs text-text truncate" title={item.role}>
-                      {item.role}
-                    </span>
-                    {roleDeficit ? (
-                      <Badge variant="accent">Need {item.needed}</Badge>
-                    ) : isFilled ? (
-                      <Badge>Filled</Badge>
-                    ) : (
-                      <Badge variant="primaryOutline">No Target</Badge>
-                    )}
-                  </div>
+                  return (
+                    <div
+                      key={item.role}
+                      className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-3 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-1.5">
+                        <span className="font-semibold text-text truncate" title={item.role}>
+                          {item.role}
+                        </span>
+                        {roleDeficit ? (
+                          <Badge variant="accent" className="text-[10px] px-1.5 py-0.5">
+                            Need {item.needed}
+                          </Badge>
+                        ) : isFilled ? (
+                          <Badge className="text-[10px] px-1.5 py-0.5">Filled</Badge>
+                        ) : (
+                          <Badge variant="primaryOutline" className="text-[10px] px-1.5 py-0.5">
+                            No Target
+                          </Badge>
+                        )}
+                      </div>
 
-                  <div className="mt-3.5 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-muted text-[11px]">
-                      <span>Target: {item.target}</span>
-                      <span className="font-semibold text-text">
-                        ~{item.expectedTurnup} expected
-                      </span>
+                      <div className="mt-2 text-[11px] text-muted flex items-center justify-between">
+                        <span>Target: {item.target}</span>
+                        <span className="font-medium text-text">~{item.expectedTurnup} exp</span>
+                      </div>
                     </div>
-
-                    <div className="h-1.5 w-full rounded-full bg-border/60 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          roleDeficit ? 'bg-accent' : isFilled ? 'bg-primary' : 'bg-muted'
-                        }`}
-                        style={{
-                          width: `${Math.min(100, Math.max(0, item.fulfillmentPercentage))}%`,
-                        }}
-                      />
-                    </div>
-
-                    <p className="text-[10px] text-muted truncate">
-                      {item.committed} scheduled
-                      {item.excused > 0 ? ` • ${item.excused} excused` : ''}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

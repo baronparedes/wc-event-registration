@@ -20,15 +20,17 @@ import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 import {
   ForecastMonthNavigator,
   ForecastMonthSummaryBar,
-  type ForecastSlot,
-  ForecastSlotSelector,
+  ForecastRoleGroupSelector,
   SundayForecastCard,
 } from './components';
-import { useAttendanceForecastData } from './hooks/useAttendanceForecastData';
+import {
+  type ForecastRoleGroup,
+  useAttendanceForecastData,
+} from './hooks/useAttendanceForecastData';
 
 export function AdminServiceAttendanceForecastPage() {
   const [viewDate, setViewDate] = useState(() => new Date());
-  const [activeSlot, setActiveSlot] = useState<ForecastSlot>('ALL');
+  const [activeRoleGroup, setActiveRoleGroup] = useState<ForecastRoleGroup>('USHER_BACKROOM');
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false);
 
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
@@ -42,14 +44,21 @@ export function AdminServiceAttendanceForecastPage() {
   const viewMonthIndex = viewDate.getMonth();
   const isCurrentMonth = isSameMonth(viewDate, new Date());
 
-  const { sundayForecasts, monthSummary, isLoading, isError, refetch, evaluationWindow } =
-    useAttendanceForecastData({
-      viewYear,
-      viewMonthIndex,
-      activeSlot,
-      targets: volunteerTargets,
-      thresholds: confidenceThresholds,
-    });
+  const {
+    sundayForecasts,
+    monthSummary,
+    selectedRoleGroup,
+    isLoading,
+    isError,
+    refetch,
+    evaluationWindow,
+  } = useAttendanceForecastData({
+    viewYear,
+    viewMonthIndex,
+    activeRoleGroup,
+    targets: volunteerTargets,
+    thresholds: confidenceThresholds,
+  });
 
   const handlePreviousMonth = () => {
     setViewDate((prev) => subMonths(prev, 1));
@@ -109,16 +118,23 @@ export function AdminServiceAttendanceForecastPage() {
               evaluationWindow={evaluationWindow}
             />
 
-            {/* Time Slot Tabs */}
-            <ForecastSlotSelector activeSlot={activeSlot} onChangeSlot={setActiveSlot} />
+            {/* Role Group / Department Tabs */}
+            <ForecastRoleGroupSelector
+              activeGroup={activeRoleGroup}
+              onChangeGroup={setActiveRoleGroup}
+            />
 
             {/* Month Summary Bar */}
             <ForecastMonthSummaryBar summary={monthSummary} />
 
-            {/* Chronological Sunday Cards */}
-            <div className="space-y-4">
+            {/* Chronological Sunday Cards with Simplified Tables */}
+            <div className="space-y-6">
               {sundayForecasts.map((sunday) => (
-                <SundayForecastCard key={sunday.isoDateKey} sunday={sunday} />
+                <SundayForecastCard
+                  key={sunday.isoDateKey}
+                  sunday={sunday}
+                  tableTitle={selectedRoleGroup.tableTitle}
+                />
               ))}
             </div>
           </div>
@@ -131,7 +147,7 @@ export function AdminServiceAttendanceForecastPage() {
           onSaveTargets={setVolunteerTargets}
           thresholds={confidenceThresholds}
           onSaveThresholds={setConfidenceThresholds}
-          initialSlot={activeSlot === 'ALL' ? '9AM' : activeSlot}
+          initialSlot="9AM"
         />
       </AdminPageShell.Content>
     </AdminPageShell>
