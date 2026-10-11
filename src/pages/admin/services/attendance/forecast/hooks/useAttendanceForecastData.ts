@@ -261,7 +261,7 @@ export function useAttendanceForecastData({
           probSum += rate;
         }
 
-        const confirmed = Math.round(probSum);
+        const confirmed = Math.min(scheduled, Math.round(probSum));
         const overShort = confirmed - sessionTarget;
 
         return {
@@ -301,8 +301,8 @@ export function useAttendanceForecastData({
 
       const totalScheduled =
         activeSlot === 'ALL'
-          ? matchingEntries.length
-          : (entriesByTimeSlot[activeSlot] || []).length;
+          ? sessions.reduce((acc, s) => acc + s.scheduled, 0)
+          : (sessions.find((s) => s.slot === activeSlot)?.scheduled ?? 0);
 
       return {
         ...sunday,

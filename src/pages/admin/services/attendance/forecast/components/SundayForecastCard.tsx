@@ -26,13 +26,13 @@ export function SundayForecastCard({
     formattedDate,
     sessions,
     totalTarget,
+    totalScheduled,
     totalConfirmed,
     totalOverShort,
     hasDeficit,
     forecast,
   } = sunday;
 
-  const totalScheduled = sessions.reduce((acc, s) => acc + s.scheduled, 0);
   const resolvedTableTitle = tableTitle ?? 'ALL VOLUNTEER COMMITMENTS';
 
   return (
