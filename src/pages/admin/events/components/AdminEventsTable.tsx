@@ -4,16 +4,16 @@ import {
   BarChart3,
   ClipboardList,
   Copy,
+  Edit,
   FormInput,
   MoreHorizontal,
   QrCode,
-  Settings,
   Share2,
   UserCheck,
   Users,
 } from 'lucide-react';
 
-import { Button, DropdownMenu, DropdownMenuItem } from '@/components/ui';
+import { DropdownMenu, DropdownMenuItem } from '@/components/ui';
 import { ActionLink } from '@/components/ui/ActionLink';
 import {
   ListTable,
@@ -59,7 +59,7 @@ function AdminEventTableActions({
           aria-label={`Edit ${event.title}`}
           className="flex items-center gap-1.5 text-sm font-medium"
         >
-          <Settings className="h-4 w-4" />
+          <Edit className="h-4 w-4" />
           Edit
         </ActionLink>
       )}
@@ -77,20 +77,20 @@ function AdminEventTableActions({
       <DropdownMenu
         open={isMenuOpen}
         onOpenChange={setIsMenuOpen}
+        usePortal
         trigger={
-          <Button
+          <button
             type="button"
-            variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
               setIsMenuOpen((isOpen) => !isOpen);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded p-0 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             aria-label={`More actions for ${event.title}`}
             title="More actions"
           >
             <MoreHorizontal className="h-5 w-5" />
-          </Button>
+          </button>
         }
       >
         {canWrite && onDuplicateClick && (
@@ -120,7 +120,10 @@ function AdminEventTableActions({
           </DropdownMenuItem>
         )}
         {canWrite && (
-          <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
+          <DropdownMenuItem
+            to={toRoute('adminEventAttendance', { id: event.id })}
+            onClick={() => setIsMenuOpen(false)}
+          >
             <span className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
               Attendance settings
@@ -128,7 +131,10 @@ function AdminEventTableActions({
           </DropdownMenuItem>
         )}
         {canWrite && (
-          <DropdownMenuItem to={toRoute('adminEventFields', { id: event.id })}>
+          <DropdownMenuItem
+            to={toRoute('adminEventFields', { id: event.id })}
+            onClick={() => setIsMenuOpen(false)}
+          >
             <span className="flex items-center gap-2">
               <FormInput className="h-4 w-4" />
               Registration fields
@@ -136,7 +142,10 @@ function AdminEventTableActions({
           </DropdownMenuItem>
         )}
         {canRead && (
-          <DropdownMenuItem to={toRoute('adminRegistrations', { id: event.id })}>
+          <DropdownMenuItem
+            to={toRoute('adminRegistrations', { id: event.id })}
+            onClick={() => setIsMenuOpen(false)}
+          >
             <span className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               Registrations
@@ -144,7 +153,10 @@ function AdminEventTableActions({
           </DropdownMenuItem>
         )}
         {canRead && (
-          <DropdownMenuItem to={toRoute('adminAttendanceDashboard', { id: event.id })}>
+          <DropdownMenuItem
+            to={toRoute('adminAttendanceDashboard', { id: event.id })}
+            onClick={() => setIsMenuOpen(false)}
+          >
             <span className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Attendance dashboard
@@ -152,7 +164,10 @@ function AdminEventTableActions({
           </DropdownMenuItem>
         )}
         {canAccessCheckIn && (
-          <DropdownMenuItem to={toRoute('adminAttendanceCheckIn', { id: event.id })}>
+          <DropdownMenuItem
+            to={toRoute('adminAttendanceCheckIn', { id: event.id })}
+            onClick={() => setIsMenuOpen(false)}
+          >
             <span className="flex items-center gap-2">
               <QrCode className="h-4 w-4" />
               Check-in

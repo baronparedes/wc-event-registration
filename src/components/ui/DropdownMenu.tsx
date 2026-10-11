@@ -1,4 +1,6 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { Link } from 'react-router-dom';
 import { twMerge } from 'tailwind-merge';
@@ -10,6 +12,7 @@ type DropdownMenuProps = {
   onOpenChange: (open: boolean) => void;
   className?: string;
   menuClassName?: string;
+  usePortal?: boolean;
 };
 
 export function DropdownMenu({
@@ -19,12 +22,59 @@ export function DropdownMenu({
   onOpenChange,
   className,
   menuClassName,
+  usePortal = false,
 }: DropdownMenuProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{
+    top?: number;
+    bottom?: number;
+    right: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !usePortal) return;
+
+    function updateCoords() {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      // If space below is less than ~280px and more space above, open upwards
+      const placeAbove = spaceBelow < 280 && rect.top > spaceBelow;
+
+      if (placeAbove) {
+        setCoords({
+          bottom: viewportHeight - rect.top + 4,
+          right: Math.max(8, window.innerWidth - rect.right),
+        });
+      } else {
+        setCoords({
+          top: rect.bottom + 4,
+          right: Math.max(8, window.innerWidth - rect.right),
+        });
+      }
+    }
+
+    updateCoords();
+
+    window.addEventListener('resize', updateCoords);
+    window.addEventListener('scroll', updateCoords, true);
+
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
+  }, [open, usePortal]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        (!menuRef.current || !menuRef.current.contains(target))
+      ) {
         onOpenChange(false);
       }
     }
@@ -35,19 +85,35 @@ export function DropdownMenu({
     }
   }, [open, onOpenChange]);
 
-  return (
-    <div ref={ref} className={twMerge('relative', className)}>
-      {trigger}
-      {open && (
-        <div
-          className={twMerge(
-            'absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg',
-            menuClassName,
-          )}
-        >
-          {children}
-        </div>
+  const menuElement = open && (
+    <div
+      ref={menuRef}
+      style={
+        usePortal
+          ? {
+              position: 'fixed',
+              top: coords?.top !== undefined ? `${coords.top}px` : undefined,
+              bottom: coords?.bottom !== undefined ? `${coords.bottom}px` : undefined,
+              right: coords ? `${coords.right}px` : undefined,
+              visibility: coords ? 'visible' : 'hidden',
+            }
+          : undefined
+      }
+      className={twMerge(
+        usePortal
+          ? 'z-50 min-w-48 rounded-md border border-border bg-surface shadow-lg'
+          : 'absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg',
+        menuClassName,
       )}
+    >
+      {children}
+    </div>
+  );
+
+  return (
+    <div ref={triggerRef} className={twMerge('relative', className)}>
+      {trigger}
+      {open && (usePortal ? createPortal(menuElement, document.body) : menuElement)}
     </div>
   );
 }

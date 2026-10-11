@@ -71,6 +71,28 @@ describe('DropdownMenu', () => {
     expect(container.firstChild).toHaveClass('w-full', 'custom-class');
     expect(screen.getByText('Menu Content').parentElement).toHaveClass('custom-menu-class');
   });
+
+  it('renders in document.body when usePortal is true and handles outside click', () => {
+    const onOpenChange = vi.fn();
+
+    render(
+      <DropdownMenu
+        open={true}
+        usePortal={true}
+        onOpenChange={onOpenChange}
+        trigger={<button type="button">Open</button>}
+      >
+        <div>Portal Content</div>
+      </DropdownMenu>,
+    );
+
+    const portalContent = screen.getByText('Portal Content');
+    expect(portalContent).toBeInTheDocument();
+    expect(document.body).toContainElement(portalContent);
+
+    fireEvent.mouseDown(document.body);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });
 
 describe('DropdownMenuItem', () => {
