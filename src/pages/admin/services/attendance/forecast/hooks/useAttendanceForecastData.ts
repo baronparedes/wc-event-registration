@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { format } from 'date-fns';
+import { format, subDays, subMonths } from 'date-fns';
 
 import {
   type MemberScheduleEntry,
@@ -55,6 +55,13 @@ export type UseAttendanceForecastDataParams = {
 
 const SUNDAY_ORDINALS = ['1st Sunday', '2nd Sunday', '3rd Sunday', '4th Sunday', '5th Sunday'];
 
+export function getForecastEvaluationWindow(viewYear: number, viewMonthIndex: number) {
+  const monthStart = new Date(viewYear, viewMonthIndex, 1);
+  const endDate = format(subDays(monthStart, 1), 'yyyy-MM-dd');
+  const startDate = format(subMonths(monthStart, 3), 'yyyy-MM-dd');
+  return { startDate, endDate };
+}
+
 export function getSundaysOfMonth(year: number, monthIndex: number) {
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const sundays: {
@@ -94,8 +101,14 @@ export function useAttendanceForecastData({
   targets = DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   thresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
 }: UseAttendanceForecastDataParams) {
+  const evaluationWindow = useMemo(() => {
+    return getForecastEvaluationWindow(viewYear, viewMonthIndex);
+  }, [viewYear, viewMonthIndex]);
+
   const schedulesQuery = useAdminMembersSchedulesQuery();
-  const attendanceScoresQuery = useMembersAttendanceScoresQuery();
+  const attendanceScoresQuery = useMembersAttendanceScoresQuery({
+    dateRange: evaluationWindow,
+  });
   const { data: excusedMembersArray = [], ...excusedQuery } = useGetExcusedMembers(
     viewYear,
     viewMonthIndex,
@@ -228,5 +241,6 @@ export function useAttendanceForecastData({
     refetch,
     excusedMap,
     attendanceScoreMap,
+    evaluationWindow,
   };
 }

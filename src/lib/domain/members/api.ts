@@ -249,14 +249,35 @@ export type MemberAttendanceStats = {
   turnupRate: number;
 };
 
+export type FetchMembersAttendanceScoresOptions = {
+  weeks?: number;
+  excuseEventId?: string | null;
+  dateRange?: { startDate: string; endDate: string };
+};
+
 export async function fetchMembersAttendanceScores(
-  weeks = 12,
-  excuseEventId?: string | null,
+  weeksOrOptions: number | FetchMembersAttendanceScoresOptions = 12,
+  excuseEventIdParam?: string | null,
 ): Promise<Map<string, MemberAttendanceStats>> {
-  const endDate = new Date().toISOString().split('T')[0];
-  const pastDate = new Date();
-  pastDate.setDate(pastDate.getDate() - weeks * 7);
-  const startDate = pastDate.toISOString().split('T')[0];
+  const isOptionsObject = typeof weeksOrOptions === 'object' && weeksOrOptions !== null;
+  const weeks = isOptionsObject ? (weeksOrOptions.weeks ?? 12) : weeksOrOptions;
+  const excuseEventId = isOptionsObject
+    ? (weeksOrOptions.excuseEventId ?? null)
+    : (excuseEventIdParam ?? null);
+  const customDateRange = isOptionsObject ? weeksOrOptions.dateRange : undefined;
+
+  const endDate = customDateRange
+    ? customDateRange.endDate
+    : new Date().toISOString().split('T')[0];
+
+  let startDate: string;
+  if (customDateRange) {
+    startDate = customDateRange.startDate;
+  } else {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - weeks * 7);
+    startDate = pastDate.toISOString().split('T')[0];
+  }
 
   const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
     p_start_date: startDate,

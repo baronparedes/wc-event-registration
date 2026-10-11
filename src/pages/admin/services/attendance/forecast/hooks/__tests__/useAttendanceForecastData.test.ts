@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
 import type { AdminMember } from '@/lib/domain/members';
 
-import { getSundaysOfMonth, useAttendanceForecastData } from '../useAttendanceForecastData';
+import {
+  getForecastEvaluationWindow,
+  getSundaysOfMonth,
+  useAttendanceForecastData,
+} from '../useAttendanceForecastData';
 
 const {
   mockUseAdminMembersSchedulesQuery,
@@ -19,9 +23,26 @@ const {
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMembersSchedulesQuery: () => mockUseAdminMembersSchedulesQuery(),
-  useMembersAttendanceScoresQuery: () => mockUseMembersAttendanceScoresQuery(),
+  useMembersAttendanceScoresQuery: (...args: unknown[]) =>
+    mockUseMembersAttendanceScoresQuery(...args),
   useGetExcusedMembers: (...args: unknown[]) => mockUseGetExcusedMembers(...args),
 }));
+
+describe('getForecastEvaluationWindow', () => {
+  it('returns the 3 months window immediately preceding the selected month', () => {
+    // October 2026 (index 9) -> 2026-07-01 to 2026-09-30
+    const window = getForecastEvaluationWindow(2026, 9);
+    expect(window.startDate).toBe('2026-07-01');
+    expect(window.endDate).toBe('2026-09-30');
+  });
+
+  it('handles year boundaries correctly for January', () => {
+    // January 2027 (index 0) -> 2026-10-01 to 2026-12-31
+    const window = getForecastEvaluationWindow(2027, 0);
+    expect(window.startDate).toBe('2026-10-01');
+    expect(window.endDate).toBe('2026-12-31');
+  });
+});
 
 describe('getSundaysOfMonth', () => {
   it('returns all 4 Sundays for October 2026', () => {
@@ -126,6 +147,13 @@ describe('useAttendanceForecastData', () => {
 
     expect(result.current.isLoading).toBe(false);
     expect(result.current.sundayForecasts).toHaveLength(4);
+    expect(mockUseMembersAttendanceScoresQuery).toHaveBeenCalledWith({
+      dateRange: { startDate: '2026-07-01', endDate: '2026-09-30' },
+    });
+    expect(result.current.evaluationWindow).toEqual({
+      startDate: '2026-07-01',
+      endDate: '2026-09-30',
+    });
 
     // 1st Sunday has 1 scheduled member in 9AM
     const firstSunday = result.current.sundayForecasts[0];

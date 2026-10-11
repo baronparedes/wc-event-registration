@@ -9,6 +9,7 @@ export type ForecastMonthNavigatorProps = {
   onNextMonth: () => void;
   onToday: () => void;
   isCurrentMonth: boolean;
+  evaluationWindow?: { startDate: string; endDate: string };
 };
 
 export function ForecastMonthNavigator({
@@ -17,6 +18,7 @@ export function ForecastMonthNavigator({
   onNextMonth,
   onToday,
   isCurrentMonth,
+  evaluationWindow,
 }: ForecastMonthNavigatorProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 sm:p-4 shadow-2xs">
@@ -28,7 +30,11 @@ export function ForecastMonthNavigator({
           <h2 className="text-base sm:text-lg font-bold text-text">
             {format(viewDate, 'MMMM yyyy')}
           </h2>
-          <p className="text-xs text-muted">Viewing Sunday forecast projections for this month</p>
+          <p className="text-xs text-muted">
+            {evaluationWindow
+              ? `Turnup baseline: ${evaluationWindow.startDate} to ${evaluationWindow.endDate} (3 months prior)`
+              : 'Viewing Sunday forecast projections for this month'}
+          </p>
         </div>
       </div>
 

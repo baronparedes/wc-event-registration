@@ -130,4 +130,33 @@ describe('fetchMembersAttendanceScores', () => {
       'Failed to fetch attendance scores: Database connection failed',
     );
   });
+
+  it('uses custom dateRange when provided in options', async () => {
+    const mockMocks = (
+      supabase as unknown as {
+        _mocks: {
+          rpcMock: ReturnType<typeof vi.fn>;
+        };
+      }
+    )._mocks;
+
+    mockMocks.rpcMock.mockResolvedValueOnce({
+      data: [{ user_id: 'user-1', attendance_score: 9.0, total_count: 1 }],
+      error: null,
+    });
+
+    await fetchMembersAttendanceScores({
+      dateRange: { startDate: '2026-07-01', endDate: '2026-09-30' },
+      excuseEventId: 'excuse-event-1',
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'get_commitment_dashboard_stats',
+      expect.objectContaining({
+        p_start_date: '2026-07-01',
+        p_end_date: '2026-09-30',
+        p_excuse_event_id: 'excuse-event-1',
+      }),
+    );
+  });
 });

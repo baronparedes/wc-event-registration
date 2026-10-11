@@ -42,13 +42,14 @@ export function AdminServiceAttendanceForecastPage() {
   const viewMonthIndex = viewDate.getMonth();
   const isCurrentMonth = isSameMonth(viewDate, new Date());
 
-  const { sundayForecasts, monthSummary, isLoading, isError, refetch } = useAttendanceForecastData({
-    viewYear,
-    viewMonthIndex,
-    activeSlot,
-    targets: volunteerTargets,
-    thresholds: confidenceThresholds,
-  });
+  const { sundayForecasts, monthSummary, isLoading, isError, refetch, evaluationWindow } =
+    useAttendanceForecastData({
+      viewYear,
+      viewMonthIndex,
+      activeSlot,
+      targets: volunteerTargets,
+      thresholds: confidenceThresholds,
+    });
 
   const handlePreviousMonth = () => {
     setViewDate((prev) => subMonths(prev, 1));
@@ -105,6 +106,7 @@ export function AdminServiceAttendanceForecastPage() {
               onNextMonth={handleNextMonth}
               onToday={handleToday}
               isCurrentMonth={isCurrentMonth}
+              evaluationWindow={evaluationWindow}
             />
 
             {/* Time Slot Tabs */}
