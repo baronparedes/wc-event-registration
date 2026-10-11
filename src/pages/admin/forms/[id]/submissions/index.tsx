@@ -30,10 +30,11 @@ export function AdminFormSubmissionsPage() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
   const normalizedSearchTerm = debouncedSearchTerm.trim().toLowerCase();
-  const allSubmissions = rawSubmissions ?? [];
 
   const filteredSubmissions = useMemo(() => {
-    return allSubmissions.filter((sub) => {
+    if (!rawSubmissions) return [];
+
+    return rawSubmissions.filter((sub) => {
       if (sourceFilter !== 'all' && sub.source !== sourceFilter) {
         return false;
       }
@@ -60,7 +61,7 @@ export function AdminFormSubmissionsPage() {
         phone.includes(normalizedSearchTerm)
       );
     });
-  }, [allSubmissions, normalizedSearchTerm, sourceFilter]);
+  }, [rawSubmissions, normalizedSearchTerm, sourceFilter]);
 
   const isLoading = formLoading || submissionsLoading;
   const error = formError || submissionsError;
@@ -81,7 +82,7 @@ export function AdminFormSubmissionsPage() {
   }
 
   const isFormArchived = form?.status === 'archived';
-  const totalCount = allSubmissions.length;
+  const totalCount = rawSubmissions?.length ?? 0;
   const filteredCount = filteredSubmissions.length;
   const hasFilterActive = normalizedSearchTerm.length > 0 || sourceFilter !== 'all';
 
