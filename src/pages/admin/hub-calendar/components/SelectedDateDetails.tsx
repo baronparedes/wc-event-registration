@@ -455,32 +455,42 @@ export function SelectedDateDetails({
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {selectedMilestones.map((milestone) => (
-                  <div
-                    key={milestone.id}
-                    onClick={() => setSelectedMemberForQuickView(milestone.member)}
-                    className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
-                  >
-                    <MilestoneAvatar
-                      size="md"
-                      name={milestone.member.full_name}
-                      avatarObjectKey={milestone.member.avatar_object_key}
-                      type={milestone.type}
-                      className="shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-semibold text-text">
-                          {milestone.member.full_name}
+                {selectedMilestones.map((milestone) => {
+                  const isExcused = isMemberExcused(
+                    excusedMap,
+                    toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber),
+                    milestone.member,
+                  );
+
+                  return (
+                    <div
+                      key={milestone.id}
+                      onClick={() => setSelectedMemberForQuickView(milestone.member)}
+                      className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
+                    >
+                      <MilestoneAvatar
+                        size="md"
+                        name={milestone.member.full_name}
+                        avatarObjectKey={milestone.member.avatar_object_key}
+                        type={milestone.type}
+                        excused={isExcused}
+                        className="shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-text">
+                            {milestone.member.full_name}
+                          </p>
+                          <MilestoneBadge type={milestone.type} />
+                        </div>
+                        <p className="mt-1 truncate text-xs text-muted">
+                          {milestone.member.member_id} •{' '}
+                          {milestone.member.nickname || 'No nickname'}
                         </p>
-                        <MilestoneBadge type={milestone.type} />
                       </div>
-                      <p className="mt-1 truncate text-xs text-muted">
-                        {milestone.member.member_id} • {milestone.member.nickname || 'No nickname'}
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

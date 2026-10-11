@@ -150,6 +150,7 @@ export function MobileScheduleCalendar({
                         name={m.member.full_name}
                         avatarObjectKey={m.member.avatar_object_key}
                         type={m.type}
+                        excused={isMemberExcused(excusedMap, cell.isoDate, m.member)}
                       />
                     ))}
                     {visibleSchedules.map((entry) => (

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
-import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
+import type { ExcusedMemberMap, MilestoneEntry } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
 import { SelectedDateDetails } from '../SelectedDateDetails';
@@ -639,5 +639,40 @@ describe('SelectedDateDetails', () => {
     expect(screen.getByText('Member Details')).toBeInTheDocument();
     expect(screen.getByTestId('member-confidence-card')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View Full Profile' })).toBeInTheDocument();
+  });
+
+  it('renders excused calendar badge on milestone avatar when milestone member is excused on that date', () => {
+    const milestone: MilestoneEntry = {
+      id: 'm-001',
+      type: 'birthday',
+      member: mockMember1,
+    };
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-09-20', new Map([['mem-001', new Set<TimeSlot>(['9AM'])]])],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[milestone]}
+          selectedEntries={[]}
+          entriesByTimeSlot={{ '9AM': [], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          excusedMap={excusedMap}
+          activeTab="ALL"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTitle('Birthday')).toBeInTheDocument();
+    expect(screen.getByTitle('Excused')).toBeInTheDocument();
   });
 });
