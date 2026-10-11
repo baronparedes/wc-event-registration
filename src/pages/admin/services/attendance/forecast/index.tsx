@@ -91,7 +91,6 @@ export function AdminServiceAttendanceForecastPage() {
         actions={
           <Button
             type="button"
-            variant="secondary"
             onClick={() => setIsTargetsModalOpen(true)}
             className="w-full sm:w-auto"
           >
@@ -128,12 +127,6 @@ export function AdminServiceAttendanceForecastPage() {
               evaluationWindow={evaluationWindow}
             />
 
-            {/* Role Group / Department Tabs */}
-            <ForecastRoleGroupSelector
-              activeGroup={activeRoleGroup}
-              onChangeGroup={setActiveRoleGroup}
-            />
-
             {/* Per Sunday Tabs */}
             <ForecastSundaySelector
               sundays={sundayForecasts}
@@ -143,6 +136,12 @@ export function AdminServiceAttendanceForecastPage() {
 
             {/* Month Summary Bar */}
             <ForecastMonthSummaryBar summary={monthSummary} />
+
+            {/* Role Group / Department Tabs */}
+            <ForecastRoleGroupSelector
+              activeGroup={activeRoleGroup}
+              onChangeGroup={setActiveRoleGroup}
+            />
 
             {/* Chronological Sunday Cards with Simplified Tables */}
             <div className="space-y-6">

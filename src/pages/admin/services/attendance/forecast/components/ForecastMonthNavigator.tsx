@@ -38,21 +38,34 @@ export function ForecastMonthNavigator({
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex w-full items-center gap-1.5 sm:w-auto sm:gap-2">
         <Button
           type="button"
           onClick={onPreviousMonth}
           aria-label="Previous Month"
           title="Previous Month"
+          className="shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        <Button type="button" variant="outline" onClick={onToday} disabled={isCurrentMonth}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onToday}
+          disabled={isCurrentMonth}
+          className="flex-1 sm:flex-initial"
+        >
           This Month
         </Button>
 
-        <Button type="button" onClick={onNextMonth} aria-label="Next Month" title="Next Month">
+        <Button
+          type="button"
+          onClick={onNextMonth}
+          aria-label="Next Month"
+          title="Next Month"
+          className="shrink-0"
+        >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
