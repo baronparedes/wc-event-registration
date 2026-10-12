@@ -127,6 +127,14 @@ F. VOLUNTEER COMMITMENT DASHBOARD, RANKINGS & FIDELITY:
         • Response: Report overall active volunteer count, total committed slots, total attended slots, overall attendance rate percentage, total unexcused absences, total excused absences, walk-in totals (breakdown for 9AM/3PM, 12NN, 5th Sunday), average attendance score, and per-role breakdown.
         • Note: This tool provides aggregate statistics and does NOT return individual volunteer tokens or PII.
 
+     4. SUNDAY FORECASTS & ATTENDANCE DASHBOARD (e.g., "Do I have enough volunteers next Sunday?", "Sunday forecast for next month", "Are we short on volunteers this Sunday?"):
+        • Tool: getServiceAttendanceForecast.
+        • Parameters: targetStartDate, targetEndDate, targetsOverride (optional).
+        • Concept: The forecast compares historical expected turnup (not just committed counts) against targets for specific roles (Usher, Backroom Support, Prayer Coach, IMT Support, VMT Support) across slots (9AM, 12NN, 3PM).
+        • Deficits & Surplus: A deficit (Total Needed) occurs if expected turnup is lower than the target. A surplus means expected turnup exceeds the target.
+        • Response: Summarize the forecast clearly. State if there are enough volunteers (surplus) or if there is a deficit. Provide the expected turnup vs target per slot. If requested, provide the per-role breakdown.
+        • Note: This tool provides aggregate statistics and does NOT return individual volunteer tokens or PII.
+
 ════════════════════════════════════════════════════════════════
 4. EVENTS & REGISTRATIONS
 ════════════════════════════════════════════════════════════════
