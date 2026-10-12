@@ -155,7 +155,7 @@ export function VolunteerStaffingModeler({
             return (
               <div
                 key={item.role}
-                className="flex flex-col justify-between rounded-xl border border-border bg-white dark:bg-surface p-3.5 transition-colors shadow-2xs"
+                className="flex flex-col justify-between rounded-xl border border-border bg-white dark:bg-surface p-3.5 transition-colors shadow-xs"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-semibold text-xs text-text truncate" title={item.role}>

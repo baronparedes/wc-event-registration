@@ -272,7 +272,7 @@ export function SelectedDateDetails({
                     At Risk
                   </TabsTrigger>
                   <TabsTrigger value="inactive" className="text-xs py-1 px-3">
-                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-zinc-400" />
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-muted" />
                     Inactive
                   </TabsTrigger>
                   <TabsTrigger value="excused" className="text-xs py-1 px-3">
@@ -573,7 +573,7 @@ export function SelectedDateDetails({
                                 key={slot}
                                 type="button"
                                 onClick={() => handleTabChange(slot)}
-                                className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus:outline-none flex items-center gap-1.5 shrink-0 ${
+                                className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-sm flex items-center gap-1.5 shrink-0 ${
                                   isActive
                                     ? 'border-primary text-primary font-semibold'
                                     : 'border-transparent text-muted hover:border-border hover:text-text'

@@ -53,9 +53,9 @@ const TIER_CONFIG: Record<
   },
   inactive: {
     label: 'Inactive',
-    badgeClass: 'bg-zinc-500/15 text-zinc-800 border-zinc-500/30',
-    dotClass: 'bg-zinc-500',
-    cardClass: 'border-zinc-500/30 bg-zinc-500/5',
+    badgeClass: 'bg-muted/15 text-text border-border',
+    dotClass: 'bg-muted',
+    cardClass: 'border-zinc-500/30 bg-muted/5',
   },
   excused: {
     label: 'Excused',

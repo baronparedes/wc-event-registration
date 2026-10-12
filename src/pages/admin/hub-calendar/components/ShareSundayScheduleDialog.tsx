@@ -106,7 +106,7 @@ export function ShareSundayScheduleDialog({
       <Dialog.Body>
         <div className="space-y-4">
           {/* Summary Card */}
-          <div className="rounded-xl border border-border bg-slate-50/60 p-4">
+          <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -138,7 +138,7 @@ export function ShareSundayScheduleDialog({
                     key={slot}
                     onClick={() => setSelectedSlot(slot)}
                     className={`flex items-center justify-between p-3.5 transition-colors cursor-pointer ${
-                      isSelected ? 'bg-primary/5' : 'hover:bg-slate-50/70'
+                      isSelected ? 'bg-primary/5' : 'hover:bg-surface-hover/70'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -168,7 +168,7 @@ export function ShareSundayScheduleDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                      <span className="inline-flex items-center rounded-full bg-muted/20 px-2.5 py-0.5 text-xs font-semibold text-text">
                         {entries.length} volunteer{entries.length === 1 ? '' : 's'}
                       </span>
                       {!isMobile && (

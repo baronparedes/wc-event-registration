@@ -41,7 +41,7 @@ describe('VolunteerStaffingTargetsModal', () => {
     expect(screen.getByLabelText('Prayer Coach')).toHaveValue('50');
   });
 
-  it('allows editing values for specific slot and switching slots', () => {
+  it('allows editing values for specific slot and switching slots', async () => {
     render(
       <VolunteerStaffingTargetsModal
         isOpen={true}
@@ -67,6 +67,9 @@ describe('VolunteerStaffingTargetsModal', () => {
 
     const saveBtn = screen.getByRole('button', { name: /Save Settings/i });
     fireEvent.click(saveBtn);
+
+    // wait for form submit
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(onSaveMock).toHaveBeenCalledWith({
       '9AM': expect.objectContaining({ Usher: 30 }),
@@ -120,7 +123,7 @@ describe('VolunteerStaffingTargetsModal', () => {
     expect(screen.getByLabelText('Usher')).toHaveValue('17');
   });
 
-  it('switches to Turnup Thresholds tab, edits thresholds, and saves them', () => {
+  it('switches to Turnup Thresholds tab, edits thresholds, and saves them', async () => {
     const onSaveThresholdsMock = vi.fn();
     render(
       <VolunteerStaffingTargetsModal
@@ -152,6 +155,8 @@ describe('VolunteerStaffingTargetsModal', () => {
 
     const saveBtn = screen.getByRole('button', { name: /Save Settings/i });
     fireEvent.click(saveBtn);
+
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(onSaveThresholdsMock).toHaveBeenCalledWith({
       solid: 0.75,
