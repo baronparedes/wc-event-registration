@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -94,14 +92,6 @@ function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
   const rawVariables = useWatch({ control, name: 'required_variables_raw' });
   const parsedVariables = parseVariables(rawVariables);
 
-  // Auto-slugify when creating if user hasn't manually edited the slug field
-  const nameValue = useWatch({ control, name: 'name' });
-  useEffect(() => {
-    if (!isEditMode && !dirtyFields.slug && nameValue) {
-      setValue('slug', slugify(nameValue), { shouldValidate: true });
-    }
-  }, [nameValue, isEditMode, dirtyFields.slug, setValue]);
-
   const onSubmit = async (values: EmailTemplateFormValues) => {
     const requiredVariables = parseVariables(values.required_variables_raw);
 
@@ -133,6 +123,12 @@ function EmailTemplateBuilderForm({ template, onClose, onSuccess }: FormProps) {
               required
               {...field}
               value={field.value ?? ''}
+              onChange={(e) => {
+                field.onChange(e);
+                if (!isEditMode && !dirtyFields.slug) {
+                  setValue('slug', slugify(e.target.value), { shouldValidate: true });
+                }
+              }}
             />
           )}
         />
