@@ -1,6 +1,8 @@
 import { assertEquals } from '@std/assert';
-import type { SupabaseClient } from '@/shared/handler.ts';
+
 import { POSTGRES_ERROR_CODES } from '@/shared/constants.ts';
+import type { SupabaseClient } from '@/shared/handler.ts';
+
 import { insertRegistration } from '../handlers/insertRegistration.ts';
 
 function createMockSupabase(overrides?: {
@@ -23,14 +25,18 @@ function createMockSupabase(overrides?: {
                     limit: () => ({
                       maybeSingle: () =>
                         Promise.resolve({
-                          data: overrides?.selectExisting !== undefined ? overrides.selectExisting : null,
+                          data:
+                            overrides?.selectExisting !== undefined
+                              ? overrides.selectExisting
+                              : null,
                           error: overrides?.selectExistingError ?? null,
                         }),
                     }),
                   }),
                   maybeSingle: () =>
                     Promise.resolve({
-                      data: overrides?.selectExisting !== undefined ? overrides.selectExisting : null,
+                      data:
+                        overrides?.selectExisting !== undefined ? overrides.selectExisting : null,
                       error: overrides?.selectExistingError ?? null,
                     }),
                 }),
@@ -46,17 +52,23 @@ function createMockSupabase(overrides?: {
             select: () => ({
               single: () =>
                 Promise.resolve({
-                  data: overrides?.insertResult !== undefined ? overrides.insertResult : { id: 'reg-new' },
+                  data:
+                    overrides?.insertResult !== undefined
+                      ? overrides.insertResult
+                      : { id: 'reg-new' },
                   error: overrides?.insertError ?? null,
                 }),
             }),
           }),
           update: () => ({
             eq: () =>
-                Promise.resolve({
-                  data: overrides?.updateResult !== undefined ? overrides.updateResult : { id: 'reg-updated' },
-                  error: overrides?.updateError ?? null,
-                }),
+              Promise.resolve({
+                data:
+                  overrides?.updateResult !== undefined
+                    ? overrides.updateResult
+                    : { id: 'reg-updated' },
+                error: overrides?.updateError ?? null,
+              }),
           }),
         };
       }
@@ -89,7 +101,7 @@ Deno.test('insertRegistration correctly handles idempotent replay', async () => 
     insertResult: null,
     insertError: {
       code: POSTGRES_ERROR_CODES.uniqueViolation,
-      message: 'registrations_event_idempotency_unique_idx'
+      message: 'registrations_event_idempotency_unique_idx',
     },
     selectExisting: { id: 'reg-existing', user_id: 'user-1', status: 'submitted' },
   });
@@ -115,7 +127,7 @@ Deno.test('insertRegistration correctly handles update (allow_update)', async ()
     insertResult: null,
     insertError: {
       code: POSTGRES_ERROR_CODES.uniqueViolation,
-      message: 'registrations_event_user_unique_idx'
+      message: 'registrations_event_user_unique_idx',
     },
     selectExisting: { id: 'reg-existing', user_id: 'user-1', status: 'submitted' },
   });

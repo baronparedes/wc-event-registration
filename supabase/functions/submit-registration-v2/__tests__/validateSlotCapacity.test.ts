@@ -1,5 +1,7 @@
 import { assertEquals } from '@std/assert';
+
 import type { SupabaseClient } from '@/shared/handler.ts';
+
 import { validateSlotCapacity } from '../handlers/validateSlotCapacity.ts';
 
 function createMockSupabase(overrides?: {
@@ -15,10 +17,11 @@ function createMockSupabase(overrides?: {
           select: () => query,
           eq: () => query,
           neq: () => query,
-          returns: () => Promise.resolve({
-            data: overrides?.answers !== undefined ? overrides.answers : [],
-            error: overrides?.answersError ?? null,
-          }),
+          returns: () =>
+            Promise.resolve({
+              data: overrides?.answers !== undefined ? overrides.answers : [],
+              error: overrides?.answersError ?? null,
+            }),
         };
         return query;
       }
@@ -26,10 +29,11 @@ function createMockSupabase(overrides?: {
         const query = {
           select: () => query,
           in: () => query,
-          returns: () => Promise.resolve({
-            data: overrides?.users !== undefined ? overrides.users : [],
-            error: overrides?.usersError ?? null,
-          }),
+          returns: () =>
+            Promise.resolve({
+              data: overrides?.users !== undefined ? overrides.users : [],
+              error: overrides?.usersError ?? null,
+            }),
         };
         return query;
       }
@@ -50,7 +54,7 @@ Deno.test('validateSlotCapacity passes when no slot fields', async () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = { team_name: 'Alpha' };
 
@@ -68,9 +72,17 @@ Deno.test('validateSlotCapacity passes when no slot fields', async () => {
 Deno.test('validateSlotCapacity fails when global slot capacity is reached', async () => {
   const supabase = createMockSupabase({
     answers: [
-      { answer_text: 'opt-1', registration_id: 'reg-a', registrations: { status: 'submitted', user_id: 'user-1' } },
-      { answer_text: 'opt-1', registration_id: 'reg-b', registrations: { status: 'submitted', user_id: 'user-2' } },
-    ]
+      {
+        answer_text: 'opt-1',
+        registration_id: 'reg-a',
+        registrations: { status: 'submitted', user_id: 'user-1' },
+      },
+      {
+        answer_text: 'opt-1',
+        registration_id: 'reg-b',
+        registrations: { status: 'submitted', user_id: 'user-2' },
+      },
+    ],
   });
 
   const fields = [
@@ -83,7 +95,7 @@ Deno.test('validateSlotCapacity fails when global slot capacity is reached', asy
       is_required: true,
       options: [{ id: 'opt-1', label: 'Opt 1', value: 'opt-1' }],
       validation_rules: { max_slots: { 'opt-1': 2 } },
-    }
+    },
   ];
   const responses = { slot_field: 'opt-1' };
 
@@ -104,8 +116,12 @@ Deno.test('validateSlotCapacity fails when global slot capacity is reached', asy
 Deno.test('validateSlotCapacity passes when global slot capacity is not reached', async () => {
   const supabase = createMockSupabase({
     answers: [
-      { answer_text: 'opt-1', registration_id: 'reg-a', registrations: { status: 'submitted', user_id: 'user-1' } },
-    ]
+      {
+        answer_text: 'opt-1',
+        registration_id: 'reg-a',
+        registrations: { status: 'submitted', user_id: 'user-1' },
+      },
+    ],
   });
 
   const fields = [
@@ -118,7 +134,7 @@ Deno.test('validateSlotCapacity passes when global slot capacity is not reached'
       is_required: true,
       options: [{ id: 'opt-1', label: 'Opt 1', value: 'opt-1' }],
       validation_rules: { max_slots: { 'opt-1': 2 } },
-    }
+    },
   ];
   const responses = { slot_field: 'opt-1' };
 
@@ -136,11 +152,13 @@ Deno.test('validateSlotCapacity passes when global slot capacity is not reached'
 Deno.test('validateSlotCapacity fails when user lacks required role slots', async () => {
   const supabase = createMockSupabase({
     answers: [
-      { answer_text: 'opt-1', registration_id: 'reg-a', registrations: { status: 'submitted', user_id: 'user-1' } },
+      {
+        answer_text: 'opt-1',
+        registration_id: 'reg-a',
+        registrations: { status: 'submitted', user_id: 'user-1' },
+      },
     ],
-    users: [
-      { id: 'user-1', role: 'member' }
-    ]
+    users: [{ id: 'user-1', role: 'member' }],
   });
 
   const fields = [
@@ -152,8 +170,8 @@ Deno.test('validateSlotCapacity fails when user lacks required role slots', asyn
       applicability: 'members_and_public' as const,
       is_required: true,
       options: [{ id: 'opt-1', label: 'Opt 1', value: 'opt-1' }],
-      validation_rules: { max_slots_role_allotments: { 'opt-1': { 'member': 1 } } },
-    }
+      validation_rules: { max_slots_role_allotments: { 'opt-1': { member: 1 } } },
+    },
   ];
   const responses = { slot_field: 'opt-1' };
 
@@ -174,7 +192,7 @@ Deno.test('validateSlotCapacity fails when user lacks required role slots', asyn
 Deno.test('validateSlotCapacity passes when user has required role slots', async () => {
   const supabase = createMockSupabase({
     answers: [],
-    users: []
+    users: [],
   });
 
   const fields = [
@@ -186,8 +204,8 @@ Deno.test('validateSlotCapacity passes when user has required role slots', async
       applicability: 'members_and_public' as const,
       is_required: true,
       options: [{ id: 'opt-1', label: 'Opt 1', value: 'opt-1' }],
-      validation_rules: { max_slots_role_allotments: { 'opt-1': { 'member': 1 } } },
-    }
+      validation_rules: { max_slots_role_allotments: { 'opt-1': { member: 1 } } },
+    },
   ];
   const responses = { slot_field: 'opt-1' };
 

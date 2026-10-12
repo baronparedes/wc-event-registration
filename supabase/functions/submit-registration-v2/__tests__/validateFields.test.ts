@@ -1,6 +1,6 @@
 import { assertEquals } from '@std/assert';
+
 import { validateFields } from '../handlers/validateFields.ts';
-import type { EventFieldWithValidation } from '@/shared/validation.ts';
 
 Deno.test('validateFields passes for valid required field', () => {
   const fields = [
@@ -13,7 +13,7 @@ Deno.test('validateFields passes for valid required field', () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = { team_name: 'Alpha' };
 
@@ -32,7 +32,7 @@ Deno.test('validateFields fails for missing required field', () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = {};
 

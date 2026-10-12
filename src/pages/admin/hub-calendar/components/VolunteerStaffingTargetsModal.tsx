@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Copy, RotateCcw, Save, Settings2, SlidersHorizontal } from 'lucide-react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Button, Dialog, FormInputField, Tabs, TabsList, TabsTrigger } from '@/components/ui';
@@ -98,8 +98,8 @@ function VolunteerStaffingTargetsModalContent({
     },
   });
 
-  const formQuotas = methods.watch('quotas');
-  const formThresholds = methods.watch('thresholds');
+  const formQuotas = useWatch({ control: methods.control, name: 'quotas' });
+  const formThresholds = useWatch({ control: methods.control, name: 'thresholds' });
 
   const { register, handleSubmit, setValue } = methods;
 

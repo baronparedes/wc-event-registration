@@ -1,4 +1,5 @@
 import { assertEquals } from '@std/assert';
+
 import { resolveRegistrationScope } from '../handlers/resolveRegistrationScope.ts';
 
 Deno.test('resolveRegistrationScope returns idempotency key when no fields', () => {
@@ -10,23 +11,29 @@ Deno.test('resolveRegistrationScope returns idempotency key when no fields', () 
   }
 });
 
-Deno.test('resolveRegistrationScope returns primary for block policy with no uniqueness fields', () => {
-  const result = resolveRegistrationScope([], {}, 'block', 'idemp-1');
-  assertEquals(result.ok, true);
-  if (result.ok) {
-    assertEquals(result.data.registrationScopeKey, 'primary');
-    assertEquals(result.data.hasCompoundScope, false);
-  }
-});
+Deno.test(
+  'resolveRegistrationScope returns primary for block policy with no uniqueness fields',
+  () => {
+    const result = resolveRegistrationScope([], {}, 'block', 'idemp-1');
+    assertEquals(result.ok, true);
+    if (result.ok) {
+      assertEquals(result.data.registrationScopeKey, 'primary');
+      assertEquals(result.data.hasCompoundScope, false);
+    }
+  },
+);
 
-Deno.test('resolveRegistrationScope returns primary for allow_update policy with no uniqueness fields', () => {
-  const result = resolveRegistrationScope([], {}, 'allow_update', 'idemp-1');
-  assertEquals(result.ok, true);
-  if (result.ok) {
-    assertEquals(result.data.registrationScopeKey, 'primary');
-    assertEquals(result.data.hasCompoundScope, false);
-  }
-});
+Deno.test(
+  'resolveRegistrationScope returns primary for allow_update policy with no uniqueness fields',
+  () => {
+    const result = resolveRegistrationScope([], {}, 'allow_update', 'idemp-1');
+    assertEquals(result.ok, true);
+    if (result.ok) {
+      assertEquals(result.data.registrationScopeKey, 'primary');
+      assertEquals(result.data.hasCompoundScope, false);
+    }
+  },
+);
 
 Deno.test('resolveRegistrationScope returns compound scope if fields support it', () => {
   const mockFields = [
@@ -39,11 +46,11 @@ Deno.test('resolveRegistrationScope returns compound scope if fields support it'
       is_required: true,
       options: [],
       validation_rules: { unique_key_component: true },
-    }
+    },
   ];
 
   const responses = {
-    unique_field: 'compound-value'
+    unique_field: 'compound-value',
   };
 
   const result = resolveRegistrationScope(mockFields, responses, 'allow_multiple', 'idemp-1');
@@ -65,7 +72,7 @@ Deno.test('resolveRegistrationScope returns errors if compound scope value is mi
       is_required: true,
       options: [],
       validation_rules: { unique_key_component: true },
-    }
+    },
   ];
 
   const responses = {}; // Missing unique_field

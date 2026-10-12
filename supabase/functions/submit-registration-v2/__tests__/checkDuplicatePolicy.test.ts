@@ -1,5 +1,7 @@
 import { assertEquals } from '@std/assert';
+
 import type { SupabaseClient } from '@/shared/handler.ts';
+
 import { checkDuplicatePolicy } from '../handlers/checkDuplicatePolicy.ts';
 
 function createMockSupabase(overrides?: {

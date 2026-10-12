@@ -1,5 +1,7 @@
 import { assertEquals } from '@std/assert';
+
 import type { SupabaseClient } from '@/shared/handler.ts';
+
 import { persistAnswers } from '../handlers/persistAnswers.ts';
 
 function createMockSupabase(overrides?: {
@@ -39,7 +41,7 @@ Deno.test('persistAnswers successfully inserts new answers', async () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = { team_name: 'Alpha' };
 
@@ -65,7 +67,7 @@ Deno.test('persistAnswers successfully updates answers', async () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = { team_name: 'Alpha' };
 
@@ -91,7 +93,7 @@ Deno.test('persistAnswers fails if insert fails', async () => {
       is_required: true,
       options: [],
       validation_rules: {},
-    }
+    },
   ];
   const responses = { team_name: 'Alpha' };
 
