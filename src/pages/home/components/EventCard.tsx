@@ -196,7 +196,6 @@ export function EventCard({ event }: EventCardProps) {
           )}
           <div className="flex shrink-0 flex-col items-end gap-2 [@container(min-width:340px)]:flex-row [@container(min-width:340px)]:items-center">
             <Badge
-              className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
               variant={
                 event.listingStatus === 'open'
                   ? 'default'
@@ -252,11 +251,7 @@ export function EventCard({ event }: EventCardProps) {
             </h3>
           </div>
           {event.allow_public_registrations && (
-            <Badge
-              icon={<Users className="h-3.5 w-3.5" />}
-              variant="outline"
-              className="border-border/80 bg-surface/90 shadow-xs backdrop-blur-md"
-            >
+            <Badge icon={<Users className="h-3.5 w-3.5" />} variant="outline">
               Open to Guests
             </Badge>
           )}
