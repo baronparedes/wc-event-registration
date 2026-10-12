@@ -39,7 +39,9 @@
 **Deviation:** `useForm` initialization in `src/pages/admin/events/[id]/attendance/hooks/useAdminEventAttendancePageState.ts` used a `useEffect` block with `reset()` to sync asynchronously loaded React Query data.
 **Learning:** React Hook Form's newer versions support natively reacting to external asynchronous data changes via the `values` prop, entirely replacing the imperative `useEffect` pattern.
 **Standard:** Pass the computed async data directly into the `values` prop of `useForm()` instead of using `useEffect` with `reset()`.
+
 ## 2025-02-12 - Removed `useEffect` syncing for Form Slug Auto-generation
+
 **Deviation:** `EmailTemplateBuilderDialog` used `useWatch` and `useEffect` to sync the `slug` form field when the `name` field changed.
 **Learning:** This architectural deviation led to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events.
 **Standard:** Extract dependent field updates out of `useEffect` lifecycle hooks and into the driving field's `onChange` event handler, calling both the internal React Hook Form `field.onChange` and updating the dependent state via `setValue`.
