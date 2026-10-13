@@ -135,7 +135,7 @@ export function Dialog({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabel ? undefined : titleId}
           aria-describedby={descriptionId}
-          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} overflow-x-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
+          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
           style={{ touchAction: 'pan-y' }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -243,7 +243,7 @@ function DialogBody({ children, className = '', scrollable = false, ...props }: 
   const scrollClasses = scrollable ? 'max-h-[calc(85vh-8rem)] overflow-y-auto pr-1' : '';
 
   return (
-    <div className={`mt-4 overflow-x-hidden ${scrollClasses} ${className}`} {...props}>
+    <div className={`mt-4 ${scrollClasses} ${className}`} {...props}>
       {children}
     </div>
   );
