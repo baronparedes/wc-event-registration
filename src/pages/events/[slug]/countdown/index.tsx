@@ -9,7 +9,7 @@ import { usePublicEventQuery } from '@/hooks/domain/events';
 import { getEventCoverPublicUrl } from '@/lib/domain/events';
 import { formatDateTime } from '@/lib/infrastructure';
 
-import { AddToCalendarDropdown, ShareCountdownDialog } from './components';
+import { AddToCalendarDialog, ShareCountdownDialog } from './components';
 import { formatEventSchedule, generateQrCodeDataUrl } from './utils';
 
 export function EventCountdownPage() {
@@ -268,7 +268,7 @@ export function EventCountdownPage() {
             <Home className="h-5 w-5 mr-2" aria-hidden="true" />
             Go Home
           </Button>
-          <AddToCalendarDropdown event={event} className="w-full sm:w-auto" />
+          <AddToCalendarDialog event={event} className="w-full sm:w-auto" />
           <Button
             size="3xl"
             variant="outline"
