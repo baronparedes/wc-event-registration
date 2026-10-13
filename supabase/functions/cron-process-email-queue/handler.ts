@@ -1,5 +1,13 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import {
+  type PowerAutomateBatchItem,
+  type PowerAutomateBatchPayload,
+  encodeBase64Utf8,
+  fetchResendTemplate,
+  tokenizeTemplate,
+  wrapPlainTextAsHtml,
+} from '../_shared/emailTemplate.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
 import { sendResendEmail } from '../_shared/resend.ts';
 
@@ -73,6 +81,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
   const { client, corsHeaders, requestId } = hookResult;
   const queueClient = client as unknown as EmailQueueClient;
+  const outlookDispatchEmail = Deno.env.get('OUTLOOK_DISPATCH_EMAIL')?.trim();
 
   try {
     let processedCount = 0;
@@ -187,6 +196,135 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
       }
     };
 
+    const processMessagesWithOutlookBatch = async (
+      messages: EmailQueueMessage[],
+      targetDispatchEmail: string,
+    ) => {
+      const validItems: PowerAutomateBatchItem[] = [];
+      const validMessages: EmailQueueMessage[] = [];
+
+      for (const msg of messages) {
+        const payload = msg.message;
+        const messageId = msg.msg_id;
+        const sundayDate = payload.metadata?.sunday_date;
+
+        if (payload.event_type !== 'email_notification') {
+          console.warn(
+            `[cron-process-email-queue] Skipping unknown event_type: ${payload.event_type}`,
+          );
+          await queueClient.rpc('archive_email_notification', { message_id: messageId });
+          continue;
+        }
+
+        let bodyHtml: string | undefined;
+        let emailSubject = payload.subject;
+
+        if (payload.template_slug) {
+          const { data: template, error: templateError } = await queueClient
+            .from('email_templates')
+            .select('resend_template_id')
+            .eq('slug', payload.template_slug)
+            .single();
+
+          if (template && !templateError) {
+            const resendTemplate = await fetchResendTemplate(template.resend_template_id);
+            if (resendTemplate?.html) {
+              bodyHtml = tokenizeTemplate(resendTemplate.html, payload.metadata);
+              emailSubject =
+                payload.subject ||
+                (resendTemplate.subject
+                  ? tokenizeTemplate(resendTemplate.subject, payload.metadata)
+                  : 'Service Reminder');
+            } else if (payload.text) {
+              bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
+              emailSubject = payload.subject || 'Service Reminder';
+            } else {
+              console.error(
+                `[cron-process-email-queue] Failed to fetch Resend template: ${template.resend_template_id}`,
+              );
+              await archiveAfterRetryLimit(msg, 'Failed to fetch Resend template');
+              continue;
+            }
+          } else if (payload.text) {
+            console.warn(
+              `[cron-process-email-queue] Template not found for slug ${payload.template_slug}; falling back to plain text email`,
+            );
+            bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
+            emailSubject = payload.subject || 'Service Reminder';
+          } else {
+            console.error(
+              `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
+              { error: templateError },
+            );
+            await archiveAfterRetryLimit(msg, templateError ?? 'template not found');
+            continue;
+          }
+        } else if (payload.text) {
+          bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
+          emailSubject = payload.subject || 'Church Notification';
+        } else {
+          console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
+          recordEmailStats(sundayDate, 'failed');
+          await queueClient.rpc('archive_email_notification', { message_id: messageId });
+          continue;
+        }
+
+        validItems.push({
+          to: payload.recipient,
+          subject: emailSubject,
+          body_html: bodyHtml,
+          metadata: payload.metadata,
+        });
+        validMessages.push(msg);
+      }
+
+      if (validItems.length === 0) {
+        return;
+      }
+
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const batchPayload: PowerAutomateBatchPayload = {
+        batch_id: batchId,
+        count: validItems.length,
+        created_at: new Date().toISOString(),
+        items: validItems,
+      };
+
+      const base64Attachment = encodeBase64Utf8(JSON.stringify(batchPayload, null, 2));
+
+      const sendResult = await sendResendEmail({
+        to: targetDispatchEmail,
+        subject: `[WC-BROADCAST-DISPATCH] ${batchId} (${validItems.length} emails)`,
+        text: `Automated broadcast batch for Power Automate processing.\nBatch ID: ${batchId}\nEmail Count: ${validItems.length}\nCreated At: ${batchPayload.created_at}`,
+        html: `<p>Automated broadcast batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Count:</strong> ${validItems.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
+        attachments: [
+          {
+            filename: 'batch-emails.json',
+            content: base64Attachment,
+            type: 'application/json',
+          },
+        ],
+        targetType: 'power-automate-batch-dispatch',
+      });
+
+      if (!sendResult.ok) {
+        console.error(
+          `[cron-process-email-queue] Power Automate dispatch failed for batch ${batchId}:`,
+          sendResult.error,
+        );
+        for (const msg of validMessages) {
+          await archiveAfterRetryLimit(msg, sendResult.error);
+        }
+        return;
+      }
+
+      for (const msg of validMessages) {
+        recordEmailStats(msg.message.metadata?.sunday_date, 'succeeded');
+        await queueClient.rpc('archive_email_notification', { message_id: msg.msg_id });
+        processedCount++;
+      }
+    };
+
     while (true) {
       const { data: messages, error: popError } = await queueClient.rpc('pop_email_notifications', {
         batch_size: EMAIL_QUEUE_BATCH_SIZE,
@@ -204,9 +342,13 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         break;
       }
 
-      for (let offset = 0; offset < messages.length; offset += EMAIL_SEND_CONCURRENCY) {
-        const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
-        await Promise.allSettled(concurrentMessages.map(processMessage));
+      if (outlookDispatchEmail) {
+        await processMessagesWithOutlookBatch(messages, outlookDispatchEmail);
+      } else {
+        for (let offset = 0; offset < messages.length; offset += EMAIL_SEND_CONCURRENCY) {
+          const concurrentMessages = messages.slice(offset, offset + EMAIL_SEND_CONCURRENCY);
+          await Promise.allSettled(concurrentMessages.map(processMessage));
+        }
       }
     }
 
