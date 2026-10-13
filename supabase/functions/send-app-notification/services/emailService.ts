@@ -51,16 +51,9 @@ export async function sendEmailNotifications({
       },
     }));
 
-    const batchResult = await enqueueEmailNotificationsBatch(
-      supabase as unknown as {
-        rpc: (
-          name: string,
-          args?: Record<string, unknown>,
-        ) => Promise<{ data: unknown; error: { message: string } | null }>;
-      },
-      queueInputs,
-      { concurrency: 10 },
-    );
+    const batchResult = await enqueueEmailNotificationsBatch(supabase, queueInputs, {
+      concurrency: 10,
+    });
     successfulEnqueues = batchResult.successfulCount;
 
     console.log('[send-app-notification] [email] Broadcast queue summary:', {
@@ -71,14 +64,7 @@ export async function sendEmailNotifications({
     });
 
     if (successfulEnqueues > 0) {
-      await triggerEmailProcessor(
-        supabase as unknown as {
-          rpc: (
-            name: string,
-            args?: Record<string, unknown>,
-          ) => Promise<{ data: unknown; error: { message: string } | null }>;
-        },
-      );
+      await triggerEmailProcessor(supabase);
     }
   }
 

@@ -1,10 +1,6 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
-import {
-  type SupabaseRpcClient,
-  enqueueEmailNotification,
-  triggerEmailProcessor,
-} from '../_shared/emailQueue.ts';
+import { enqueueEmailNotification, triggerEmailProcessor } from '../_shared/emailQueue.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
 import { z } from '../_shared/validation.ts';
 
@@ -37,10 +33,9 @@ export async function handleEnqueueEvent(req: Request): Promise<Response> {
   }
 
   const { client, data, corsHeaders, requestId } = hookResult;
-  const enqueueClient = client as unknown as SupabaseRpcClient;
 
   try {
-    const { messageId, error: queueError } = await enqueueEmailNotification(enqueueClient, {
+    const { messageId, error: queueError } = await enqueueEmailNotification(client, {
       event_type: data.event_type,
       recipient: data.recipient,
       template_slug: data.template_slug,
@@ -63,7 +58,7 @@ export async function handleEnqueueEvent(req: Request): Promise<Response> {
     }
 
     // Trigger processing via database helper (directEdgeInvoke false to preserve fire-and-forget RPC behavior)
-    await triggerEmailProcessor(enqueueClient, { directEdgeInvoke: false });
+    await triggerEmailProcessor(client, { directEdgeInvoke: false });
 
     return jsonResponse(corsHeaders, { success: true, message_id: messageId }, HTTP_STATUS.created);
   } catch (error) {

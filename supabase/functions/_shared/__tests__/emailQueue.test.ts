@@ -12,7 +12,7 @@ Deno.test(
   async () => {
     const calls: Array<{ name: string; args?: Record<string, unknown> }> = [];
     const client: SupabaseRpcClient = {
-      rpc: (name, args) => {
+      rpc: (name: string, args?: Record<string, unknown>) => {
         calls.push({ name, args });
         return Promise.resolve({ data: 123, error: null });
       },
@@ -61,7 +61,7 @@ Deno.test('enqueueEmailNotification surfaces RPC errors', async () => {
 Deno.test('enqueueEmailNotificationsBatch processes items concurrently', async () => {
   const enqueued: string[] = [];
   const client: SupabaseRpcClient = {
-    rpc: (_name, args) => {
+    rpc: (_name: string, args?: Record<string, unknown>) => {
       const payload = args?.payload as { recipient: string };
       if (payload.recipient === 'fail@example.com') {
         return Promise.resolve({ data: null, error: { message: 'fail' } });
@@ -104,7 +104,7 @@ Deno.test('triggerEmailProcessor calls DB RPC and direct fetch when configured',
 
   const rpcCalls: string[] = [];
   const client: SupabaseRpcClient = {
-    rpc: (name) => {
+    rpc: (name: string) => {
       rpcCalls.push(name);
       return Promise.resolve({ data: null, error: null });
     },

@@ -1,3 +1,5 @@
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
+
 export type NotificationCategory = 'sunday_reminder' | 'broadcast';
 
 export type EmailQueuePayload = {
@@ -22,12 +24,16 @@ export type EnqueueEmailInput = {
   idempotency_key?: string;
 };
 
-export type SupabaseRpcClient = {
-  rpc: (
-    functionName: string,
-    args?: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+type RpcResponse = {
+  data: unknown;
+  error: { message: string } | PostgrestError | null;
 };
+
+export type SupabaseRpcClient =
+  | Pick<SupabaseClient, 'rpc'>
+  | {
+      rpc: (functionName: string, args?: Record<string, unknown>) => PromiseLike<RpcResponse>;
+    };
 
 /**
  * Enqueues a single email notification message into the pgmq email_notifications queue.
@@ -47,7 +53,12 @@ export async function enqueueEmailNotification(
     idempotency_key: input.idempotency_key,
   };
 
-  const { data, error } = await client.rpc('enqueue_email_notification', { payload });
+  const { data, error } = await (
+    client as {
+      rpc: (name: string, args?: Record<string, unknown>) => PromiseLike<RpcResponse>;
+    }
+  ).rpc('enqueue_email_notification', { payload });
+
   if (error) {
     return { messageId: null, error };
   }
@@ -102,7 +113,12 @@ export async function triggerEmailProcessor(
   options: { directEdgeInvoke?: boolean } = {},
 ): Promise<void> {
   if (client) {
-    const { error: triggerError } = await client.rpc('trigger_email_processor');
+    const { error: triggerError } = await (
+      client as {
+        rpc: (name: string, args?: Record<string, unknown>) => PromiseLike<RpcResponse>;
+      }
+    ).rpc('trigger_email_processor');
+
     if (triggerError) {
       console.warn('[emailQueue] Error triggering email processor RPC:', triggerError);
     }
