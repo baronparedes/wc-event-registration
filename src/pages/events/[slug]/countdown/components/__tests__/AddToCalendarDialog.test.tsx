@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AdminEvent } from '@/lib/domain/events';
 import { downloadIcsFile } from '@/pages/events/[slug]/countdown/utils/calendarExportUtils';
 
-import { AddToCalendarDropdown } from '../AddToCalendarDropdown';
+import { AddToCalendarDialog } from '../AddToCalendarDialog';
 
 const mockEvent: AdminEvent = {
   registration_opens_at: null,
@@ -40,7 +40,7 @@ vi.mock('@/pages/events/[slug]/countdown/utils/calendarExportUtils', async (impo
   };
 });
 
-describe('AddToCalendarDropdown', () => {
+describe('AddToCalendarDialog', () => {
   const originalOpen = window.open;
   beforeEach(() => {
     window.open = vi.fn();
@@ -52,16 +52,19 @@ describe('AddToCalendarDropdown', () => {
   });
 
   it('renders Add to Calendar button with responsive full width classes', () => {
-    const { container } = render(<AddToCalendarDropdown event={mockEvent} />);
+    const { container } = render(<AddToCalendarDialog event={mockEvent} />);
     expect(screen.getByRole('button', { name: /Add to Calendar/i })).toBeInTheDocument();
     expect(container.firstChild).toHaveClass('w-full', 'sm:w-auto');
   });
 
-  it('opens dropdown and allows Google Calendar export', () => {
-    render(<AddToCalendarDropdown event={mockEvent} />);
+  it('opens dialog and allows Google Calendar export', () => {
+    render(<AddToCalendarDialog event={mockEvent} />);
     fireEvent.click(screen.getByRole('button', { name: /Add to Calendar/i }));
 
-    const googleButton = screen.getByText('Google Calendar');
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
+    const googleButton = screen.getByRole('button', { name: /Google Calendar/i });
     expect(googleButton).toBeInTheDocument();
     fireEvent.click(googleButton);
     expect(window.open).toHaveBeenCalledWith(
@@ -71,11 +74,11 @@ describe('AddToCalendarDropdown', () => {
     );
   });
 
-  it('opens dropdown and allows Outlook export', () => {
-    render(<AddToCalendarDropdown event={mockEvent} />);
+  it('opens dialog and allows Outlook export', () => {
+    render(<AddToCalendarDialog event={mockEvent} />);
     fireEvent.click(screen.getByRole('button', { name: /Add to Calendar/i }));
 
-    const outlookButton = screen.getByText('Outlook');
+    const outlookButton = screen.getByRole('button', { name: /Outlook/i });
     expect(outlookButton).toBeInTheDocument();
     fireEvent.click(outlookButton);
     expect(window.open).toHaveBeenCalledWith(
@@ -85,11 +88,11 @@ describe('AddToCalendarDropdown', () => {
     );
   });
 
-  it('opens dropdown and allows Yahoo export', () => {
-    render(<AddToCalendarDropdown event={mockEvent} />);
+  it('opens dialog and allows Yahoo export', () => {
+    render(<AddToCalendarDialog event={mockEvent} />);
     fireEvent.click(screen.getByRole('button', { name: /Add to Calendar/i }));
 
-    const yahooButton = screen.getByText('Yahoo');
+    const yahooButton = screen.getByRole('button', { name: /Yahoo/i });
     expect(yahooButton).toBeInTheDocument();
     fireEvent.click(yahooButton);
     expect(window.open).toHaveBeenCalledWith(
@@ -99,11 +102,11 @@ describe('AddToCalendarDropdown', () => {
     );
   });
 
-  it('opens dropdown and allows Apple Calendar (.ics) export', () => {
-    render(<AddToCalendarDropdown event={mockEvent} />);
+  it('opens dialog and allows Apple Calendar (.ics) export', () => {
+    render(<AddToCalendarDialog event={mockEvent} />);
     fireEvent.click(screen.getByRole('button', { name: /Add to Calendar/i }));
 
-    const appleButton = screen.getByText('Apple Calendar (.ics)');
+    const appleButton = screen.getByRole('button', { name: /Apple Calendar \(\.ics\)/i });
     expect(appleButton).toBeInTheDocument();
     fireEvent.click(appleButton);
     expect(downloadIcsFile).toHaveBeenCalledWith(mockEvent);
