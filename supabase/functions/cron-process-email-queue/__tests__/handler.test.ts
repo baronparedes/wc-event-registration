@@ -8,8 +8,10 @@ type QueueMessage = {
   message: {
     event_type: string;
     recipient: string;
+    template_slug?: string;
     subject?: string;
     text?: string;
+    metadata?: Record<string, unknown>;
   };
 };
 
@@ -25,6 +27,7 @@ async function withFunctionEnv(run: () => Promise<void>) {
       'ALLOWED_ORIGINS',
       'RESEND_API_KEY',
       'RESEND_FROM_EMAIL',
+      'OUTLOOK_DISPATCH_EMAIL',
     ].map((name) => [name, Deno.env.get(name)]),
   );
 
@@ -88,7 +91,24 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/rpc/update_email_reminder_delivery_stats') {
       return Promise.resolve(Response.json(null));
     }
+    if (requestUrl.pathname === '/rest/v1/email_templates') {
+      const slug = requestUrl.searchParams.get('slug')?.replace(/^eq\./, '');
+      return Promise.resolve(
+        Response.json({
+          resend_template_id: `tmpl_${slug || 'default'}`,
+        }),
+      );
+    }
     if (requestUrl.hostname === 'api.resend.com') {
+      if (requestUrl.pathname.startsWith('/templates/')) {
+        return Promise.resolve(
+          Response.json({
+            id: requestUrl.pathname.split('/').pop(),
+            subject: 'Schedule for {{date}}',
+            html: '<p>Hi {{name}}, your schedule on {{date}} is confirmed.</p>',
+          }),
+        );
+      }
       sentEmails.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
       activeResendCalls++;
       maxActiveResendCalls = Math.max(maxActiveResendCalls, activeResendCalls);
@@ -315,3 +335,118 @@ Deno.test('cron-process-email-queue archives delivery failures after five attemp
     }
   });
 });
+
+Deno.test(
+  'cron-process-email-queue bundles queued messages into a single OUTLOOK_DISPATCH_EMAIL batch with JSON attachment',
+  async () => {
+    await withFunctionEnv(async () => {
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcomechurch.org.ph');
+      const messages: QueueMessage[] = [
+        {
+          msg_id: 201,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            recipient: 'alice@example.com',
+            subject: 'Announcement',
+            text: 'Hello Alice',
+          },
+        },
+        {
+          msg_id: 202,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            recipient: 'bob@example.com',
+            subject: 'Announcement',
+            text: 'Hello Bob',
+          },
+        },
+      ];
+
+      const fetchMock = mockFetch({ messages });
+
+      try {
+        const response = await handleCronProcessEmailQueue(buildRequest());
+        assertEquals(await response.json(), { success: true, processed: 2 });
+
+        // Exactly 1 email sent to OUTLOOK_DISPATCH_EMAIL
+        assertEquals(fetchMock.sentEmails.length, 1);
+        const sent = fetchMock.sentEmails[0];
+        assertEquals(sent.to, 'broadcasts@welcomechurch.org.ph');
+        assertEquals(typeof sent.subject, 'string');
+        assertEquals(String(sent.subject).includes('[WC-BROADCAST-DISPATCH]'), true);
+        assertEquals(String(sent.subject).includes('(2 emails)'), true);
+
+        // Contains batch-emails.json attachment
+        const attachments = sent.attachments as Array<{ filename: string; content: string }>;
+        assertEquals(Array.isArray(attachments), true);
+        assertEquals(attachments.length, 1);
+        assertEquals(attachments[0].filename, 'batch-emails.json');
+
+        // Decode base64 JSON payload
+        const decodedJson = atob(attachments[0].content);
+        const batchPayload = JSON.parse(decodedJson);
+        assertEquals(batchPayload.count, 2);
+        assertEquals(batchPayload.items.length, 2);
+        assertEquals(batchPayload.items[0].to, 'alice@example.com');
+        assertEquals(batchPayload.items[0].body_html.includes('Hello Alice'), true);
+        assertEquals(batchPayload.items[1].to, 'bob@example.com');
+        assertEquals(batchPayload.items[1].body_html.includes('Hello Bob'), true);
+
+        // Both messages archived
+        assertEquals(fetchMock.archivedIds, [201, 202]);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-email-queue tokenizes Resend template variables when dispatching to OUTLOOK_DISPATCH_EMAIL',
+  async () => {
+    await withFunctionEnv(async () => {
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcomechurch.org.ph');
+      const messages: QueueMessage[] = [
+        {
+          msg_id: 301,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            recipient: 'paul@example.com',
+            template_slug: 'volunteer-schedule',
+            metadata: {
+              name: 'Brother Paul',
+              date: '2026-10-18',
+              sunday_date: '2026-10-18',
+            },
+          },
+        },
+      ];
+
+      const fetchMock = mockFetch({ messages });
+
+      try {
+        const response = await handleCronProcessEmailQueue(buildRequest());
+        assertEquals(await response.json(), { success: true, processed: 1 });
+
+        assertEquals(fetchMock.sentEmails.length, 1);
+        const sent = fetchMock.sentEmails[0];
+        const attachments = sent.attachments as Array<{ filename: string; content: string }>;
+        const batchPayload = JSON.parse(atob(attachments[0].content));
+
+        assertEquals(batchPayload.count, 1);
+        assertEquals(batchPayload.items[0].to, 'paul@example.com');
+        assertEquals(batchPayload.items[0].subject, 'Schedule for 2026-10-18');
+        assertEquals(
+          batchPayload.items[0].body_html,
+          '<p>Hi Brother Paul, your schedule on 2026-10-18 is confirmed.</p>',
+        );
+        assertEquals(fetchMock.archivedIds, [301]);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
