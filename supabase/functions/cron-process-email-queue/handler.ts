@@ -16,14 +16,31 @@ type RpcResult<T> = {
   error: { message: string } | null;
 };
 
+export type NotificationCategory = 'sunday_reminder' | 'broadcast';
+
 type EmailQueuePayload = {
   event_type: string;
+  category?: NotificationCategory | string;
   recipient: string;
   template_slug?: string;
   subject?: string;
   text?: string;
   metadata?: Record<string, unknown>;
 };
+
+export function resolveNotificationCategory(payload: EmailQueuePayload): NotificationCategory {
+  if (payload.category === 'sunday_reminder' || payload.template_slug === 'volunteer-schedule') {
+    return 'sunday_reminder';
+  }
+  if (
+    payload.category === 'broadcast' ||
+    payload.metadata?.target_type !== undefined ||
+    payload.metadata?.broadcast_title !== undefined
+  ) {
+    return 'broadcast';
+  }
+  return payload.metadata?.sunday_date ? 'sunday_reminder' : 'broadcast';
+}
 
 type EmailQueueMessage = {
   msg_id: number;
@@ -201,8 +218,15 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
       messages: EmailQueueMessage[],
       targetDispatchEmail: string,
     ) => {
-      const validItems: PowerAutomateBatchItem[] = [];
-      const validMessages: EmailQueueMessage[] = [];
+      type CategorizedGroup = {
+        items: PowerAutomateBatchItem[];
+        messages: EmailQueueMessage[];
+      };
+
+      const groups: Record<NotificationCategory, CategorizedGroup> = {
+        sunday_reminder: { items: [], messages: [] },
+        broadcast: { items: [], messages: [] },
+      };
 
       for (const msg of messages) {
         const payload = msg.message;
@@ -273,64 +297,66 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           continue;
         }
 
-        validItems.push({
+        const category = resolveNotificationCategory(payload);
+        groups[category].items.push({
           to: payload.recipient,
           subject: emailSubject,
           body_html: bodyHtml,
           metadata: payload.metadata,
         });
-        validMessages.push(msg);
+        groups[category].messages.push(msg);
       }
 
-      if (validItems.length === 0) {
-        return;
-      }
-
-      const isSundayBatch = validItems.some((item) => !!item.metadata?.sunday_date);
-      const batchType = isSundayBatch ? 'sunday_reminder' : 'broadcast';
-      const typeTag = isSundayBatch ? '[SUNDAY-REMINDER]' : '[BROADCAST]';
-
-      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const batchPayload: PowerAutomateBatchPayload = {
-        batch_id: batchId,
-        batch_type: batchType,
-        count: validItems.length,
-        created_at: new Date().toISOString(),
-        items: validItems,
-      };
-
-      const base64Attachment = encodeBase64Utf8(JSON.stringify(batchPayload, null, 2));
-
-      const sendResult = await sendResendEmail({
-        to: targetDispatchEmail,
-        subject: `[WC-BROADCAST-DISPATCH] ${typeTag} ${batchId} (${validItems.length} emails)`,
-        text: `Automated ${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'} batch for Power Automate processing.\nBatch ID: ${batchId}\nBatch Type: ${batchType}\nEmail Count: ${validItems.length}\nCreated At: ${batchPayload.created_at}`,
-        html: `<p>Automated <strong>${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'}</strong> batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Batch Type:</strong> ${batchType}</li><li><strong>Count:</strong> ${validItems.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
-        attachments: [
-          {
-            filename: 'batch-emails.json',
-            content: base64Attachment,
-            type: 'application/json',
-          },
-        ],
-        targetType: 'power-automate-batch-dispatch',
-      });
-
-      if (!sendResult.ok) {
-        console.error(
-          `[cron-process-email-queue] Power Automate dispatch failed for batch ${batchId}:`,
-          sendResult.error,
-        );
-        for (const msg of validMessages) {
-          await archiveAfterRetryLimit(msg, sendResult.error);
+      for (const category of ['sunday_reminder', 'broadcast'] as const) {
+        const { items, messages: validMessages } = groups[category];
+        if (items.length === 0) {
+          continue;
         }
-        return;
-      }
 
-      for (const msg of validMessages) {
-        recordEmailStats(msg.message.metadata?.sunday_date, 'succeeded');
-        await queueClient.rpc('archive_email_notification', { message_id: msg.msg_id });
-        processedCount++;
+        const isSundayBatch = category === 'sunday_reminder';
+        const typeTag = isSundayBatch ? '[SUNDAY-REMINDER]' : '[BROADCAST]';
+        const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const batchPayload: PowerAutomateBatchPayload = {
+          batch_id: batchId,
+          batch_type: category,
+          count: items.length,
+          created_at: new Date().toISOString(),
+          items,
+        };
+
+        const base64Attachment = encodeBase64Utf8(JSON.stringify(batchPayload, null, 2));
+
+        const sendResult = await sendResendEmail({
+          to: targetDispatchEmail,
+          subject: `[WC-BROADCAST-DISPATCH] ${typeTag} ${batchId} (${items.length} emails)`,
+          text: `Automated ${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'} batch for Power Automate processing.\nBatch ID: ${batchId}\nBatch Type: ${category}\nEmail Count: ${items.length}\nCreated At: ${batchPayload.created_at}`,
+          html: `<p>Automated <strong>${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'}</strong> batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Batch Type:</strong> ${category}</li><li><strong>Count:</strong> ${items.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
+          attachments: [
+            {
+              filename: 'batch-emails.json',
+              content: base64Attachment,
+              type: 'application/json',
+            },
+          ],
+          targetType: 'power-automate-batch-dispatch',
+        });
+
+        if (!sendResult.ok) {
+          console.error(
+            `[cron-process-email-queue] Power Automate dispatch failed for ${category} batch ${batchId}:`,
+            sendResult.error,
+          );
+          for (const msg of validMessages) {
+            await archiveAfterRetryLimit(msg, sendResult.error);
+          }
+          continue;
+        }
+
+        for (const msg of validMessages) {
+          recordEmailStats(msg.message.metadata?.sunday_date, 'succeeded');
+          await queueClient.rpc('archive_email_notification', { message_id: msg.msg_id });
+          processedCount++;
+        }
       }
     };
 

@@ -40,6 +40,7 @@ export async function sendEmailNotifications({
           const { error: enqueueError } = await supabase.rpc('enqueue_email_notification', {
             payload: {
               event_type: 'email_notification',
+              category: 'broadcast',
               recipient: email,
               subject: payload.title,
               text: emailText,

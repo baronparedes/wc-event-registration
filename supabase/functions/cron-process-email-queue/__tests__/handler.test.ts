@@ -7,6 +7,7 @@ type QueueMessage = {
   read_ct: number;
   message: {
     event_type: string;
+    category?: string;
     recipient: string;
     template_slug?: string;
     subject?: string;
@@ -448,6 +449,83 @@ Deno.test(
           '<p>Hi Brother Paul, your schedule on 2026-10-18 is confirmed.</p>',
         );
         assertEquals(fetchMock.archivedIds, [301]);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-email-queue partitions mixed queue messages into separate Sunday reminder and broadcast batches',
+  async () => {
+    await withFunctionEnv(async () => {
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcome.org.ph');
+      const messages: QueueMessage[] = [
+        {
+          msg_id: 501,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            recipient: 'volunteer@example.com',
+            template_slug: 'volunteer-schedule',
+            metadata: {
+              name: 'Sister Mary',
+              date: '2026-10-25',
+              sunday_date: '2026-10-25',
+            },
+          },
+        },
+        {
+          msg_id: 502,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            category: 'broadcast',
+            recipient: 'all@example.com',
+            subject: 'Church Picnic',
+            text: 'Join us for the picnic!',
+          },
+        },
+      ];
+
+      const fetchMock = mockFetch({ messages });
+
+      try {
+        const response = await handleCronProcessEmailQueue(buildRequest());
+        assertEquals(await response.json(), { success: true, processed: 2 });
+
+        // Exactly 2 separate emails dispatched to Outlook
+        assertEquals(fetchMock.sentEmails.length, 2);
+
+        // Check Sunday Reminder batch
+        const sundaySent = fetchMock.sentEmails.find((e) =>
+          String(e.subject).includes('[SUNDAY-REMINDER]'),
+        );
+        assertEquals(!!sundaySent, true);
+        const sundayAtt = (
+          sundaySent?.attachments as Array<{ filename: string; content: string }>
+        )[0];
+        const sundayPayload = JSON.parse(atob(sundayAtt.content));
+        assertEquals(sundayPayload.batch_type, 'sunday_reminder');
+        assertEquals(sundayPayload.count, 1);
+        assertEquals(sundayPayload.items[0].to, 'volunteer@example.com');
+
+        // Check Broadcast batch
+        const broadcastSent = fetchMock.sentEmails.find((e) =>
+          String(e.subject).includes('[BROADCAST]'),
+        );
+        assertEquals(!!broadcastSent, true);
+        const broadcastAtt = (
+          broadcastSent?.attachments as Array<{ filename: string; content: string }>
+        )[0];
+        const broadcastPayload = JSON.parse(atob(broadcastAtt.content));
+        assertEquals(broadcastPayload.batch_type, 'broadcast');
+        assertEquals(broadcastPayload.count, 1);
+        assertEquals(broadcastPayload.items[0].to, 'all@example.com');
+
+        // Both messages archived
+        assertEquals(fetchMock.archivedIds, [501, 502]);
       } finally {
         fetchMock.restore();
       }
