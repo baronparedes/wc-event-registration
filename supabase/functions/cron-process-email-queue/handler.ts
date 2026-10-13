@@ -236,6 +236,9 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
                   ? tokenizeTemplate(resendTemplate.subject, payload.metadata)
                   : 'Service Reminder');
             } else if (payload.text) {
+              console.warn(
+                `[cron-process-email-queue] Resend template '${template.resend_template_id}' returned no HTML (or fetch failed); falling back to wrapped plain text for msg ${messageId}`,
+              );
               bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
               emailSubject = payload.subject || 'Service Reminder';
             } else {

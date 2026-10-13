@@ -49,14 +49,16 @@ Deno.test('encodeBase64Utf8 - accurately encodes UTF-8 and emoji characters', ()
   assertEquals(decoded, text);
 });
 
-Deno.test('fetchResendTemplate - fetches and caches template HTML', async () => {
+Deno.test('fetchResendTemplate - fetches and caches template HTML with User-Agent', async () => {
   resetTemplateCache();
   const originalFetch = globalThis.fetch;
   let fetchCount = 0;
+  let capturedHeaders: HeadersInit | undefined;
 
   try {
-    globalThis.fetch = ((input: RequestInfo | URL) => {
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
       fetchCount++;
+      capturedHeaders = init?.headers;
       const url = input.toString();
       if (url === 'https://api.resend.com/templates/tmpl_123') {
         return Promise.resolve(
@@ -74,11 +76,64 @@ Deno.test('fetchResendTemplate - fetches and caches template HTML', async () => 
     assertEquals(template1?.id, 'tmpl_123');
     assertEquals(template1?.html, '<p>Hi {{name}}</p>');
     assertEquals(fetchCount, 1);
+    assertEquals((capturedHeaders as Record<string, string>)?.['User-Agent'], 'WelcomeHub/1.0');
 
     // Second call should hit in-memory cache
     const template2 = await fetchResendTemplate('tmpl_123', 'fake-key');
     assertEquals(template2?.id, 'tmpl_123');
     assertEquals(fetchCount, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    resetTemplateCache();
+  }
+});
+
+Deno.test('fetchResendTemplate - unwraps nested data envelope if present in response', async () => {
+  resetTemplateCache();
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = ((input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url === 'https://api.resend.com/templates/tmpl_nested') {
+        return Promise.resolve(
+          Response.json({
+            data: {
+              id: 'tmpl_nested',
+              subject: 'Nested Subject',
+              html: '<div>Nested Content</div>',
+            },
+          }),
+        );
+      }
+      return Promise.resolve(new Response('Not found', { status: 404 }));
+    }) as typeof globalThis.fetch;
+
+    const template = await fetchResendTemplate('tmpl_nested', 'fake-key');
+    assertEquals(template?.id, 'tmpl_nested');
+    assertEquals(template?.subject, 'Nested Subject');
+    assertEquals(template?.html, '<div>Nested Content</div>');
+  } finally {
+    globalThis.fetch = originalFetch;
+    resetTemplateCache();
+  }
+});
+
+Deno.test('fetchResendTemplate - handles 400/404 HTTP errors gracefully', async () => {
+  resetTemplateCache();
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = (() => {
+      return Promise.resolve(
+        new Response(JSON.stringify({ statusCode: 404, message: 'Template not found' }), {
+          status: 404,
+        }),
+      );
+    }) as typeof globalThis.fetch;
+
+    const template = await fetchResendTemplate('tmpl_missing', 'fake-key');
+    assertEquals(template, null);
   } finally {
     globalThis.fetch = originalFetch;
     resetTemplateCache();

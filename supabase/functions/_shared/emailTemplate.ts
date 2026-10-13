@@ -145,18 +145,34 @@ export async function fetchResendTemplate(
       headers: {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'WelcomeHub/1.0',
       },
     });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
       console.warn(
         `[fetchResendTemplate] Failed to fetch template ${resendTemplateId}: HTTP ${response.status}`,
+        errorText,
       );
       templateCache.set(resendTemplateId, null);
       return null;
     }
 
-    const data = (await response.json()) as ResendTemplateDetails;
+    const resJson: unknown = await response.json().catch(() => null);
+    if (!resJson || typeof resJson !== 'object') {
+      console.warn(
+        `[fetchResendTemplate] Unexpected response payload for template ${resendTemplateId}`,
+      );
+      templateCache.set(resendTemplateId, null);
+      return null;
+    }
+
+    const data: ResendTemplateDetails =
+      'data' in resJson && resJson.data && typeof resJson.data === 'object'
+        ? (resJson.data as ResendTemplateDetails)
+        : (resJson as ResendTemplateDetails);
+
     templateCache.set(resendTemplateId, data);
     return data;
   } catch (error) {
