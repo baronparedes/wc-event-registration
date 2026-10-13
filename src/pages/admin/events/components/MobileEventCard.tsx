@@ -123,11 +123,15 @@ export function MobileEventCard({
           <DropdownMenu
             open={isMenuOpen}
             onOpenChange={setIsMenuOpen}
+            usePortal
             trigger={
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen((isOpen) => !isOpen);
+                }}
                 className="flex min-h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
                 aria-label={`More actions for ${event.title}`}
                 title="More actions"
@@ -163,7 +167,10 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canWrite && (
-              <DropdownMenuItem to={toRoute('adminEventAttendance', { id: event.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminEventAttendance', { id: event.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4" />
                   Attendance settings
@@ -171,7 +178,10 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canWrite && (
-              <DropdownMenuItem to={toRoute('adminEventFields', { id: event.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminEventFields', { id: event.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <FormInput className="h-4 w-4" />
                   Registration fields
@@ -179,7 +189,10 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canRead && (
-              <DropdownMenuItem to={toRoute('adminRegistrations', { id: event.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminRegistrations', { id: event.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   Registrations
@@ -187,7 +200,10 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canRead && (
-              <DropdownMenuItem to={toRoute('adminAttendanceDashboard', { id: event.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminAttendanceDashboard', { id: event.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Attendance dashboard
@@ -195,7 +211,10 @@ export function MobileEventCard({
               </DropdownMenuItem>
             )}
             {canAccessCheckIn && (
-              <DropdownMenuItem to={toRoute('adminAttendanceCheckIn', { id: event.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminAttendanceCheckIn', { id: event.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <QrCode className="h-4 w-4" />
                   Check-in

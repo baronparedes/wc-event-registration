@@ -86,11 +86,15 @@ export function MobileFormCard({ form, canWrite, canRead, onDuplicateClick }: Mo
           <DropdownMenu
             open={isMenuOpen}
             onOpenChange={setIsMenuOpen}
+            usePortal
             trigger={
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen((isOpen) => !isOpen);
+                }}
                 className="flex min-h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
                 aria-label={`More actions for ${form.title}`}
                 title="More actions"
@@ -100,7 +104,10 @@ export function MobileFormCard({ form, canWrite, canRead, onDuplicateClick }: Mo
             }
           >
             {canWrite && (
-              <DropdownMenuItem to={toRoute('adminFormFields', { id: form.id })}>
+              <DropdownMenuItem
+                to={toRoute('adminFormFields', { id: form.id })}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <span className="flex items-center gap-2">
                   <FormInput className="h-4 w-4" />
                   Form fields

@@ -15,6 +15,7 @@ const DEFAULT_BASE_URL = process.env.BASE_URL || 'https://www.welcomehub.app';
 
 const CRAWLER_USER_AGENTS = {
   facebook: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+  meta: 'Mozilla/5.0 (compatible; meta-externalagent/1.1; +https://developers.facebook.com)',
   viber: 'Viber/6.5.5.1372',
   whatsapp: 'WhatsApp/2.21.12.21 A',
   twitter: 'Twitterbot/1.0',
