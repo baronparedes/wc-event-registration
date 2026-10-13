@@ -42,10 +42,10 @@ export function AddToCalendarDialog({ event, className }: AddToCalendarDialogPro
         </Dialog.Header>
 
         <Dialog.Body>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Button
               variant="outline"
-              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:bg-slate-50 transition-colors"
+              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:scale-100 hover:bg-slate-50 transition-colors"
               onClick={() => {
                 window.open(getGoogleCalendarUrl(event), '_blank', 'noopener,noreferrer');
                 setIsOpen(false);
@@ -56,7 +56,7 @@ export function AddToCalendarDialog({ event, className }: AddToCalendarDialogPro
             </Button>
             <Button
               variant="outline"
-              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:bg-slate-50 transition-colors"
+              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:scale-100 hover:bg-slate-50 transition-colors"
               onClick={() => {
                 window.open(getOutlookCalendarUrl(event), '_blank', 'noopener,noreferrer');
                 setIsOpen(false);
@@ -67,7 +67,7 @@ export function AddToCalendarDialog({ event, className }: AddToCalendarDialogPro
             </Button>
             <Button
               variant="outline"
-              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:bg-slate-50 transition-colors"
+              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:scale-100 hover:bg-slate-50 transition-colors"
               onClick={() => {
                 window.open(getYahooCalendarUrl(event), '_blank', 'noopener,noreferrer');
                 setIsOpen(false);
@@ -78,7 +78,7 @@ export function AddToCalendarDialog({ event, className }: AddToCalendarDialogPro
             </Button>
             <Button
               variant="outline"
-              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:bg-slate-50 transition-colors"
+              className="flex h-auto flex-col items-center justify-center gap-3 p-6 hover:scale-100 hover:bg-slate-50 transition-colors"
               onClick={() => {
                 downloadIcsFile(event);
                 setIsOpen(false);
