@@ -265,7 +265,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           }
         } else if (payload.text) {
           bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
-          emailSubject = payload.subject || 'Church Notification';
+          emailSubject = payload.subject || 'Notification';
         } else {
           console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
           recordEmailStats(sundayDate, 'failed');
@@ -286,9 +286,14 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         return;
       }
 
+      const isSundayBatch = validItems.some((item) => !!item.metadata?.sunday_date);
+      const batchType = isSundayBatch ? 'sunday_reminder' : 'broadcast';
+      const typeTag = isSundayBatch ? '[SUNDAY-REMINDER]' : '[BROADCAST]';
+
       const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const batchPayload: PowerAutomateBatchPayload = {
         batch_id: batchId,
+        batch_type: batchType,
         count: validItems.length,
         created_at: new Date().toISOString(),
         items: validItems,
@@ -298,9 +303,9 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
 
       const sendResult = await sendResendEmail({
         to: targetDispatchEmail,
-        subject: `[WC-BROADCAST-DISPATCH] ${batchId} (${validItems.length} emails)`,
-        text: `Automated broadcast batch for Power Automate processing.\nBatch ID: ${batchId}\nEmail Count: ${validItems.length}\nCreated At: ${batchPayload.created_at}`,
-        html: `<p>Automated broadcast batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Count:</strong> ${validItems.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
+        subject: `[WC-BROADCAST-DISPATCH] ${typeTag} ${batchId} (${validItems.length} emails)`,
+        text: `Automated ${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'} batch for Power Automate processing.\nBatch ID: ${batchId}\nBatch Type: ${batchType}\nEmail Count: ${validItems.length}\nCreated At: ${batchPayload.created_at}`,
+        html: `<p>Automated <strong>${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'}</strong> batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Batch Type:</strong> ${batchType}</li><li><strong>Count:</strong> ${validItems.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
         attachments: [
           {
             filename: 'batch-emails.json',

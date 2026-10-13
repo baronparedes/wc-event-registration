@@ -242,7 +242,7 @@ describe('service-matrix domain logic', () => {
 
     it('classifies committed slots as service_exception when date is in exceptionDates', () => {
       const exceptionDates = [
-        { exception_date: '2026-09-13', reason: 'Church-wide Anniversary Gathering' },
+        { exception_date: '2026-09-13', reason: 'Ministry-wide Anniversary Gathering' },
       ];
       const grid = computeMatrixGrid(
         sundays,
@@ -258,7 +258,7 @@ describe('service-matrix domain logic', () => {
       const cell = grid.second_sunday['12NN'];
       expect(cell.status).toBe('service_exception');
       expect(cell.isCommitted).toBe(true);
-      expect(cell.exceptionReason).toBe('Church-wide Anniversary Gathering');
+      expect(cell.exceptionReason).toBe('Ministry-wide Anniversary Gathering');
     });
 
     it('prioritizes actual attendance over service_exception if a check-in exists', () => {

@@ -340,7 +340,7 @@ Deno.test(
   'cron-process-email-queue bundles queued messages into a single OUTLOOK_DISPATCH_EMAIL batch with JSON attachment',
   async () => {
     await withFunctionEnv(async () => {
-      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcomechurch.org.ph');
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcome.org.ph');
       const messages: QueueMessage[] = [
         {
           msg_id: 201,
@@ -373,9 +373,10 @@ Deno.test(
         // Exactly 1 email sent to OUTLOOK_DISPATCH_EMAIL
         assertEquals(fetchMock.sentEmails.length, 1);
         const sent = fetchMock.sentEmails[0];
-        assertEquals(sent.to, 'broadcasts@welcomechurch.org.ph');
+        assertEquals(sent.to, 'broadcasts@welcome.org.ph');
         assertEquals(typeof sent.subject, 'string');
         assertEquals(String(sent.subject).includes('[WC-BROADCAST-DISPATCH]'), true);
+        assertEquals(String(sent.subject).includes('[BROADCAST]'), true);
         assertEquals(String(sent.subject).includes('(2 emails)'), true);
 
         // Contains batch-emails.json attachment
@@ -407,7 +408,7 @@ Deno.test(
   'cron-process-email-queue tokenizes Resend template variables when dispatching to OUTLOOK_DISPATCH_EMAIL',
   async () => {
     await withFunctionEnv(async () => {
-      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcomechurch.org.ph');
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcome.org.ph');
       const messages: QueueMessage[] = [
         {
           msg_id: 301,
@@ -433,10 +434,13 @@ Deno.test(
 
         assertEquals(fetchMock.sentEmails.length, 1);
         const sent = fetchMock.sentEmails[0];
+        assertEquals(String(sent.subject).includes('[WC-BROADCAST-DISPATCH]'), true);
+        assertEquals(String(sent.subject).includes('[SUNDAY-REMINDER]'), true);
         const attachments = sent.attachments as Array<{ filename: string; content: string }>;
         const batchPayload = JSON.parse(atob(attachments[0].content));
 
         assertEquals(batchPayload.count, 1);
+        assertEquals(batchPayload.batch_type, 'sunday_reminder');
         assertEquals(batchPayload.items[0].to, 'paul@example.com');
         assertEquals(batchPayload.items[0].subject, 'Schedule for 2026-10-18');
         assertEquals(

@@ -51,7 +51,7 @@ Deno.test('wrapPlainTextAsHtml - wraps text with breaklines in responsive html l
   assertEquals(html.includes('<h2 class="email-title">Service Update</h2>'), true);
   assertEquals(html.includes('Line 1<br />Line 2'), true);
   assertEquals(html.includes('class="email-container"'), true);
-  assertEquals(html.includes('Sent via Welcome Church Hub'), true);
+  assertEquals(html.includes('welcomehub.app'), true);
 });
 
 Deno.test('wrapPlainTextAsHtml - converts URLs in body text to hyperlinks', () => {
@@ -63,7 +63,7 @@ Deno.test('wrapPlainTextAsHtml - converts URLs in body text to hyperlinks', () =
 });
 
 Deno.test('encodeBase64Utf8 - accurately encodes UTF-8 and emoji characters', () => {
-  const text = 'Hello world! 🇵🇭 Welcome Church';
+  const text = 'Hello world! 🇵🇭 Welcome Ministry';
   const encoded = encodeBase64Utf8(text);
   const decoded = new TextDecoder().decode(Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)));
   assertEquals(decoded, text);

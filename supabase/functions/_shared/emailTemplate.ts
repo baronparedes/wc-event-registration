@@ -7,6 +7,7 @@ export interface PowerAutomateBatchItem {
 
 export interface PowerAutomateBatchPayload {
   batch_id: string;
+  batch_type?: 'sunday_reminder' | 'broadcast';
   count: number;
   created_at: string;
   items: PowerAutomateBatchItem[];
@@ -91,7 +92,7 @@ export function linkifyEscapedText(escapedText: string): string {
  * Wraps plain text content into a responsive, clean HTML email layout.
  */
 export function wrapPlainTextAsHtml(text: string, title?: string): string {
-  const escapedTitle = title ? escapeHtml(title) : 'Church Notification';
+  const escapedTitle = title ? escapeHtml(title) : 'Notification';
   const escapedBody = linkifyEscapedText(escapeHtml(text || '')).replace(/\r?\n/g, '<br />');
 
   return `<!DOCTYPE html>
@@ -144,7 +145,7 @@ export function wrapPlainTextAsHtml(text: string, title?: string): string {
       ${escapedBody}
     </div>
     <div class="email-footer">
-      Sent via Welcome Church Hub
+      Sent via <a href="https://welcomehub.app" target="_blank" rel="noopener noreferrer">welcomehub.app</a>
     </div>
   </div>
 </body>
