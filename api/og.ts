@@ -290,7 +290,7 @@ export async function fetchEventMetadataForOg(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -355,7 +355,7 @@ export async function fetchFormMetadataForOg(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -436,6 +436,7 @@ export interface NodeLikeResponse {
 export async function handleOgRequest(
   targetUrlString: string,
   targetRoutePath?: string,
+  outContext?: { isFound?: boolean },
 ): Promise<string> {
   const url = new URL(targetUrlString);
   const rawRoutePath = targetRoutePath || url.searchParams.get('route') || url.pathname;
@@ -467,9 +468,15 @@ export async function handleOgRequest(
 
   if (eventSlug) {
     const event = await fetchEventMetadataForOg(eventSlug, { origin: url.origin });
+    if (event && outContext) {
+      outContext.isFound = true;
+    }
     ogMetadata = buildEventOgMetadata(event, ogMetadata.url);
   } else if (formSlug) {
     const form = await fetchFormMetadataForOg(formSlug, { origin: url.origin });
+    if (form && outContext) {
+      outContext.isFound = true;
+    }
     ogMetadata = buildFormOgMetadata(form, ogMetadata.url);
   }
 
@@ -519,11 +526,15 @@ export default async function handler(
   }
 
   try {
-    const html = await handleOgRequest(targetUrlString, routePath);
+    const outContext = { isFound: false };
+    const html = await handleOgRequest(targetUrlString, routePath, outContext);
+    const cacheControl = outContext.isFound
+      ? 'public, max-age=60, s-maxage=300'
+      : 'no-cache, no-store, max-age=0, must-revalidate';
 
     if (optionalRes && typeof optionalRes.status === 'function') {
       optionalRes.setHeader('Content-Type', 'text/html; charset=utf-8');
-      optionalRes.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300');
+      optionalRes.setHeader('Cache-Control', cacheControl);
       optionalRes.status(200).send(html);
       return;
     }
@@ -532,12 +543,13 @@ export default async function handler(
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=60, s-maxage=300',
+        'Cache-Control': cacheControl,
       },
     });
   } catch {
     if (optionalRes && typeof optionalRes.status === 'function') {
       optionalRes.setHeader('Content-Type', 'text/html; charset=utf-8');
+      optionalRes.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
       optionalRes.status(200).send(FALLBACK_HTML_TEMPLATE);
       return;
     }
@@ -546,6 +558,7 @@ export default async function handler(
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
       },
     });
   }

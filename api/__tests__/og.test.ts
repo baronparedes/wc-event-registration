@@ -477,7 +477,7 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       expect(sentBody).toContain('<title>Tech Fest | Welcome Hub</title>');
     });
 
-    it('falls back to default template when fetching fails', async () => {
+    it('falls back to default template when fetching fails and sets no-cache header', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
 
       const request = new Request(
@@ -487,6 +487,43 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       const response = (await handler(request)) as Response;
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(200);
+      expect(response.headers.get('Cache-Control')).toBe(
+        'no-cache, no-store, max-age=0, must-revalidate',
+      );
+
+      const html = await response.text();
+      expect(html).toContain('<title>Welcome Hub</title>');
+    });
+
+    it('sets no-cache headers when an event is not found to prevent CDN cache poisoning', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-event')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              event: null,
+            }),
+          };
+        }
+        return {
+          ok: true,
+          text: async () =>
+            '<!doctype html><html><head><title>Welcome Hub</title></head><body><div id="root"></div></body></html>',
+        };
+      });
+
+      const request = new Request(
+        'https://www.welcomehub.app/api/og?route=/events/missing-event/register',
+      );
+
+      const response = (await handler(request)) as Response;
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Cache-Control')).toBe(
+        'no-cache, no-store, max-age=0, must-revalidate',
+      );
 
       const html = await response.text();
       expect(html).toContain('<title>Welcome Hub</title>');
