@@ -6,7 +6,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+          "value": "(?i).*(facebookexternalhit|Facebot|meta-externalagent|meta-externalfetcher|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
         }
       ],
       "destination": "/api/og?route=/events/:slug"
@@ -17,7 +17,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+          "value": "(?i).*(facebookexternalhit|Facebot|meta-externalagent|meta-externalfetcher|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
         }
       ],
       "destination": "/api/og?route=/events/:slug/:path*"
@@ -28,7 +28,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+          "value": "(?i).*(facebookexternalhit|Facebot|meta-externalagent|meta-externalfetcher|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
         }
       ],
       "destination": "/api/og?route=/forms/:slug"
@@ -39,7 +39,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
+          "value": "(?i).*(facebookexternalhit|Facebot|meta-externalagent|meta-externalfetcher|Twitterbot|WhatsApp|Viber|TelegramBot|Discordbot|LinkedInBot|Pinterest|Slackbot|Applebot|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|skypeuripreview|quora|redditbot|curl|Wget).*"
         }
       ],
       "destination": "/api/og?route=/forms/:slug/:path*"

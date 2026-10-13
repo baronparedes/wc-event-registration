@@ -30,6 +30,7 @@ export function DropdownMenu({
     top?: number;
     bottom?: number;
     right: number;
+    maxHeight?: number;
   } | null>(null);
 
   useLayoutEffect(() => {
@@ -47,11 +48,13 @@ export function DropdownMenu({
         setCoords({
           bottom: viewportHeight - rect.top + 4,
           right: Math.max(8, window.innerWidth - rect.right),
+          maxHeight: Math.max(120, rect.top - 12),
         });
       } else {
         setCoords({
           top: rect.bottom + 4,
           right: Math.max(8, window.innerWidth - rect.right),
+          maxHeight: Math.max(120, spaceBelow - 12),
         });
       }
     }
@@ -95,13 +98,14 @@ export function DropdownMenu({
               top: coords?.top !== undefined ? `${coords.top}px` : undefined,
               bottom: coords?.bottom !== undefined ? `${coords.bottom}px` : undefined,
               right: coords ? `${coords.right}px` : undefined,
+              maxHeight: coords?.maxHeight !== undefined ? `${coords.maxHeight}px` : undefined,
               visibility: coords ? 'visible' : 'hidden',
             }
           : undefined
       }
       className={twMerge(
         usePortal
-          ? 'z-50 min-w-48 rounded-md border border-border bg-surface shadow-lg'
+          ? 'z-50 min-w-48 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-md border border-border bg-surface shadow-lg'
           : 'absolute right-0 top-full z-40 mt-1 min-w-48 rounded-md border border-border bg-surface shadow-lg',
         menuClassName,
       )}

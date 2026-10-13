@@ -29,12 +29,12 @@ export const DEFAULT_OG_METADATA = {
 };
 
 export const CRAWLER_USER_AGENTS_REGEX =
-  /facebookexternalhit|facebot|twitterbot|viber|whatsapp|telegrambot|discordbot|linkedinbot|slackbot|applebot|pinterestbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|skypeuripreview|quora|redditbot/i;
+  /facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher|twitterbot|viber|whatsapp|telegrambot|discordbot|linkedinbot|slackbot|applebot|pinterestbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|skypeuripreview|quora|redditbot/i;
 
 export const EVENT_DYNAMIC_ROUTE_REGEX =
-  /^\/events\/([^/]+)\/(?:register|register-public|countdown)\/?$/;
+  /^\/events\/([^/]+)(?:\/(?:register|register-public|countdown))?\/?$/;
 
-export const FORM_DYNAMIC_ROUTE_REGEX = /^\/forms\/([^/]+)\/submit\/?$/;
+export const FORM_DYNAMIC_ROUTE_REGEX = /^\/forms\/([^/]+)(?:\/submit)?\/?$/;
 
 export function isCrawlerUserAgent(userAgent: string | null | undefined): boolean {
   if (!userAgent) return false;
@@ -42,12 +42,16 @@ export function isCrawlerUserAgent(userAgent: string | null | undefined): boolea
 }
 
 export function extractEventSlug(pathname: string): string | null {
-  const match = pathname.match(EVENT_DYNAMIC_ROUTE_REGEX);
+  if (!pathname) return null;
+  const cleanPath = pathname.trim().split(/[?#]/)[0];
+  const match = cleanPath.match(EVENT_DYNAMIC_ROUTE_REGEX);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 export function extractFormSlug(pathname: string): string | null {
-  const match = pathname.match(FORM_DYNAMIC_ROUTE_REGEX);
+  if (!pathname) return null;
+  const cleanPath = pathname.trim().split(/[?#]/)[0];
+  const match = cleanPath.match(FORM_DYNAMIC_ROUTE_REGEX);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
@@ -434,10 +438,11 @@ export async function handleOgRequest(
   targetRoutePath?: string,
 ): Promise<string> {
   const url = new URL(targetUrlString);
-  const routePath = targetRoutePath || url.searchParams.get('route') || url.pathname;
+  const rawRoutePath = targetRoutePath || url.searchParams.get('route') || url.pathname;
+  const cleanRoutePath = rawRoutePath.trim().split(/[?#]/)[0];
 
-  const eventSlug = extractEventSlug(routePath);
-  const formSlug = extractFormSlug(routePath);
+  const eventSlug = extractEventSlug(cleanRoutePath);
+  const formSlug = extractFormSlug(cleanRoutePath);
 
   let baseHtml = FALLBACK_HTML_TEMPLATE;
   try {
@@ -454,7 +459,7 @@ export async function handleOgRequest(
     title: DEFAULT_OG_METADATA.title,
     description: DEFAULT_OG_METADATA.description,
     imageUrl: `${url.origin}${DEFAULT_OG_METADATA.fallbackImageRelativePath}`,
-    url: new URL(routePath, url.origin).toString(),
+    url: new URL(cleanRoutePath, url.origin).toString(),
     type: DEFAULT_OG_METADATA.type,
     siteName: DEFAULT_OG_METADATA.siteName,
     twitterCard: DEFAULT_OG_METADATA.twitterCard,

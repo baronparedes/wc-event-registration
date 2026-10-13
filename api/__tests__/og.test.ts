@@ -48,6 +48,12 @@ describe('api/og Serverless Function & SEO Helpers', () => {
           'LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)',
         ),
       ).toBe(true);
+      expect(
+        isCrawlerUserAgent(
+          'Mozilla/5.0 (compatible; meta-externalagent/1.1; +https://developers.facebook.com)',
+        ),
+      ).toBe(true);
+      expect(isCrawlerUserAgent('meta-externalfetcher/1.0')).toBe(true);
       expect(isCrawlerUserAgent('Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)')).toBe(
         true,
       );
@@ -71,31 +77,46 @@ describe('api/og Serverless Function & SEO Helpers', () => {
   });
 
   describe('extractEventSlug', () => {
-    it('extracts slugs from registration, public registration, and countdown routes', () => {
+    it('extracts slugs from registration, public registration, countdown, and root event routes', () => {
       expect(extractEventSlug('/events/tech-summit-2026/register')).toBe('tech-summit-2026');
       expect(extractEventSlug('/events/tech-summit-2026/register/')).toBe('tech-summit-2026');
+      expect(extractEventSlug('/events/tech-summit-2026')).toBe('tech-summit-2026');
+      expect(extractEventSlug('/events/tech-summit-2026/')).toBe('tech-summit-2026');
       expect(extractEventSlug('/events/youth-camp/register-public')).toBe('youth-camp');
       expect(extractEventSlug('/events/sunday-service/countdown')).toBe('sunday-service');
       expect(extractEventSlug('/events/special%20event/register')).toBe('special event');
+      expect(extractEventSlug('/events/tech-summit-2026/register?v=1&ref=facebook')).toBe(
+        'tech-summit-2026',
+      );
+      expect(extractEventSlug('/events/tech-summit-2026?v=1#details')).toBe('tech-summit-2026');
     });
 
     it('returns null for non-matching or admin routes', () => {
       expect(extractEventSlug('/')).toBeNull();
       expect(extractEventSlug('/admin/events/123')).toBeNull();
       expect(extractEventSlug('/events')).toBeNull();
+      expect(extractEventSlug('/events/')).toBeNull();
       expect(extractEventSlug('/forms/sample/submit')).toBeNull();
     });
   });
 
   describe('extractFormSlug', () => {
-    it('extracts slugs from form submission routes', () => {
+    it('extracts slugs from form submission and root form routes', () => {
       expect(extractFormSlug('/forms/volunteer-registration/submit')).toBe(
         'volunteer-registration',
       );
       expect(extractFormSlug('/forms/volunteer-registration/submit/')).toBe(
         'volunteer-registration',
       );
+      expect(extractFormSlug('/forms/volunteer-registration')).toBe('volunteer-registration');
+      expect(extractFormSlug('/forms/volunteer-registration/')).toBe('volunteer-registration');
       expect(extractFormSlug('/forms/retreat%20form/submit')).toBe('retreat form');
+      expect(extractFormSlug('/forms/volunteer-registration/submit?v=1')).toBe(
+        'volunteer-registration',
+      );
+      expect(extractFormSlug('/forms/volunteer-registration?ref=viber#form')).toBe(
+        'volunteer-registration',
+      );
     });
 
     it('returns null for non-matching routes', () => {
@@ -103,6 +124,7 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       expect(extractFormSlug('/events/tech-summit/register')).toBeNull();
       expect(extractFormSlug('/admin/forms/123')).toBeNull();
       expect(extractFormSlug('/forms')).toBeNull();
+      expect(extractFormSlug('/forms/')).toBeNull();
     });
   });
 
