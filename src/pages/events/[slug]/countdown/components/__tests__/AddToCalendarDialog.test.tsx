@@ -111,4 +111,19 @@ describe('AddToCalendarDialog', () => {
     fireEvent.click(appleButton);
     expect(downloadIcsFile).toHaveBeenCalledWith(mockEvent);
   });
+
+  it('applies hover:scale-100 on provider buttons to prevent overflow scrollbars', () => {
+    render(<AddToCalendarDialog event={mockEvent} />);
+    fireEvent.click(screen.getByRole('button', { name: /Add to Calendar/i }));
+
+    const googleButton = screen.getByRole('button', { name: /Google Calendar/i });
+    const outlookButton = screen.getByRole('button', { name: /Outlook/i });
+    const yahooButton = screen.getByRole('button', { name: /Yahoo/i });
+    const appleButton = screen.getByRole('button', { name: /Apple Calendar \(\.ics\)/i });
+
+    expect(googleButton).toHaveClass('hover:scale-100');
+    expect(outlookButton).toHaveClass('hover:scale-100');
+    expect(yahooButton).toHaveClass('hover:scale-100');
+    expect(appleButton).toHaveClass('hover:scale-100');
+  });
 });
