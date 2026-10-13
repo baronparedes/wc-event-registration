@@ -1,12 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/shared/database.types.ts';
-
 import {
   type EnqueueEmailInput,
   enqueueEmailNotificationsBatch,
   triggerEmailProcessor,
-} from '../../_shared/emailQueue.ts';
+} from '@/shared/emailQueue.ts';
+
 import { resolveTargetEmails } from '../targets/index.ts';
 import type { SendAppNotificationPayload } from '../types.ts';
 
