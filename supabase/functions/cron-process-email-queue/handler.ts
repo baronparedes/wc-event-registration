@@ -217,7 +217,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
         }
 
         let bodyHtml: string | undefined;
-        let emailSubject = payload.subject;
+        let emailSubject: string;
 
         if (payload.template_slug) {
           const { data: template, error: templateError } = await queueClient
