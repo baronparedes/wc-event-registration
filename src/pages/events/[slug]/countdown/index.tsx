@@ -20,17 +20,30 @@ export function EventCountdownPage() {
   const isRegistrationOpen = availability?.status === 'available';
   const coverUrl = getEventCoverPublicUrl(event?.cover_image_key);
 
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  const [isEventStarted, setIsEventStarted] = useState(false);
-  const [isPastDate, setIsPastDate] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+
+  const startsAtDate = event?.starts_at ? new Date(event.starts_at) : null;
+  const timeDifference = startsAtDate ? startsAtDate.getTime() - now : 0;
+
+  const isSameDay = startsAtDate
+    ? new Date(now).getFullYear() === startsAtDate.getFullYear() &&
+      new Date(now).getMonth() === startsAtDate.getMonth() &&
+      new Date(now).getDate() === startsAtDate.getDate()
+    : false;
+
+  const isAfterStartDay = startsAtDate ? now > startsAtDate.getTime() && !isSameDay : false;
+
+  const isPastDate = isAfterStartDay;
+  const isEventStarted = timeDifference <= 0 && startsAtDate !== null && !isPastDate;
+
+  const timeLeft = {
+    days: timeDifference > 0 ? Math.floor(timeDifference / (1000 * 60 * 60 * 24)) : 0,
+    hours: timeDifference > 0 ? Math.floor((timeDifference / (1000 * 60 * 60)) % 24) : 0,
+    minutes: timeDifference > 0 ? Math.floor((timeDifference / 1000 / 60) % 60) : 0,
+    seconds: timeDifference > 0 ? Math.floor((timeDifference / 1000) % 60) : 0,
+  };
 
   const eventSlug = event?.slug;
   useEffect(() => {
@@ -50,50 +63,21 @@ export function EventCountdownPage() {
   useEffect(() => {
     if (!event || !event.starts_at) return;
 
-    const startsAtDate = new Date(event.starts_at);
+    // We update every second only if the event hasn't already passed
+    if (isPastDate || isEventStarted) return;
 
-    const updateTimer = () => {
-      const now = new Date();
-      const timeDifference = startsAtDate.getTime() - now.getTime();
-
-      // Check if the current date is strictly after the event's start date
-      // (Ignoring time, just based on calendar day)
-      const isSameDay =
-        now.getFullYear() === startsAtDate.getFullYear() &&
-        now.getMonth() === startsAtDate.getMonth() &&
-        now.getDate() === startsAtDate.getDate();
-
-      const isAfterStartDay = now.getTime() > startsAtDate.getTime() && !isSameDay;
-
-      if (isAfterStartDay) {
-        setIsPastDate(true);
-        navigate(ROUTE_PATHS.home, { replace: true });
-        return false;
-      }
-
-      if (timeDifference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        setIsEventStarted(true);
-        return false;
-      }
-
-      setTimeLeft({
-        days: Math.floor(timeDifference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((timeDifference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((timeDifference / 1000 / 60) % 60),
-        seconds: Math.floor((timeDifference / 1000) % 60),
-      });
-
-      return true;
-    };
-
-    const shouldContinue = updateTimer();
-    if (!shouldContinue) return;
-
-    const timer = setInterval(updateTimer, 1000);
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
 
     return () => clearInterval(timer);
-  }, [event, navigate]);
+  }, [event, isPastDate, isEventStarted]);
+
+  useEffect(() => {
+    if (isPastDate) {
+      navigate(ROUTE_PATHS.home, { replace: true });
+    }
+  }, [isPastDate, navigate]);
 
   if (isLoading) {
     return (
