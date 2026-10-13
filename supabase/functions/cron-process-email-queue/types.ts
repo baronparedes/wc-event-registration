@@ -1,18 +1,10 @@
-export type NotificationCategory = 'sunday_reminder' | 'broadcast';
+import type { EmailQueuePayload, NotificationCategory } from '../_shared/emailQueue.ts';
+
+export type { EmailQueuePayload, NotificationCategory };
 
 export type RpcResult<T> = {
   data: T | null;
   error: { message: string } | null;
-};
-
-export type EmailQueuePayload = {
-  event_type: string;
-  category?: NotificationCategory | string;
-  recipient: string;
-  template_slug?: string;
-  subject?: string;
-  text?: string;
-  metadata?: Record<string, unknown>;
 };
 
 export type EmailQueueMessage = {

@@ -1,5 +1,10 @@
 import { HTTP_STATUS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import {
+  type SupabaseRpcClient,
+  enqueueEmailNotification,
+  triggerEmailProcessor,
+} from '../_shared/emailQueue.ts';
 import { errorResponse, jsonResponse } from '../_shared/http.ts';
 import { z } from '../_shared/validation.ts';
 
@@ -17,19 +22,6 @@ const enqueueEventSchema = z
     message: 'Either template_slug or text is required',
   });
 
-type RpcResult<T> = {
-  data: T | null;
-  error: { message: string } | null;
-};
-
-type EnqueueEventClient = {
-  rpc(
-    functionName: 'enqueue_email_notification',
-    args: { payload: Record<string, unknown> },
-  ): Promise<RpcResult<number>>;
-  rpc(functionName: 'trigger_email_processor'): Promise<RpcResult<null>>;
-};
-
 export async function handleEnqueueEvent(req: Request): Promise<Response> {
   const hookResult = await useEdgeHook({
     req,
@@ -45,11 +37,10 @@ export async function handleEnqueueEvent(req: Request): Promise<Response> {
   }
 
   const { client, data, corsHeaders, requestId } = hookResult;
-  const enqueueClient = client as unknown as EnqueueEventClient;
+  const enqueueClient = client as unknown as SupabaseRpcClient;
 
   try {
-    // Construct the payload for the queue
-    const payload = {
+    const { messageId, error: queueError } = await enqueueEmailNotification(enqueueClient, {
       event_type: data.event_type,
       recipient: data.recipient,
       template_slug: data.template_slug,
@@ -57,14 +48,7 @@ export async function handleEnqueueEvent(req: Request): Promise<Response> {
       text: data.text,
       metadata: data.metadata,
       idempotency_key: data.idempotency_key,
-    };
-
-    const { data: queueResult, error: queueError } = await enqueueClient.rpc(
-      'enqueue_email_notification',
-      {
-        payload,
-      },
-    );
+    });
 
     if (queueError) {
       console.error('[enqueue-event] Failed to enqueue message', {
@@ -78,20 +62,10 @@ export async function handleEnqueueEvent(req: Request): Promise<Response> {
       );
     }
 
-    // Attempt to trigger immediate processing (fire-and-forget via pg_net helper)
-    const { error: triggerError } = await enqueueClient.rpc('trigger_email_processor');
-    if (triggerError) {
-      console.warn(
-        '[enqueue-event] Non-fatal error triggering email processor immediately:',
-        triggerError,
-      );
-    }
+    // Trigger processing via database helper (directEdgeInvoke false to preserve fire-and-forget RPC behavior)
+    await triggerEmailProcessor(enqueueClient, { directEdgeInvoke: false });
 
-    return jsonResponse(
-      corsHeaders,
-      { success: true, message_id: queueResult },
-      HTTP_STATUS.created,
-    );
+    return jsonResponse(corsHeaders, { success: true, message_id: messageId }, HTTP_STATUS.created);
   } catch (error) {
     console.error('[enqueue-event] Unexpected error', {
       requestId,
