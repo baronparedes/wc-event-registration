@@ -160,11 +160,11 @@ describe('formatAssignedSeat & ServiceMatrixCell', () => {
       isCommitted: true,
       sundayKey: 'fourth_sunday',
       timeSlot: '12NN',
-      exceptionReason: 'Special Church Gathering',
+      exceptionReason: 'Special Gathering',
     };
     rerender(<ServiceMatrixCell cell={exceptionCell} />);
     expect(screen.getByText('Service Exception')).toBeInTheDocument();
-    expect(screen.getByText('Special Church Gathering')).toBeInTheDocument();
+    expect(screen.getByText('Special Gathering')).toBeInTheDocument();
 
     const naCell: MatrixCellData = {
       status: 'not_applicable',

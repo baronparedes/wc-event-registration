@@ -41,9 +41,7 @@ const formattableExtensions = /\.(ts|tsx|js|jsx|mjs|json|css|md|sql)$/;
 const targetFormattable = changedFiles.filter((f) => formattableExtensions.test(f));
 
 const lintableExtensions = /\.(ts|tsx|js|jsx|mjs)$/;
-const targetLintable = changedFiles.filter(
-  (f) => lintableExtensions.test(f) && !f.startsWith('supabase/functions/'),
-);
+const targetLintable = changedFiles.filter((f) => lintableExtensions.test(f));
 
 const targetReactFiles = changedFiles.filter((f) => f.startsWith('src/') && /\.(ts|tsx)$/.test(f));
 
@@ -156,7 +154,7 @@ if (targetLintable.length > 0) {
   parallelTasks.push({
     label: 'Linting (changed files)',
     command: 'npx',
-    args: ['eslint', ...targetLintable],
+    args: ['eslint', '--no-warn-ignored', ...targetLintable],
   });
 }
 

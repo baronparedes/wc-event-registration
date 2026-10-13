@@ -21,6 +21,16 @@ const callManagePushSubscription = createEdgeFunctionCaller<
   { success: boolean }
 >('manage-push-subscription');
 
+const callTriggerEmailWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-email-queue');
+
+const callTriggerPushWorker = createEdgeFunctionCaller<
+  Record<string, never>,
+  { success: boolean; processed: number }
+>('cron-process-push-reminders');
+
 export async function sendAppNotification(
   payload: SendAppNotificationPayload,
 ): Promise<SendAppNotificationResponse> {
@@ -28,6 +38,13 @@ export async function sendAppNotification(
 
   if (!data || !data.success) {
     throw new Error('Failed to send broadcast notification');
+  }
+
+  // Trigger background workers immediately to drain the queue without waiting for cron
+  if (payload.channels?.includes('email')) {
+    callTriggerEmailWorker({}).catch((workerError) => {
+      console.warn('[sendAppNotification] Email worker trigger warning:', workerError);
+    });
   }
 
   return data;
@@ -130,16 +147,6 @@ export async function markAllNotificationsAsRead(): Promise<void> {
 
   if (error) throw error;
 }
-
-const callTriggerEmailWorker = createEdgeFunctionCaller<
-  Record<string, never>,
-  { success: boolean; processed: number }
->('cron-process-email-queue');
-
-const callTriggerPushWorker = createEdgeFunctionCaller<
-  Record<string, never>,
-  { success: boolean; processed: number }
->('cron-process-push-reminders');
 
 export async function getSundaySchedulePreview(
   targetSundayDate?: string,

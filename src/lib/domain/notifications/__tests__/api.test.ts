@@ -10,20 +10,24 @@ import {
   sendAppNotification,
 } from '../api';
 
-const { mockSendCaller, mockPushCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
-  const sendCaller = vi.fn();
-  const pushCaller = vi.fn();
-  const createCaller = vi.fn((fnName: string) => {
-    if (fnName === 'send-app-notification') return sendCaller;
-    if (fnName === 'manage-push-subscription') return pushCaller;
-    return vi.fn();
+const { mockSendCaller, mockPushCaller, mockCronEmailCaller, mockCreateEdgeFunctionCaller } =
+  vi.hoisted(() => {
+    const sendCaller = vi.fn();
+    const pushCaller = vi.fn();
+    const cronEmailCaller = vi.fn();
+    const createCaller = vi.fn((fnName: string) => {
+      if (fnName === 'send-app-notification') return sendCaller;
+      if (fnName === 'manage-push-subscription') return pushCaller;
+      if (fnName === 'cron-process-email-queue') return cronEmailCaller;
+      return vi.fn();
+    });
+    return {
+      mockSendCaller: sendCaller,
+      mockPushCaller: pushCaller,
+      mockCronEmailCaller: cronEmailCaller,
+      mockCreateEdgeFunctionCaller: createCaller,
+    };
   });
-  return {
-    mockSendCaller: sendCaller,
-    mockPushCaller: pushCaller,
-    mockCreateEdgeFunctionCaller: createCaller,
-  };
-});
 
 vi.mock('@/lib/infrastructure', () => ({
   createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
@@ -85,6 +89,24 @@ describe('Notifications Domain API', () => {
           targetType: 'all',
         }),
       ).rejects.toThrow('Failed to send broadcast notification');
+    });
+
+    it('triggers email worker when channels include email', async () => {
+      mockSendCaller.mockResolvedValueOnce({
+        success: true,
+        count: 5,
+        emailCount: 5,
+      });
+      mockCronEmailCaller.mockResolvedValueOnce({ success: true, processed: 5 });
+
+      await sendAppNotification({
+        title: 'Title',
+        message: 'Message',
+        channels: ['email'],
+        targetType: 'all',
+      });
+
+      expect(mockCronEmailCaller).toHaveBeenCalledWith({});
     });
   });
 

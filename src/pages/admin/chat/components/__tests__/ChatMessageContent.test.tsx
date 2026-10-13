@@ -37,7 +37,7 @@ describe('ChatMessageContent', () => {
   it('renders ordered and unordered lists', () => {
     const markdown = `
 1. **Events Management**: Look up upcoming events
-2. **Member Search**: Search church members
+2. **Member Search**: Search members
 
 - First bullet
 - Second bullet

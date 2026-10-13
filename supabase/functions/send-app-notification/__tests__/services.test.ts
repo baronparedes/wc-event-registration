@@ -210,6 +210,14 @@ Deno.test(
 
       const enqueueCalls = calls.filter((c) => c.name === 'enqueue_email_notification');
       assertEquals(enqueueCalls.length, 2);
+      const firstPayload = (enqueueCalls[0].args as { payload: Record<string, unknown> }).payload;
+      assertEquals(firstPayload.category, 'broadcast');
+      assertEquals(firstPayload.metadata, {
+        broadcast_title: 'Update',
+        broadcast_message: 'New info',
+        url: undefined,
+        target_type: 'event',
+      });
 
       const triggerCall = calls.find((c) => c.name === 'trigger_email_processor');
       assertEquals(!!triggerCall, true);

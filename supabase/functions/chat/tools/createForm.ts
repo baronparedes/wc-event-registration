@@ -86,7 +86,7 @@ export function createCreateFormTool({ client, requestId, userId }: ToolContext)
       .enum(['members', 'public', 'members_and_public'])
       .default('members')
       .describe(
-        'Allowed respondent audience: "members" (church members only), "public" (open to public), or "members_and_public" (both). Defaults to "members".',
+        'Allowed respondent audience: "members" (members only), "public" (open to public), or "members_and_public" (both). Defaults to "members".',
       ),
     duplicatePolicy: z
       .enum(['block', 'allow_update', 'allow_multiple', 'allow_multiple_update'])

@@ -58,7 +58,7 @@ Deno.test(
     {
       LOCAL_BROADCAST: 'false',
       RESEND_API_KEY: 'test_resend_key',
-      RESEND_FROM_EMAIL: 'noreply@welcomechurch.ph',
+      RESEND_FROM_EMAIL: 'noreply@welcome.ph',
       NODE_ENV: 'production',
       ENVIRONMENT: 'production',
       SUPABASE_URL: 'https://live.supabase.co',
