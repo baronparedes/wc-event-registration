@@ -51,3 +51,9 @@ expect(result.current).toBe(false);
 **Challenge:** Testing `EventCoverPhotoUpload` required triggering its internal sub-component (`CoverPhotoCropDialog`) to fire the `onApplyCrop` handler.
 **Learning:** React Testing Library is constrained when a sub-component behaves as an uncontrolled overlay if its actual rendering is complex or relies on external APIs (like `html-to-image`).
 **Pattern:** Mock the complex sub-component globally using `vi.mock('../CoverPhotoCropDialog', () => { ... })` to return a simpler inline element that explicitly exposes buttons to trigger the prop functions, allowing easy simulation of complex async child behavior within the parent test.
+
+## 2024-10-13 - Testing Custom React Contexts
+
+**Challenge:** Missing test coverage on `useImageCanvasContext` related to throwing an error outside a provider or properly retrieving values.
+**Learning:** Context value hooks often contain specific logic for error handling when invoked outside their matching Provider.
+**Pattern:** To reach full coverage on custom contexts, use `renderHook` from React Testing Library in combination with `toThrow` to test the non-provider exception case, and use the `wrapper` configuration option in `renderHook` to verify behavior inside the provider. Suppress console output for the expected error to prevent cluttering standard test runs.
