@@ -43,6 +43,12 @@ export async function sendEmailNotifications({
               recipient: email,
               subject: payload.title,
               text: emailText,
+              metadata: {
+                broadcast_title: payload.title,
+                broadcast_message: payload.message,
+                url: payload.url,
+                target_type: payload.targetType,
+              },
             },
           });
 

@@ -4,6 +4,7 @@ import {
   encodeBase64Utf8,
   escapeHtml,
   fetchResendTemplate,
+  linkifyEscapedText,
   resetTemplateCache,
   tokenizeTemplate,
   wrapPlainTextAsHtml,
@@ -33,13 +34,32 @@ Deno.test('escapeHtml - escapes HTML special characters', () => {
   );
 });
 
+Deno.test('linkifyEscapedText - turns URLs into hyperlinks safely', () => {
+  const input = 'Check out https://welcomehub.app/events/123 for details.';
+  const output = linkifyEscapedText(input);
+  assertEquals(
+    output,
+    'Check out <a href="https://welcomehub.app/events/123" style="color: #2563eb; text-decoration: underline;" target="_blank" rel="noopener noreferrer">https://welcomehub.app/events/123</a> for details.',
+  );
+});
+
 Deno.test('wrapPlainTextAsHtml - wraps text with breaklines in responsive html layout', () => {
   const plain = 'Line 1\nLine 2';
   const html = wrapPlainTextAsHtml(plain, 'Service Update');
 
   assertEquals(html.includes('<title>Service Update</title>'), true);
+  assertEquals(html.includes('<h2 class="email-title">Service Update</h2>'), true);
   assertEquals(html.includes('Line 1<br />Line 2'), true);
   assertEquals(html.includes('class="email-container"'), true);
+  assertEquals(html.includes('Sent via Welcome Church Hub'), true);
+});
+
+Deno.test('wrapPlainTextAsHtml - converts URLs in body text to hyperlinks', () => {
+  const plain = 'Please visit https://welcomehub.app for updates.';
+  const html = wrapPlainTextAsHtml(plain);
+
+  assertEquals(html.includes('<h2 class="email-title">'), false);
+  assertEquals(html.includes('<a href="https://welcomehub.app"'), true);
 });
 
 Deno.test('encodeBase64Utf8 - accurately encodes UTF-8 and emoji characters', () => {

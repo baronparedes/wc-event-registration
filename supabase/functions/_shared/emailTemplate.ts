@@ -77,11 +77,22 @@ export function tokenizeTemplate(
 }
 
 /**
+ * Converts URLs within safely escaped text into clickable hyperlinks.
+ */
+export function linkifyEscapedText(escapedText: string): string {
+  const urlPattern = /(https?:\/\/[^\s<]+)/g;
+  return escapedText.replace(
+    urlPattern,
+    '<a href="$1" style="color: #2563eb; text-decoration: underline;" target="_blank" rel="noopener noreferrer">$1</a>',
+  );
+}
+
+/**
  * Wraps plain text content into a responsive, clean HTML email layout.
  */
 export function wrapPlainTextAsHtml(text: string, title?: string): string {
   const escapedTitle = title ? escapeHtml(title) : 'Church Notification';
-  const escapedBody = escapeHtml(text || '').replace(/\r?\n/g, '<br />');
+  const escapedBody = linkifyEscapedText(escapeHtml(text || '')).replace(/\r?\n/g, '<br />');
 
   return `<!DOCTYPE html>
 <html>
@@ -106,16 +117,34 @@ export function wrapPlainTextAsHtml(text: string, title?: string): string {
       border: 1px solid #e2e8f0;
       padding: 32px;
     }
+    .email-title {
+      margin: 0 0 16px 0;
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
     .email-body {
       font-size: 16px;
       word-break: break-word;
+    }
+    .email-footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 13px;
+      color: #64748b;
     }
   </style>
 </head>
 <body>
   <div class="email-container">
+    ${title ? `<h2 class="email-title">${escapedTitle}</h2>` : ''}
     <div class="email-body">
       ${escapedBody}
+    </div>
+    <div class="email-footer">
+      Sent via Welcome Church Hub
     </div>
   </div>
 </body>

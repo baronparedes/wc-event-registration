@@ -164,6 +164,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           return;
         }
 
+        const isSundayReminder = typeof sundayDate === 'string' && sundayDate.length > 0;
         const sendResult = await sendResendEmail({
           to: payload.recipient,
           subject: emailSubject,
@@ -172,7 +173,7 @@ export async function handleCronProcessEmailQueue(req: Request): Promise<Respons
           variables: payload.metadata,
           data: payload.metadata,
           metadata: payload.metadata,
-          targetType: 'sunday-schedule-reminder',
+          targetType: isSundayReminder ? 'sunday-schedule-reminder' : 'broadcast-notification',
         });
 
         if (!sendResult.ok) {
