@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { BarChart3, Calendar, CheckCircle2, Table } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge, ButtonGroup } from '@/components/ui';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
 import { SundayCommitmentChart } from './SundayCommitmentChart';
@@ -59,38 +59,19 @@ export function SundayForecastCard({
 
         <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
           {/* Table / Chart View Mode Toggle */}
-          <div
-            role="group"
-            aria-label="View mode toggle"
-            className="inline-flex items-center rounded-lg border border-border bg-surface-hover/50 p-0.5"
+          <ButtonGroup<'table' | 'chart'>
+            value={viewMode}
+            onChange={setViewMode}
+            ariaLabel="View mode toggle"
+            size="sm"
           >
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              aria-pressed={viewMode === 'table'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                viewMode === 'table'
-                  ? 'bg-primary text-white shadow-xs font-bold'
-                  : 'text-muted hover:text-text hover:bg-surface-hover/80'
-              }`}
-            >
-              <Table className="h-3.5 w-3.5" />
-              <span>Table</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('chart')}
-              aria-pressed={viewMode === 'chart'}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                viewMode === 'chart'
-                  ? 'bg-primary text-white shadow-xs font-bold'
-                  : 'text-muted hover:text-text hover:bg-surface-hover/80'
-              }`}
-            >
-              <BarChart3 className="h-3.5 w-3.5" />
-              <span>Chart</span>
-            </button>
-          </div>
+            <ButtonGroup.Item value="table" icon={<Table className="h-3.5 w-3.5" />}>
+              Table
+            </ButtonGroup.Item>
+            <ButtonGroup.Item value="chart" icon={<BarChart3 className="h-3.5 w-3.5" />}>
+              Chart
+            </ButtonGroup.Item>
+          </ButtonGroup>
 
           {/* Overall Deficit / Target Badge */}
           {hasDeficit ? (

@@ -91,3 +91,17 @@ export type ServiceExceptionDate = {
   reason: string;
   created_at: string;
 };
+
+export type MissedServiceCommitment = {
+  user_id: string;
+  member_id: string;
+  full_name: string;
+  nickname: string | null;
+  role: string;
+  phone: string | null;
+  avatar_object_key: string | null;
+  service_date: string;
+  time_slot: string;
+  status: 'absent' | 'excused';
+  category: string | null;
+};

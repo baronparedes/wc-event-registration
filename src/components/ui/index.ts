@@ -1,4 +1,12 @@
 export { Button, type ButtonVariant } from './Button';
+export {
+  ButtonGroup,
+  ButtonGroupItem,
+  type ButtonGroupProps,
+  type ButtonGroupItemProps,
+  type ButtonGroupOption,
+  type ButtonGroupSize,
+} from './ButtonGroup';
 export { CheckboxField } from './CheckboxField';
 export { FormInputField } from './FormInputField';
 export { FormMultiSelectDropdownField } from './FormMultiSelectDropdownField';

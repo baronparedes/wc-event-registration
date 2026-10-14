@@ -23,8 +23,11 @@ vi.mock('@/hooks/domain/auth', () => ({
 }));
 
 const mockUseServiceDashboardQuery = vi.fn();
+const mockUseMissedServiceCommitmentsQuery = vi.fn();
 vi.mock('@/hooks/domain/services', () => ({
   useServiceDashboardQuery: (...args: unknown[]) => mockUseServiceDashboardQuery(...args),
+  useMissedServiceCommitmentsQuery: (...args: unknown[]) =>
+    mockUseMissedServiceCommitmentsQuery(...args),
 }));
 
 const queryClient = new QueryClient();
@@ -32,6 +35,7 @@ const queryClient = new QueryClient();
 describe('AdminServicesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseMissedServiceCommitmentsQuery.mockReturnValue({ data: [], isLoading: false });
 
     vi.mocked(useAdminAuthQuery).mockReturnValue({
       data: {

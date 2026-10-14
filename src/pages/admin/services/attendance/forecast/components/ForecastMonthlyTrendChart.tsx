@@ -14,7 +14,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import { Badge } from '@/components/ui';
+import { Badge, ButtonGroup } from '@/components/ui';
 import type { TimeSlot } from '@/hooks/domain/members';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
@@ -421,27 +421,16 @@ export function ForecastMonthlyTrendChart({
 
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 shrink-0 w-full sm:w-auto">
           {/* Session Slot Toggle */}
-          <div
-            role="group"
-            aria-label="Session filter"
-            className="inline-flex items-center rounded-lg border border-border bg-surface-hover/50 p-0.5"
-          >
-            {SESSION_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setSelectedSlot(opt.id)}
-                aria-pressed={selectedSlot === opt.id}
-                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-                  selectedSlot === opt.id
-                    ? 'bg-primary text-white shadow-xs font-bold'
-                    : 'text-muted hover:text-text hover:bg-surface-hover/80'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <ButtonGroup<'ALL' | TimeSlot>
+            value={selectedSlot}
+            onChange={setSelectedSlot}
+            ariaLabel="Session filter"
+            size="sm"
+            options={SESSION_OPTIONS.map((opt) => ({
+              value: opt.id,
+              label: opt.label,
+            }))}
+          />
 
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted">
             <span>Avg Fulfillment:</span>

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 
-import type { ServiceAttendance } from './types';
+import type { MissedServiceCommitment, ServiceAttendance } from './types';
 
 export function escapeServiceCsvValue(value: string | null | undefined): string {
   if (value === null || value === undefined) {
@@ -170,6 +170,71 @@ export function buildFailedServiceAttendanceCsvExport(
 
   const timestamp = format(new Date(), 'yyyyMMdd-HHmmss');
   const filename = `failed-service-attendance-migration-${timestamp}.csv`;
+
+  return { csvText, filename };
+}
+
+export interface BuildMissedServiceCommitmentsCsvExportParams {
+  records: MissedServiceCommitment[];
+  startDate?: string;
+  endDate?: string;
+}
+
+export function buildMissedServiceCommitmentsCsvExport(
+  params: BuildMissedServiceCommitmentsCsvExportParams,
+): {
+  csvText: string;
+  filename: string;
+} {
+  const { records, startDate, endDate } = params;
+
+  const sortedRecords = [...records].sort((a, b) => {
+    if (a.service_date !== b.service_date) {
+      return a.service_date.localeCompare(b.service_date);
+    }
+    if (a.time_slot !== b.time_slot) {
+      return a.time_slot.localeCompare(b.time_slot);
+    }
+    return a.full_name.localeCompare(b.full_name);
+  });
+
+  const headers = [
+    'Member ID',
+    'Full Name',
+    'Nickname',
+    'Role',
+    'Category',
+    'Service Date',
+    'Committed Time Slot',
+    'Contact Number',
+    'Status',
+  ];
+
+  const rows: string[][] = [
+    headers,
+    ...sortedRecords.map((r) => [
+      r.member_id || '',
+      r.full_name || '',
+      r.nickname || '',
+      r.role || '',
+      r.category || '',
+      r.service_date || '',
+      r.time_slot || '',
+      r.phone || '',
+      r.status === 'excused' ? 'Excused' : 'Absent',
+    ]),
+  ];
+
+  const csvText = rows
+    .map((row) => row.map((val) => escapeServiceCsvValue(val)).join(','))
+    .join('\n');
+
+  let filename = 'service-missed-commitments.csv';
+  if (startDate && endDate && startDate === endDate) {
+    filename = `service-missed-commitments-${startDate}.csv`;
+  } else if (startDate && endDate) {
+    filename = `service-missed-commitments-${startDate}_to_${endDate}.csv`;
+  }
 
   return { csvText, filename };
 }
