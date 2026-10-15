@@ -59,7 +59,8 @@ export function escapeHtml(str: string): string {
 }
 
 /**
- * Replaces {{variable}} and {{{variable}}} placeholders with matching values from variables dictionary.
+ * Replaces {{variable}} and {{{variable}}} placeholders, and handles simple {{#key}}...{{/key}}
+ * and {{^key}}...{{/key}} conditional blocks with matching values from variables dictionary.
  */
 export function tokenizeTemplate(
   templateStr: string,
@@ -68,7 +69,38 @@ export function tokenizeTemplate(
   if (!templateStr) return '';
   if (!variables) return templateStr;
 
-  return templateStr.replace(/\{\{\{?\s*([a-zA-Z0-9_.-]+)\s*\}?\}\}/g, (_, key) => {
+  // 1. Process conditional sections: {{#key}}...{{/key}}
+  let result = templateStr.replace(
+    /\{\{#([a-zA-Z0-9_.-]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g,
+    (_, key, content) => {
+      const val = variables[key];
+      const isTruthy =
+        val !== undefined &&
+        val !== null &&
+        val !== false &&
+        val !== '' &&
+        (!Array.isArray(val) || val.length > 0);
+      return isTruthy ? content : '';
+    },
+  );
+
+  // 2. Process inverted sections: {{^key}}...{{/key}}
+  result = result.replace(
+    /\{\{\^([a-zA-Z0-9_.-]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g,
+    (_, key, content) => {
+      const val = variables[key];
+      const isFalsy =
+        val === undefined ||
+        val === null ||
+        val === false ||
+        val === '' ||
+        (Array.isArray(val) && val.length === 0);
+      return isFalsy ? content : '';
+    },
+  );
+
+  // 3. Process variable replacements: {{key}} and {{{key}}}
+  return result.replace(/\{\{\{?\s*([a-zA-Z0-9_.-]+)\s*\}?\}\}/g, (_, key) => {
     const val = variables[key];
     if (val === undefined || val === null) {
       return '';
@@ -89,11 +121,113 @@ export function linkifyEscapedText(escapedText: string): string {
 }
 
 /**
+ * Resolves a URL to an absolute URL targeting Welcome Hub if it is a relative path.
+ */
+export function toAbsoluteUrl(url?: string | null, baseUrl?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const base = (
+    baseUrl ||
+    Deno.env.get('APP_URL') ||
+    Deno.env.get('PUBLIC_APP_URL') ||
+    'https://welcomehub.app'
+  ).replace(/\/+$/, '');
+
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${base}${path}`;
+}
+
+/**
+ * Derives a user-friendly Call-To-Action (CTA) button label from a destination URL or path.
+ */
+export function resolveActionText(url?: string | null): string {
+  if (!url) return 'View Details';
+  const clean = url.trim().toLowerCase();
+  if (clean.includes('/events/') || clean.includes('/event/')) {
+    return 'View Event';
+  }
+  if (clean.includes('/profile')) {
+    return 'View Profile';
+  }
+  if (clean.includes('/register')) {
+    return 'Register Now';
+  }
+  if (clean.includes('/forms/') || clean.includes('/form/')) {
+    return 'Open Form';
+  }
+  if (clean.includes('/admin/')) {
+    return 'Open Admin Dashboard';
+  }
+  if (clean === '/' || clean === 'https://welcomehub.app' || clean === 'https://welcomehub.app/') {
+    return 'Open Welcome Hub';
+  }
+  return 'View Details';
+}
+
+export interface WrapPlainTextAsHtmlOptions {
+  actionUrl?: string | null;
+  actionText?: string | null;
+  baseUrl?: string | null;
+}
+
+/**
  * Wraps plain text content into a responsive, clean HTML email layout.
  */
-export function wrapPlainTextAsHtml(text: string, title?: string): string {
+export function wrapPlainTextAsHtml(
+  text: string,
+  title?: string,
+  options?: WrapPlainTextAsHtmlOptions,
+): string {
   const escapedTitle = title ? escapeHtml(title) : 'Notification';
-  const escapedBody = linkifyEscapedText(escapeHtml(text || '')).replace(/\r?\n/g, '<br />');
+
+  let cleanText = (text || '').trim();
+  let actionUrl = options?.actionUrl?.trim() || '';
+
+  // If actionUrl wasn't explicitly provided, check if text ends with a trailing URL / relative path
+  if (!actionUrl) {
+    const trailingUrlMatch = cleanText.match(
+      /(?:^|\r?\n\r?\n)(\/[a-zA-Z0-9_\-./?=&%#]+|https?:\/\/[^\s<]+)\s*$/,
+    );
+    if (trailingUrlMatch && trailingUrlMatch[1]) {
+      actionUrl = trailingUrlMatch[1];
+      cleanText = cleanText.slice(0, cleanText.length - trailingUrlMatch[0].length).trim();
+    }
+  } else {
+    // If actionUrl was provided, strip any trailing occurrence of it from cleanText
+    const escapedActionUrl = actionUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const trailingRegex = new RegExp(`(?:\\r?\\n\\r?\\n)?${escapedActionUrl}\\s*$`, 'i');
+    cleanText = cleanText.replace(trailingRegex, '').trim();
+
+    // Also strip if cleanText ends with the absolute version of actionUrl
+    const absUrl = toAbsoluteUrl(actionUrl, options?.baseUrl || undefined);
+    if (absUrl && absUrl !== actionUrl) {
+      const escapedAbs = absUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const trailingAbsRegex = new RegExp(`(?:\\r?\\n\\r?\\n)?${escapedAbs}\\s*$`, 'i');
+      cleanText = cleanText.replace(trailingAbsRegex, '').trim();
+    }
+  }
+
+  const escapedBody = linkifyEscapedText(escapeHtml(cleanText)).replace(/\r?\n/g, '<br />');
+
+  const finalActionUrl = actionUrl ? toAbsoluteUrl(actionUrl, options?.baseUrl || undefined) : '';
+  const finalActionText = actionUrl
+    ? options?.actionText?.trim() || resolveActionText(actionUrl)
+    : '';
+
+  const buttonHtml = finalActionUrl
+    ? `
+    <div class="email-cta-container" style="margin-top: 28px; margin-bottom: 8px; text-align: center;">
+      <a href="${escapeHtml(finalActionUrl)}" class="email-button" style="display: inline-block; background-color: #2563eb; color: #ffffff !important; font-size: 15px; font-weight: 600; text-decoration: none; padding: 12px 24px; border-radius: 6px; text-align: center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);" target="_blank" rel="noopener noreferrer">
+        <span style="color: #ffffff !important;">${escapeHtml(finalActionText)} &rarr;</span>
+      </a>
+    </div>`
+    : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -129,6 +263,25 @@ export function wrapPlainTextAsHtml(text: string, title?: string): string {
       font-size: 16px;
       word-break: break-word;
     }
+    .email-cta-container {
+      margin-top: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .email-button {
+      display: inline-block;
+      background-color: #2563eb;
+      color: #ffffff !important;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .email-button:hover {
+      background-color: #1d4ed8;
+    }
     .email-footer {
       margin-top: 32px;
       padding-top: 16px;
@@ -143,7 +296,7 @@ export function wrapPlainTextAsHtml(text: string, title?: string): string {
     ${title ? `<h2 class="email-title">${escapedTitle}</h2>` : ''}
     <div class="email-body">
       ${escapedBody}
-    </div>
+    </div>${buttonHtml}
     <div class="email-footer">
       Sent via <a href="https://welcomehub.app" target="_blank" rel="noopener noreferrer">welcomehub.app</a>
     </div>

@@ -212,10 +212,17 @@ Deno.test(
       assertEquals(enqueueCalls.length, 2);
       const firstPayload = (enqueueCalls[0].args as { payload: Record<string, unknown> }).payload;
       assertEquals(firstPayload.category, 'broadcast');
+      assertEquals(firstPayload.template_slug, 'broadcast');
       assertEquals(firstPayload.metadata, {
         broadcast_title: 'Update',
+        title: 'Update',
         broadcast_message: 'New info',
+        message: 'New info',
+        broadcast_message_html: 'New info',
+        message_html: 'New info',
         url: undefined,
+        action_url: undefined,
+        action_text: undefined,
         target_type: 'event',
       });
 
