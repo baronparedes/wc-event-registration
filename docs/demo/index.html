@@ -1,0 +1,2944 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WelcomeHub — Ministry Leadership Executive Deck</title>
+    <meta
+      name="description"
+      content="PowerPoint-style presentation slide deck for ministry leaders: Aida (Volunteer Experience), Lorna (SLOD), and Fe (VMT Admin)."
+    />
+    <link rel="icon" type="image/png" href="../../src/assets/wc-hub-brand.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --font-main:
+          'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+
+        /* Clean Minimalist Palette (Strict Light Mode) */
+        --bg-stage: #f1f5f9;
+        --bg-slide: #ffffff;
+        --bg-subtle: #f8fafc;
+        --bg-badge: #e2e8f0;
+
+        --border-subtle: #e2e8f0;
+        --border-strong: #cbd5e1;
+
+        --text-main: #0f172a;
+        --text-body: #334155;
+        --text-muted: #64748b;
+
+        --color-brand: #0d9488;
+        --color-brand-primary: #2563eb;
+        --color-brand-subtle: #eff6ff;
+
+        /* Persona Accents */
+        --aida-color: #059669;
+        --aida-bg: #ecfdf5;
+        --aida-border: #a7f3d0;
+        --aida-text: #065f46;
+
+        --lorna-color: #4f46e5;
+        --lorna-bg: #eef2ff;
+        --lorna-border: #c7d2fe;
+        --lorna-text: #3730a3;
+
+        --fe-color: #7c3aed;
+        --fe-bg: #f5f3ff;
+        --fe-border: #ddd6fe;
+        --fe-text: #5b21b6;
+
+        --shadow-slide:
+          0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        --radius-slide: 20px;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-main);
+        background-color: var(--bg-stage);
+        color: var(--text-main);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+      }
+
+      /* Top Progress Bar */
+      .slide-progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: #e2e8f0;
+        z-index: 100;
+      }
+
+      .slide-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0d9488, #2563eb, #7c3aed);
+        width: 6.25%;
+        transition: width 0.25s ease;
+      }
+
+      /* Top Stage Bar */
+      .stage-header {
+        padding: 0.75rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+        border-bottom: 1px solid var(--border-subtle);
+        z-index: 40;
+      }
+
+      .brand-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        text-decoration: none;
+      }
+
+      .brand-logo-img {
+        height: 36px;
+        width: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 1px 4px rgba(13, 148, 136, 0.25);
+        border: 1px solid rgba(13, 148, 136, 0.15);
+      }
+
+      .stage-nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .btn-action {
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        color: var(--text-body);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        transition: all 0.15s ease;
+      }
+
+      .btn-action:hover {
+        background: var(--bg-subtle);
+        color: var(--text-main);
+        border-color: var(--border-strong);
+      }
+
+      .btn-action.primary {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+      }
+
+      .btn-action.primary:hover {
+        background: #1e293b;
+      }
+
+      /* Presentation Slide Viewport */
+      .presentation-viewport {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem 2rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slide {
+        display: none;
+        width: 100%;
+        max-width: 1100px;
+        height: calc(100vh - 145px);
+        max-height: 690px;
+        background: var(--bg-slide);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-slide);
+        box-shadow: var(--shadow-slide);
+        padding: 2.25rem 3rem;
+        position: relative;
+        overflow-y: auto;
+        user-select: text;
+      }
+
+      .slide.active {
+        display: flex;
+        flex-direction: column;
+        animation: fadeInSlide 0.22s ease-out;
+      }
+
+      @keyframes fadeInSlide {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Slide Header */
+      .slide-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+
+      .slide-tag {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .slide-h1 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+      }
+
+      .slide-subtitle {
+        font-size: 1.125rem;
+        color: var(--text-body);
+        line-height: 1.55;
+        margin-bottom: 1.75rem;
+        max-width: 880px;
+      }
+
+      /* Presentation Bottom Controls */
+      .stage-footer {
+        padding: 0.75rem 2rem;
+        background: #ffffff;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 40;
+      }
+
+      .slide-counter {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--text-body);
+        font-family: var(--font-mono);
+      }
+
+      .nav-arrow-group {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .btn-slide-nav {
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        color: var(--text-main);
+        font-weight: 700;
+        font-size: 0.9375rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: all 0.15s ease;
+      }
+
+      .btn-slide-nav:hover:not(:disabled) {
+        background: var(--bg-subtle);
+        border-color: var(--border-strong);
+      }
+
+      .btn-slide-nav:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      /* Slide Card Grid Layouts */
+      .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        flex: 1;
+      }
+
+      .grid-3col {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        flex: 1;
+      }
+
+      .card-box {
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card-box.subtle {
+        background: var(--bg-subtle);
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Slide 1 Persona Hero Introduction Cards */
+      .persona-intro-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 0.75rem;
+      }
+
+      .persona-intro-card {
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .persona-intro-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+      }
+
+      .persona-intro-photo-wrap {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+        background: #f1f5f9;
+      }
+
+      .persona-intro-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+        transition: transform 0.3s ease;
+      }
+
+      .persona-intro-card:hover .persona-intro-photo {
+        transform: scale(1.03);
+      }
+
+      .persona-intro-badge {
+        position: absolute;
+        top: 0.65rem;
+        left: 0.65rem;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(4px);
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+      }
+
+      .persona-intro-body {
+        padding: 0.9rem 1.15rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      .persona-intro-name-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 0.15rem;
+      }
+
+      .persona-intro-name {
+        font-size: 1.35rem;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .persona-intro-tag {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .persona-intro-role {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 0.35rem;
+      }
+
+      .persona-intro-desc {
+        font-size: 0.8125rem;
+        color: var(--text-body);
+        line-height: 1.4;
+      }
+
+      /* Persona Hero Deep-Dive Layout (Slides 3, 4, 5) */
+      .persona-hero-layout {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 2rem;
+        align-items: stretch;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .persona-hero-card {
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        position: relative;
+      }
+
+      .persona-hero-photo-wrap {
+        position: relative;
+        flex: 1;
+        min-height: 410px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      }
+
+      .persona-hero-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+        transition: transform 0.35s ease;
+      }
+
+      .persona-hero-card:hover .persona-hero-photo {
+        transform: scale(1.02);
+      }
+
+      .persona-hero-badge {
+        position: absolute;
+        top: 0.85rem;
+        left: 0.85rem;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(4px);
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+      }
+
+      .persona-hero-footer {
+        padding: 1.15rem 1.35rem;
+        background: #ffffff;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .persona-hero-name {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+
+      .persona-hero-role {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-top: 0.25rem;
+      }
+
+      .persona-hero-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.35rem;
+        font-weight: 500;
+      }
+
+      .persona-right-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1rem;
+        min-width: 0;
+      }
+
+      .persona-quote-banner {
+        background: var(--bg-subtle);
+        border-left: 4px solid var(--color-brand);
+        padding: 0.9rem 1.35rem;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        font-size: 1.05rem;
+        font-style: italic;
+        color: var(--text-main);
+        line-height: 1.5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+
+      /* List items in slides */
+      .slide-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .slide-list-item {
+        position: relative;
+        padding-left: 1.65rem;
+        font-size: 1rem;
+        color: var(--text-body);
+        line-height: 1.55;
+      }
+
+      .slide-list-item strong {
+        color: var(--text-main);
+        font-weight: 700;
+      }
+
+      .slide-list-item.pain::before {
+        content: '✕';
+        position: absolute;
+        left: 0;
+        top: 0.05rem;
+        color: #dc2626;
+        font-weight: 800;
+        font-size: 0.875rem;
+      }
+
+      .slide-list-item.impact::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        top: 0.05rem;
+        color: #059669;
+        font-weight: 800;
+        font-size: 1rem;
+      }
+
+      /* Demo Screen Route Badge Link */
+      .demo-route-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: #2563eb;
+        border: 1px solid rgba(37, 99, 235, 0.3);
+        padding: 0.4rem 0.85rem;
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        transition: all 0.15s ease;
+      }
+
+      .demo-route-badge:hover {
+        background: #eff6ff;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+      }
+
+      /* Ministry Impact Box */
+      .script-box {
+        background: #f8fafc;
+        border: 1px solid var(--border-subtle);
+        border-left: 4px solid #2563eb;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        padding: 1.25rem;
+        margin-top: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .script-text {
+        font-size: 1.05rem;
+        color: var(--text-main);
+        line-height: 1.65;
+        font-weight: 500;
+      }
+
+      .cue-badge {
+        font-size: 0.875rem;
+        background: #ffffff;
+        border: 1px solid var(--border-subtle);
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-sm);
+        color: var(--text-body);
+        margin-top: 0.65rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+
+      .cue-badge strong {
+        color: var(--text-main);
+      }
+
+      .table-clean {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+      }
+
+      .table-clean th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background: var(--bg-subtle);
+        border-bottom: 2px solid var(--border-subtle);
+        font-weight: 700;
+        color: var(--text-main);
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .table-clean td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-body);
+        line-height: 1.5;
+      }
+
+      /* Jump Modal */
+      .jump-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .jump-modal {
+        background: #ffffff;
+        width: 90%;
+        max-width: 640px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        padding: 1.5rem;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .jump-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .jump-list {
+        list-style: none;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .jump-item {
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.9375rem;
+        color: var(--text-body);
+        transition: background 0.15s ease;
+      }
+
+      .jump-item:hover,
+      .jump-item.active {
+        background: var(--color-brand-subtle);
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      /* Print & Projector Mode */
+      @media print {
+        body {
+          overflow: visible !important;
+          height: auto !important;
+          background: white !important;
+        }
+
+        .slide-progress-bar,
+        .stage-header,
+        .stage-footer,
+        .jump-modal-overlay {
+          display: none !important;
+        }
+
+        .presentation-viewport {
+          display: block !important;
+          padding: 0 !important;
+        }
+
+        .slide {
+          display: block !important;
+          page-break-after: always !important;
+          height: auto !important;
+          max-height: none !important;
+          box-shadow: none !important;
+          border: 1px solid #ccc !important;
+          margin-bottom: 2rem !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Top Progress Bar -->
+    <div class="slide-progress-bar">
+      <div class="slide-progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Stage Top Bar with Embedded Brand Logo -->
+    <header class="stage-header">
+      <div class="brand-title">
+        <img
+          src="../../src/assets/wc-hub-brand.png"
+          alt="WelcomeHub Brand Logo"
+          class="brand-logo-img"
+          onerror="
+            this.onerror = null;
+            this.src = 'https://welcomehub.app/apple-touch-icon.png';
+          "
+        />
+        <span>WelcomeHub — Ministry Leadership Deck</span>
+      </div>
+
+      <div class="stage-nav-actions">
+        <button class="btn-action" id="btnJumpList" title="Jump to any slide (Press 'J')">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          <span>Slides</span>
+        </button>
+
+        <a
+          href="https://welcomehub.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-action primary"
+          title="Open WelcomeHub Production App"
+        >
+          <span>Open WelcomeHub</span>
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Presentation Viewport -->
+    <main class="presentation-viewport">
+      <!-- Slide 1: Title & Executive Vision with Brand Logo -->
+      <section class="slide active" data-slide="1">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: center; gap: 0.75rem">
+            <img
+              src="../../src/assets/wc-hub-brand.png"
+              alt="WelcomeHub Logo"
+              style="
+                height: 38px;
+                width: 38px;
+                border-radius: 8px;
+                object-fit: cover;
+                box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+              "
+              onerror="
+                this.onerror = null;
+                this.src = 'https://welcomehub.app/apple-touch-icon.png';
+              "
+            />
+            <span class="slide-tag">Executive Ministry Presentation</span>
+          </div>
+          <a
+            href="https://welcomehub.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >welcomehub.app ↗</a
+          >
+        </div>
+
+        <h1 class="slide-h1" style="font-size: 2.75rem; margin-top: 1.25rem; margin-bottom: 0.5rem">
+          Serving Those <span style="color: #0d9488">Who Serve</span>
+        </h1>
+
+        <p class="slide-subtitle" style="font-size: 1.125rem; margin-bottom: 0.85rem">
+          Connecting our volunteers, day-of service leaders, and executive team into one unified
+          ecosystem for volunteer care and operational excellence.
+        </p>
+
+        <div class="grid-3col" style="margin-top: 1rem">
+          <!-- Pillar 1: Volunteer Experience -->
+          <div
+            class="card-box subtle"
+            style="
+              border-top: 4px solid var(--aida-color);
+              padding: 1.75rem 1.5rem;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            "
+          >
+            <div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 0.85rem;
+                "
+              >
+                <div
+                  style="
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 10px;
+                    background: var(--aida-bg);
+                    color: var(--aida-color);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid var(--aida-border);
+                  "
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <polyline points="16 11 18 13 22 9"></polyline>
+                  </svg>
+                </div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: var(--aida-color);
+                    background: var(--aida-bg);
+                    padding: 0.25rem 0.6rem;
+                    border-radius: 20px;
+                    border: 1px solid var(--aida-border);
+                  "
+                  >Pillar 01</span
+                >
+              </div>
+              <h3
+                style="
+                  font-size: 1.25rem;
+                  font-weight: 800;
+                  color: var(--text-main);
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Volunteer Experience
+              </h3>
+              <p
+                style="
+                  font-size: 0.8125rem;
+                  font-weight: 600;
+                  color: var(--text-muted);
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Serving Church Members & Families
+              </p>
+              <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+                10-second registrations, clear Sunday commitments, personal profile schedules, and
+                direct shift notifications.
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 1rem;
+                padding-top: 0.75rem;
+                border-top: 1px dashed var(--border-subtle);
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--aida-color);
+              "
+            >
+              Frictionless · Empowering
+            </div>
+          </div>
+
+          <!-- Pillar 2: Sunday Operations -->
+          <div
+            class="card-box subtle"
+            style="
+              border-top: 4px solid var(--lorna-color);
+              padding: 1.75rem 1.5rem;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            "
+          >
+            <div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 0.85rem;
+                "
+              >
+                <div
+                  style="
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 10px;
+                    background: var(--lorna-bg);
+                    color: var(--lorna-color);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid var(--lorna-border);
+                  "
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                    <path d="m9 16 2 2 4-4"></path>
+                  </svg>
+                </div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: var(--lorna-color);
+                    background: var(--lorna-bg);
+                    padding: 0.25rem 0.6rem;
+                    border-radius: 20px;
+                    border: 1px solid var(--lorna-border);
+                  "
+                  >Pillar 02</span
+                >
+              </div>
+              <h3
+                style="
+                  font-size: 1.25rem;
+                  font-weight: 800;
+                  color: var(--text-main);
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Sunday Operations
+              </h3>
+              <p
+                style="
+                  font-size: 0.8125rem;
+                  font-weight: 600;
+                  color: var(--text-muted);
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Day-of Service Leaders (SLODs)
+              </p>
+              <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+                Live turn-up %, walk-in audits, and 3-day statistical turnup forecasts across 9AM,
+                12NN, and 3PM services.
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 1rem;
+                padding-top: 0.75rem;
+                border-top: 1px dashed var(--border-subtle);
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--lorna-color);
+              "
+            >
+              Zero Blindspots · Real-Time
+            </div>
+          </div>
+
+          <!-- Pillar 3: Volunteer Care & Governance -->
+          <div
+            class="card-box subtle"
+            style="
+              border-top: 4px solid var(--fe-color);
+              padding: 1.75rem 1.5rem;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            "
+          >
+            <div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 0.85rem;
+                "
+              >
+                <div
+                  style="
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 10px;
+                    background: var(--fe-bg);
+                    color: var(--fe-color);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid var(--fe-border);
+                  "
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="m9 12 2 2 4-4"></path>
+                  </svg>
+                </div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: var(--fe-color);
+                    background: var(--fe-bg);
+                    padding: 0.25rem 0.6rem;
+                    border-radius: 20px;
+                    border: 1px solid var(--fe-border);
+                  "
+                  >Pillar 03</span
+                >
+              </div>
+              <h3
+                style="
+                  font-size: 1.25rem;
+                  font-weight: 800;
+                  color: var(--text-main);
+                  margin-bottom: 0.25rem;
+                "
+              >
+                Volunteer Care & Governance
+              </h3>
+              <p
+                style="
+                  font-size: 0.8125rem;
+                  font-weight: 600;
+                  color: var(--text-muted);
+                  margin-bottom: 0.75rem;
+                "
+              >
+                VMT Administration & Pastoral Oversight
+              </p>
+              <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+                Grace-filled fidelity scoring formulas, staffing deficit forecasts, and targeted
+                multi-channel broadcasting.
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 1rem;
+                padding-top: 0.75rem;
+                border-top: 1px dashed var(--border-subtle);
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--fe-color);
+              "
+            >
+              Strategic · Grace-Filled
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 2: Why We Built This (The Reality) -->
+      <section class="slide" data-slide="2">
+        <div class="slide-meta">
+          <span class="slide-tag">Current Ministry Challenges</span>
+        </div>
+
+        <h2 class="slide-h1">The Problem with Spreadsheets & Chat Groups</h2>
+        <p class="slide-subtitle">
+          Administrative chaos steals our time from what actually matters: personal ministry and
+          discipleship.
+        </p>
+
+        <div class="grid-2col">
+          <div class="card-box" style="border-left: 4px solid #dc2626">
+            <h3 class="card-title" style="color: #dc2626">What's Hurting Our Teams Today</h3>
+            <ul class="slide-list">
+              <li class="slide-list-item pain">
+                <strong>Sunday Blindspots:</strong> SLODs arrive Sunday morning with zero
+                confirmation of who will actually appear.
+              </li>
+              <li class="slide-list-item pain">
+                <strong>Silent Volunteer Drift:</strong> Volunteers miss 3 Sundays in a row, and
+                leadership only notices months later.
+              </li>
+              <li class="slide-list-item pain">
+                <strong>Form Fatigue:</strong> Faithful volunteers type their name and phone number
+                on every retreat or event form.
+              </li>
+              <li class="slide-list-item pain">
+                <strong>Chat Noise:</strong> Urgent broadcast messages get buried under memes and
+                chat banter.
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-box" style="border-left: 4px solid #059669">
+            <h3 class="card-title" style="color: #059669">The WelcomeHub Shift</h3>
+            <ul class="slide-list">
+              <li class="slide-list-item impact">
+                <strong>Predictive Visibility:</strong> Turn-up statistical forecasts give 3 days of
+                early notice before Sunday.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Pastoral Early Warning:</strong> Attendance scores highlight disengagement
+                before drop-out occurs.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Frictionless Serving:</strong> 1-click registration, instant RFID tap
+                check-ins, and clear profile schedules.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Precision Broadcasting:</strong> Direct push + email alerts targeted
+                strictly by volunteer role.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: Persona 1 - Aida (Volunteer) -->
+      <section class="slide" data-slide="3">
+        <div class="persona-hero-layout">
+          <!-- Hero Whole Body Column -->
+          <div class="persona-hero-card" style="border-top: 4px solid var(--aida-color)">
+            <div class="persona-hero-photo-wrap">
+              <img
+                src="./assets/persona-aida-full.jpg"
+                alt="Aida - Whole Body Volunteer Portrait"
+                class="persona-hero-photo"
+              />
+              <span class="persona-hero-badge" style="color: var(--aida-color)"
+                >PERSONA 01 · VOLUNTEER</span
+              >
+            </div>
+            <div class="persona-hero-footer">
+              <div style="display: flex; align-items: baseline; justify-content: space-between">
+                <div class="persona-hero-name" style="color: var(--aida-color)">Aida</div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: var(--aida-color);
+                    background: var(--aida-bg);
+                    padding: 0.2rem 0.55rem;
+                    border-radius: 12px;
+                    border: 1px solid var(--aida-border);
+                  "
+                  >Volunteer</span
+                >
+              </div>
+              <div class="persona-hero-role" style="color: var(--text-main)">
+                Dedicated Church Volunteer
+              </div>
+              <div class="persona-hero-meta">
+                <span>📍 Welcome Team · 1st & 3rd Sundays</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategic Content Column -->
+          <div class="persona-right-content">
+            <div>
+              <div class="slide-meta" style="margin-bottom: 0.4rem">
+                <span class="slide-tag" style="color: var(--aida-color)"
+                  >Persona 1 · Volunteer Experience</span
+                >
+                <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted)"
+                  >Serving with Joy & Clarity</span
+                >
+              </div>
+              <h2 class="slide-h1" style="font-size: 1.95rem; margin-bottom: 0.65rem">
+                "Make Serving Frictionless, Valued, and Clear"
+              </h2>
+              <div class="persona-quote-banner" style="border-left-color: var(--aida-color)">
+                "I love serving our church family, but with family and work, I just need signing up
+                and knowing my shifts to be effortless and clear."
+              </div>
+            </div>
+
+            <div class="grid-2col" style="gap: 1.15rem; flex: 1">
+              <div class="card-box" style="border-left: 3px solid #dc2626; padding: 1.25rem">
+                <h3
+                  class="card-title"
+                  style="color: #dc2626; font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  Aida's Past Frustrations
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Typing name, phone, and email repeatedly for church events.
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Forgetting which Sunday she's scheduled (1st vs. 3rd rotation).
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Missing ministry announcements inside crowded WhatsApp groups.
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                class="card-box"
+                style="
+                  background: var(--aida-bg);
+                  border-color: var(--aida-border);
+                  border-left: 3px solid var(--aida-color);
+                  padding: 1.25rem;
+                "
+              >
+                <h3
+                  class="card-title"
+                  style="color: var(--aida-text); font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  How WelcomeHub Serves Aida
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>One-Tap Registration:</strong> Session auto-lookup confirms in 10s.
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Personal Profile:</strong> Clear Sunday rotation & attendance ledger.
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Direct Alerts:</strong> Push alerts and in-app bell drawer for her
+                    shifts.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: Persona 2 - Lorna (SLOD) -->
+      <section class="slide" data-slide="4">
+        <div class="persona-hero-layout">
+          <!-- Hero Whole Body Column -->
+          <div class="persona-hero-card" style="border-top: 4px solid var(--lorna-color)">
+            <div class="persona-hero-photo-wrap">
+              <img
+                src="./assets/persona-lorna-full.jpg"
+                alt="Lorna - Whole Body SLOD Portrait"
+                class="persona-hero-photo"
+              />
+              <span class="persona-hero-badge" style="color: var(--lorna-color)"
+                >PERSONA 02 · SLOD LEADER</span
+              >
+            </div>
+            <div class="persona-hero-footer">
+              <div style="display: flex; align-items: baseline; justify-content: space-between">
+                <div class="persona-hero-name" style="color: var(--lorna-color)">Lorna</div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: var(--lorna-color);
+                    background: var(--lorna-bg);
+                    padding: 0.2rem 0.55rem;
+                    border-radius: 12px;
+                    border: 1px solid var(--lorna-border);
+                  "
+                  >SLOD</span
+                >
+              </div>
+              <div class="persona-hero-role" style="color: var(--text-main)">
+                Servant Leader of the Day (SLOD)
+              </div>
+              <div class="persona-hero-meta">
+                <span>📍 Sunday 9AM · 12NN · 3PM Services</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategic Content Column -->
+          <div class="persona-right-content">
+            <div>
+              <div class="slide-meta" style="margin-bottom: 0.4rem">
+                <span class="slide-tag" style="color: var(--lorna-color)"
+                  >Persona 2 · Servant Leader of the Day</span
+                >
+                <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted)"
+                  >Sunday Operations</span
+                >
+              </div>
+              <h2 class="slide-h1" style="font-size: 1.95rem; margin-bottom: 0.65rem">
+                "Sunday Morning: Confident, Prepared, and Agile"
+              </h2>
+              <div class="persona-quote-banner" style="border-left-color: var(--lorna-color)">
+                "I cannot arrive on Sunday morning hoping volunteers appear. I need live visibility
+                across all three services so we never have empty stations."
+              </div>
+            </div>
+
+            <div class="grid-2col" style="gap: 1.15rem; flex: 1">
+              <div class="card-box" style="border-left: 3px solid #dc2626; padding: 1.25rem">
+                <h3
+                  class="card-title"
+                  style="color: #dc2626; font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  Lorna's Past Frustrations
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Arriving Sunday blind to whether Ushers or IMT will actually show up.
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Scrambling 10 minutes before worship to fill missing posts.
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Zero visibility into attendance across 9AM, 12NN, and 3PM services.
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                class="card-box"
+                style="
+                  background: var(--lorna-bg);
+                  border-color: var(--lorna-border);
+                  border-left: 3px solid var(--lorna-color);
+                  padding: 1.25rem;
+                "
+              >
+                <h3
+                  class="card-title"
+                  style="color: var(--lorna-text); font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  How WelcomeHub Empowers Lorna
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Services Dashboard:</strong> Live turn-up % and walk-in counts per slot.
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Hub Calendar Forecast:</strong> Turnup tiers (Solid, Moderate, At Risk).
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Attendance Ledger:</strong> Granular RFID search & 1-click printable
+                    CSV.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5: Persona 3 - Fe (VMT Admin) -->
+      <section class="slide" data-slide="5">
+        <div class="persona-hero-layout">
+          <!-- Hero Whole Body Column -->
+          <div class="persona-hero-card" style="border-top: 4px solid var(--fe-color)">
+            <div class="persona-hero-photo-wrap">
+              <img
+                src="./assets/persona-fe-full.jpg"
+                alt="Fe - Whole Body VMT Admin Portrait"
+                class="persona-hero-photo"
+              />
+              <span class="persona-hero-badge" style="color: var(--fe-color)"
+                >PERSONA 03 · VMT ADMIN</span
+              >
+            </div>
+            <div class="persona-hero-footer">
+              <div style="display: flex; align-items: baseline; justify-content: space-between">
+                <div class="persona-hero-name" style="color: var(--fe-color)">Fe</div>
+                <span
+                  style="
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: var(--fe-color);
+                    background: var(--fe-bg);
+                    padding: 0.2rem 0.55rem;
+                    border-radius: 12px;
+                    border: 1px solid var(--fe-border);
+                  "
+                  >VMT Admin</span
+                >
+              </div>
+              <div class="persona-hero-role" style="color: var(--text-main)">
+                Volunteer Management Team (VMT)
+              </div>
+              <div class="persona-hero-meta">
+                <span>📍 Executive Shepherding & Volunteer Retention</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategic Content Column -->
+          <div class="persona-right-content">
+            <div>
+              <div class="slide-meta" style="margin-bottom: 0.4rem">
+                <span class="slide-tag" style="color: var(--fe-color)"
+                  >Persona 3 · Volunteer Management Team</span
+                >
+                <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted)"
+                  >Pastoral Shepherding</span
+                >
+              </div>
+              <h2 class="slide-h1" style="font-size: 1.95rem; margin-bottom: 0.65rem">
+                "Strategic Care, Governance, and Proactive Shepherding"
+              </h2>
+              <div class="persona-quote-banner" style="border-left-color: var(--fe-color)">
+                "Our volunteers give their hearts to this church. When someone starts to fade, we
+                need to shepherd them with grace before they quietly walk away."
+              </div>
+            </div>
+
+            <div class="grid-2col" style="gap: 1.15rem; flex: 1">
+              <div class="card-box" style="border-left: 3px solid #dc2626; padding: 1.25rem">
+                <h3
+                  class="card-title"
+                  style="color: #dc2626; font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  Fe's Past Frustrations
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Volunteers silently disengaging without leadership knowing.
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    No way to distinguish between excused absences and no-shows.
+                  </li>
+                  <li class="slide-list-item pain" style="font-size: 0.925rem">
+                    Accidental message spamming across entire ministries.
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                class="card-box"
+                style="
+                  background: var(--fe-bg);
+                  border-color: var(--fe-border);
+                  border-left: 3px solid var(--fe-color);
+                  padding: 1.25rem;
+                "
+              >
+                <h3
+                  class="card-title"
+                  style="color: var(--fe-text); font-size: 1.05rem; margin-bottom: 0.5rem"
+                >
+                  How WelcomeHub Empowers Fe
+                </h3>
+                <ul class="slide-list" style="gap: 0.75rem">
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Commitment Dashboard:</strong> Grace-filled fidelity scoring formula.
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Attendance Forecast:</strong> Monthly trends & staffing deficit
+                    warnings.
+                  </li>
+                  <li class="slide-list-item impact" style="font-size: 0.925rem">
+                    <strong>Precision Broadcasting:</strong> Multi-channel push + email with safety
+                    gate.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: A Sunday in the Life (Timeline) -->
+      <section class="slide" data-slide="6">
+        <div class="slide-meta">
+          <span class="slide-tag">Ecosystem Alignment</span>
+        </div>
+
+        <h2 class="slide-h1">A Sunday in the Life: How All Three Connect</h2>
+        <p class="slide-subtitle">
+          From Wednesday mid-week prep to Sunday altar ministry and Monday pastoral follow-ups.
+        </p>
+
+        <div class="grid-3col">
+          <!-- Stage 1: Mid-Week Prep -->
+          <div class="card-box" style="border-top: 4px solid var(--aida-color)">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.65rem;
+              "
+            >
+              <span style="font-size: 0.8125rem; font-weight: 800; color: #2563eb"
+                >STAGE 1 · MID-WEEK</span
+              >
+              <span
+                style="
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  color: var(--aida-color);
+                  background: var(--aida-bg);
+                  padding: 0.2rem 0.55rem;
+                  border-radius: 12px;
+                  border: 1px solid var(--aida-border);
+                "
+                >Preparation</span
+              >
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem">
+              Preparation (Wed–Thu)
+            </h4>
+            <ul class="slide-list" style="font-size: 0.9rem">
+              <li class="slide-list-item impact">
+                <strong>Fe:</strong> Broadcasts push reminders to scheduled Ushers.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Aida:</strong> Checks her shift on profile; files advance excuse if sick.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Lorna:</strong> Checks Hub Calendar for "At Risk" station gaps.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Stage 2: Sunday Execution -->
+          <div
+            class="card-box"
+            style="border-top: 4px solid var(--lorna-color); border: 2px solid #2563eb"
+          >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.65rem;
+              "
+            >
+              <span style="font-size: 0.8125rem; font-weight: 800; color: #2563eb"
+                >STAGE 2 · SUNDAY</span
+              >
+              <span
+                style="
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  color: var(--lorna-color);
+                  background: var(--lorna-bg);
+                  padding: 0.2rem 0.55rem;
+                  border-radius: 12px;
+                  border: 1px solid var(--lorna-border);
+                "
+                >Service Floor</span
+              >
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem">
+              Execution (9AM · 12NN · 3PM)
+            </h4>
+            <ul class="slide-list" style="font-size: 0.9rem">
+              <li class="slide-list-item impact">
+                <strong>Aida:</strong> Taps her RFID tag at kiosk in 2 seconds.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Lorna:</strong> Monitors Services Dashboard for real-time 9AM/12NN/3PM
+                turnup.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Aida:</strong> Steps in as walk-in for 3PM, earning bonus points.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Stage 3: Care & Review -->
+          <div class="card-box" style="border-top: 4px solid var(--fe-color)">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.65rem;
+              "
+            >
+              <span style="font-size: 0.8125rem; font-weight: 800; color: #2563eb"
+                >STAGE 3 · POST-SERVICE</span
+              >
+              <span
+                style="
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  color: var(--fe-color);
+                  background: var(--fe-bg);
+                  padding: 0.2rem 0.55rem;
+                  border-radius: 12px;
+                  border: 1px solid var(--fe-border);
+                "
+                >Care Review</span
+              >
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem">
+              Care & Review (Sun PM–Mon)
+            </h4>
+            <ul class="slide-list" style="font-size: 0.9rem">
+              <li class="slide-list-item impact">
+                <strong>Lorna:</strong> Audits check-ins on Attendance Data ledger.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Fe:</strong> Reviews Commitment Dashboard to care for absent members.
+              </li>
+              <li class="slide-list-item impact">
+                <strong>Aida:</strong> Sees positive attendance score on her profile.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7: Live Demo - Aida (Registration & Profile) -->
+      <section class="slide" data-slide="7">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--aida-color)"
+              >Aida (Volunteer)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Registration & Profile</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/profile"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /profile ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Effortless Registration & Member Profile</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to Hub (<a
+                  href="https://welcomehub.app/"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/</code></a
+                >).
+              </li>
+              <li>
+                Click <strong>Register</strong> on any event: show instant auto-lookup without
+                re-typing.
+              </li>
+              <li>
+                Open Volunteer Profile (<a
+                  href="https://welcomehub.app/profile"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/profile</code></a
+                >).
+              </li>
+              <li>Show Sunday Commitment Rotation schedule (1st to 5th Sunday).</li>
+              <li>Open the top-right Notification Drawer.</li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Zero repetitive data entry for church members.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                When Aida registers for a retreat or workshop, the system already knows who she is.
+                No typing phone numbers or emails over and over. On her profile, she can always
+                check which Sunday she committed to serve.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 8: Live Demo - Lorna (Hub Calendar) -->
+      <section class="slide" data-slide="8">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--lorna-color)"
+              >Lorna (SLOD)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Hub Calendar</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/hub-calendar"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/hub-calendar ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Hub Calendar & Avatar Health Rings</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/hub-calendar"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/hub-calendar</code></a
+                >.
+              </li>
+              <li>Select this Sunday on the date picker.</li>
+              <li>
+                Click the <strong>At Risk</strong> filter tab to isolate potential volunteer
+                shortages.
+              </li>
+              <li>Hover over color-coded avatar border rings (Green, Blue, Amber, Red).</li>
+              <li>Click <strong>Export Sunday Schedule</strong> to download the printable CSV.</li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> 3-day advance warning on station shortages.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                Ahead of Sunday service, Lorna opens the Hub Calendar. The statistical forecast
+                categorizes expected turnup into Solid, Moderate, and At-Risk tiers—giving
+                leadership days of advance visibility into potential station shortages.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: Live Demo - Lorna (Services Dashboard 9AM/12NN/3PM) -->
+      <section class="slide" data-slide="9">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--lorna-color)"
+              >Lorna (SLOD)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Services Dashboard (9AM/12NN/3PM)</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/services"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/services ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Services Overview (9AM · 12NN · 3PM)</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/services"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/services</code></a
+                >.
+              </li>
+              <li>
+                Toggle between <strong>Sunday</strong>, <strong>Month</strong>, and
+                <strong>Annual</strong> views.
+              </li>
+              <li>
+                Point to the 3 service slots: <strong>9:00 AM</strong>, <strong>12:00 NN</strong>,
+                and <strong>3:00 PM</strong>.
+              </li>
+              <li>Review turn-up percentage, committed targets, and actual attendees.</li>
+              <li>
+                Highlight <strong>Walk-In Volunteers</strong> and
+                <strong>Late Arrival Overrides</strong>.
+              </li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Multi-service live turnup tracking without pen and
+              paper.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                Overseeing all three Sunday services (9:00 AM, 12:00 NN, and 3:00 PM) is seamless.
+                The Services Dashboard delivers real-time turnup rates per slot, tracks walk-in
+                substitutes, and highlights staffing gaps as they arise.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 10: Live Demo - Lorna (Attendance Data Log) -->
+      <section class="slide" data-slide="10">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--lorna-color)"
+              >Lorna (SLOD)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Attendance Ledger</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/services/attendance/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/services/attendance/data ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Attendance Data Log & Check-In Ledger</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/services/attendance/data"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/services/attendance/data</code></a
+                >.
+              </li>
+              <li>Filter by Role (e.g., <em>Usher</em> or <em>Backroom Support</em>).</li>
+              <li>Filter by Service Time Slot (9AM, 12NN, 3PM) or walk-in flag.</li>
+              <li>Search a volunteer by name or RFID tag.</li>
+              <li>Click <strong>Export CSV</strong> for official attendance records.</li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Complete traceability for every volunteer check-in.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                With an immutable attendance ledger, volunteer check-ins are verifiable and
+                transparent. Leaders can filter by ministry role or service slot, audit walk-in
+                substitutions, and export official reports with one click.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 11: Live Demo - Fe (Commitment Dashboard & Scoring) -->
+      <section class="slide" data-slide="11">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--fe-color)"
+              >Fe (VMT)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Commitment Dashboard</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/services/attendance/commitment"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/services/attendance/commitment ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Commitment Dashboard & Attendance Scoring</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/services/attendance/commitment"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/services/attendance/commitment</code></a
+                >.
+              </li>
+              <li>
+                Toggle between <strong>Q1</strong>, <strong>Q2</strong>, <strong>Q3</strong>,
+                <strong>Q4</strong>, and <strong>YTD</strong>.
+              </li>
+              <li>
+                Explain the Attendance Score Formula:
+                <ul style="padding-left: 1rem; margin-top: 0.35rem; font-size: 0.875rem">
+                  <li><strong>+1.0 pt:</strong> Honoring committed service slot.</li>
+                  <li><strong>-1.0 pt:</strong> Unannounced / missed absence without excuse.</li>
+                  <li><strong>-0.5 pt:</strong> Submitting an excuse request in advance.</li>
+                  <li><strong>+0.5 pt:</strong> Stepping in as walk-in support (9AM / 3PM).</li>
+                </ul>
+              </li>
+              <li>Sort by lowest score or highest missed count to spot struggling volunteers.</li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Grace-filled accountability that detects burnout early.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                The Commitment Dashboard evaluates volunteer schedule fidelity across the quarter
+                with grace-filled accountability. Filing advance excuses halves penalties, walk-in
+                coverage earns bonus points, and leaders can proactively identify and care for
+                burnout.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 12: Live Demo - Fe (Attendance Forecast) -->
+      <section class="slide" data-slide="12">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--fe-color)"
+              >Fe (VMT)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Attendance Forecast</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/services/attendance/forecast"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/services/attendance/forecast ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Attendance Forecast & Staffing Targets</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/services/attendance/forecast"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/services/attendance/forecast</code></a
+                >.
+              </li>
+              <li>
+                Use the <strong>Month Navigator</strong> to view projections for upcoming months.
+              </li>
+              <li>
+                Inspect the <strong>Forecast Monthly Trend Chart</strong> across upcoming Sundays.
+              </li>
+              <li>Select specific <strong>Role Groups</strong> (Ushers, Prayer Coaches, IMT).</li>
+              <li>
+                Open <strong>Volunteer Staffing Targets</strong> modal to view minimum staffing
+                thresholds.
+              </li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Strategic capacity planning months in advance.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                Ministry planning extends months into the future. The Attendance Forecast projects
+                volunteer turnup against minimum staffing thresholds across all roles, empowering
+                ministry heads to recruit before shortages occur.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 13: Live Demo - Fe (Precision Broadcasting) -->
+      <section class="slide" data-slide="13">
+        <div class="slide-meta">
+          <div style="display: flex; align-items: baseline; gap: 0.75rem">
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--fe-color)"
+              >Fe (VMT)</span
+            >
+            <span class="slide-tag" style="color: var(--text-muted); font-weight: 700"
+              >Live Demo · Precision Broadcasting</span
+            >
+          </div>
+          <a
+            href="https://welcomehub.app/admin/notifications"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="demo-route-badge"
+            >Open /admin/notifications ↗</a
+          >
+        </div>
+
+        <h2 class="slide-h1">Precision Broadcasting & Confirmation Gate</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h3 class="card-title">Live System Flow</h3>
+            <ol
+              style="
+                padding-left: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+                color: var(--text-body);
+                font-size: 0.95rem;
+              "
+            >
+              <li>
+                Navigate to
+                <a
+                  href="https://welcomehub.app/admin/notifications"
+                  target="_blank"
+                  class="demo-route-badge"
+                  style="padding: 0.15rem 0.45rem"
+                  ><code>/admin/notifications</code></a
+                >.
+              </li>
+              <li>Toggle both <strong>Push</strong> and <strong>Email</strong> channels.</li>
+              <li>
+                Set Target Audience to <strong>By Role</strong> (e.g., <em>Prayer Coach</em> &
+                <em>IMT</em>).
+              </li>
+              <li>Highlight the live audience reach counter (recipients & device tokens).</li>
+              <li>
+                Click <strong>Preview & Dispatch</strong> to show the mandatory safety confirmation
+                gate.
+              </li>
+            </ol>
+            <div class="cue-badge">
+              <strong>Key Takeaway:</strong> Zero WhatsApp spam; mandatory safety checks prevent
+              accidents.
+            </div>
+          </div>
+
+          <div class="card-box subtle">
+            <div
+              style="
+                font-size: 0.8125rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              Ministry Impact
+            </div>
+            <div class="script-box">
+              <p class="script-text">
+                Precision broadcasting enables leaders to reach specific volunteer teams via Push
+                and Email without spamming uninvolved members. A mandatory confirmation safety gate
+                ensures critical communications are verified before dispatch.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hidden Slide: Recommended 15-Minute Leader Pitch Agenda (Hidden from live presentation) -->
+      <section class="slide-hidden" style="display: none" data-slide="hidden-agenda">
+        <div class="slide-meta">
+          <span class="slide-tag">Leader Presentation Plan</span>
+        </div>
+
+        <h2 class="slide-h1">Recommended 15-Minute Leader Pitch Agenda</h2>
+
+        <div class="card-box" style="padding: 0; overflow: hidden">
+          <table class="table-clean">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Agenda Segment</th>
+                <th>Live Screens Covered</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #2563eb">
+                  00–02 min
+                </td>
+                <td><strong>The Vision & Pain</strong></td>
+                <td>Spreadsheet bottlenecks vs. Shepherding people</td>
+                <td>Alignment that current tools are failing volunteers</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #2563eb">
+                  02–05 min
+                </td>
+                <td><strong>Aida: Volunteer Flow</strong></td>
+                <td>
+                  <a
+                    href="https://welcomehub.app/"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/</code></a
+                  >
+                  &
+                  <a
+                    href="https://welcomehub.app/profile"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/profile</code></a
+                  >
+                </td>
+                <td>Shows respect for volunteer time</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #2563eb">
+                  05–09 min
+                </td>
+                <td><strong>Lorna: Sunday Operations</strong></td>
+                <td>
+                  <a
+                    href="https://welcomehub.app/admin/hub-calendar"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/hub-calendar</code></a
+                  >
+                  &
+                  <a
+                    href="https://welcomehub.app/admin/services"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/services</code></a
+                  >
+                </td>
+                <td>Proves 9AM, 12NN, 3PM run with zero blindspots</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #2563eb">
+                  09–13 min
+                </td>
+                <td><strong>Fe: Volunteer Care</strong></td>
+                <td>
+                  <a
+                    href="https://welcomehub.app/admin/services/attendance/commitment"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/commitment</code></a
+                  >
+                  &
+                  <a
+                    href="https://welcomehub.app/admin/notifications"
+                    target="_blank"
+                    class="demo-route-badge"
+                    style="padding: 0.1rem 0.35rem"
+                    ><code>/notifications</code></a
+                  >
+                </td>
+                <td>Demonstrates data-driven pastoral care</td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #2563eb">
+                  13–15 min
+                </td>
+                <td><strong>Next Steps & Q&A</strong></td>
+                <td>Pilot date & ministry onboarding schedule</td>
+                <td>Secures leadership green light</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Slide 14: Ministry Leader Q&A Prep -->
+      <section class="slide" data-slide="14">
+        <div class="slide-meta">
+          <span class="slide-tag">Anticipated Questions</span>
+        </div>
+
+        <h2 class="slide-h1">Leader Q&A: Ready-to-Use Answers</h2>
+
+        <div class="grid-2col">
+          <div class="card-box">
+            <h4
+              style="
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 0.4rem;
+              "
+            >
+              Q: What if an older volunteer isn't tech-savvy?
+            </h4>
+            <p style="font-size: 0.925rem; color: var(--text-body); line-height: 1.5">
+              They don't have to be. On Sunday morning, they simply tap their physical RFID tag at
+              the check-in desk, or the SLOD checks them in manually with one click.
+            </p>
+          </div>
+
+          <div class="card-box">
+            <h4
+              style="
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 0.4rem;
+              "
+            >
+              Q: Does this replace personal pastoral care?
+            </h4>
+            <p style="font-size: 0.925rem; color: var(--text-body); line-height: 1.5">
+              No—it unlocks it. Instead of spending 5 hours a week updating spreadsheets, leaders
+              spend those 5 hours visiting or calling volunteers identified as 'At Risk'.
+            </p>
+          </div>
+
+          <div class="card-box">
+            <h4
+              style="
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 0.4rem;
+              "
+            >
+              Q: How does the attendance score handle grace?
+            </h4>
+            <p style="font-size: 0.925rem; color: var(--text-body); line-height: 1.5">
+              Submitting an excuse in advance halves the absence penalty (-0.5 instead of -1.0), and
+              walk-in service earns positive bonus points. 5th Sundays are strictly optional with
+              zero penalties.
+            </p>
+          </div>
+
+          <div class="card-box">
+            <h4
+              style="
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 0.4rem;
+              "
+            >
+              Q: Can we import historical attendance data?
+            </h4>
+            <p style="font-size: 0.925rem; color: var(--text-body); line-height: 1.5">
+              Yes. The Attendance Migration tool (<code>/admin/services/attendance/migration</code>)
+              imports past CSV rosters and seat records directly into the platform.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15: Implementation Roadmap & Next Steps -->
+      <section class="slide" data-slide="15">
+        <div class="slide-meta">
+          <span class="slide-tag" style="color: #0d9488">Implementation Roadmap & Next Steps</span>
+          <span
+            class="demo-route-badge"
+            style="background: #f0fdf4; color: #166534; border-color: #bbf7d0"
+            >Target: 3-Week Pilot</span
+          >
+        </div>
+
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+          "
+        >
+          <img
+            src="../../src/assets/wc-hub-brand.png"
+            alt="WelcomeHub Logo"
+            style="
+              height: 52px;
+              width: 52px;
+              border-radius: 12px;
+              object-fit: cover;
+              box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+            "
+            onerror="
+              this.onerror = null;
+              this.src = 'https://welcomehub.app/apple-touch-icon.png';
+            "
+          />
+        </div>
+
+        <h2 class="slide-h1" style="font-size: 2.5rem; text-align: center; margin-top: 0.35rem">
+          Implementation Roadmap & Onboarding
+        </h2>
+
+        <p
+          class="slide-subtitle"
+          style="text-align: center; margin: 0 auto 1.75rem; font-size: 1.15rem; max-width: 720px"
+        >
+          A structured 3-phase rollout to onboard volunteer teams with zero Sunday service
+          disruption.
+        </p>
+
+        <div class="grid-3col">
+          <div class="card-box" style="text-align: center; border-top: 4px solid var(--aida-color)">
+            <div
+              style="
+                font-size: 0.75rem;
+                font-weight: 800;
+                color: var(--aida-color);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.35rem;
+              "
+            >
+              Phase 1 · Weeks 1–2
+            </div>
+            <h4
+              style="
+                font-size: 1.15rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                color: var(--text-main);
+              "
+            >
+              Roster & Schedule Setup
+            </h4>
+            <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+              Import volunteer rosters, assign ministry roles, and verify 1st to 5th Sunday
+              commitment schedules.
+            </p>
+          </div>
+
+          <div
+            class="card-box"
+            style="text-align: center; border-top: 4px solid var(--lorna-color)"
+          >
+            <div
+              style="
+                font-size: 0.75rem;
+                font-weight: 800;
+                color: var(--lorna-color);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.35rem;
+              "
+            >
+              Phase 2 · Target Sunday
+            </div>
+            <h4
+              style="
+                font-size: 1.15rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                color: var(--text-main);
+              "
+            >
+              Pilot Sunday Service
+            </h4>
+            <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+              Run SLOD dashboard and check-in kiosks across 9AM, 12NN, and 3PM services with
+              on-ground support.
+            </p>
+          </div>
+
+          <div class="card-box" style="text-align: center; border-top: 4px solid var(--fe-color)">
+            <div
+              style="
+                font-size: 0.75rem;
+                font-weight: 800;
+                color: var(--fe-color);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.35rem;
+              "
+            >
+              Phase 3 · Ongoing
+            </div>
+            <h4
+              style="
+                font-size: 1.15rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                color: var(--text-main);
+              "
+            >
+              Full Ministry Adoption
+            </h4>
+            <p style="font-size: 0.9rem; color: var(--text-body); line-height: 1.5">
+              Activate volunteer self-service profiles, targeted broadcast channels, and quarterly
+              care forecasting.
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="card-box"
+          style="
+            margin-top: 1.5rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.15rem 1.5rem;
+            border-radius: var(--radius-md);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 1rem">
+            <div
+              style="
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: #16a34a;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+              "
+            >
+              ✓
+            </div>
+            <div>
+              <div style="font-weight: 700; color: #166534; font-size: 1.05rem">
+                Recommended Next Step
+              </div>
+              <div style="color: #15803d; font-size: 0.9rem">
+                Approve target date for Phase 2 Pilot Sunday and authorize team roster alignment.
+              </div>
+            </div>
+          </div>
+          <div
+            style="
+              padding: 0.5rem 1.25rem;
+              background: #ffffff;
+              border: 1px solid #86efac;
+              border-radius: var(--radius-sm);
+              font-size: 0.95rem;
+              font-weight: 700;
+              color: #166534;
+              white-space: nowrap;
+            "
+          >
+            Open for Leadership Alignment & Q&A
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Stage Bottom Navigation Bar -->
+    <footer class="stage-footer">
+      <div class="slide-counter">
+        <span id="currentSlideNum">1</span> / <span id="totalSlideNum">16</span>
+      </div>
+
+      <div class="nav-arrow-group">
+        <button class="btn-slide-nav" id="btnPrevSlide" title="Previous Slide (Press Left Arrow)">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Previous</span>
+        </button>
+
+        <button
+          class="btn-slide-nav"
+          id="btnNextSlide"
+          title="Next Slide (Press Right Arrow / Space)"
+        >
+          <span>Next</span>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div style="font-size: 0.8125rem; color: var(--text-muted)">
+        Press
+        <kbd
+          style="
+            background: #e2e8f0;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+          "
+          >←</kbd
+        >
+        <kbd
+          style="
+            background: #e2e8f0;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+          "
+          >→</kbd
+        >
+        or
+        <kbd
+          style="
+            background: #e2e8f0;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+          "
+          >Space</kbd
+        >
+        to advance ·
+        <kbd
+          style="
+            background: #e2e8f0;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+          "
+          >J</kbd
+        >
+        Jump
+      </div>
+    </footer>
+
+    <!-- Slide Jump Modal -->
+    <div class="jump-modal-overlay" id="jumpModal">
+      <div class="jump-modal">
+        <div class="jump-modal-header">
+          <h3 style="font-size: 1.15rem; font-weight: 700">Jump to Slide</h3>
+          <button class="btn-action" id="btnCloseJumpModal">✕</button>
+        </div>
+        <ul class="jump-list" id="jumpList"></ul>
+      </div>
+    </div>
+
+    <!-- PowerPoint Slide Logic -->
+    <script>
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const totalSlides = slides.length;
+      let currentSlideIndex = 0;
+
+      const currentSlideNumEl = document.getElementById('currentSlideNum');
+      const totalSlideNumEl = document.getElementById('totalSlideNum');
+      const progressFillEl = document.getElementById('progressFill');
+      const btnPrev = document.getElementById('btnPrevSlide');
+      const btnNext = document.getElementById('btnNextSlide');
+
+      const jumpModal = document.getElementById('jumpModal');
+      const btnJumpList = document.getElementById('btnJumpList');
+      const btnCloseJumpModal = document.getElementById('btnCloseJumpModal');
+      const jumpList = document.getElementById('jumpList');
+
+      totalSlideNumEl.textContent = totalSlides;
+
+      // Populate Jump List
+      slides.forEach((slide, idx) => {
+        const heading =
+          slide.querySelector('h1, h2')?.innerText?.replace(/\n/g, ' ') || `Slide ${idx + 1}`;
+        const li = document.createElement('li');
+        li.className = 'jump-item';
+        li.innerHTML = `<span><strong>${idx + 1}.</strong> ${heading}</span>`;
+        li.addEventListener('click', () => {
+          goToSlide(idx);
+          closeJumpModal();
+        });
+        jumpList.appendChild(li);
+      });
+
+      function updateSlideUI() {
+        slides.forEach((slide, idx) => {
+          if (idx === currentSlideIndex) {
+            slide.classList.add('active');
+          } else {
+            slide.classList.remove('active');
+          }
+        });
+
+        currentSlideNumEl.textContent = currentSlideIndex + 1;
+        const progressPercent = ((currentSlideIndex + 1) / totalSlides) * 100;
+        progressFillEl.style.width = `${progressPercent}%`;
+
+        btnPrev.disabled = currentSlideIndex === 0;
+        btnNext.disabled = currentSlideIndex === totalSlides - 1;
+
+        // Update jump list active state
+        Array.from(jumpList.children).forEach((item, idx) => {
+          if (idx === currentSlideIndex) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      function goToSlide(index) {
+        if (index >= 0 && index < totalSlides) {
+          currentSlideIndex = index;
+          updateSlideUI();
+        }
+      }
+
+      function nextSlide() {
+        if (currentSlideIndex < totalSlides - 1) {
+          currentSlideIndex++;
+          updateSlideUI();
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlideIndex > 0) {
+          currentSlideIndex--;
+          updateSlideUI();
+        }
+      }
+
+      btnNext.addEventListener('click', nextSlide);
+      btnPrev.addEventListener('click', prevSlide);
+
+      // Keyboard Shortcuts
+      window.addEventListener('keydown', (e) => {
+        // Don't trigger when inside modal or inputs
+        if (jumpModal.style.display === 'flex' && e.key !== 'Escape') return;
+
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+          e.preventDefault();
+          prevSlide();
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          goToSlide(0);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          goToSlide(totalSlides - 1);
+        } else if (e.key.toLowerCase() === 'j') {
+          e.preventDefault();
+          openJumpModal();
+        } else if (e.key === 'Escape') {
+          closeJumpModal();
+        }
+      });
+
+      function openJumpModal() {
+        jumpModal.style.display = 'flex';
+      }
+
+      function closeJumpModal() {
+        jumpModal.style.display = 'none';
+      }
+
+      btnJumpList.addEventListener('click', openJumpModal);
+      btnCloseJumpModal.addEventListener('click', closeJumpModal);
+      jumpModal.addEventListener('click', (e) => {
+        if (e.target === jumpModal) closeJumpModal();
+      });
+
+      // Touch Swipe Support for tablets
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      window.addEventListener(
+        'touchstart',
+        (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+        },
+        { passive: true },
+      );
+
+      window.addEventListener(
+        'touchend',
+        (e) => {
+          touchEndX = e.changedTouches[0].screenX;
+          if (touchStartX - touchEndX > 50) nextSlide();
+          if (touchEndX - touchStartX > 50) prevSlide();
+        },
+        { passive: true },
+      );
+
+      // Initialize UI
+      updateSlideUI();
+    </script>
+  </body>
+</html>
