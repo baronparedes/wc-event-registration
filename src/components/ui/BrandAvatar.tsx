@@ -3,12 +3,13 @@ import type { FC } from 'react';
 import brandLogo from '@/assets/wc-hub-brand.png';
 
 export interface BrandAvatarProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   alt?: string;
   className?: string;
 }
 
 const sizeClasses = {
+  xxs: 'h-6 w-6',
   xs: 'h-8 w-8',
   sm: 'h-10 w-10',
   md: 'h-14 w-14',

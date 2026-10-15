@@ -51,7 +51,7 @@ describe('AdminChatPage', () => {
     });
   });
 
-  it('renders initial empty state', () => {
+  it('renders initial empty state with helper prompts', () => {
     render(
       <MemoryRouter>
         <AdminChatPage />
@@ -59,9 +59,67 @@ describe('AdminChatPage', () => {
     );
 
     expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
-    expect(screen.getByText('Ask me questions about data and events.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Ask me questions about volunteers, schedules, and events.'),
+    ).toBeInTheDocument();
     expect(screen.getByAltText('AI Assistant')).toBeInTheDocument();
     expect(screen.getAllByText('Beta').length).toBeGreaterThanOrEqual(1);
+
+    expect(
+      screen.getByRole('button', {
+        name: /Who is scheduled to serve this Sunday, and who has filed approved excuses\?/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /What was our overall turn-up rate and attendance breakdown for last Sunday's services\?/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /Which volunteers had unexcused absences or missed their commitments last weekend\?/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /Who are our top-performing volunteers based on attendance scores this quarter\?/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /Do we have enough volunteers scheduled for next Sunday, or are we facing any role deficits\?/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('submits message immediately when clicking a helper prompt', async () => {
+    mockStreamRequest.mockImplementation(
+      async (_payload: unknown, onChunk: (text: string) => void) => {
+        onChunk('Here is the schedule for Sunday.');
+      },
+    );
+
+    render(
+      <MemoryRouter>
+        <AdminChatPage />
+      </MemoryRouter>,
+    );
+
+    const helperButton = screen.getByRole('button', {
+      name: /Who is scheduled to serve this Sunday, and who has filed approved excuses\?/i,
+    });
+    fireEvent.click(helperButton);
+
+    expect(
+      screen.getByText(
+        'Who is scheduled to serve this Sunday, and who has filed approved excuses?',
+      ),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockStreamRequest).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Here is the schedule for Sunday.')).toBeInTheDocument();
+    });
   });
 
   it('submits a message, displays user message and avatar, and streams response', async () => {

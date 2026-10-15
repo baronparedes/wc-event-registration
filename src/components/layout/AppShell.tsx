@@ -58,6 +58,7 @@ export function AppShell() {
         avatarObjectKey={avatarObjectKey}
         roleLabel={roleLabel}
         hasProfileAccess={Boolean(currentProfile)}
+        contentClassName="hidden sm:block max-w-[10rem] md:max-w-[15rem]"
         disableLink={isMinimizedShell}
       />
     </div>
@@ -82,7 +83,7 @@ export function AppShell() {
         onLogout={handleLogout}
       />
 
-      <main className="relative mx-auto w-full max-w-7xl flex-1 animate-fadeIn sm:px-2 md:px-6 py-4 print:p-0">
+      <main className="relative mx-auto w-full max-w-7xl flex-1 animate-fadeIn px-4 sm:px-4 md:px-6 py-4 print:p-0">
         <Outlet />
       </main>
 

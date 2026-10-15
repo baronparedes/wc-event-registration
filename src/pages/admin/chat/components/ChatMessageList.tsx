@@ -11,6 +11,7 @@ export interface ChatMessageListProps {
   isLoading: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
   bottomRef: RefObject<HTMLDivElement | null>;
+  onSelectPrompt?: (prompt: string) => void;
 }
 
 export const ChatMessageList = memo(function ChatMessageList({
@@ -20,10 +21,13 @@ export const ChatMessageList = memo(function ChatMessageList({
   isLoading,
   scrollRef,
   bottomRef,
+  onSelectPrompt,
 }: ChatMessageListProps) {
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-      {messages.length === 0 && <ChatEmptyState />}
+    <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4">
+      {messages.length === 0 && (
+        <ChatEmptyState onSelectPrompt={onSelectPrompt} disabled={isLoading} />
+      )}
       {messages.map((m) => (
         <ChatMessageItem
           key={m.id}

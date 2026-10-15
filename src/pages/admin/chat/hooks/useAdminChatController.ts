@@ -41,29 +41,44 @@ export function useAdminChatController() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const isSubmittingRef = useRef(false);
+  const messagesRef = useRef<ChatMessageItemData[]>(messages);
 
-  // Only persist to sessionStorage when not actively streaming to avoid heavy JSON.stringify blocking
-  useEffect(() => {
-    if (isLoading) return;
+  const saveMessagesToStorage = useCallback((msgs: ChatMessageItemData[]) => {
+    if (typeof window === 'undefined') return;
     try {
-      if (messages.length > 0) {
-        window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+      if (msgs.length > 0) {
+        window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(msgs));
       } else {
         window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
       }
     } catch (error) {
       console.error('Failed to save chat messages to sessionStorage', error);
     }
-  }, [messages, isLoading]);
+  }, []);
+
+  // Update messagesRef and persist to sessionStorage when not actively streaming
+  useEffect(() => {
+    messagesRef.current = messages;
+    if (isLoading) return;
+    saveMessagesToStorage(messages);
+  }, [messages, isLoading, saveMessagesToStorage]);
+
+  // Flush to sessionStorage on unmount or tab close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveMessagesToStorage(messagesRef.current);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      saveMessagesToStorage(messagesRef.current);
+    };
+  }, [saveMessagesToStorage]);
 
   const handleClearChat = useCallback(() => {
     setMessages([]);
-    try {
-      window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
-    } catch (error) {
-      console.error('Failed to clear chat messages from sessionStorage', error);
-    }
-  }, []);
+    saveMessagesToStorage([]);
+  }, [saveMessagesToStorage]);
 
   const scrollToBottom = useCallback((smooth = false) => {
     if (smooth && bottomRef.current?.scrollIntoView) {
@@ -91,7 +106,15 @@ export function useAdminChatController() {
       const assistantMessageId = crypto.randomUUID();
       const currentMessages = [...messages, userMessage];
 
-      setMessages([...currentMessages, { id: assistantMessageId, role: 'assistant', content: '' }]);
+      const initialAssistantMessage: ChatMessageItemData = {
+        id: assistantMessageId,
+        role: 'assistant',
+        content: '',
+      };
+      const initialMessages = [...currentMessages, initialAssistantMessage];
+
+      setMessages(initialMessages);
+      saveMessagesToStorage(initialMessages);
       scrollToBottom(true);
 
       // Sliding context window: send at most the last MAX_CONTEXT_MESSAGES to keep AI latency low
@@ -131,13 +154,15 @@ export function useAdminChatController() {
         }
         flushBuffer();
 
-        setMessages((prev) =>
-          prev.map((msg) =>
+        setMessages((prev) => {
+          const finalMessages = prev.map((msg) =>
             msg.id === assistantMessageId && !msg.content.trim()
               ? { ...msg, content: "I'm on a coffee break, you can come back later." }
               : msg,
-          ),
-        );
+          );
+          saveMessagesToStorage(finalMessages);
+          return finalMessages;
+        });
       } catch (error) {
         if (rafId) {
           cancelAnimationFrame(rafId);
@@ -151,13 +176,15 @@ export function useAdminChatController() {
           (error instanceof Error && error.name === 'AbortError');
 
         if (isAbortError) {
-          setMessages((prev) =>
-            prev.map((msg) =>
+          setMessages((prev) => {
+            const nextMsgs = prev.map((msg) =>
               msg.id === assistantMessageId && !msg.content.trim()
                 ? { ...msg, content: '[Request aborted]' }
                 : msg,
-            ),
-          );
+            );
+            saveMessagesToStorage(nextMsgs);
+            return nextMsgs;
+          });
         } else {
           const errMsg = error instanceof Error ? error.message : String(error);
           const isQuota = /429|quota|resource_exhausted|rate\s*limit/i.test(errMsg);
@@ -174,17 +201,20 @@ export function useAdminChatController() {
               ? 'Sorry, I encountered an error.'
               : errMsg;
 
-          setMessages((prev) =>
-            prev.map((msg) =>
+          setMessages((prev) => {
+            const nextMsgs = prev.map((msg) =>
               msg.id === assistantMessageId ? { ...msg, content: fallbackContent } : msg,
-            ),
-          );
+            );
+            saveMessagesToStorage(nextMsgs);
+            return nextMsgs;
+          });
         }
+      } finally {
+        isSubmittingRef.current = false;
+        saveMessagesToStorage(messagesRef.current);
       }
-
-      isSubmittingRef.current = false;
     },
-    [isLoading, messages, scrollToBottom, streamRequest, userTokenMap],
+    [isLoading, messages, saveMessagesToStorage, scrollToBottom, streamRequest, userTokenMap],
   );
 
   return {
