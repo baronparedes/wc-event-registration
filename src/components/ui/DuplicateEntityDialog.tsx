@@ -64,9 +64,9 @@ export function DuplicateEntityDialog({
 
   const titleRegistration = register('title');
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    titleRegistration.onChange(e);
-    const newTitle = e.target.value;
+  const handleTitleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await titleRegistration.onChange(e);
+    const newTitle = String(e.target.value);
     const generatedSlug = newTitle
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -93,7 +93,9 @@ export function DuplicateEntityDialog({
             placeholder={`e.g. ${sourceItem?.title || 'New Item'} - Copy`}
             registration={{
               ...titleRegistration,
-              onChange: handleTitleChange,
+              onChange: async (e) => {
+                await handleTitleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
+              },
             }}
             error={errors.title?.message}
             disabled={isPending}
