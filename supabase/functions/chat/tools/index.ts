@@ -1,7 +1,6 @@
 import { createAnalyzeEventAttendeesTool } from './analyzeEventAttendees.ts';
 import { createCreateEventTool } from './createEvent.ts';
 import { createCreateFormTool } from './createForm.ts';
-import { createGetAdminRoutesTool } from './getAdminRoutes.ts';
 import { createGetCommitmentSummaryStatsTool } from './getCommitmentSummaryStats.ts';
 import { createGetEventsTool } from './getEvents.ts';
 import { createGetExcusedMembersTool } from './getExcusedMembers.ts';
@@ -37,7 +36,6 @@ export * from './roles.ts';
 
 export function createChatTools(context: ToolContext) {
   return {
-    getAdminRoutes: createGetAdminRoutesTool(context),
     getEvents: createGetEventsTool(context),
     createEvent: createCreateEventTool(context),
     createForm: createCreateFormTool(context),

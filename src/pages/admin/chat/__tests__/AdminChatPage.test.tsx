@@ -345,9 +345,9 @@ describe('AdminChatPage', () => {
     const callPayload = mockStreamRequest.mock.calls[0][0] as {
       messages: Array<{ role: string; content: string }>;
     };
-    expect(callPayload.messages).toHaveLength(20);
+    expect(callPayload.messages).toHaveLength(10);
     expect(callPayload.messages[callPayload.messages.length - 1]?.content).toBe('New query');
-    expect(callPayload.messages[0]?.content).toBe('Message 6'); // 26 total (25 historical + 1 new), last 20 starts at index 6
+    expect(callPayload.messages[0]?.content).toBe('Message 16'); // 26 total (25 historical + 1 new), last 10 starts at index 16
   });
 
   it('tokenizes user names in the network request payload while displaying natural names in UI', async () => {

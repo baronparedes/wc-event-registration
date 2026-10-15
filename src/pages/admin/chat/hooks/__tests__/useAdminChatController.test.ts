@@ -114,4 +114,29 @@ describe('useAdminChatController', () => {
       content: 'Streaming answer',
     });
   });
+
+  it('slices message history to MAX_CONTEXT_MESSAGES when sending to streamRequest', async () => {
+    // Seed 15 existing messages in storage
+    const existingMessages = Array.from({ length: 15 }, (_, i) => ({
+      id: `msg-${i}`,
+      role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: `Message ${i}`,
+    }));
+    window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(existingMessages));
+
+    const { result } = renderHook(() => useAdminChatController());
+
+    await act(async () => {
+      await result.current.handleSendMessage('Latest question');
+    });
+
+    // streamRequest should be called with payload containing exactly 10 messages (MAX_CONTEXT_MESSAGES)
+    expect(mockStreamRequest).toHaveBeenCalledTimes(1);
+    const sentPayload = mockStreamRequest.mock.calls[0][0] as {
+      messages: { role: string; content: string }[];
+    };
+    expect(sentPayload.messages).toHaveLength(10);
+    // The last message in sent payload should be the new user message
+    expect(sentPayload.messages[9].content).toBe('Latest question');
+  });
 });
