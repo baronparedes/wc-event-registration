@@ -22,9 +22,9 @@ import type { AdminRole } from '@/lib/domain/auth';
 import { canAdminPerform } from '@/lib/domain/auth';
 
 import { RouteErrorBoundary } from '../components/RouteErrorBoundary';
-import { AppMobileShell, AppShell } from '../components/layout';
+import { AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
-import { useIsMobileViewport, useOnlineStatus } from '../hooks/utils';
+import { useOnlineStatus } from '../hooks/utils';
 
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
@@ -280,8 +280,7 @@ function LazyRoute({ children }: { children: ReactElement }) {
 }
 
 function ResponsiveShellLayout() {
-  const isMobile = useIsMobileViewport();
-  return isMobile ? <AppMobileShell /> : <AppShell />;
+  return <AppShell />;
 }
 
 function isOfflineSupportedPath(pathname: string): boolean {

@@ -16,3 +16,9 @@ export const chatInputSchema = z.object({
 });
 
 export type ChatInputFormValues = z.infer<typeof chatInputSchema>;
+
+export interface HelperPrompt {
+  id: string;
+  icon: string;
+  prompt: string;
+}
