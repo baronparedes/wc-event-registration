@@ -241,7 +241,7 @@ export function MissedCommitmentsModal({
             </div>
             {dateSubtitle && <h1 className="text-muted mt-1">{dateSubtitle}</h1>}
           </div>
-          <div className="mt-2 sm:mt-0">
+          <div className="mt-2 sm:mt-0 w-full sm:w-auto">
             <ExportMissedCommitmentsButton
               records={filteredRecords}
               startDate={startDate}

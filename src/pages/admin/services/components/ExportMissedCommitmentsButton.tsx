@@ -14,6 +14,7 @@ export interface ExportMissedCommitmentsButtonProps {
   startDate?: string;
   endDate?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export function ExportMissedCommitmentsButton({
@@ -21,6 +22,7 @@ export function ExportMissedCommitmentsButton({
   startDate,
   endDate,
   disabled = false,
+  className,
 }: ExportMissedCommitmentsButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -79,6 +81,7 @@ export function ExportMissedCommitmentsButton({
       onClick={handleExport}
       disabled={isDisabled}
       aria-label="Export missed commitments as CSV"
+      className={`w-full sm:w-auto ${className ?? ''}`.trim()}
     >
       {isExporting ? (
         <>
