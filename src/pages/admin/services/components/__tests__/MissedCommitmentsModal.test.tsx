@@ -16,6 +16,18 @@ function renderModal(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
+const { mockUseIsMobileViewport } = vi.hoisted(() => ({
+  mockUseIsMobileViewport: vi.fn(),
+}));
+
+vi.mock('@/hooks/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/utils')>();
+  return {
+    ...actual,
+    useIsMobileViewport: () => mockUseIsMobileViewport(),
+  };
+});
+
 const mockUseMissedServiceCommitmentsQuery = vi.fn();
 vi.mock('@/hooks/domain/services', () => ({
   useMissedServiceCommitmentsQuery: (...args: unknown[]) =>
@@ -54,6 +66,7 @@ const sampleMissedRecords: MissedServiceCommitment[] = [
 describe('MissedCommitmentsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseIsMobileViewport.mockReturnValue(false);
   });
 
   it('renders loading state when query is loading', () => {
@@ -609,5 +622,30 @@ describe('MissedCommitmentsModal', () => {
     expect(
       screen.getByText('No volunteers match your current search or filter criteria.'),
     ).toBeInTheDocument();
+  });
+
+  it('renders mobile card list when isMobileViewport is true', () => {
+    mockUseIsMobileViewport.mockReturnValue(true);
+    mockUseMissedServiceCommitmentsQuery.mockReturnValue({
+      data: sampleMissedRecords,
+      isLoading: false,
+    });
+
+    renderModal(
+      <MissedCommitmentsModal
+        isOpen={true}
+        onClose={vi.fn()}
+        filterMode="sunday"
+        selectedSunday="2026-03-15"
+      />,
+    );
+
+    // Desktop table columnheaders should not be rendered
+    expect(screen.queryByRole('columnheader', { name: 'Volunteer' })).not.toBeInTheDocument();
+
+    // Volunteer names and details should be present in mobile cards
+    expect(screen.getByText('Test Volunteer One')).toBeInTheDocument();
+    expect(screen.getByText('Test Volunteer Two')).toBeInTheDocument();
+    expect(screen.getAllByText('Contact:').length).toBeGreaterThanOrEqual(1);
   });
 });

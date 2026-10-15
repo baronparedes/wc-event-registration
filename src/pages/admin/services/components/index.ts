@@ -4,4 +4,7 @@ export * from './ServiceDashboardRoleBreakdown';
 export * from './ServiceMetricCard';
 export * from './ServiceNavigationLinks';
 export * from './MissedCommitmentsModal';
+export * from './MissedCommitmentsTable';
+export * from './MissedCommitmentsMobileList';
 export * from './ExportMissedCommitmentsButton';
+export * from './types';
