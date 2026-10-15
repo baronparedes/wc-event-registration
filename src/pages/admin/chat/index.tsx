@@ -23,7 +23,6 @@ export function AdminChatPage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Header
-        breadcrumbs={[{ label: 'Hello!' }]}
         title="AI Assistant"
         badge={
           <Badge
@@ -42,7 +41,6 @@ export function AdminChatPage() {
         actions={
           messages.length > 0 ? (
             <Button
-              variant="outline"
               size="sm"
               onClick={handleClearChat}
               disabled={isLoading}
@@ -57,7 +55,7 @@ export function AdminChatPage() {
       />
 
       <AdminPageShell.Content isLoading={false} loadingMessage="">
-        <div className="flex h-[calc(100vh-14rem)] min-h-[520px] max-h-[820px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+        <div className="flex h-[calc(100vh-14rem)] min-h-[520px] max-h-[920px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
           <ChatMessageList
             messages={messages}
             displayName={displayName}
@@ -67,7 +65,7 @@ export function AdminChatPage() {
             bottomRef={bottomRef}
           />
 
-          <div className="border-t border-border bg-background p-4">
+          <div className="border-t border-border bg-background px-3 py-2 sm:px-4 sm:py-2.5">
             <ChatInputForm
               isLoading={isLoading}
               onSubmit={handleSendMessage}

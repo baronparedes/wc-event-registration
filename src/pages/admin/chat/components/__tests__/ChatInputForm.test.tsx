@@ -38,11 +38,39 @@ describe('ChatInputForm', () => {
     render(<ChatInputForm isLoading={false} onSubmit={vi.fn()} onStop={vi.fn()} />);
 
     expect(
-      screen.getByPlaceholderText(
-        'Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)',
-      ),
+      screen.getByPlaceholderText('Ask about volunteers, schedules, events...'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mention a member/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Send/i })).toHaveAttribute(
+      'title',
+      'Send message (Enter to send, Shift+Enter for new line)',
+    );
+  });
+
+  it('renders shortened placeholder on mobile viewports', () => {
+    window.innerWidth = 500;
+    render(<ChatInputForm isLoading={false} onSubmit={vi.fn()} onStop={vi.fn()} />);
+
+    expect(screen.getByPlaceholderText('Ask a question...')).toBeInTheDocument();
+  });
+
+  it('inserts @ and opens mention candidates when clicking the @ mention button', () => {
+    render(
+      <ChatInputForm
+        isLoading={false}
+        onSubmit={vi.fn()}
+        onStop={vi.fn()}
+        tokenMap={mockTokenMap}
+      />,
+    );
+
+    const mentionButton = screen.getByRole('button', { name: /Mention a member/i });
+    fireEvent.click(mentionButton);
+
+    const input = screen.getByPlaceholderText(/Ask/i);
+    expect(input).toHaveValue('@');
+    expect(screen.getByRole('listbox', { name: /Mention members/i })).toBeInTheDocument();
   });
 
   it('enables send button when typing non-whitespace text and clears input on submit', () => {
