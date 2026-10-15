@@ -18,4 +18,5 @@ export * from './queries/useServiceDashboardQuery';
 export * from './queries/useCommitmentDashboardStatsQuery';
 export * from './mutations/useExportCommitmentDashboardStatsCSVMutation';
 export * from './queries/useVolunteerAttendanceLogQuery';
+export * from './queries/useMissedServiceCommitmentsQuery';
 export * from './queries/useServiceExceptionDatesQuery';

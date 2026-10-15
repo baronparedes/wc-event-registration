@@ -9,6 +9,7 @@ import type {
   UpdateServiceSeatInput,
 } from './schemas';
 import type {
+  MissedServiceCommitment,
   ServiceAttendance,
   ServiceExceptionDate,
   ServiceLayout,
@@ -45,6 +46,20 @@ export type ServiceDashboardStatsArgs = {
   p_year?: number;
   p_month?: number;
   p_sunday_date?: string;
+  p_start_date?: string;
+  p_end_date?: string;
+};
+
+export type MissedServiceCommitmentsArgs = {
+  p_year?: number;
+  p_month?: number;
+  p_sunday_date?: string;
+  p_start_date?: string;
+  p_end_date?: string;
+  p_time_slot?: string;
+  p_role?: string;
+  p_excuse_event_id?: string;
+  p_search_query?: string;
 };
 
 export type CommitmentDashboardStatsRpcFilters = {
@@ -357,6 +372,18 @@ export async function fetchServiceDashboardStats(
   }
 
   return data as unknown;
+}
+
+export async function fetchMissedServiceCommitments(
+  args: MissedServiceCommitmentsArgs,
+): Promise<MissedServiceCommitment[]> {
+  const { data, error } = await supabase.rpc('get_missed_service_commitments', args);
+
+  if (error) {
+    throw new Error(`Failed to fetch missed service commitments: ${error.message}`);
+  }
+
+  return (data ?? []) as MissedServiceCommitment[];
 }
 
 export async function fetchCommitmentDashboardStatsPage(

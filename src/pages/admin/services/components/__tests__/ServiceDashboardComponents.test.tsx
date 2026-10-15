@@ -107,6 +107,9 @@ describe('ServiceDashboardMetrics', () => {
     expect(screen.getByText('Present')).toBeInTheDocument();
     expect(screen.getByText('48 Total')).toBeInTheDocument();
 
+    expect(screen.getByText('Missed Commitments')).toBeInTheDocument();
+    expect(screen.getByText('12 Total')).toBeInTheDocument();
+
     expect(screen.getByText('Turn-Up Rate')).toBeInTheDocument();
     expect(screen.getByText('80% Avg')).toBeInTheDocument();
 
@@ -115,6 +118,20 @@ describe('ServiceDashboardMetrics', () => {
 
     expect(screen.getByText('Total Walk-In')).toBeInTheDocument();
     expect(screen.getByText('17 Total')).toBeInTheDocument();
+  });
+
+  it('calls onViewMissed when a missed commitment slot is clicked', () => {
+    const onViewMissed = vi.fn();
+    render(
+      <ServiceDashboardMetrics
+        stats={sampleStats}
+        dateFilterParams={new URLSearchParams()}
+        onViewMissed={onViewMissed}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle('View missed volunteers for 9AM'));
+    expect(onViewMissed).toHaveBeenCalledWith('9AM');
   });
 
   it('opens filtered attendance records in a new tab for present, late and walk-in metrics', () => {
@@ -171,7 +188,7 @@ describe('ServiceDashboardMetrics', () => {
 
     expect(screen.getByText('0% Avg')).toBeInTheDocument();
     expect(screen.queryByTitle(/View present attendees/)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(9);
+    expect(screen.getAllByRole('button')).toHaveLength(12);
     expect(screen.getAllByRole('button').every((button) => button.hasAttribute('disabled'))).toBe(
       true,
     );

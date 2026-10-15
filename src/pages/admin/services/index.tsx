@@ -11,17 +11,31 @@ import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
 
 import {
+  MissedCommitmentsModal,
   ServiceDashboardFilters,
   ServiceDashboardMetrics,
   ServiceDashboardRoleBreakdown,
   ServiceNavigationLinks,
 } from './components';
-import { type FilterMode, getLastSundayOfYear, getNearestPreviousSunday } from './constants';
+import {
+  type FilterMode,
+  type ServiceTimeSlot,
+  getLastSundayOfYear,
+  getNearestPreviousSunday,
+} from './constants';
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
   const { data: authState } = useAdminAuthQuery();
   const [filterMode, setFilterMode] = useState<FilterMode>('sunday');
+
+  const [isMissedModalOpen, setIsMissedModalOpen] = useState(false);
+  const [missedModalSlot, setMissedModalSlot] = useState<ServiceTimeSlot | 'All'>('All');
+
+  const handleOpenMissedModal = (slot: ServiceTimeSlot | 'All' = 'All') => {
+    setMissedModalSlot(slot);
+    setIsMissedModalOpen(true);
+  };
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -131,9 +145,25 @@ export function AdminServicesPage() {
           />
         ) : (
           <div className="space-y-6">
-            <ServiceDashboardMetrics stats={stats} dateFilterParams={dateFilterParams} />
+            <ServiceDashboardMetrics
+              stats={stats}
+              dateFilterParams={dateFilterParams}
+              onViewMissed={handleOpenMissedModal}
+            />
             <ServiceDashboardRoleBreakdown stats={stats} dateFilterParams={dateFilterParams} />
           </div>
+        )}
+
+        {isMissedModalOpen && (
+          <MissedCommitmentsModal
+            isOpen={isMissedModalOpen}
+            onClose={() => setIsMissedModalOpen(false)}
+            filterMode={filterMode}
+            selectedSunday={selectedSunday}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            initialTimeSlot={missedModalSlot}
+          />
         )}
       </AdminPageShell.Content>
     </AdminPageShell>

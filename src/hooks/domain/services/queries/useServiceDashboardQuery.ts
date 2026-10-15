@@ -13,6 +13,7 @@ export interface TimeSlotStats {
   present: number;
   walk_ins: number;
   late_tardy: number;
+  missed?: number;
   roles: Record<string, number>;
   committed_roles?: Record<string, number>;
 }
@@ -35,6 +36,7 @@ const normalizeSlot = (raw?: Partial<TimeSlotStats>): TimeSlotStats => ({
   present: raw?.present ?? 0,
   walk_ins: raw?.walk_ins ?? 0,
   late_tardy: raw?.late_tardy ?? 0,
+  missed: raw?.missed ?? Math.max(0, (raw?.committed ?? 0) - (raw?.present ?? 0)),
   roles: raw?.roles ?? {},
   committed_roles: raw?.committed_roles ?? {},
 });
