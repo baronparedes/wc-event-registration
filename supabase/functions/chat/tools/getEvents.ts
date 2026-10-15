@@ -190,6 +190,11 @@ export function createGetEventsTool({ client, requestId }: ToolContext) {
 
         return {
           ...event,
+          description: event.description
+            ? event.description.length > 160
+              ? event.description.slice(0, 160) + '...'
+              : event.description
+            : null,
           time_status,
           member_registrations,
           public_registrations,

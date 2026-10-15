@@ -52,13 +52,28 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
       .describe(
         'End of the date range in YYYY-MM-DD format. Resolve natural language timeframes into concrete dates.',
       ),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(50)
+      .describe('Maximum number of volunteer records to return. Defaults to 50.'),
   });
 
   return tool({
     description:
       "Determine a user's service attendance check-in activity within a specific date range, optionally filtered by role or user tokens. Use this to find active volunteers, total check-in counts (including scheduled check-ins and walk-ins), last check-in dates, identify members who have not served (inactive), or find members who checked in late or as walk-ins within a timeframe. Note: Walk-ins are active check-in attendances and count towards total service activity. Secondary roles (after '/') are ignored for role filtering and reporting; only the primary role (before '/') is evaluated. Always resolves timeframes into a start and end date. NEVER returns PII like names or emails; it uses user tokens instead.",
     inputSchema: schema,
-    execute: async ({ activityType, role, userTokens, targetStartDate, targetEndDate }) => {
+    execute: async ({
+      activityType,
+      role,
+      userTokens,
+      targetStartDate,
+      targetEndDate,
+      limit = 50,
+    }) => {
       const now = getPhNow();
       const range = resolveDateRange(targetStartDate, targetEndDate, 'this_month', now);
 
@@ -260,13 +275,16 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           totalLates += s.lates;
         }
 
+        const returnedVolunteers = tokensList.length > 0 ? sorted : sorted.slice(0, limit);
+
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
           activity_type: activityType,
           role_filter: role ? getPrimaryRole(role) : null,
-          volunteers: sorted,
+          volunteers: returnedVolunteers,
           summary: {
             total_active_volunteers: sorted.length,
+            returned_count: returnedVolunteers.length,
             total_checkins: totalCheckins,
             total_walk_ins: totalWalkIns,
             total_lates: totalLates,
@@ -348,12 +366,16 @@ export function createGetUserServiceActivityTool({ client, requestId }: ToolCont
           }))
           .filter((u): u is { token: string; role: string } => Boolean(u.token));
 
+        const returnedInactive =
+          tokensList.length > 0 ? inactiveUsers : inactiveUsers.slice(0, limit);
+
         return {
           timeframe: { start_date: formattedStart, end_date: formattedEnd },
           activity_type: 'inactive',
           role_filter: role ? getPrimaryRole(role) : null,
-          inactive_volunteers: inactiveUsers,
+          inactive_volunteers: returnedInactive,
           total_inactive_count: inactiveUsers.length,
+          returned_count: returnedInactive.length,
         };
       }
     },

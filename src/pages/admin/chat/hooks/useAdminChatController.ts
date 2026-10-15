@@ -8,7 +8,7 @@ import { tokenizeUserText } from '@/lib/domain/chat';
 import { type ChatMessageItemData, storedChatMessagesSchema } from '../types';
 
 export const CHAT_STORAGE_KEY = 'wc_admin_chat_messages';
-export const MAX_CONTEXT_MESSAGES = 20;
+export const MAX_CONTEXT_MESSAGES = 10;
 
 export function loadStoredChatMessages(): ChatMessageItemData[] {
   if (typeof window === 'undefined') return [];

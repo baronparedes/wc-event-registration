@@ -125,7 +125,7 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
           count: 0,
           tokens: [],
           service_breakdown: Object.fromEntries(
-            serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+            serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0 }]),
           ),
           sunday_breakdown: [],
           role_breakdown: {},
@@ -154,13 +154,13 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
             count: 0,
             tokens: [],
             service_breakdown: Object.fromEntries(
-              serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+              serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0 }]),
             ),
             sunday_breakdown: targetSundayDates.map((date) => ({
               date: formatDate(date),
               count: 0,
               service_breakdown: Object.fromEntries(
-                serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0, tokens: [] }]),
+                serviceSlots.map((serviceSlot) => [serviceSlot, { count: 0 }]),
               ),
             })),
             role_breakdown: {},
@@ -322,7 +322,6 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
         const dateUsers = usersFor(date);
         return {
           count: dateUsers.length,
-          tokens: dateUsers.map(getToken).filter((token): token is string => Boolean(token)),
           service_breakdown: Object.fromEntries(
             serviceSlots.map((serviceSlot) => {
               const serviceUsers = usersFor(date, serviceSlot);
@@ -330,9 +329,6 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
                 serviceSlot,
                 {
                   count: serviceUsers.length,
-                  tokens: serviceUsers
-                    .map(getToken)
-                    .filter((token): token is string => Boolean(token)),
                 },
               ];
             }),
@@ -344,9 +340,22 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       const allUsers = [...new Set(dateKeys.flatMap((date) => usersFor(date)))];
       const roleNames = [...new Set(allUsers.map((user) => getPrimaryRole(user.role)))];
 
+      const excusedVolunteers = allUsers.map((user) => {
+        const token = getToken(user) ?? 'Unknown';
+        const userRecords = matchingRecords.filter((r) => r.userId === user.id);
+        return {
+          token,
+          role: getPrimaryRole(user.role),
+          dates: [...new Set(userRecords.map((r) => r.requestDate))],
+          services: [...new Set(userRecords.flatMap((r) => parseServiceSlots(r.services)))],
+          reasons: [...new Set(userRecords.map((r) => r.reason).filter(Boolean))],
+        };
+      });
+
       return {
         count: allUsers.length,
         tokens: allUsers.map(getToken).filter((token): token is string => Boolean(token)),
+        excused_volunteers: excusedVolunteers,
         service_breakdown: Object.fromEntries(
           serviceSlots.map((serviceSlot) => {
             const serviceUsers = [
@@ -356,9 +365,6 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
               serviceSlot,
               {
                 count: serviceUsers.length,
-                tokens: serviceUsers
-                  .map(getToken)
-                  .filter((token): token is string => Boolean(token)),
               },
             ];
           }),
@@ -376,25 +382,6 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
               roleName,
               {
                 count: roleUsers.length,
-                tokens: roleUsers.map(getToken).filter((token): token is string => Boolean(token)),
-                service_breakdown: Object.fromEntries(
-                  serviceSlots.map((serviceSlot) => {
-                    const serviceUsers = roleUsers.filter((user) =>
-                      dateKeys.some((date) =>
-                        usersFor(date, serviceSlot).some((candidate) => candidate.id === user.id),
-                      ),
-                    );
-                    return [
-                      serviceSlot,
-                      {
-                        count: serviceUsers.length,
-                        tokens: serviceUsers
-                          .map(getToken)
-                          .filter((token): token is string => Boolean(token)),
-                      },
-                    ];
-                  }),
-                ),
               },
             ];
           }),

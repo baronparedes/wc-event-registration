@@ -490,12 +490,8 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
           date: dateStr,
           sunday_key: sundayKey,
           count: sundayUnexcused.length,
-          tokens: sundayUnexcused.map((v) => v.token),
           service_breakdown: Object.fromEntries(
-            serviceSlots.map((slot) => [
-              slot,
-              { count: sundaySlotMap[slot].length, tokens: sundaySlotMap[slot] },
-            ]),
+            serviceSlots.map((slot) => [slot, { count: sundaySlotMap[slot].length }]),
           ),
         };
       });
@@ -509,7 +505,6 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
             roleName,
             {
               count: roleVolunteers.length,
-              tokens: roleVolunteers.map((v) => v.token),
             },
           ];
         }),
@@ -525,10 +520,7 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
         tokens: uniqueTokens,
         volunteers: unexcusedList,
         service_breakdown: Object.fromEntries(
-          serviceSlots.map((slot) => [
-            slot,
-            { count: serviceSlotMap[slot].length, tokens: serviceSlotMap[slot] },
-          ]),
+          serviceSlots.map((slot) => [slot, { count: serviceSlotMap[slot].length }]),
         ),
         role_breakdown: roleBreakdown,
         sunday_breakdown: sundayBreakdown,

@@ -196,21 +196,16 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
         .map(getToken)
         .filter((token): token is string => Boolean(token));
 
-      const buildServiceBreakdown = (users: typeof committedUsers) =>
-        Object.fromEntries(
-          serviceSlots.map((serviceSlot) => {
-            const serviceUsers = users.filter((user) =>
-              Array.from(targetSundayKeys).some((sundayKey) =>
-                hasServiceSlot(user, sundayKey, serviceSlot),
-              ),
-            );
-            const serviceTokens = serviceUsers
-              .map(getToken)
-              .filter((token): token is string => Boolean(token));
-
-            return [serviceSlot, { count: serviceUsers.length, tokens: serviceTokens }];
-          }),
-        );
+      const serviceBreakdown = Object.fromEntries(
+        serviceSlots.map((serviceSlot) => {
+          const serviceUsers = committedUsers.filter((user) =>
+            Array.from(targetSundayKeys).some((sundayKey) =>
+              hasServiceSlot(user, sundayKey, serviceSlot),
+            ),
+          );
+          return [serviceSlot, { count: serviceUsers.length }];
+        }),
+      );
 
       const buildSundayBreakdown = (users: typeof committedUsers) =>
         targetSundayDates.map((date, index) => {
@@ -239,7 +234,6 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
           };
         });
 
-      const serviceBreakdown = buildServiceBreakdown(committedUsers);
       const sundayBreakdown = buildSundayBreakdown(committedUsers);
 
       const roleBreakdown = Object.fromEntries(
@@ -254,8 +248,6 @@ export function createGetUserCommitmentsTool({ client, requestId }: ToolContext)
               {
                 count: roleUsers.length,
                 tokens: roleUsers.map(getToken).filter((token): token is string => Boolean(token)),
-                service_breakdown: buildServiceBreakdown(roleUsers),
-                sunday_breakdown: buildSundayBreakdown(roleUsers),
               },
             ];
           },
