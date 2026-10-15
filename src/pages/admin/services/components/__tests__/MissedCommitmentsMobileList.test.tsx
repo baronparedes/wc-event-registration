@@ -82,6 +82,7 @@ describe('MissedCommitmentsMobileList', () => {
     expect(screen.getByText('2×')).toBeInTheDocument();
     expect(screen.getByText('Prayer Coach')).toBeInTheDocument();
     expect(screen.getByText('Backroom Support')).toBeInTheDocument();
+    expect(screen.getByText('Not provided')).toBeInTheDocument();
   });
 
   it('renders date prefixes in month view mode on mobile', () => {

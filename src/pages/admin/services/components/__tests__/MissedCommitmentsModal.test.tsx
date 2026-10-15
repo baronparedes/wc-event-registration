@@ -646,6 +646,8 @@ describe('MissedCommitmentsModal', () => {
     // Volunteer names and details should be present in mobile cards
     expect(screen.getByText('Test Volunteer One')).toBeInTheDocument();
     expect(screen.getByText('Test Volunteer Two')).toBeInTheDocument();
-    expect(screen.getAllByText('Contact:').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Contact Number').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('09171234567')).toBeInTheDocument();
+    expect(screen.getByText('09189876543')).toBeInTheDocument();
   });
 });
