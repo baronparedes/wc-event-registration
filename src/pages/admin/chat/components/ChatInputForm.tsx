@@ -11,15 +11,19 @@ import {
 } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Send, Square } from 'lucide-react';
+import { ArrowRight, AtSign, Square } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { Button, FormTextareaField } from '@/components/ui';
+import { Button } from '@/components/ui';
 import type { ResolvedToken } from '@/hooks/domain/chat/queries/useResolveUserTokensQuery';
+import { useIsMobileViewport } from '@/hooks/utils';
 import { findMentionCandidates, splitTextByMentions } from '@/lib/domain/chat';
 
 import { type ChatInputFormValues, chatInputSchema } from '../types';
 import { ChatMentionPopover } from './ChatMentionPopover';
+
+const CHAT_INPUT_PLACEHOLDER = 'Ask about volunteers, schedules, events...';
+const CHAT_INPUT_PLACEHOLDER_MOBILE = 'Ask a question...';
 
 interface ChatInputFormProps {
   isLoading: boolean;
@@ -34,8 +38,10 @@ export const ChatInputForm = memo(function ChatInputForm({
   onStop,
   tokenMap = {},
 }: ChatInputFormProps) {
+  const isMobile = useIsMobileViewport();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [dismissedAtIndex, setDismissedAtIndex] = useState<number | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
 
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -55,15 +61,19 @@ export const ChatInputForm = memo(function ChatInputForm({
     if (!textarea) return;
 
     if (!message.trim()) {
-      textarea.style.height = '44px';
+      textarea.style.height = '32px';
       textarea.style.overflowY = 'hidden';
+      setIsMultiline(false);
       return;
     }
 
     textarea.style.height = 'auto';
     const scrollHeight = textarea.scrollHeight;
-    const minHeight = 44;
+    const minHeight = 32;
     const maxHeight = 160;
+
+    const multiline = scrollHeight > minHeight + 4;
+    setIsMultiline(multiline);
 
     if (scrollHeight <= minHeight) {
       textarea.style.height = `${minHeight}px`;
@@ -126,6 +136,23 @@ export const ChatInputForm = memo(function ChatInputForm({
     },
     [message, mentionInfo, setValue],
   );
+
+  const handleMentionButtonClick = useCallback(() => {
+    const currentMessage = message;
+    const nextMessage =
+      !currentMessage || currentMessage.endsWith(' ')
+        ? `${currentMessage}@`
+        : `${currentMessage} @`;
+    setValue('message', nextMessage, { shouldValidate: true, shouldDirty: true });
+    setDismissedAtIndex(null);
+    setSelectedIndex(0);
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.focus();
+      const length = nextMessage.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [message, setValue]);
 
   const handleFormSubmit = useCallback(
     (e?: FormEvent) => {
@@ -191,7 +218,7 @@ export const ChatInputForm = memo(function ChatInputForm({
     <div
       aria-hidden="true"
       ref={backdropRef}
-      className="pointer-events-none absolute inset-0 overflow-hidden px-4 py-2.5 text-sm leading-5 whitespace-pre-wrap break-words font-normal text-text select-none"
+      className="pointer-events-none absolute inset-0 overflow-hidden pl-3 pr-8 py-1.5 text-sm leading-5 whitespace-pre-wrap break-words font-normal text-text select-none"
     >
       {segments.map((seg, i) =>
         seg.isMention ? (
@@ -231,49 +258,74 @@ export const ChatInputForm = memo(function ChatInputForm({
           onHighlight={setSelectedIndex}
         />
       )}
-      <form onSubmit={handleFormSubmit} className="flex items-end gap-2">
-        <FormTextareaField
-          registration={messageRegistration}
-          textareaRef={handleRef}
-          onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
-          backdrop={backdrop}
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={showMentionPopover}
-          aria-haspopup="listbox"
-          aria-controls={showMentionPopover ? 'chat-mention-listbox' : undefined}
-          aria-activedescendant={activeDescendant}
-          ariaLabel="Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)"
-          placeholder="Ask about volunteers, schedules, events... (Shift+Enter for new line, @ to mention)"
-          rows={1}
-          className="flex-1 min-w-0"
-          textareaClassName={`w-full resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-sm leading-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:border-accent transition h-[44px] min-h-[44px] max-h-[160px] ${
-            hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
-          }`}
-        />
-        {isLoading ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onStop}
-            className="mb-2 shrink-0 text-danger border-danger/30 hover:bg-danger/10 hover:text-danger"
-            aria-label="Stop generating"
+      <form
+        onSubmit={handleFormSubmit}
+        className="rounded-xl border border-border bg-surface px-2.5 py-1 shadow-xs transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 [&_grammarly-extension]:!translate-y-[3px]"
+      >
+        <div className={`flex gap-1.5 ${isMultiline ? 'items-end' : 'items-center'}`}>
+          <div className={`relative flex-1 min-w-0 ${isMultiline ? '' : 'flex items-center'}`}>
+            {backdrop}
+            <textarea
+              {...messageRegistration}
+              ref={handleRef}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={showMentionPopover}
+              aria-haspopup="listbox"
+              aria-controls={showMentionPopover ? 'chat-mention-listbox' : undefined}
+              aria-activedescendant={activeDescendant}
+              aria-label={isMobile ? CHAT_INPUT_PLACEHOLDER_MOBILE : CHAT_INPUT_PLACEHOLDER}
+              placeholder={isMobile ? CHAT_INPUT_PLACEHOLDER_MOBILE : CHAT_INPUT_PLACEHOLDER}
+              rows={1}
+              onKeyDown={handleKeyDown}
+              onScroll={handleScroll}
+              className={`w-full block resize-none border-none outline-none ring-0 shadow-none bg-transparent pl-3 pr-8 py-1.5 text-sm leading-5 placeholder:truncate focus:border-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:shadow-none active:outline-none active:border-none active:ring-0 h-8 min-h-8 max-h-[160px] ${
+                hasMention ? 'text-transparent caret-text selection:bg-primary/20' : 'text-text'
+              }`}
+            />
+          </div>
+
+          <div
+            className={`flex shrink-0 items-center gap-1 ${isMultiline ? 'self-end pb-0.5' : ''}`}
           >
-            <Square className="h-4 w-4 sm:mr-2 fill-current" />
-            <span className="hidden sm:inline">Stop</span>
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            variant="default"
-            disabled={!message.trim()}
-            className="mb-2 shrink-0"
-          >
-            <Send className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Send</span>
-          </Button>
-        )}
+            <button
+              type="button"
+              onClick={handleMentionButtonClick}
+              className="inline-flex h-8 w-8 sm:w-auto items-center justify-center rounded-lg px-0 sm:px-2.5 text-xs font-medium text-muted hover:bg-muted/10 hover:text-text transition-colors select-none"
+              aria-label="Mention a member"
+              title="Mention a member"
+            >
+              <AtSign className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline sm:ml-1">mention</span>
+            </button>
+
+            {isLoading ? (
+              <Button
+                type="button"
+                size="xs"
+                onClick={onStop}
+                className="min-h-8 h-8 w-8 sm:w-auto rounded-lg border-danger/30 bg-danger/10 px-0 sm:px-3 text-xs font-semibold text-danger hover:bg-danger/20 hover:text-danger flex items-center justify-center"
+                aria-label="Stop generating"
+              >
+                <Square className="h-3 w-3 fill-current" />
+                <span className="hidden sm:inline sm:ml-1">Stop</span>
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="default"
+                size="xs"
+                disabled={!message.trim()}
+                className="min-h-8 h-8 w-8 sm:w-auto rounded-lg px-0 sm:px-3 text-xs font-semibold shadow-xs flex items-center justify-center"
+                aria-label="Send message"
+                title="Send message (Enter to send, Shift+Enter for new line)"
+              >
+                <span className="hidden sm:inline">Send</span>
+                <ArrowRight className="h-3.5 w-3.5 sm:ml-1" />
+              </Button>
+            )}
+          </div>
+        </div>
       </form>
     </div>
   );
