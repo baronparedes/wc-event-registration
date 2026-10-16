@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { addMonths, isSameMonth, subMonths } from 'date-fns';
-import { SlidersHorizontal } from 'lucide-react';
+import { Share2, SlidersHorizontal } from 'lucide-react';
 
 import { AdminPageShell } from '@/components/layout';
 import { AlertBanner, Button } from '@/components/ui';
@@ -23,6 +23,7 @@ import {
   ForecastMonthlyTrendChart,
   ForecastRoleGroupSelector,
   ForecastSundaySelector,
+  ShareSundayForecastDialog,
   SundayForecastCard,
 } from './components';
 import {
@@ -35,6 +36,7 @@ export function AdminServiceAttendanceForecastPage() {
   const [activeRoleGroup, setActiveRoleGroup] = useState<ForecastRoleGroup>('ALL');
   const [activeSundayKey, setActiveSundayKey] = useState<string>('ALL');
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
     getStoredVolunteerTargets(),
@@ -90,14 +92,26 @@ export function AdminServiceAttendanceForecastPage() {
         description="Monthly turnup expectations and role deficit forecasting for Sunday services."
         breadcrumbs={[{ label: 'Services', to: ROUTE_PATHS.adminServices }, { label: 'Forecast' }]}
         actions={
-          <Button
-            type="button"
-            onClick={() => setIsTargetsModalOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-            Configure Targets
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsShareModalOpen(true)}
+              className="w-full sm:w-auto"
+              disabled={isLoading || isError || !sundayForecasts.length}
+            >
+              <Share2 className="mr-1.5 h-4 w-4" />
+              Share Forecast
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setIsTargetsModalOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+              Configure Targets
+            </Button>
+          </div>
         }
       />
       <ServiceNavigationLinks />
@@ -163,6 +177,14 @@ export function AdminServiceAttendanceForecastPage() {
             </div>
           </div>
         )}
+
+        <ShareSundayForecastDialog
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          sundays={sundayForecasts}
+          initialSundayKey={activeSundayKey}
+          roleGroupLabel={selectedRoleGroup.label}
+        />
 
         <VolunteerStaffingTargetsModal
           isOpen={isTargetsModalOpen}
