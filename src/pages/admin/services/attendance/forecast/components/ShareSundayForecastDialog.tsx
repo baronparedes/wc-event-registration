@@ -62,7 +62,7 @@ export function ShareSundayForecastDialog({
         shareError: 'Failed to generate shareable image',
       }}
     >
-      <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
+      <Dialog isOpen={isOpen} onClose={onClose} size="5xl">
         <Dialog.Header showCloseButton>
           <Dialog.Title>Share Sunday Attendance Forecast</Dialog.Title>
           <Dialog.Description>
@@ -72,7 +72,7 @@ export function ShareSundayForecastDialog({
           </Dialog.Description>
         </Dialog.Header>
 
-        <Dialog.Body>
+        <Dialog.Body scrollable className="max-h-[calc(85vh-9rem)]">
           <div className="flex flex-col gap-4">
             {/* Sunday Selection Tabs (if multiple Sundays exist) */}
             {sundays.length > 1 && (
@@ -101,13 +101,8 @@ export function ShareSundayForecastDialog({
 
             {/* Scrollable Preview Area */}
             <div className="flex w-full justify-center overflow-x-auto rounded-xl border border-border bg-slate-50 p-2 sm:p-5">
-              <div className="w-full flex justify-center overflow-hidden">
-                <div className="scale-[0.82] sm:scale-100 origin-top">
-                  <SundayForecastShareCard
-                    sunday={selectedSunday}
-                    roleGroupLabel={roleGroupLabel}
-                  />
-                </div>
+              <div className="shrink-0">
+                <SundayForecastShareCard sunday={selectedSunday} roleGroupLabel={roleGroupLabel} />
               </div>
             </div>
 
