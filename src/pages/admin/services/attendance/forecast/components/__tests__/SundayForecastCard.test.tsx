@@ -74,7 +74,9 @@ describe('SundayForecastCard', () => {
     expect(screen.getByText('Individual Role Breakdown')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('Need 7')).toBeInTheDocument();
-    expect(screen.getByText('Target: 15')).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) => el?.textContent?.trim() === 'Target: 15'),
+    ).toBeInTheDocument();
     // Collapse/expand button should not exist
     expect(screen.queryByText(/Show Individual Role Breakdown/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Hide Individual Role Breakdown/i)).not.toBeInTheDocument();
@@ -176,5 +178,30 @@ describe('SundayForecastCard', () => {
     expect(screen.getByText('Need 4')).toBeInTheDocument();
     expect(screen.getByText('Need 6')).toBeInTheDocument();
     expect(screen.getByText('Need 10')).toBeInTheDocument();
+  });
+
+  it('renders unified top summary banner with metrics and staffing status', () => {
+    render(<SundayForecastCard sunday={mockSunday} />);
+
+    expect(screen.getByText('Total Target')).toBeInTheDocument();
+    expect(screen.getAllByText('15').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Total Scheduled')).toBeInTheDocument();
+    expect(screen.getAllByText('10').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Total Expected')).toBeInTheDocument();
+    expect(screen.getByText('~8')).toBeInTheDocument();
+    expect(screen.getByText('Staffing Status')).toBeInTheDocument();
+    expect(screen.getAllByText('7 Short').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders role card with two-tier layout separating target and expected turnout', () => {
+    render(<SundayForecastCard sunday={mockSunday} showRoleBreakdownOption={true} />);
+
+    expect(screen.getByText('Usher')).toBeInTheDocument();
+    expect(screen.getByText('Need 7')).toBeInTheDocument();
+    expect(screen.getByText(/Target:/i)).toBeInTheDocument();
+    expect(screen.getByText('~8 expected')).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: /Usher staffing fulfillment/i }),
+    ).toBeInTheDocument();
   });
 });

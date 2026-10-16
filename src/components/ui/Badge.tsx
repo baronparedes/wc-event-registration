@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 export type BadgeVariant =
   | 'default'
   | 'secondary'
+  | 'tertiary'
   | 'accent'
   | 'outline'
   | 'primaryOutline'
@@ -23,6 +24,7 @@ export type BadgeProps = {
 const variantClassName: Record<BadgeVariant, string> = {
   default: 'bg-primary text-white',
   secondary: 'bg-secondary text-white',
+  tertiary: 'bg-tertiary text-white',
   accent: 'bg-accent text-text',
   outline: 'border border-primary/60 bg-transparent text-text',
   primaryOutline: 'border border-primary bg-background text-primary',

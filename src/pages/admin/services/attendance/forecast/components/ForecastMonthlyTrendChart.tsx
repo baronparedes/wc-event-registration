@@ -18,6 +18,7 @@ import { Badge, ButtonGroup } from '@/components/ui';
 import type { TimeSlot } from '@/hooks/domain/members';
 
 import type { SundayForecastData } from '../hooks/useAttendanceForecastData';
+import { FORECAST_CHART_COLORS } from './sessionThemes';
 
 export type ForecastMonthlyTrendChartProps = {
   sundays: SundayForecastData[];
@@ -97,7 +98,7 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
       <div className="space-y-1 text-muted">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
             <span>Target Quota:</span>
           </span>
           <span className="font-semibold text-text tabular-nums">{data.target}</span>
@@ -105,7 +106,7 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
 
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-sky-500" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <span>Scheduled:</span>
           </span>
           <span className="font-semibold text-text tabular-nums">{data.scheduled}</span>
@@ -113,9 +114,7 @@ function MonthlyTrendTooltip({ active, payload }: TrendTooltipProps) {
 
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span
-              className={`h-2 w-2 rounded-full ${isNegative ? 'bg-rose-500' : 'bg-emerald-500'}`}
-            />
+            <span className={`h-2 w-2 rounded-full ${isNegative ? 'bg-danger' : 'bg-secondary'}`} />
             <span>Expected Turnup:</span>
           </span>
           <span className="font-bold text-text tabular-nums">{data.expected}</span>
@@ -144,7 +143,7 @@ function renderExpectedDot(props: {
         cx={cx}
         cy={cy}
         r={5}
-        fill="#f43f5e"
+        fill={FORECAST_CHART_COLORS.danger}
         stroke="#ffffff"
         strokeWidth={2}
         key={`expected-dot-${cx}-${cy}`}
@@ -157,7 +156,7 @@ function renderExpectedDot(props: {
       cx={cx}
       cy={cy}
       r={3.5}
-      fill="#10b981"
+      fill={FORECAST_CHART_COLORS.expected}
       stroke="#ffffff"
       strokeWidth={1.5}
       key={`expected-dot-${cx}-${cy}`}
@@ -478,9 +477,9 @@ export function ForecastMonthlyTrendChart({
                 type="monotone"
                 dataKey="expected"
                 name="Expected Turnup"
-                stroke="#10b981"
+                stroke={FORECAST_CHART_COLORS.expected}
                 strokeWidth={2.5}
-                fill="#10b981"
+                fill={FORECAST_CHART_COLORS.expected}
                 fillOpacity={0.15}
                 dot={renderExpectedDot}
                 activeDot={{ r: 6 }}
@@ -489,19 +488,29 @@ export function ForecastMonthlyTrendChart({
                 type="monotone"
                 dataKey="scheduled"
                 name="Scheduled"
-                stroke="#0284c7"
+                stroke={FORECAST_CHART_COLORS.scheduled}
                 strokeWidth={2.5}
-                dot={{ r: 3.5, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 1.5 }}
+                dot={{
+                  r: 3.5,
+                  fill: FORECAST_CHART_COLORS.scheduled,
+                  stroke: '#ffffff',
+                  strokeWidth: 1.5,
+                }}
                 activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="target"
                 name="Target Quota"
-                stroke="#f59e0b"
+                stroke={FORECAST_CHART_COLORS.target}
                 strokeWidth={2.5}
                 strokeDasharray="5 5"
-                dot={{ r: 3.5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 1.5 }}
+                dot={{
+                  r: 3.5,
+                  fill: FORECAST_CHART_COLORS.target,
+                  stroke: '#ffffff',
+                  strokeWidth: 1.5,
+                }}
                 activeDot={{ r: 6 }}
               />
             </ComposedChart>
