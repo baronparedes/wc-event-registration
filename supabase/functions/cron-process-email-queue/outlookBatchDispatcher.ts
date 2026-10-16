@@ -20,6 +20,70 @@ type ResolvedBatchItem = {
   category: NotificationCategory;
 };
 
+type ResolvedBatchEmailContent = {
+  bodyHtml: string;
+  subject: string;
+};
+
+async function resolveBatchEmailContent(
+  client: EmailQueueClient,
+  payload: EmailQueueMessage['message'],
+  messageId: number,
+  fallbackText: string | undefined,
+  actionUrl: string | undefined,
+): Promise<ResolvedBatchEmailContent | { error: string }> {
+  // 1. Try resolving via Resend template if template_slug is specified
+  if (payload.template_slug) {
+    const templateId = await fetchTemplateIdBySlug(client, payload.template_slug);
+    const isConfiguredTemplate =
+      typeof templateId === 'string' &&
+      templateId.length > 0 &&
+      !templateId.includes('placeholder');
+
+    if (isConfiguredTemplate && templateId) {
+      const resendTemplate = await fetchResendTemplate(templateId);
+      if (resendTemplate?.html) {
+        return {
+          bodyHtml: tokenizeTemplate(resendTemplate.html, payload.metadata),
+          subject:
+            payload.subject ||
+            (resendTemplate.subject
+              ? tokenizeTemplate(resendTemplate.subject, payload.metadata)
+              : 'Service Reminder'),
+        };
+      }
+
+      if (!payload.text) {
+        return { error: 'Failed to fetch Resend template' };
+      }
+      console.warn(
+        `[cron-process-email-queue] Resend template '${templateId}' returned no HTML; falling back to wrapped plain text for msg ${messageId}`,
+      );
+    } else {
+      if (!payload.text) {
+        return { error: 'template not found' };
+      }
+      console.warn(
+        `[cron-process-email-queue] Template not configured for slug ${payload.template_slug}; falling back to plain text email`,
+      );
+    }
+  }
+
+  // 2. Fall back to plain text wrapped in responsive HTML layout
+  if (payload.text) {
+    const defaultSubject = payload.template_slug ? 'Service Reminder' : 'Notification';
+    return {
+      bodyHtml: wrapPlainTextAsHtml(fallbackText || payload.text, payload.subject, {
+        actionUrl,
+      }),
+      subject: payload.subject || defaultSubject,
+    };
+  }
+
+  // 3. Neither a valid template nor email text was provided
+  return { error: 'no email body' };
+}
+
 async function resolveOutlookBatchItem(
   client: EmailQueueClient,
   msg: EmailQueueMessage,
@@ -33,43 +97,23 @@ async function resolveOutlookBatchItem(
     return null;
   }
 
-  let bodyHtml: string | undefined;
-  let emailSubject: string | undefined;
+  const rawUrl =
+    typeof payload.metadata?.url === 'string'
+      ? payload.metadata.url
+      : typeof payload.metadata?.action_url === 'string'
+        ? payload.metadata.action_url
+        : undefined;
 
-  if (payload.template_slug) {
-    const templateId = await fetchTemplateIdBySlug(client, payload.template_slug);
-    if (templateId) {
-      const resendTemplate = await fetchResendTemplate(templateId);
-      if (resendTemplate?.html) {
-        bodyHtml = tokenizeTemplate(resendTemplate.html, payload.metadata);
-        emailSubject =
-          payload.subject ||
-          (resendTemplate.subject
-            ? tokenizeTemplate(resendTemplate.subject, payload.metadata)
-            : 'Service Reminder');
-      } else if (payload.text) {
-        console.warn(
-          `[cron-process-email-queue] Resend template '${templateId}' returned no HTML; falling back to wrapped plain text for msg ${messageId}`,
-        );
-        bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
-        emailSubject = payload.subject || 'Service Reminder';
-      } else {
-        return { error: 'Failed to fetch Resend template' };
-      }
-    } else if (payload.text) {
-      console.warn(
-        `[cron-process-email-queue] Template not found for slug ${payload.template_slug}; falling back to plain text email`,
-      );
-      bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
-      emailSubject = payload.subject || 'Service Reminder';
-    } else {
-      return { error: 'template not found' };
-    }
-  } else if (payload.text) {
-    bodyHtml = wrapPlainTextAsHtml(payload.text, payload.subject);
-    emailSubject = payload.subject || 'Notification';
-  } else {
-    return { error: 'no email body' };
+  const rawBodyText =
+    typeof payload.metadata?.broadcast_message === 'string' &&
+    payload.metadata.broadcast_message.trim().length > 0
+      ? payload.metadata.broadcast_message
+      : payload.text;
+
+  const content = await resolveBatchEmailContent(client, payload, messageId, rawBodyText, rawUrl);
+
+  if ('error' in content) {
+    return content;
   }
 
   const category = resolveNotificationCategory(payload);
@@ -77,8 +121,8 @@ async function resolveOutlookBatchItem(
     category,
     item: {
       to: payload.recipient,
-      subject: emailSubject,
-      body_html: bodyHtml,
+      subject: content.subject,
+      body_html: content.bodyHtml,
       metadata: payload.metadata,
     },
   };

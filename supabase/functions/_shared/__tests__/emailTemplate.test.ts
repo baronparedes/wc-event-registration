@@ -6,9 +6,41 @@ import {
   fetchResendTemplate,
   linkifyEscapedText,
   resetTemplateCache,
+  resolveActionText,
+  toAbsoluteUrl,
   tokenizeTemplate,
   wrapPlainTextAsHtml,
 } from '../emailTemplate.ts';
+
+Deno.test('toAbsoluteUrl - resolves relative paths to welcomehub.app by default', () => {
+  assertEquals(
+    toAbsoluteUrl('/events/okay-ka-pop/countdown'),
+    'https://welcomehub.app/events/okay-ka-pop/countdown',
+  );
+  assertEquals(
+    toAbsoluteUrl('events/okay-ka-pop/countdown'),
+    'https://welcomehub.app/events/okay-ka-pop/countdown',
+  );
+  assertEquals(toAbsoluteUrl('/profile'), 'https://welcomehub.app/profile');
+  assertEquals(toAbsoluteUrl('https://example.com/custom-page'), 'https://example.com/custom-page');
+  assertEquals(toAbsoluteUrl(''), '');
+  assertEquals(toAbsoluteUrl(null), '');
+  assertEquals(
+    toAbsoluteUrl('/events/123', 'https://staging.welcomehub.app'),
+    'https://staging.welcomehub.app/events/123',
+  );
+});
+
+Deno.test('resolveActionText - derives contextual button labels', () => {
+  assertEquals(resolveActionText('/events/okay-ka-pop/countdown'), 'View Event');
+  assertEquals(resolveActionText('https://welcomehub.app/profile'), 'View Profile');
+  assertEquals(resolveActionText('/register/sunday'), 'Register Now');
+  assertEquals(resolveActionText('/forms/volunteer-signup'), 'Open Form');
+  assertEquals(resolveActionText('/admin/notifications'), 'Open Admin Dashboard');
+  assertEquals(resolveActionText('/'), 'Open Welcome Hub');
+  assertEquals(resolveActionText('https://welcomehub.app'), 'Open Welcome Hub');
+  assertEquals(resolveActionText('/other/path'), 'View Details');
+});
 
 Deno.test('tokenizeTemplate - replaces single and triple mustache variables', () => {
   const template =
@@ -17,6 +49,23 @@ Deno.test('tokenizeTemplate - replaces single and triple mustache variables', ()
 
   const output = tokenizeTemplate(template, variables);
   assertEquals(output, '<h1>Hello John Doe</h1><p>Role: Usher</p><span>Unchanged: </span>');
+});
+
+Deno.test('tokenizeTemplate - handles conditional sections and inverted sections', () => {
+  const template =
+    '<div>{{#action_url}}<a href="{{action_url}}">{{action_text}}</a>{{/action_url}}{{^action_url}}No link{{/action_url}}</div>';
+
+  const withUrl = tokenizeTemplate(template, {
+    action_url: 'https://welcomehub.app/events/123',
+    action_text: 'View Event',
+  });
+  assertEquals(withUrl, '<div><a href="https://welcomehub.app/events/123">View Event</a></div>');
+
+  const withoutUrl = tokenizeTemplate(template, { action_url: '', action_text: '' });
+  assertEquals(withoutUrl, '<div>No link</div>');
+
+  const withNullUrl = tokenizeTemplate(template, null);
+  assertEquals(withNullUrl, template);
 });
 
 Deno.test('tokenizeTemplate - handles null or missing variables gracefully', () => {
@@ -52,9 +101,52 @@ Deno.test('wrapPlainTextAsHtml - wraps text with breaklines in responsive html l
   assertEquals(html.includes('Line 1<br />Line 2'), true);
   assertEquals(html.includes('class="email-container"'), true);
   assertEquals(html.includes('welcomehub.app'), true);
+  assertEquals(html.includes('<div class="email-cta-container"'), false);
 });
 
-Deno.test('wrapPlainTextAsHtml - converts URLs in body text to hyperlinks', () => {
+Deno.test('wrapPlainTextAsHtml - renders CTA button and full domain for relative actionUrl', () => {
+  const message = 'Join us for Christmas party!\n\nSee you there!';
+  const html = wrapPlainTextAsHtml(message, 'Event Notice', {
+    actionUrl: '/events/okay-ka-pop/countdown',
+  });
+
+  assertEquals(html.includes('<div class="email-cta-container"'), true);
+  assertEquals(html.includes('href="https://welcomehub.app/events/okay-ka-pop/countdown"'), true);
+  assertEquals(html.includes('View Event &rarr;'), true);
+  assertEquals(html.includes('class="email-button"'), true);
+  assertEquals(html.includes('/events/okay-ka-pop/countdown<br />'), false);
+});
+
+Deno.test(
+  'wrapPlainTextAsHtml - auto-detects trailing relative URL from text and strips it from body',
+  () => {
+    const text = 'Join us for Christmas party!\n\nSee you there!\n\n/events/okay-ka-pop/countdown';
+    const html = wrapPlainTextAsHtml(text, 'Event Notice');
+
+    assertEquals(html.includes('<div class="email-cta-container"'), true);
+    assertEquals(html.includes('href="https://welcomehub.app/events/okay-ka-pop/countdown"'), true);
+    assertEquals(html.includes('View Event &rarr;'), true);
+    // Ensure trailing URL was stripped from the message body
+    assertEquals(html.includes('/events/okay-ka-pop/countdown<br />'), false);
+    assertEquals(
+      html.includes('Join us for Christmas party!<br /><br />See you there!\n    </div>'),
+      true,
+    );
+  },
+);
+
+Deno.test('wrapPlainTextAsHtml - supports custom actionText', () => {
+  const message = 'Fill up this form:';
+  const html = wrapPlainTextAsHtml(message, 'Survey', {
+    actionUrl: 'https://welcomehub.app/forms/feedback',
+    actionText: 'Complete Survey',
+  });
+
+  assertEquals(html.includes('Complete Survey &rarr;'), true);
+  assertEquals(html.includes('href="https://welcomehub.app/forms/feedback"'), true);
+});
+
+Deno.test('wrapPlainTextAsHtml - converts inline URLs in body text to hyperlinks', () => {
   const plain = 'Please visit https://welcomehub.app for updates.';
   const html = wrapPlainTextAsHtml(plain);
 

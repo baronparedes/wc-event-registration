@@ -1,3 +1,4 @@
+import { wrapPlainTextAsHtml } from '../_shared/emailTemplate.ts';
 import { sendResendEmail } from '../_shared/resend.ts';
 import {
   type EmailDeliveryTracker,
@@ -28,13 +29,17 @@ export async function processDirectMessage(
 
     if (payload.template_slug) {
       const foundTemplateId = await fetchTemplateIdBySlug(client, payload.template_slug);
-      if (foundTemplateId) {
+      const isConfiguredTemplate =
+        typeof foundTemplateId === 'string' &&
+        foundTemplateId.length > 0 &&
+        !foundTemplateId.includes('placeholder');
+      if (isConfiguredTemplate && foundTemplateId) {
         templateId = foundTemplateId;
       } else if (payload.text) {
         console.warn(
-          `[cron-process-email-queue] Template not found for slug ${payload.template_slug}; falling back to plain text email`,
+          `[cron-process-email-queue] Template not configured for slug ${payload.template_slug}; falling back to standard email`,
         );
-        emailSubject = payload.subject || 'Service Reminder';
+        emailSubject = payload.subject || 'Notification';
       } else {
         console.error(
           `[cron-process-email-queue] Template not found for slug: ${payload.template_slug}`,
@@ -49,11 +54,31 @@ export async function processDirectMessage(
       return;
     }
 
+    const rawUrl =
+      typeof payload.metadata?.url === 'string'
+        ? payload.metadata.url
+        : typeof payload.metadata?.action_url === 'string'
+          ? payload.metadata.action_url
+          : undefined;
+    const bodyText =
+      typeof payload.metadata?.broadcast_message === 'string' &&
+      payload.metadata.broadcast_message.trim().length > 0
+        ? payload.metadata.broadcast_message
+        : emailText;
+
+    let emailHtml: string | undefined;
+    if (!templateId && rawUrl) {
+      emailHtml = wrapPlainTextAsHtml(bodyText || emailText || '', emailSubject, {
+        actionUrl: rawUrl,
+      });
+    }
+
     const isSundayReminder = typeof sundayDate === 'string' && sundayDate.length > 0;
     const sendResult = await sendResendEmail({
       to: payload.recipient,
       subject: emailSubject,
       text: emailText,
+      html: emailHtml,
       template_id: templateId,
       variables: payload.metadata,
       data: payload.metadata,

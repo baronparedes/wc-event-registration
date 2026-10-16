@@ -6,6 +6,12 @@ import {
   enqueueEmailNotificationsBatch,
   triggerEmailProcessor,
 } from '@/shared/emailQueue.ts';
+import {
+  escapeHtml,
+  linkifyEscapedText,
+  resolveActionText,
+  toAbsoluteUrl,
+} from '@/shared/emailTemplate.ts';
 
 import { resolveTargetEmails } from '../targets/index.ts';
 import type { SendAppNotificationPayload } from '../types.ts';
@@ -33,7 +39,12 @@ export async function sendEmailNotifications({
     targetEventId: payload.targetEventId,
   });
 
-  const emailText = payload.url ? `${payload.message}\n\n${payload.url}` : payload.message;
+  const absoluteUrl = payload.url ? toAbsoluteUrl(payload.url) : undefined;
+  const emailText = absoluteUrl ? `${payload.message}\n\n${absoluteUrl}` : payload.message;
+  const actionUrl = absoluteUrl || payload.url;
+  const actionText = actionUrl ? resolveActionText(actionUrl) : undefined;
+  const escapedMessage = escapeHtml(payload.message || '');
+  const messageHtml = linkifyEscapedText(escapedMessage).replace(/\r?\n/g, '<br />');
   let successfulEnqueues = 0;
 
   if (targetEmails.length > 0) {
@@ -41,12 +52,19 @@ export async function sendEmailNotifications({
       recipient: email,
       category: 'broadcast',
       event_type: 'email_notification',
+      template_slug: 'broadcast',
       subject: payload.title,
       text: emailText,
       metadata: {
         broadcast_title: payload.title,
+        title: payload.title,
         broadcast_message: payload.message,
-        url: payload.url,
+        message: payload.message,
+        broadcast_message_html: messageHtml,
+        message_html: messageHtml,
+        url: actionUrl,
+        action_url: actionUrl,
+        action_text: actionText,
         target_type: payload.targetType,
       },
     }));
