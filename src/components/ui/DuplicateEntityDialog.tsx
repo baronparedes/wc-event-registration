@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { VALIDATION_PATTERNS } from '@/config/constants';
@@ -41,41 +39,21 @@ export function DuplicateEntityDialog({
   isPending,
   onDuplicate,
 }: DuplicateEntityDialogProps) {
+  const defaultTitle = isOpen && sourceItem ? `${sourceItem.title} (Copy)` : '';
+  const defaultSlug = defaultTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   const {
     register,
     handleSubmit,
     setValue,
-    reset,
-    control,
     formState: { errors },
   } = useForm<DuplicateEntityFormValues>({
     resolver: zodResolver(duplicateSchema),
-    defaultValues: {
-      title: '',
-      slug: '',
-    },
+    values: { title: defaultTitle, slug: defaultSlug },
   });
-
-  const titleValue = useWatch({ control, name: 'title' });
-
-  // Auto-generate slug from title
-  useEffect(() => {
-    if (titleValue) {
-      const generatedSlug = titleValue
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      setValue('slug', generatedSlug, { shouldValidate: true });
-    }
-  }, [titleValue, setValue]);
-
-  useEffect(() => {
-    if (isOpen && sourceItem) {
-      reset({
-        title: `${sourceItem.title} (Copy)`,
-      });
-    }
-  }, [isOpen, sourceItem, reset]);
 
   const onSubmit = async (values: DuplicateEntityFormValues) => {
     if (!sourceItem) return;
@@ -83,6 +61,18 @@ export function DuplicateEntityDialog({
   };
 
   const capitalizedEntityType = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+
+  const titleRegistration = register('title');
+
+  const handleTitleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await titleRegistration.onChange(e);
+    const newTitle = String(e.target.value);
+    const generatedSlug = newTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    setValue('slug', generatedSlug, { shouldValidate: true });
+  };
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="lg">
@@ -101,7 +91,12 @@ export function DuplicateEntityDialog({
             id={`duplicate-${entityType.toLowerCase()}-title`}
             label={`New ${capitalizedEntityType} Name`}
             placeholder={`e.g. ${sourceItem?.title || 'New Item'} - Copy`}
-            registration={register('title')}
+            registration={{
+              ...titleRegistration,
+              onChange: async (e) => {
+                await handleTitleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
+              },
+            }}
             error={errors.title?.message}
             disabled={isPending}
             required

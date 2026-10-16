@@ -45,3 +45,9 @@
 **Deviation:** `EmailTemplateBuilderDialog` used `useWatch` and `useEffect` to sync the `slug` form field when the `name` field changed.
 **Learning:** This architectural deviation led to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events.
 **Standard:** Extract dependent field updates out of `useEffect` lifecycle hooks and into the driving field's `onChange` event handler, calling both the internal React Hook Form `field.onChange` and updating the dependent state via `setValue`.
+
+## 2026-10-15 - Removed `useEffect` syncing for Form Slug Auto-generation in DuplicateEntityDialog
+
+**Deviation:** `DuplicateEntityDialog` used `useWatch` and `useEffect` to sync the `slug` form field when the `title` field changed. Additionally, it used `useEffect` to `reset` the form based on prop changes (`isOpen`, `sourceItem`).
+**Learning:** This architectural deviation leads to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events and computing values during render.
+**Standard:** Compute initial `values` for `useForm` directly during render. Extract dependent field updates out of `useEffect` lifecycle hooks and into the driving field's `onChange` event handler, calling both the internal React Hook Form `field.onChange` and updating the dependent state via `setValue`.
