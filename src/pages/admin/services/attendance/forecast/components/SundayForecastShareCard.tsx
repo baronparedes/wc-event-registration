@@ -48,8 +48,8 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
 
   return (
     <div
-      style={{ width: '840px', minWidth: '840px', maxWidth: '840px' }}
-      className="w-[840px] min-w-[840px] max-w-[840px] shrink-0 box-border rounded-2xl border border-border bg-surface p-7 text-text shadow-xs"
+      style={{ width: '920px', minWidth: '920px', maxWidth: '920px' }}
+      className="w-[920px] min-w-[920px] max-w-[920px] shrink-0 box-border rounded-2xl border border-border bg-surface p-7 text-text shadow-xs"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border pb-5">
@@ -93,7 +93,7 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
 
         <div className="flex justify-center p-3">
           <ComposedChart
-            width={780}
+            width={850}
             height={220}
             data={chartData}
             margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
@@ -292,7 +292,7 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                   )}
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {slotGroup.roleBreakdown.map((item) => {
                     const isFilled = item.needed === 0 && item.target > 0;
                     const roleDeficit = item.needed > 0;
@@ -300,32 +300,37 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                     return (
                       <div
                         key={item.role}
-                        className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2 text-xs"
+                        className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2.5 text-xs"
                       >
-                        <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-start justify-between gap-1.5 min-h-[30px]">
                           <span
-                            className="text-xs font-semibold text-text truncate"
+                            className="text-xs font-bold text-text leading-snug"
                             title={item.role}
                           >
                             {item.role}
                           </span>
                           {roleDeficit ? (
-                            <Badge variant="accent" className="text-[10px] px-1 py-0.5 shrink-0">
+                            <Badge
+                              variant="accent"
+                              className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start"
+                            >
                               Need {item.needed}
                             </Badge>
                           ) : isFilled ? (
-                            <Badge className="text-[10px] px-1 py-0.5 shrink-0">Filled</Badge>
+                            <Badge className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start">
+                              Filled
+                            </Badge>
                           ) : (
                             <Badge
                               variant="primaryOutline"
-                              className="text-[10px] px-1 py-0.5 shrink-0"
+                              className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start"
                             >
                               No Target
                             </Badge>
                           )}
                         </div>
 
-                        <div className="mt-2 text-[11px] text-muted flex items-center justify-between">
+                        <div className="mt-2.5 pt-1.5 border-t border-border/30 text-[11px] text-muted flex items-center justify-between">
                           <span>Target: {item.target}</span>
                           <span className="font-medium text-text">~{item.expectedTurnup} exp</span>
                         </div>
