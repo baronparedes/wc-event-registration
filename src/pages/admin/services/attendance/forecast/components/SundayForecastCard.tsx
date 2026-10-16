@@ -171,32 +171,32 @@ export function SundayForecastCard({
                         return (
                           <div
                             key={item.role}
-                            className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-3 sm:p-3.5"
+                            className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2.5 sm:p-3"
                           >
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center justify-between gap-1.5">
                               <span
-                                className="text-base font-semibold text-text truncate"
+                                className="text-sm font-semibold text-text truncate"
                                 title={item.role}
                               >
                                 {item.role}
                               </span>
                               {roleDeficit ? (
-                                <Badge variant="accent" className="text-sm px-2 py-0.5 shrink-0">
+                                <Badge variant="accent" className="text-xs px-1.5 py-0.5 shrink-0">
                                   Need {item.needed}
                                 </Badge>
                               ) : isFilled ? (
-                                <Badge className="text-sm px-2 py-0.5 shrink-0">Filled</Badge>
+                                <Badge className="text-xs px-1.5 py-0.5 shrink-0">Filled</Badge>
                               ) : (
                                 <Badge
                                   variant="primaryOutline"
-                                  className="text-sm px-2 py-0.5 shrink-0"
+                                  className="text-xs px-1.5 py-0.5 shrink-0"
                                 >
                                   No Target
                                 </Badge>
                               )}
                             </div>
 
-                            <div className="mt-3 text-sm text-muted flex items-center justify-between">
+                            <div className="mt-2.5 text-xs text-muted flex items-center justify-between">
                               <span>Target: {item.target}</span>
                               <span className="font-medium text-text">
                                 ~{item.expectedTurnup} exp
