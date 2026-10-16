@@ -38,27 +38,10 @@ describe('SundayCommitmentChart', () => {
     { slot: '3PM' as const, target: 91, scheduled: 83, confirmed: 58, overShort: -33 },
   ];
 
-  it('renders chart overview title and footer metrics summary', () => {
-    render(
-      <SundayCommitmentChart
-        title="ALL VOLUNTEER COMMITMENTS"
-        sessions={sampleSessions}
-        totalTarget={243}
-        totalScheduled={252}
-        totalConfirmed={183}
-        totalOverShort={-60}
-        totalDeficit={60}
-      />,
-    );
+  it('renders chart overview title and slot breakdown cards', () => {
+    render(<SundayCommitmentChart title="ALL VOLUNTEER COMMITMENTS" sessions={sampleSessions} />);
 
     expect(screen.getByText(/ALL VOLUNTEER COMMITMENTS — Chart Overview/i)).toBeInTheDocument();
-    expect(screen.getByText('Total Target')).toBeInTheDocument();
-    expect(screen.getByText('243')).toBeInTheDocument();
-    expect(screen.getByText('Total Scheduled')).toBeInTheDocument();
-    expect(screen.getByText('252')).toBeInTheDocument();
-    expect(screen.getByText('Total Expected')).toBeInTheDocument();
-    expect(screen.getByText('183')).toBeInTheDocument();
-    expect(screen.getByText('-60 Short')).toBeInTheDocument();
 
     // 3 Slot Breakdown Cards
     expect(screen.getByText('9 AM Session')).toBeInTheDocument();

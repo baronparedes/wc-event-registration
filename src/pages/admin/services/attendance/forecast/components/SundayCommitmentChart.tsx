@@ -14,14 +14,15 @@ import {
 } from 'recharts';
 
 import type { SundaySessionForecast } from '../hooks/useAttendanceForecastData';
+import { FORECAST_CHART_COLORS, getSessionTheme } from './sessionThemes';
 
 export type SundayCommitmentChartProps = {
   title: string;
   sessions: SundaySessionForecast[];
-  totalTarget: number;
-  totalScheduled: number;
-  totalConfirmed: number;
-  totalOverShort: number;
+  totalTarget?: number;
+  totalScheduled?: number;
+  totalConfirmed?: number;
+  totalOverShort?: number;
   totalDeficit?: number;
   totalSurplus?: number;
 };
@@ -73,7 +74,7 @@ function SundayChartTooltip({ active, payload }: ChartTooltipProps) {
       <div className="space-y-1 text-muted">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
             <span>Target:</span>
           </span>
           <span className="font-semibold text-text tabular-nums">{data.target}</span>
@@ -81,7 +82,7 @@ function SundayChartTooltip({ active, payload }: ChartTooltipProps) {
 
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-sky-500" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <span>Scheduled:</span>
           </span>
           <span className="font-semibold text-text tabular-nums">{data.scheduled}</span>
@@ -89,7 +90,7 @@ function SundayChartTooltip({ active, payload }: ChartTooltipProps) {
 
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="h-2 w-2 rounded-full bg-secondary" />
             <span>Expected:</span>
           </span>
           <span className="font-bold text-text tabular-nums">{data.expected}</span>
@@ -99,16 +100,7 @@ function SundayChartTooltip({ active, payload }: ChartTooltipProps) {
   );
 }
 
-export function SundayCommitmentChart({
-  title,
-  sessions,
-  totalTarget,
-  totalScheduled,
-  totalConfirmed,
-  totalOverShort,
-  totalDeficit,
-  totalSurplus,
-}: SundayCommitmentChartProps) {
+export function SundayCommitmentChart({ title, sessions }: SundayCommitmentChartProps) {
   const chartData = useMemo(() => {
     return sessions.map((s) => ({
       session: s.slot,
@@ -118,9 +110,6 @@ export function SundayCommitmentChart({
       overShort: s.overShort,
     }));
   }, [sessions]);
-
-  const isTotalNegative = totalOverShort < 0;
-  const isTotalPositive = totalOverShort > 0;
 
   return (
     <div className="w-full overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
@@ -167,14 +156,14 @@ export function SundayCommitmentChart({
               <Bar
                 dataKey="scheduled"
                 name="Scheduled"
-                fill="#0284c7"
+                fill={FORECAST_CHART_COLORS.scheduled}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={44}
               />
               <Bar
                 dataKey="expected"
                 name="Expected Turnup"
-                fill="#10b981"
+                fill={FORECAST_CHART_COLORS.expected}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={44}
               />
@@ -182,10 +171,15 @@ export function SundayCommitmentChart({
                 type="step"
                 dataKey="target"
                 name="Target"
-                stroke="#f59e0b"
+                stroke={FORECAST_CHART_COLORS.target}
                 strokeWidth={2.5}
                 strokeDasharray="5 5"
-                dot={{ r: 5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+                dot={{
+                  r: 5,
+                  fill: FORECAST_CHART_COLORS.target,
+                  stroke: '#ffffff',
+                  strokeWidth: 2,
+                }}
                 activeDot={{ r: 7 }}
               />
             </ComposedChart>
@@ -197,19 +191,27 @@ export function SundayCommitmentChart({
           {sessions.map((session) => {
             const hasDeficit = session.overShort < 0;
             const hasSurplus = session.overShort > 0;
-            const sessionLabel =
-              session.slot === '9AM' ? '9 AM' : session.slot === '12NN' ? '12 NN' : '3 PM';
+            const theme = getSessionTheme(session.slot);
+            const sessionLabel = theme.slotLabel;
 
             return (
               <div
                 key={session.slot}
-                className="flex flex-col justify-between rounded-xl border border-border/80 bg-surface-hover/20 p-3.5 transition-all shadow-xs hover:border-border"
+                className={`flex flex-col justify-between rounded-xl border border-border/80 border-l-4 ${theme.borderAccent} bg-surface-hover/20 p-3.5 transition-all shadow-xs hover:border-border`}
               >
                 {/* Slot Card Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                  <span className="text-xs font-bold text-text uppercase tracking-wide">
-                    {sessionLabel} Session
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${theme.dotColor}`} aria-hidden="true" />
+                    <span className="text-xs font-bold text-text uppercase tracking-wide">
+                      {sessionLabel} Session
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded border px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider ${theme.badge}`}
+                    >
+                      {theme.tag}
+                    </span>
+                  </div>
                   {hasDeficit ? (
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums bg-danger/15 text-danger">
                       {session.overShort} Short
@@ -249,50 +251,6 @@ export function SundayCommitmentChart({
               </div>
             );
           })}
-        </div>
-
-        {/* Overall Sunday Totals Summary Strip */}
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-lg border border-border/70 bg-surface-hover/30 p-2.5 text-center">
-          <div>
-            <div className="text-[10px] font-bold text-muted uppercase">Total Target</div>
-            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalTarget}</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-muted uppercase">Total Scheduled</div>
-            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalScheduled}</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-muted uppercase">Total Expected</div>
-            <div className="mt-0.5 text-sm font-bold text-text tabular-nums">{totalConfirmed}</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-muted uppercase">Staffing Status</div>
-            <div className="mt-0.5">
-              {totalDeficit !== undefined && totalDeficit > 0 ? (
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums bg-danger/15 text-danger">
-                  -{totalDeficit} Short
-                </span>
-              ) : (
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${
-                    totalSurplus !== undefined && totalSurplus > 0
-                      ? 'bg-primary/15 text-primary'
-                      : isTotalNegative
-                        ? 'bg-danger/15 text-danger'
-                        : isTotalPositive
-                          ? 'bg-primary/15 text-primary'
-                          : 'bg-muted/15 text-text font-bold'
-                  }`}
-                >
-                  {totalSurplus !== undefined && totalSurplus > 0
-                    ? `+${totalSurplus}`
-                    : isTotalPositive
-                      ? `+${totalOverShort}`
-                      : totalOverShort}
-                </span>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
