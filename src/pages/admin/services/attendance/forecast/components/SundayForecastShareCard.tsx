@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
+
 import { Users } from 'lucide-react';
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis } from 'recharts';
 
 import { Badge, BrandAvatar } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
@@ -10,7 +13,7 @@ export type SundayForecastShareCardProps = {
   roleGroupLabel?: string;
 };
 
-export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps) {
+export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForecastShareCardProps) {
   const {
     ordinalLabel,
     formattedDate,
@@ -24,6 +27,16 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
     hasDeficit,
     forecast,
   } = sunday;
+
+  const chartData = useMemo(() => {
+    return sessions.map((s) => ({
+      session: s.slot,
+      target: s.target,
+      scheduled: s.scheduled,
+      expected: s.confirmed,
+      overShort: s.overShort,
+    }));
+  }, [sessions]);
 
   const isTotalNegative = totalOverShort < 0;
   const isTotalPositive = totalOverShort > 0;
@@ -68,8 +81,73 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
         </div>
       </div>
 
+      {/* Chart Overview */}
+      <div className="mt-5 overflow-hidden rounded-xl border border-border/80 bg-surface">
+        <div className="flex items-center justify-center gap-2 border-b border-border/60 bg-surface-hover/40 px-4 py-2 text-center">
+          <Users className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          <h3 className="text-xs font-bold tracking-wider text-text uppercase">
+            {roleGroupLabel ? `${roleGroupLabel} Commitments` : 'Volunteer Commitments'} &mdash;
+            Chart Overview
+          </h3>
+        </div>
+
+        <div className="flex justify-center p-3">
+          <ComposedChart
+            width={780}
+            height={220}
+            data={chartData}
+            margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.7} />
+            <XAxis
+              dataKey="session"
+              tickLine={false}
+              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }}
+              dy={6}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#64748b', fontSize: 11 }}
+              dx={-4}
+            />
+            <Legend
+              verticalAlign="top"
+              align="right"
+              wrapperStyle={{ paddingBottom: 10, fontSize: 12 }}
+              iconType="circle"
+              iconSize={8}
+            />
+            <Bar
+              dataKey="scheduled"
+              name="Scheduled"
+              fill="#0284c7"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={44}
+            />
+            <Bar
+              dataKey="expected"
+              name="Expected Turnup"
+              fill="#10b981"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={44}
+            />
+            <Line
+              type="step"
+              dataKey="target"
+              name="Target"
+              stroke="#f59e0b"
+              strokeWidth={2.5}
+              strokeDasharray="5 5"
+              dot={{ r: 5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+            />
+          </ComposedChart>
+        </div>
+      </div>
+
       {/* 3 Session Overview Cards */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {sessions.map((session) => {
           const sessionDeficit = session.overShort < 0;
           const sessionSurplus = session.overShort > 0;
