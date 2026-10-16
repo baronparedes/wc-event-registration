@@ -173,23 +173,28 @@ export function SundayForecastCard({
                             key={item.role}
                             className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2.5 sm:p-3"
                           >
-                            <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
                               <span
-                                className="text-sm font-semibold text-text truncate"
+                                className="text-sm font-semibold text-text leading-snug"
                                 title={item.role}
                               >
                                 {item.role}
                               </span>
                               {roleDeficit ? (
-                                <Badge variant="accent" className="text-xs px-1.5 py-0.5 shrink-0">
+                                <Badge
+                                  variant="accent"
+                                  className="text-xs px-1.5 py-0.5 shrink-0 self-start"
+                                >
                                   Need {item.needed}
                                 </Badge>
                               ) : isFilled ? (
-                                <Badge className="text-xs px-1.5 py-0.5 shrink-0">Filled</Badge>
+                                <Badge className="text-xs px-1.5 py-0.5 shrink-0 self-start">
+                                  Filled
+                                </Badge>
                               ) : (
                                 <Badge
                                   variant="primaryOutline"
-                                  className="text-xs px-1.5 py-0.5 shrink-0"
+                                  className="text-xs px-1.5 py-0.5 shrink-0 self-start"
                                 >
                                   No Target
                                 </Badge>

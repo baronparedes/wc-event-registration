@@ -5,6 +5,24 @@ import type { SundayForecastData } from '@/pages/admin/services/attendance/forec
 
 import { ShareSundayForecastDialog } from '../ShareSundayForecastDialog';
 
+vi.mock('recharts', async () => {
+  return {
+    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="responsive-container">{children}</div>
+    ),
+    ComposedChart: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="composed-chart">{children}</div>
+    ),
+    Bar: () => <div data-testid="bar" />,
+    Line: () => <div data-testid="line" />,
+    XAxis: () => <div data-testid="xaxis" />,
+    YAxis: () => <div data-testid="yaxis" />,
+    Tooltip: () => <div data-testid="tooltip" />,
+    Legend: () => <div data-testid="legend" />,
+    CartesianGrid: () => <div data-testid="cartesian-grid" />,
+  };
+});
+
 describe('ShareSundayForecastDialog', () => {
   const mockSundays: SundayForecastData[] = [
     {
@@ -120,6 +138,7 @@ describe('ShareSundayForecastDialog', () => {
 
     expect(screen.getByText('Share Sunday Attendance Forecast')).toBeInTheDocument();
     expect(screen.getAllByText('October 4, 2026').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId('composed-chart').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Copy Image/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Download Image/i).length).toBeGreaterThan(0);
 

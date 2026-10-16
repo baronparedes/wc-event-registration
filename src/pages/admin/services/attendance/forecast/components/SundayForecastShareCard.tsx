@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
+
 import { Users } from 'lucide-react';
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis } from 'recharts';
 
 import { Badge, BrandAvatar } from '@/components/ui';
 import { LEGAL_CONFIG } from '@/config/constants';
@@ -10,7 +13,7 @@ export type SundayForecastShareCardProps = {
   roleGroupLabel?: string;
 };
 
-export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps) {
+export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForecastShareCardProps) {
   const {
     ordinalLabel,
     formattedDate,
@@ -25,6 +28,16 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
     forecast,
   } = sunday;
 
+  const chartData = useMemo(() => {
+    return sessions.map((s) => ({
+      session: s.slot,
+      target: s.target,
+      scheduled: s.scheduled,
+      expected: s.confirmed,
+      overShort: s.overShort,
+    }));
+  }, [sessions]);
+
   const isTotalNegative = totalOverShort < 0;
   const isTotalPositive = totalOverShort > 0;
 
@@ -35,8 +48,8 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
 
   return (
     <div
-      style={{ width: '840px', minWidth: '840px', maxWidth: '840px' }}
-      className="w-[840px] min-w-[840px] max-w-[840px] shrink-0 box-border rounded-2xl border border-border bg-surface p-7 text-text shadow-xs"
+      style={{ width: '920px', minWidth: '920px', maxWidth: '920px' }}
+      className="w-[920px] min-w-[920px] max-w-[920px] shrink-0 box-border rounded-2xl border border-border bg-surface p-7 text-text shadow-xs"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border pb-5">
@@ -68,8 +81,73 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
         </div>
       </div>
 
+      {/* Chart Overview */}
+      <div className="mt-5 overflow-hidden rounded-xl border border-border/80 bg-surface">
+        <div className="flex items-center justify-center gap-2 border-b border-border/60 bg-surface-hover/40 px-4 py-2 text-center">
+          <Users className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          <h3 className="text-xs font-bold tracking-wider text-text uppercase">
+            {roleGroupLabel ? `${roleGroupLabel} Commitments` : 'Volunteer Commitments'} &mdash;
+            Chart Overview
+          </h3>
+        </div>
+
+        <div className="flex justify-center p-3">
+          <ComposedChart
+            width={850}
+            height={220}
+            data={chartData}
+            margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.7} />
+            <XAxis
+              dataKey="session"
+              tickLine={false}
+              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }}
+              dy={6}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#64748b', fontSize: 11 }}
+              dx={-4}
+            />
+            <Legend
+              verticalAlign="top"
+              align="right"
+              wrapperStyle={{ paddingBottom: 10, fontSize: 12 }}
+              iconType="circle"
+              iconSize={8}
+            />
+            <Bar
+              dataKey="scheduled"
+              name="Scheduled"
+              fill="#0284c7"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={44}
+            />
+            <Bar
+              dataKey="expected"
+              name="Expected Turnup"
+              fill="#10b981"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={44}
+            />
+            <Line
+              type="step"
+              dataKey="target"
+              name="Target"
+              stroke="#f59e0b"
+              strokeWidth={2.5}
+              strokeDasharray="5 5"
+              dot={{ r: 5, fill: '#f59e0b', stroke: '#ffffff', strokeWidth: 2 }}
+            />
+          </ComposedChart>
+        </div>
+      </div>
+
       {/* 3 Session Overview Cards */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {sessions.map((session) => {
           const sessionDeficit = session.overShort < 0;
           const sessionSurplus = session.overShort > 0;
@@ -214,7 +292,7 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
                   )}
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {slotGroup.roleBreakdown.map((item) => {
                     const isFilled = item.needed === 0 && item.target > 0;
                     const roleDeficit = item.needed > 0;
@@ -222,32 +300,37 @@ export function SundayForecastShareCard({ sunday }: SundayForecastShareCardProps
                     return (
                       <div
                         key={item.role}
-                        className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2 text-xs"
+                        className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2.5 text-xs"
                       >
-                        <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-start justify-between gap-1.5 min-h-[30px]">
                           <span
-                            className="text-xs font-semibold text-text truncate"
+                            className="text-xs font-bold text-text leading-snug"
                             title={item.role}
                           >
                             {item.role}
                           </span>
                           {roleDeficit ? (
-                            <Badge variant="accent" className="text-[10px] px-1 py-0.5 shrink-0">
+                            <Badge
+                              variant="accent"
+                              className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start"
+                            >
                               Need {item.needed}
                             </Badge>
                           ) : isFilled ? (
-                            <Badge className="text-[10px] px-1 py-0.5 shrink-0">Filled</Badge>
+                            <Badge className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start">
+                              Filled
+                            </Badge>
                           ) : (
                             <Badge
                               variant="primaryOutline"
-                              className="text-[10px] px-1 py-0.5 shrink-0"
+                              className="text-[10px] px-1.5 py-0.5 shrink-0 font-semibold self-start"
                             >
                               No Target
                             </Badge>
                           )}
                         </div>
 
-                        <div className="mt-2 text-[11px] text-muted flex items-center justify-between">
+                        <div className="mt-2.5 pt-1.5 border-t border-border/30 text-[11px] text-muted flex items-center justify-between">
                           <span>Target: {item.target}</span>
                           <span className="font-medium text-text">~{item.expectedTurnup} exp</span>
                         </div>
