@@ -20,6 +20,7 @@ import type { SundayVolunteerRecipient } from '@/lib/domain/notifications';
 import { formatDateOnly } from '@/lib/infrastructure/dateFormat';
 
 import { SundayVolunteerMobileCard } from './SundayVolunteerMobileCard';
+import { parseSlotChips } from './parseSlotChips';
 
 interface SundayVolunteersTableProps {
   volunteers: SundayVolunteerRecipient[];
@@ -43,7 +44,11 @@ export function SundayVolunteersTable({
       const emailMatch = v.email?.toLowerCase().includes(normalized);
       const memberIdMatch = v.member_id?.toLowerCase().includes(normalized);
       const slotsMatch = v.formatted_slots.toLowerCase().includes(normalized);
-      return nameMatch || emailMatch || memberIdMatch || slotsMatch;
+      const excuseMatch =
+        (v.excuse_status === 'full' && 'excused'.includes(normalized)) ||
+        (v.excuse_status === 'partial' &&
+          ('partial'.includes(normalized) || 'excused'.includes(normalized)));
+      return nameMatch || emailMatch || memberIdMatch || slotsMatch || excuseMatch;
     });
   }, [volunteers, searchTerm]);
 
@@ -98,8 +103,12 @@ export function SundayVolunteersTable({
                 <ListTableHeaderCell>Volunteer</ListTableHeaderCell>
                 <ListTableHeaderCell>Email Address</ListTableHeaderCell>
                 <ListTableHeaderCell>Scheduled Slots</ListTableHeaderCell>
-                <ListTableHeaderCell align="center">Push Status</ListTableHeaderCell>
-                <ListTableHeaderCell align="center">Email Status</ListTableHeaderCell>
+                <ListTableHeaderCell align="center" className="text-center whitespace-nowrap">
+                  Push Status
+                </ListTableHeaderCell>
+                <ListTableHeaderCell align="center" className="text-center whitespace-nowrap">
+                  Email Status
+                </ListTableHeaderCell>
               </ListTableHeaderRow>
             </ListTableHead>
             <ListTableBody>
@@ -113,7 +122,19 @@ export function SundayVolunteersTable({
                         size="sm"
                       />
                       <div className="min-w-0">
-                        <p className="font-medium text-text">{volunteer.full_name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-text">{volunteer.full_name}</p>
+                          {volunteer.excuse_status === 'full' && (
+                            <Badge variant="accent" className="text-xs">
+                              Excused
+                            </Badge>
+                          )}
+                          {volunteer.excuse_status === 'partial' && (
+                            <Badge variant="accent" className="text-xs">
+                              Partially Excused
+                            </Badge>
+                          )}
+                        </div>
                         {volunteer.member_id && (
                           <p className="text-xs text-muted font-mono">{volunteer.member_id}</p>
                         )}
@@ -124,31 +145,51 @@ export function SundayVolunteersTable({
                     <span className="text-xs text-muted font-mono">{volunteer.email || '—'}</span>
                   </ListTableCell>
                   <ListTableCell>
-                    <Badge variant="primaryOutline" className="text-xs font-normal">
-                      {volunteer.formatted_slots}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {parseSlotChips(volunteer.formatted_slots).map((chip, idx) => (
+                        <Badge
+                          key={`${chip.text}-${idx}`}
+                          variant={chip.isExcused ? 'accent' : 'primaryOutline'}
+                          className="text-xs font-normal"
+                        >
+                          {chip.text}
+                        </Badge>
+                      ))}
+                    </div>
                   </ListTableCell>
                   <ListTableCell align="center">
-                    {volunteer.has_push ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                        <Bell className="h-3.5 w-3.5" /> Subscribed
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted">
-                        <BellOff className="h-3.5 w-3.5" /> No Device
-                      </span>
-                    )}
+                    <div className="flex items-center justify-center">
+                      {volunteer.excuse_status === 'full' ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted whitespace-nowrap">
+                          <BellOff className="h-3.5 w-3.5" /> Suppressed
+                        </span>
+                      ) : volunteer.has_push ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium whitespace-nowrap">
+                          <Bell className="h-3.5 w-3.5" /> Subscribed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-muted whitespace-nowrap">
+                          <BellOff className="h-3.5 w-3.5" /> No Device
+                        </span>
+                      )}
+                    </div>
                   </ListTableCell>
                   <ListTableCell align="center">
-                    {volunteer.has_email ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Reachable
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-amber-500">
-                        <XCircle className="h-3.5 w-3.5" /> Missing Email
-                      </span>
-                    )}
+                    <div className="flex items-center justify-center">
+                      {volunteer.excuse_status === 'full' ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted whitespace-nowrap">
+                          <XCircle className="h-3.5 w-3.5" /> Suppressed
+                        </span>
+                      ) : volunteer.has_email ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium whitespace-nowrap">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Reachable
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-500 whitespace-nowrap">
+                          <XCircle className="h-3.5 w-3.5" /> Missing Email
+                        </span>
+                      )}
+                    </div>
                   </ListTableCell>
                 </ListTableRow>
               ))}
