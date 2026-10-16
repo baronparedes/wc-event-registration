@@ -57,3 +57,9 @@ expect(result.current).toBe(false);
 **Challenge:** Missing test coverage on `useImageCanvasContext` related to throwing an error outside a provider or properly retrieving values.
 **Learning:** Context value hooks often contain specific logic for error handling when invoked outside their matching Provider.
 **Pattern:** To reach full coverage on custom contexts, use `renderHook` from React Testing Library in combination with `toThrow` to test the non-provider exception case, and use the `wrapper` configuration option in `renderHook` to verify behavior inside the provider. Suppress console output for the expected error to prevent cluttering standard test runs.
+
+## 2024-10-15 - ExportMissedCommitmentsButton Testing
+
+**Challenge:** Testing the dynamic generation and download of CSV files via `URL.createObjectURL` and a dummy anchor tag in a JSDOM environment is tricky, as it relies heavily on native DOM functions that don't map cleanly or consistently during test execution.
+**Learning:** The component manually creates an `<a>` tag, appends it to the body, calls `click()`, and cleans it up. Simulating this exact native browser behavior is brittle.
+**Pattern:** Mock `URL.createObjectURL` and `URL.revokeObjectURL` before each test. Spy on `HTMLAnchorElement.prototype.click` rather than intercepting `document.createElement`. This safely and reliably asserts that the anchor tag was created and clicked without mutating global DOM constructors.
