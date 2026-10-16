@@ -146,7 +146,7 @@ export function SundayForecastCard({
 
                 return (
                   <div key={slotKey} className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-text uppercase tracking-wide">
                         {slotTitle}
                       </span>
