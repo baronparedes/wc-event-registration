@@ -118,47 +118,97 @@ export function SundayForecastCard({
 
         {/* Individual Role Breakdown - always visible when All Roles are selected */}
         {showRoleBreakdownOption &&
-          forecast?.roleBreakdown &&
-          forecast.roleBreakdown.length > 0 && (
-            <div className="pt-3 border-t border-border/60">
-              <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-2.5">
+          forecast &&
+          Boolean(forecast.slotBreakdowns?.length || forecast.roleBreakdown?.length) && (
+            <div className="pt-4 border-t border-border/60 space-y-4">
+              <div className="text-[11px] font-bold text-muted uppercase tracking-wider">
                 Individual Role Breakdown
               </div>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {forecast.roleBreakdown.map((item) => {
-                  const isFilled = item.needed === 0 && item.target > 0;
-                  const roleDeficit = item.needed > 0;
 
-                  return (
-                    <div
-                      key={item.role}
-                      className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-3 text-xs"
-                    >
-                      <div className="flex items-start justify-between gap-1.5">
-                        <span className="font-semibold text-text truncate" title={item.role}>
-                          {item.role}
-                        </span>
-                        {roleDeficit ? (
-                          <Badge variant="accent" className="text-[10px] px-1.5 py-0.5">
-                            Need {item.needed}
-                          </Badge>
-                        ) : isFilled ? (
-                          <Badge className="text-[10px] px-1.5 py-0.5">Filled</Badge>
-                        ) : (
-                          <Badge variant="primaryOutline" className="text-[10px] px-1.5 py-0.5">
-                            No Target
-                          </Badge>
-                        )}
-                      </div>
+              {(forecast.slotBreakdowns && forecast.slotBreakdowns.length > 0
+                ? forecast.slotBreakdowns
+                : [forecast]
+              ).map((slotGroup) => {
+                const slotKey = slotGroup.slot ?? 'ALL';
+                const slotLabel =
+                  slotKey === '9AM'
+                    ? '9 AM'
+                    : slotKey === '12NN'
+                      ? '12 NN'
+                      : slotKey === '3PM'
+                        ? '3 PM'
+                        : slotKey;
+                const slotTitle = slotKey === 'ALL' ? 'All Sessions' : `${slotLabel} Session`;
+                const slotNeeded = slotGroup.totalNeeded ?? 0;
+                const slotTarget = slotGroup.totalTarget ?? 0;
+                const isSlotFilled = slotNeeded === 0 && slotTarget > 0;
+                const slotDeficit = slotNeeded > 0;
 
-                      <div className="mt-2 text-[11px] text-muted flex items-center justify-between">
-                        <span>Target: {item.target}</span>
-                        <span className="font-medium text-text">~{item.expectedTurnup} exp</span>
-                      </div>
+                return (
+                  <div key={slotKey} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-text uppercase tracking-wide">
+                        {slotTitle}
+                      </span>
+                      {slotDeficit ? (
+                        <Badge variant="accent" className="text-xs px-2 py-0.5">
+                          {slotNeeded} Short
+                        </Badge>
+                      ) : isSlotFilled ? (
+                        <Badge className="text-xs px-2 py-0.5">Target Met</Badge>
+                      ) : (
+                        <Badge variant="primaryOutline" className="text-xs px-2 py-0.5">
+                          No Target
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                      {slotGroup.roleBreakdown.map((item) => {
+                        const isFilled = item.needed === 0 && item.target > 0;
+                        const roleDeficit = item.needed > 0;
+
+                        return (
+                          <div
+                            key={item.role}
+                            className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/20 p-2.5 sm:p-3"
+                          >
+                            <div className="flex items-center justify-between gap-1.5">
+                              <span
+                                className="text-sm font-semibold text-text truncate"
+                                title={item.role}
+                              >
+                                {item.role}
+                              </span>
+                              {roleDeficit ? (
+                                <Badge variant="accent" className="text-xs px-1.5 py-0.5 shrink-0">
+                                  Need {item.needed}
+                                </Badge>
+                              ) : isFilled ? (
+                                <Badge className="text-xs px-1.5 py-0.5 shrink-0">Filled</Badge>
+                              ) : (
+                                <Badge
+                                  variant="primaryOutline"
+                                  className="text-xs px-1.5 py-0.5 shrink-0"
+                                >
+                                  No Target
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div className="mt-2.5 text-xs text-muted flex items-center justify-between">
+                              <span>Target: {item.target}</span>
+                              <span className="font-medium text-text">
+                                ~{item.expectedTurnup} exp
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
       </div>

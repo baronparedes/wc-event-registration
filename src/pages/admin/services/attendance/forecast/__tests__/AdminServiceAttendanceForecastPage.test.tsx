@@ -235,6 +235,20 @@ describe('AdminServiceAttendanceForecastPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('opens and closes Share Forecast modal', () => {
+    renderPage();
+
+    const shareButton = screen.getByRole('button', { name: /Share Forecast/i });
+    fireEvent.click(shareButton);
+
+    expect(screen.getByText(/Share Sunday Attendance Forecast/i)).toBeInTheDocument();
+
+    const cancelButton = screen.getByRole('button', { name: /Cancel/i });
+    fireEvent.click(cancelButton);
+
+    expect(screen.queryByText(/Share Sunday Attendance Forecast/i)).not.toBeInTheDocument();
+  });
+
   it('renders loading state when data is loading', () => {
     mockUseAdminMembersSchedulesQuery.mockReturnValue({
       data: undefined,
