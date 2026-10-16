@@ -86,4 +86,95 @@ describe('SundayForecastCard', () => {
     expect(screen.queryByText('Individual Role Breakdown')).not.toBeInTheDocument();
     expect(screen.queryByText('Need 7')).not.toBeInTheDocument();
   });
+
+  it('renders stacked per-slot role breakdown sections when slotBreakdowns is present', () => {
+    const sundayWithSlots = {
+      ...mockSunday,
+      forecast: {
+        slot: 'ALL' as const,
+        totalTarget: 45,
+        totalCommitted: 30,
+        totalExcused: 0,
+        totalExpectedTurnup: 25,
+        totalNeeded: 20,
+        overallFulfillmentPercentage: 55,
+        roleBreakdown: [],
+        slotBreakdowns: [
+          {
+            slot: '9AM' as const,
+            totalTarget: 15,
+            totalCommitted: 10,
+            totalExcused: 0,
+            totalExpectedTurnup: 8,
+            totalNeeded: 7,
+            overallFulfillmentPercentage: 53,
+            roleBreakdown: [
+              {
+                role: 'Usher',
+                target: 10,
+                committed: 8,
+                excused: 0,
+                expectedTurnup: 6,
+                needed: 4,
+                surplus: 0,
+                fulfillmentPercentage: 60,
+              },
+            ],
+          },
+          {
+            slot: '12NN' as const,
+            totalTarget: 15,
+            totalCommitted: 10,
+            totalExcused: 0,
+            totalExpectedTurnup: 8,
+            totalNeeded: 7,
+            overallFulfillmentPercentage: 53,
+            roleBreakdown: [
+              {
+                role: 'Usher',
+                target: 15,
+                committed: 10,
+                excused: 0,
+                expectedTurnup: 9,
+                needed: 6,
+                surplus: 0,
+                fulfillmentPercentage: 60,
+              },
+            ],
+          },
+          {
+            slot: '3PM' as const,
+            totalTarget: 15,
+            totalCommitted: 10,
+            totalExcused: 0,
+            totalExpectedTurnup: 9,
+            totalNeeded: 6,
+            overallFulfillmentPercentage: 60,
+            roleBreakdown: [
+              {
+                role: 'Usher',
+                target: 20,
+                committed: 12,
+                excused: 0,
+                expectedTurnup: 10,
+                needed: 10,
+                surplus: 0,
+                fulfillmentPercentage: 50,
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as SundayForecastData;
+
+    render(<SundayForecastCard sunday={sundayWithSlots} showRoleBreakdownOption={true} />);
+
+    expect(screen.getByText('Individual Role Breakdown')).toBeInTheDocument();
+    expect(screen.getAllByText('9 AM Session').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('12 NN Session').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('3 PM Session').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Need 4')).toBeInTheDocument();
+    expect(screen.getByText('Need 6')).toBeInTheDocument();
+    expect(screen.getByText('Need 10')).toBeInTheDocument();
+  });
 });

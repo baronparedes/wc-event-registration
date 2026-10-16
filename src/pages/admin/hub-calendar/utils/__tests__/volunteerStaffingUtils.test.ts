@@ -256,6 +256,8 @@ describe('volunteerStaffingUtils', () => {
       expect(forecast.totalCommitted).toBe(2);
       expect(forecast.roleBreakdown.find((r) => r.role === 'Usher')?.target).toBe(45);
       expect(forecast.roleBreakdown.find((r) => r.role === 'Backroom Support')?.target).toBe(18);
+      expect(forecast.slotBreakdowns).toHaveLength(3);
+      expect(forecast.slotBreakdowns?.map((s) => s.slot)).toEqual(['9AM', '12NN', '3PM']);
     });
   });
 });

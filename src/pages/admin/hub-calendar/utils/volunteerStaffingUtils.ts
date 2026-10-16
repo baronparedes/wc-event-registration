@@ -150,6 +150,7 @@ export interface SlotStaffingForecast {
   totalNeeded: number;
   overallFulfillmentPercentage: number;
   roleBreakdown: RoleStaffingNeed[];
+  slotBreakdowns?: SlotStaffingForecast[];
 }
 
 export function calculateSlotStaffingNeeds(
@@ -360,5 +361,6 @@ export function calculateAllSundayStaffingNeeds(
     totalNeeded,
     overallFulfillmentPercentage,
     roleBreakdown,
+    slotBreakdowns: slotForecasts,
   };
 }
