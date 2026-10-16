@@ -194,6 +194,7 @@ export function AdminSundayRemindersPage() {
               emailSentAt={preview.email_sent_at}
               emailDelivery={preview.email_delivery}
               totalVolunteers={preview.total_volunteers}
+              fullyExcusedCount={preview.fully_excused_count}
               pushEligibleCount={preview.push_eligible_count}
               emailEligibleCount={preview.email_eligible_count}
               sundayDate={preview.sunday_date}

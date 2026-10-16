@@ -21,6 +21,7 @@ interface SundayDeliveryStatusCardProps {
   emailSentAt: string | null;
   emailDelivery?: SundayChannelDeliveryStats | null;
   totalVolunteers: number;
+  fullyExcusedCount?: number;
   pushEligibleCount: number;
   emailEligibleCount: number;
   sundayDate?: string;
@@ -104,6 +105,7 @@ export function SundayDeliveryStatusCard({
   emailSentAt,
   emailDelivery,
   totalVolunteers,
+  fullyExcusedCount,
   pushEligibleCount,
   emailEligibleCount,
   sundayDate,
@@ -213,6 +215,11 @@ export function SundayDeliveryStatusCard({
           <p className="text-xs text-muted">
             Total volunteers scheduled on {formatDateOnly(sundayDate || null)}
           </p>
+          {fullyExcusedCount !== undefined && fullyExcusedCount > 0 && (
+            <p className="text-xs text-muted pt-1">
+              Includes {fullyExcusedCount} fully excused (suppressed from dispatch)
+            </p>
+          )}
         </div>
         {totalVolunteers === 0 && (
           <div className="flex items-center gap-1.5 text-xs text-amber-500">

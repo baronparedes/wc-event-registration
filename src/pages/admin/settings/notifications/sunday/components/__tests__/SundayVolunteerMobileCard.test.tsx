@@ -29,7 +29,8 @@ describe('SundayVolunteerMobileCard', () => {
 
     expect(screen.getByText('Test Adolf Edison Uy')).toBeInTheDocument();
     expect(screen.getByText('MEM-101')).toBeInTheDocument();
-    expect(screen.getByText('9:00 AM, 11:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('9:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('11:00 AM')).toBeInTheDocument();
     expect(screen.getByText('test.adolf@example.com')).toBeInTheDocument();
     expect(screen.getByText('Subscribed')).toBeInTheDocument();
     expect(screen.getByText('Reachable')).toBeInTheDocument();
@@ -52,5 +53,47 @@ describe('SundayVolunteerMobileCard', () => {
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.getByText('No Device')).toBeInTheDocument();
     expect(screen.getByText('Missing Email')).toBeInTheDocument();
+  });
+
+  it('renders excused badge and suppressed status for fully excused volunteer', () => {
+    const excusedVolunteer: SundayVolunteerRecipient = {
+      user_id: 'vol-3',
+      member_id: 'MEM-103',
+      full_name: 'Test Excused Volunteer',
+      email: 'excused@example.com',
+      formatted_slots: '9:00 AM (Excused)',
+      has_push: true,
+      has_email: true,
+      excuse_status: 'full',
+    };
+
+    renderWithProviders(<SundayVolunteerMobileCard volunteer={excusedVolunteer} />);
+
+    expect(screen.getByText('Test Excused Volunteer')).toBeInTheDocument();
+    expect(screen.getAllByText('Excused').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Suppressed')).toHaveLength(2);
+  });
+
+  it('renders partially excused badge for partially excused volunteer', () => {
+    const partialVolunteer: SundayVolunteerRecipient = {
+      user_id: 'vol-4',
+      member_id: 'MEM-104',
+      full_name: 'Test Partial Volunteer',
+      email: 'partial@example.com',
+      formatted_slots: '9:00 AM, 12:00 NN (Excused) and 3:00 PM',
+      has_push: true,
+      has_email: true,
+      excuse_status: 'partial',
+    };
+
+    renderWithProviders(<SundayVolunteerMobileCard volunteer={partialVolunteer} />);
+
+    expect(screen.getByText('Test Partial Volunteer')).toBeInTheDocument();
+    expect(screen.getByText('Partially Excused')).toBeInTheDocument();
+    expect(screen.getByText('9:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('12:00 NN')).toBeInTheDocument();
+    expect(screen.getByText('3:00 PM')).toBeInTheDocument();
+    expect(screen.getByText('Subscribed')).toBeInTheDocument();
+    expect(screen.getByText('Reachable')).toBeInTheDocument();
   });
 });

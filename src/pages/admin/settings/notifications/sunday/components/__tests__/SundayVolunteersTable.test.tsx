@@ -104,4 +104,84 @@ describe('SundayVolunteersTable', () => {
     expect(screen.getAllByText('Push Status').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Email Status').length).toBeGreaterThan(0);
   });
+
+  it('renders excused badge and suppressed delivery status for fully excused volunteer', () => {
+    const excusedVolunteers: SundayVolunteerRecipient[] = [
+      {
+        user_id: '3',
+        member_id: 'MEM-003',
+        full_name: 'Test Charlie Excused',
+        email: 'test.charlie@example.com',
+        formatted_slots: '9:00 AM (Excused)',
+        has_push: true,
+        has_email: true,
+        excuse_status: 'full',
+      },
+    ];
+
+    renderWithProviders(<SundayVolunteersTable volunteers={excusedVolunteers} />);
+
+    expect(screen.getByText('Test Charlie Excused')).toBeInTheDocument();
+    expect(screen.getAllByText('Excused').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Suppressed')).toHaveLength(2);
+  });
+
+  it('renders partially excused badge for partially excused volunteer', () => {
+    const partialVolunteers: SundayVolunteerRecipient[] = [
+      {
+        user_id: '4',
+        member_id: 'MEM-004',
+        full_name: 'Test Dana Partial',
+        email: 'test.dana@example.com',
+        formatted_slots: '9:00 AM, 12:00 NN (Excused) and 3:00 PM',
+        has_push: true,
+        has_email: true,
+        excuse_status: 'partial',
+      },
+    ];
+
+    renderWithProviders(<SundayVolunteersTable volunteers={partialVolunteers} />);
+
+    expect(screen.getByText('Test Dana Partial')).toBeInTheDocument();
+    expect(screen.getByText('Partially Excused')).toBeInTheDocument();
+    expect(screen.getByText('9:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('12:00 NN')).toBeInTheDocument();
+    expect(screen.getByText('3:00 PM')).toBeInTheDocument();
+    expect(screen.getByText('Subscribed')).toBeInTheDocument();
+    expect(screen.getByText('Reachable')).toBeInTheDocument();
+  });
+
+  it('filters volunteers by excuse status search query', async () => {
+    const user = userEvent.setup();
+    const mixedVolunteers: SundayVolunteerRecipient[] = [
+      {
+        user_id: '1',
+        member_id: 'MEM-001',
+        full_name: 'Test Regular Volunteer',
+        email: 'reg@example.com',
+        formatted_slots: '9:00 AM',
+        has_push: true,
+        has_email: true,
+        excuse_status: 'none',
+      },
+      {
+        user_id: '2',
+        member_id: 'MEM-002',
+        full_name: 'Test Excused Volunteer',
+        email: 'excused@example.com',
+        formatted_slots: '12:00 NN (Excused)',
+        has_push: true,
+        has_email: true,
+        excuse_status: 'full',
+      },
+    ];
+
+    renderWithProviders(<SundayVolunteersTable volunteers={mixedVolunteers} />);
+
+    const searchInput = screen.getByPlaceholderText('Search volunteers or slots...');
+    await user.type(searchInput, 'excused');
+
+    expect(screen.getByText('Test Excused Volunteer')).toBeInTheDocument();
+    expect(screen.queryByText('Test Regular Volunteer')).not.toBeInTheDocument();
+  });
 });

@@ -64,6 +64,7 @@ export type SundayVolunteerRecipient = {
   formatted_slots: string;
   has_push: boolean;
   has_email: boolean;
+  excuse_status?: 'none' | 'partial' | 'full';
 };
 
 export type SundayDeliveryStatus = 'queued' | 'completed' | 'partial_failure' | 'failed';
@@ -89,6 +90,7 @@ export type SundaySchedulePreview = {
   push_delivery?: SundayChannelDeliveryStats | null;
   email_delivery?: SundayChannelDeliveryStats | null;
   total_volunteers: number;
+  fully_excused_count?: number;
   push_eligible_count: number;
   email_eligible_count: number;
   volunteers: SundayVolunteerRecipient[];
