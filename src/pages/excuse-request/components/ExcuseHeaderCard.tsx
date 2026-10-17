@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
 import { CollapsibleSectionCard } from '@/components/ui/CollapsibleSectionCard';
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 
 type ExcuseHeaderCardProps = {
   defaultExpanded?: boolean;
@@ -25,16 +24,13 @@ export function ExcuseHeaderCard({ defaultExpanded = true }: ExcuseHeaderCardPro
       collapseLabel="Collapse excuse details"
       expandLabel="Expand excuse details"
       title={titleContent}
-      subtitle={
-        <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
-          Sunday Service Attendance
-        </span>
-      }
     >
-      <div className="space-y-4 pt-2">
-        <MarkdownRenderer
-          content={`Submit an advance absence notification for Sunday service attendance.\n\nIf you will not be able to serve on an upcoming Sunday, please let your coordinators and team leaders know here so they can update the service schedule.`}
-        />
+      <div className="pt-4">
+        <p className="text-balance leading-relaxed">
+          Submit an advance absence notification for Sunday service attendance. If you will not be
+          able to serve on an upcoming Sunday, please let your coordinators and team leaders know
+          here so they can update the service schedule.
+        </p>
       </div>
     </CollapsibleSectionCard>
   );

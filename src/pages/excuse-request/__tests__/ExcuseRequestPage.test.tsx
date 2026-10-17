@@ -83,6 +83,16 @@ describe('ExcuseRequestPage Wizard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMutateLookup.mockResolvedValue({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
+    });
+    mockMutateSubmit.mockResolvedValue({ id: 'excuse-123' });
     mockUseAdminAuthQuery.mockReturnValue({ data: null, isLoading: false });
     mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false });
     mockUseMemberLookupQuery.mockReturnValue({

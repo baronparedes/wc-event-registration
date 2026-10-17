@@ -31,11 +31,11 @@ export function createEdgeFunctionCaller<TRequest, TResponse extends { success: 
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      apikey: env.supabasePublishableKey,
+      Authorization: `Bearer ${token || env.supabasePublishableKey}`,
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
+    if (!token) {
       console.warn(`[${functionName}] No auth token available for Edge Function call`);
     }
 
@@ -72,11 +72,11 @@ export function createEdgeFunctionTextCaller<TRequest>(functionName: string) {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      apikey: env.supabasePublishableKey,
+      Authorization: `Bearer ${token || env.supabasePublishableKey}`,
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
+    if (!token) {
       console.warn(`[${functionName}] No auth token available for Edge Function call`);
     }
 
@@ -130,11 +130,11 @@ export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      apikey: env.supabasePublishableKey,
+      Authorization: `Bearer ${token || env.supabasePublishableKey}`,
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
+    if (!token) {
       console.warn(`[${functionName}] No auth token available for Edge Function call`);
     }
 
