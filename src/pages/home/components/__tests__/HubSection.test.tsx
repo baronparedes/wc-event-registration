@@ -95,7 +95,7 @@ describe('HubSection', () => {
     expect(screen.getByText('Volunteer Excuse Request')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fill out' })).toHaveAttribute(
       'href',
-      '/profile?tab=commitments&action=excuse',
+      '/excuse-request',
     );
   });
 });

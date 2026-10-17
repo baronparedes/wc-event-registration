@@ -64,6 +64,9 @@ const LoginPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('../pages/profile').then((module) => ({ default: module.ProfilePage })),
 );
+const ExcuseRequestPage = lazy(() =>
+  import('../pages/excuse-request').then((module) => ({ default: module.ExcuseRequestPage })),
+);
 const AdminHubCalendarPage = lazy(() =>
   import('../pages/admin/hub-calendar').then((module) => ({
     default: module.AdminHubCalendarPage,
@@ -303,6 +306,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   eventCountdown: EventCountdownPage,
   login: LoginPage,
   profile: ProfilePage,
+  excuseRequest: ExcuseRequestPage,
   adminUserRoles: AdminUserRolesPage,
   adminMembers: AdminMembersPage,
   adminMembersImport: AdminMembersImportPage,

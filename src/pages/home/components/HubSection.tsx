@@ -1,3 +1,4 @@
+import { ROUTE_PATHS } from '@/config/constants';
 import type { PublicEventListingItem } from '@/lib/domain/events';
 import type { AdminForm } from '@/lib/domain/forms';
 
@@ -50,7 +51,7 @@ export function HubSection({ title, items }: HubSectionProps) {
                   description: item.description,
                   status: 'published',
                 }}
-                submissionPath="/profile?tab=commitments&action=excuse"
+                submissionPath={ROUTE_PATHS.excuseRequest}
                 statusLabel="Open"
               />
             );

@@ -1,13 +1,14 @@
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
-import type {
-  CreateServiceAttendanceInput,
-  CreateServiceLayoutInput,
-  CreateServiceSeatInput,
-  SubmitServiceExcuseInput,
-  UpdateServiceAttendanceInput,
-  UpdateServiceLayoutInput,
-  UpdateServiceSeatInput,
+import {
+  type CreateServiceAttendanceInput,
+  type CreateServiceLayoutInput,
+  type CreateServiceSeatInput,
+  type SubmitServiceExcuseInput,
+  type UpdateServiceAttendanceInput,
+  type UpdateServiceLayoutInput,
+  type UpdateServiceSeatInput,
+  submitServiceExcuseSchema,
 } from './schemas';
 import type {
   MissedServiceCommitment,
@@ -500,27 +501,23 @@ export async function fetchServiceExceptionDates(): Promise<ServiceExceptionDate
   return (data as unknown as ServiceExceptionDate[]) || [];
 }
 
+interface SubmitServiceExcuseResponse {
+  success: boolean;
+  excuse: ServiceExcuseRequest;
+  message?: string;
+}
+
+const callSubmitServiceExcuse = createEdgeFunctionCaller<
+  SubmitServiceExcuseInput,
+  SubmitServiceExcuseResponse
+>('submit-service-excuse');
+
 export async function submitServiceExcuse(
   input: SubmitServiceExcuseInput,
 ): Promise<ServiceExcuseRequest> {
-  const { data, error } = await supabase
-    .from('service_excuse_requests')
-    .insert({
-      user_id: input.user_id,
-      member_id: input.member_id,
-      request_date: input.request_date,
-      services: input.services,
-      reason: input.reason?.trim() || null,
-      status: 'approved',
-    })
-    .select('*')
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to submit excuse request: ${error.message}`);
-  }
-
-  return data as unknown as ServiceExcuseRequest;
+  const validated = submitServiceExcuseSchema.parse(input);
+  const response = await callSubmitServiceExcuse(validated);
+  return response.excuse;
 }
 
 export async function cancelServiceExcuse(id: string): Promise<void> {

@@ -78,14 +78,25 @@ export const updateServiceAttendanceSchema = z.object({
 
 export type UpdateServiceAttendanceInput = z.input<typeof updateServiceAttendanceSchema>;
 
-export const submitServiceExcuseSchema = z.object({
-  user_id: z.string().uuid('Invalid user ID'),
-  member_id: z.string().trim().min(1, 'Member ID is required'),
-  request_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format'),
-  services: z.array(z.string().trim().min(1)).min(1, 'At least one service slot is required'),
-  reason: z.string().trim().max(500, 'Reason must be 500 characters or less').optional().nullable(),
-});
+export const submitServiceExcuseSchema = z
+  .object({
+    user_id: z.string().uuid('Invalid user ID').optional(),
+    member_id: z.string().trim().optional(),
+    member_token: z.string().trim().optional(),
+    request_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format'),
+    services: z.array(z.string().trim().min(1)).min(1, 'At least one service slot is required'),
+    reason: z
+      .string()
+      .trim()
+      .max(500, 'Reason must be 500 characters or less')
+      .optional()
+      .nullable(),
+  })
+  .refine((data) => Boolean(data.user_id || data.member_id || data.member_token), {
+    message: 'Either member_token, member_id, or user_id must be provided',
+    path: ['member_id'],
+  });
 
 export type SubmitServiceExcuseInput = z.infer<typeof submitServiceExcuseSchema>;

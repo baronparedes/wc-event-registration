@@ -11,6 +11,7 @@ export const ROUTE_PATHS = {
   notFound: '*',
   login: '/login',
   profile: '/profile',
+  excuseRequest: '/excuse-request',
   forms: '/forms',
   formSubmitPattern: '/forms/:slug/submit',
   eventRegisterPattern: '/events/:slug/register',
@@ -72,6 +73,7 @@ export type AppRouteKey =
   | 'eventCountdown'
   | 'login'
   | 'profile'
+  | 'excuseRequest'
   | 'adminUserRoles'
   | 'adminMembers'
   | 'adminMembersImport'
@@ -143,6 +145,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   { key: 'eventCountdown', path: ROUTE_PATHS.eventCountdownPattern, layout: 'standalone' },
   { key: 'login', path: ROUTE_PATHS.login, layout: 'shell' },
   { key: 'profile', path: ROUTE_PATHS.profile, layout: 'shell' },
+  { key: 'excuseRequest', path: ROUTE_PATHS.excuseRequest, layout: 'shell' },
   {
     key: 'adminUserRoles',
     path: ROUTE_PATHS.adminUserRoles,
