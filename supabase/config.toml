@@ -296,6 +296,10 @@ import_map = "./functions/deno.json"
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.submit-service-excuse]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.update-attendance-settings]
 verify_jwt = true
 import_map = "./functions/deno.json"
