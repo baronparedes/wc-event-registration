@@ -65,7 +65,6 @@ describe('supabase edge function callers', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: 'anon-key',
           Authorization: 'Bearer token-123',
         },
         body: JSON.stringify({ value: 'hello' }),
@@ -97,8 +96,6 @@ describe('supabase edge function callers', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: 'anon-key',
-          Authorization: 'Bearer anon-key',
         },
         body: JSON.stringify({ value: 'hello' }),
       }),
@@ -296,7 +293,6 @@ describe('supabase edge function callers', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: 'anon-key',
           Authorization: 'Bearer token-stream',
         },
         body: JSON.stringify({ prompt: 'hi' }),
