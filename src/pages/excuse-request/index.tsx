@@ -536,12 +536,12 @@ export function ExcuseRequestPage() {
                   <Button
                     className="w-full sm:w-auto"
                     disabled={submitMutation.isPending}
-                    onClick={() => setActiveWizardStep(2)}
+                    onClick={goHome}
                     size="lg"
                     type="button"
-                    variant="primaryOutline"
+                    variant="outline"
                   >
-                    Back
+                    Cancel
                   </Button>
                 </div>
               </form>

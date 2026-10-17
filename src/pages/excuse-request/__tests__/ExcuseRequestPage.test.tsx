@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ROUTE_PATHS } from '@/config/constants';
+
 import { ExcuseRequestPage } from '../index';
 
 const {
@@ -12,6 +14,7 @@ const {
   mockUseSubmitExcuseMutation,
   mockToastSuccess,
   mockToastError,
+  mockNavigate,
 } = vi.hoisted(() => ({
   mockUseAdminAuthQuery: vi.fn(),
   mockUseCurrentProfileQuery: vi.fn(),
@@ -19,7 +22,16 @@ const {
   mockUseSubmitExcuseMutation: vi.fn(),
   mockToastSuccess: vi.fn(),
   mockToastError: vi.fn(),
+  mockNavigate: vi.fn(),
 }));
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
@@ -371,5 +383,39 @@ describe('ExcuseRequestPage Wizard', () => {
     expect(await screen.findByText('Network error submitting excuse')).toBeInTheDocument();
     // No toast error
     expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('redirects to home page when clicking Cancel button in Step 3', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
+        member_id: 'MEM-1001',
+        full_name: 'Test Member',
+        role: 'Prayer Coach',
+      },
+      isLoading: false,
+    });
+    mockMutateLookup.mockResolvedValueOnce({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
+    });
+
+    renderPage();
+
+    // Advance to Step 3
+    const confirmButton = await screen.findByRole('button', { name: 'Yes, I confirm' });
+    fireEvent.click(confirmButton);
+
+    expect(await screen.findByText('Step 3: Excuse Details')).toBeInTheDocument();
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTE_PATHS.home);
   });
 });
