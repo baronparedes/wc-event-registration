@@ -189,3 +189,180 @@ Deno.test('download-registrations-template reports field lookup errors', async (
     }
   });
 });
+
+Deno.test(
+  'download-registrations-template reports users, registrations, and answers query errors',
+  async () => {
+    await withFunctionEnv(async () => {
+      // 1. users error
+      const originalFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: ADMIN_USER_ID }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: 'Event' }));
+          if (url.pathname === '/rest/v1/event_fields') return Promise.resolve(Response.json([]));
+          if (url.pathname === '/rest/v1/users')
+            return Promise.resolve(Response.json({ message: 'users error' }, { status: 500 }));
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const usersErrRes = await handleDownloadRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(usersErrRes.status, 500);
+        assertEquals((await usersErrRes.json()).error, 'Failed to read members');
+
+        // 2. registrations error
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: ADMIN_USER_ID }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: 'Event' }));
+          if (url.pathname === '/rest/v1/event_fields') return Promise.resolve(Response.json([]));
+          if (url.pathname === '/rest/v1/users') return Promise.resolve(Response.json([]));
+          if (url.pathname === '/rest/v1/registrations')
+            return Promise.resolve(Response.json({ message: 'regs error' }, { status: 500 }));
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const regErrRes = await handleDownloadRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(regErrRes.status, 500);
+        assertEquals((await regErrRes.json()).error, 'Failed to read existing registrations');
+
+        // 3. answers error
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: ADMIN_USER_ID }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: null }));
+          if (url.pathname === '/rest/v1/event_fields')
+            return Promise.resolve(
+              Response.json([{ id: 'f-1', field_key: 'field_1', display_order: 1 }]),
+            );
+          if (url.pathname === '/rest/v1/users')
+            return Promise.resolve(
+              Response.json([
+                {
+                  id: 'u-1',
+                  member_id: null,
+                  full_name: null,
+                  email: null,
+                  phone: null,
+                  role: null,
+                  category: null,
+                },
+              ]),
+            );
+          if (url.pathname === '/rest/v1/registrations')
+            return Promise.resolve(Response.json([{ id: 'r-1', user_id: 'u-1' }]));
+          if (url.pathname === '/rest/v1/registration_answers')
+            return Promise.resolve(Response.json({ message: 'answers error' }, { status: 500 }));
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const answersErrRes = await handleDownloadRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(answersErrRes.status, 500);
+        assertEquals(
+          (await answersErrRes.json()).error,
+          'Failed to read existing registration answers',
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);
+
+Deno.test(
+  'download-registrations-template formats object, invalid JSON, and empty answers with null event title',
+  async () => {
+    await withFunctionEnv(async () => {
+      const originalFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: ADMIN_USER_ID }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: null }));
+          if (url.pathname === '/rest/v1/event_fields') {
+            return Promise.resolve(
+              Response.json([
+                { id: 'f-obj', field_key: 'prefs', display_order: 1 },
+                { id: 'f-raw', field_key: 'raw', display_order: 2 },
+                { id: 'f-empty', field_key: 'empty', display_order: 3 },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/users') {
+            return Promise.resolve(
+              Response.json([
+                {
+                  id: 'u-1',
+                  member_id: 'M-1',
+                  full_name: 'Member One',
+                  email: 'm1@example.com',
+                  phone: null,
+                  role: null,
+                  category: null,
+                },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/registrations') {
+            return Promise.resolve(Response.json([{ id: 'r-1', user_id: 'u-1' }]));
+          }
+          if (url.pathname === '/rest/v1/registration_answers') {
+            return Promise.resolve(
+              Response.json([
+                {
+                  registration_id: 'r-1',
+                  event_field_id: 'f-obj',
+                  answer_text: JSON.stringify({ optA: true, optB: false, note: 'yes' }),
+                },
+                {
+                  registration_id: 'r-1',
+                  event_field_id: 'f-raw',
+                  answer_text: 'not-valid-json{{',
+                },
+                { registration_id: 'r-1', event_field_id: 'f-empty', answer_text: null },
+              ]),
+            );
+          }
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const response = await handleDownloadRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(response.status, 200);
+        assertStringIncludes(
+          response.headers.get('content-disposition') ?? '',
+          'event-registrations-template-',
+        );
+        const csv = await response.text();
+        assertStringIncludes(csv, 'optA:true|optB:false|note:yes');
+        assertStringIncludes(csv, 'not-valid-json{{');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);

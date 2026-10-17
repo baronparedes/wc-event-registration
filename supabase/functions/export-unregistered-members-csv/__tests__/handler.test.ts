@@ -146,3 +146,74 @@ Deno.test('export-unregistered-members-csv reports registration query failures',
     }
   });
 });
+
+Deno.test(
+  'export-unregistered-members-csv handles users query error, empty registrations, and fallback names',
+  async () => {
+    await withFunctionEnv(async () => {
+      const originalFetch = globalThis.fetch;
+      try {
+        // 1. users error
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: crypto.randomUUID() }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: 'Event' }));
+          if (url.pathname === '/rest/v1/registrations') return Promise.resolve(Response.json([]));
+          if (url.pathname === '/rest/v1/users')
+            return Promise.resolve(Response.json({ message: 'users db error' }, { status: 500 }));
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const userErrRes = await handleExportUnregisteredMembersCsv(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(userErrRes.status, 500);
+        assertEquals((await userErrRes.json()).error, 'Failed to load unregistered members');
+
+        // 2. empty registrations, null event title, unnamed member
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: crypto.randomUUID() }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: null }));
+          if (url.pathname === '/rest/v1/registrations') return Promise.resolve(Response.json([]));
+          if (url.pathname === '/rest/v1/users') {
+            return Promise.resolve(
+              Response.json([
+                {
+                  id: 'u-unnamed',
+                  member_id: null,
+                  full_name: null,
+                  email: null,
+                  role: 12345, // non-string role
+                  category: '   ', // whitespace only category
+                },
+              ]),
+            );
+          }
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const fallbackRes = await handleExportUnregisteredMembersCsv(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(fallbackRes.status, 200);
+        assertStringIncludes(
+          fallbackRes.headers.get('content-disposition') ?? '',
+          `event-${EVENT_ID}-unregistered-members-`,
+        );
+        const csv = await fallbackRes.text();
+        assertStringIncludes(csv, ',Unnamed member,,,');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);

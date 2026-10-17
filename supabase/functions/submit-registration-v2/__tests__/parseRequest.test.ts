@@ -91,3 +91,71 @@ Deno.test('parseRequest fails on missing required fields', async () => {
     }
   });
 });
+
+Deno.test('parseRequest fails when member_token cannot be decoded', async () => {
+  await withTokenSecret(async () => {
+    const req = new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_slug: 'event-1',
+        member_token: 'mlt2.invalid.payload',
+        responses: {},
+        idempotency_key: 'idemp-1',
+      }),
+    });
+
+    const result = await parseRequest(req);
+    assertEquals(result.ok, false);
+    if (!result.ok) {
+      assertEquals(result.errorCode, 'INVALID_REQUEST');
+      assertEquals(result.message, 'Invalid request payload');
+    }
+  });
+});
+
+Deno.test('parseRequest fails when member_token has mismatched eventSlug', async () => {
+  await withTokenSecret(async () => {
+    const token = await createMemberLookupToken('member-1', 'event-1');
+    const req = new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_slug: 'event-different',
+        member_token: token,
+        responses: {},
+        idempotency_key: 'idemp-1',
+      }),
+    });
+
+    const result = await parseRequest(req);
+    assertEquals(result.ok, false);
+    if (!result.ok) {
+      assertEquals(result.errorCode, 'INVALID_REQUEST');
+      assertEquals(result.message, 'Invalid request payload');
+    }
+  });
+});
+
+Deno.test('parseRequest succeeds when member_token has null eventSlug', async () => {
+  await withTokenSecret(async () => {
+    const token = await createMemberLookupToken('member-1', null);
+    const req = new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_slug: 'any-event',
+        member_token: token,
+        responses: { key: 'val' },
+        idempotency_key: 'idemp-1',
+      }),
+    });
+
+    const result = await parseRequest(req);
+    assertEquals(result.ok, true);
+    if (result.ok) {
+      assertEquals(result.data.event_slug, 'any-event');
+      assertEquals(result.data.member_id, 'member-1');
+    }
+  });
+});

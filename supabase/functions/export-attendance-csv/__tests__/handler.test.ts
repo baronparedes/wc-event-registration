@@ -32,7 +32,15 @@ function buildRequest(body: unknown, authenticated = true) {
   });
 }
 
-function mockFetch(options: { disabled?: boolean; settingsError?: boolean }) {
+function mockFetch(options: {
+  disabled?: boolean;
+  settingsError?: boolean;
+  fieldError?: boolean;
+  registrationError?: boolean;
+  userError?: boolean;
+  publicRegistrationError?: boolean;
+  checkInError?: boolean;
+}) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (input) => {
     const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
@@ -52,6 +60,9 @@ function mockFetch(options: { disabled?: boolean; settingsError?: boolean }) {
       return Promise.resolve(Response.json({ attendance_enabled: !options.disabled }));
     }
     if (requestUrl.pathname === '/rest/v1/attendance_fields') {
+      if (options.fieldError) {
+        return Promise.resolve(Response.json({ message: 'field error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -64,9 +75,15 @@ function mockFetch(options: { disabled?: boolean; settingsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/registrations') {
+      if (options.registrationError) {
+        return Promise.resolve(Response.json({ message: 'registration error' }, { status: 500 }));
+      }
       return Promise.resolve(Response.json([{ id: 'member-reg', user_id: 'member-user' }]));
     }
     if (requestUrl.pathname === '/rest/v1/users') {
+      if (options.userError) {
+        return Promise.resolve(Response.json({ message: 'user error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -79,6 +96,9 @@ function mockFetch(options: { disabled?: boolean; settingsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/public_registrations') {
+      if (options.publicRegistrationError) {
+        return Promise.resolve(Response.json({ message: 'public reg error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           { id: 'public-reg', first_name: 'Sam', last_name: 'Guest', email: 'sam@example.com' },
@@ -86,6 +106,9 @@ function mockFetch(options: { disabled?: boolean; settingsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/attendance_check_ins') {
+      if (options.checkInError) {
+        return Promise.resolve(Response.json({ message: 'checkin error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -198,3 +221,60 @@ Deno.test('export-attendance-csv maps attendance settings query failures', async
     }
   });
 });
+
+Deno.test(
+  'export-attendance-csv handles query failures for fields, registrations, users, and check-ins',
+  async () => {
+    await withFunctionEnv(async () => {
+      // 1. Field error
+      const fieldMock = mockFetch({ fieldError: true });
+      try {
+        const response = await handleExportAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read attendance fields');
+      } finally {
+        fieldMock.restore();
+      }
+
+      // 2. Registration error
+      const regMock = mockFetch({ registrationError: true });
+      try {
+        const response = await handleExportAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read registrations');
+      } finally {
+        regMock.restore();
+      }
+
+      // 3. User error
+      const userMock = mockFetch({ userError: true });
+      try {
+        const response = await handleExportAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read users');
+      } finally {
+        userMock.restore();
+      }
+
+      // 4. Public registration error
+      const pubMock = mockFetch({ publicRegistrationError: true });
+      try {
+        const response = await handleExportAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read public registrations');
+      } finally {
+        pubMock.restore();
+      }
+
+      // 5. Check-in error
+      const checkInMock = mockFetch({ checkInError: true });
+      try {
+        const response = await handleExportAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read attendance check-ins');
+      } finally {
+        checkInMock.restore();
+      }
+    });
+  },
+);

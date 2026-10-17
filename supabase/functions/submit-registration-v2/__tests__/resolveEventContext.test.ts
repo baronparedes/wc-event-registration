@@ -129,3 +129,134 @@ Deno.test('resolveEventContext rejects member registration when event is public-
     assertEquals(result.httpStatus, 200);
   }
 });
+
+Deno.test(
+  'resolveEventContext rejects member registration when legacy flags indicate public-only',
+  async () => {
+    const supabase = createMockSupabase({
+      event: {
+        id: EVENT_ID,
+        duplicate_policy: 'allow_multiple',
+        registration_mode: 'open',
+        registration_opens_at: null,
+        registration_closes_at: null,
+        allow_public_registrations: true,
+        require_id_lookup: false,
+        metadata: {},
+      },
+    });
+
+    const result = await resolveEventContext(supabase, 'legacy-public-event', 'M-123');
+    assertEquals(result.ok, false);
+    if (!result.ok) {
+      assertEquals(result.errorCode, 'MEMBER_REGISTRATION_NOT_ALLOWED');
+    }
+  },
+);
+
+Deno.test('resolveEventContext fails when event lookup errors', async () => {
+  const supabase = createMockSupabase({
+    eventError: new Error('Database connection failed'),
+  });
+
+  const result = await resolveEventContext(supabase, 'sample-event', 'M-123');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'EVENT_LOOKUP_FAILED');
+    assertEquals(result.httpStatus, 500);
+  }
+});
+
+Deno.test('resolveEventContext fails when event is not found', async () => {
+  const supabase = createMockSupabase({ event: null });
+
+  const result = await resolveEventContext(supabase, 'non-existent-event', 'M-123');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'EVENT_NOT_FOUND');
+    assertEquals(result.httpStatus, 200);
+  }
+});
+
+Deno.test('resolveEventContext fails when registration is closed', async () => {
+  const supabase = createMockSupabase({
+    event: {
+      id: EVENT_ID,
+      duplicate_policy: 'allow_multiple',
+      registration_mode: 'closed',
+      registration_opens_at: null,
+      registration_closes_at: null,
+      allow_public_registrations: true,
+      require_id_lookup: true,
+      metadata: {},
+    },
+  });
+
+  const result = await resolveEventContext(supabase, 'closed-event', 'M-123');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'REGISTRATION_CLOSED');
+    assertEquals(result.httpStatus, 200);
+  }
+});
+
+Deno.test('resolveEventContext fails when user lookup errors', async () => {
+  const supabase = createMockSupabase({
+    userError: new Error('User DB error'),
+  });
+
+  const result = await resolveEventContext(supabase, 'sample-event', 'M-123');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'USER_LOOKUP_FAILED');
+    assertEquals(result.httpStatus, 500);
+  }
+});
+
+Deno.test('resolveEventContext fails when member is not found', async () => {
+  const supabase = createMockSupabase({ user: null });
+
+  const result = await resolveEventContext(supabase, 'sample-event', 'M-NOTFOUND');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'MEMBER_NOT_FOUND');
+    assertEquals(result.httpStatus, 200);
+  }
+});
+
+Deno.test('resolveEventContext fails when fields lookup errors', async () => {
+  const supabase = createMockSupabase({
+    fieldsError: new Error('Fields DB error'),
+  });
+
+  const result = await resolveEventContext(supabase, 'sample-event', 'M-123');
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.errorCode, 'FIELDS_LOOKUP_FAILED');
+    assertEquals(result.httpStatus, 500);
+  }
+});
+
+Deno.test('resolveEventContext handles event fields with null options', async () => {
+  const supabase = createMockSupabase({
+    fields: [
+      {
+        id: 'f-1',
+        field_key: 'notes',
+        label: 'Notes',
+        field_type: 'text',
+        applicability: 'members',
+        is_required: false,
+        options: null,
+        validation_rules: null,
+      },
+    ],
+  });
+
+  const result = await resolveEventContext(supabase, 'sample-event', 'M-123');
+  assertEquals(result.ok, true);
+  if (result.ok) {
+    assertEquals(result.data.fields[0].options, []);
+    assertEquals(result.data.fields[0].validation_rules, {});
+  }
+});
