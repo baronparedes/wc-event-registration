@@ -73,7 +73,29 @@ Deno.test('parseFunctionEnvironment requires Supabase settings and trims configu
   );
 
   withEnvironment(
-    { SUPABASE_URL: undefined, SUPABASE_SERVICE_ROLE_KEY: undefined, CRON_ROLE_KEY: undefined },
+    {
+      SUPABASE_URL: ' https://example.supabase.co ',
+      SUPABASE_SERVICE_ROLE_KEY: ' service-key ',
+      CRON_ROLE_KEY: ' cron-key ',
+      ATTENDANCE_SYNC_KEY: ' sync-key ',
+    },
+    () => {
+      assertEquals(parseFunctionEnvironment(), {
+        supabaseUrl: 'https://example.supabase.co',
+        supabaseServiceKey: 'service-key',
+        cronRoleKey: 'cron-key',
+        attendanceSyncKey: 'sync-key',
+      });
+    },
+  );
+
+  withEnvironment(
+    {
+      SUPABASE_URL: undefined,
+      SUPABASE_SERVICE_ROLE_KEY: undefined,
+      CRON_ROLE_KEY: undefined,
+      ATTENDANCE_SYNC_KEY: undefined,
+    },
     () => assertEquals(parseFunctionEnvironment(), null),
   );
 });

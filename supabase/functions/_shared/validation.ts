@@ -6,12 +6,14 @@ const functionEnvironmentSchema = z.object({
   SUPABASE_URL: z.string().trim().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
   CRON_ROLE_KEY: z.string().trim().optional(),
+  ATTENDANCE_SYNC_KEY: z.string().trim().optional(),
 });
 
 export type FunctionEnvironment = {
   supabaseUrl: string;
   supabaseServiceKey: string;
   cronRoleKey?: string;
+  attendanceSyncKey?: string;
 };
 
 export function parseFunctionEnvironment(): FunctionEnvironment | null {
@@ -19,17 +21,24 @@ export function parseFunctionEnvironment(): FunctionEnvironment | null {
     SUPABASE_URL: Deno.env.get('SUPABASE_URL') ?? '',
     SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     CRON_ROLE_KEY: Deno.env.get('CRON_ROLE_KEY') ?? '',
+    ATTENDANCE_SYNC_KEY: Deno.env.get('ATTENDANCE_SYNC_KEY') ?? '',
   });
 
   if (!parsed.success) {
     return null;
   }
 
-  return {
+  const result: FunctionEnvironment = {
     supabaseUrl: parsed.data.SUPABASE_URL,
     supabaseServiceKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
-    cronRoleKey: parsed.data.CRON_ROLE_KEY || undefined,
   };
+  if (parsed.data.CRON_ROLE_KEY) {
+    result.cronRoleKey = parsed.data.CRON_ROLE_KEY;
+  }
+  if (parsed.data.ATTENDANCE_SYNC_KEY) {
+    result.attendanceSyncKey = parsed.data.ATTENDANCE_SYNC_KEY;
+  }
+  return result;
 }
 
 export async function parseRequestBody<TSchema extends z.ZodTypeAny>(

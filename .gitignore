@@ -37,6 +37,12 @@ supabase/seeds/*.local.sql
 .env
 .env.*
 *.env
+!.env.example
+!*.env.example
 
 .vscodecounter
 wc_attend.db
+.attendance-sync-state.json
+.sync-state.json
+tools/attendance-sync/bin/
+*.exe

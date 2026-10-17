@@ -67,6 +67,7 @@ type EdgeHookAdminOptions =
       requireAuth?: false;
       /** Strictly require CRON_ROLE_KEY (or optionally SUPABASE_SERVICE_ROLE_KEY if allowServiceRole is true). */
       requireCron: true;
+      requireSync?: never;
       rateLimit?: never;
       allowedRoles?: never;
       allowServiceRole?: boolean;
@@ -76,6 +77,18 @@ type EdgeHookAdminOptions =
       requireAdmin?: false;
       requireAuth?: false;
       requireCron?: false;
+      /** Strictly require ATTENDANCE_SYNC_KEY (or optionally SUPABASE_SERVICE_ROLE_KEY if allowServiceRole is true). */
+      requireSync: true;
+      rateLimit?: never;
+      allowedRoles?: never;
+      allowServiceRole?: boolean;
+      allowCronRole?: never;
+    }
+  | {
+      requireAdmin?: false;
+      requireAuth?: false;
+      requireCron?: false;
+      requireSync?: false;
       rateLimit?: never;
       allowedRoles?: never;
       allowServiceRole?: never;
@@ -107,8 +120,8 @@ type EdgeHookSuccess<TData> = {
   client: EdgeClient;
   data: TData;
   userId: string | null;
-  /** 'service_role' when called by service key, 'cron' when called by cron key, 'admin' when called by an admin JWT, 'user' when called by a normal JWT, null otherwise. */
-  callerType: 'service_role' | 'cron' | 'admin' | 'user' | null;
+  /** 'service_role' when called by service key, 'cron' when called by cron key, 'sync' when called by attendance sync key, 'admin' when called by an admin JWT, 'user' when called by a normal JWT, null otherwise. */
+  callerType: 'service_role' | 'cron' | 'sync' | 'admin' | 'user' | null;
 };
 
 export type EdgeHookResult<TData> = EdgeHookFailure | EdgeHookSuccess<TData>;
@@ -245,9 +258,38 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
   }
 
   let userId: string | null = null;
-  let callerType: 'service_role' | 'cron' | 'admin' | 'user' | null = null;
+  let callerType: 'service_role' | 'cron' | 'sync' | 'admin' | 'user' | null = null;
 
-  if (options.allowCronRole || options.requireCron) {
+  if ('requireSync' in options && options.requireSync) {
+    const syncKeyHeader = options.req.headers.get('x-sync-key')?.trim();
+    const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const providedKey = syncKeyHeader || bearerToken;
+    const expectedSyncKey = env.attendanceSyncKey || Deno.env.get('ATTENDANCE_SYNC_KEY')?.trim();
+
+    if (expectedSyncKey && providedKey && providedKey === expectedSyncKey) {
+      callerType = 'sync';
+      console.log(`[${options.functionName}] [auth] Authenticated via ATTENDANCE_SYNC_KEY`, {
+        requestId,
+      });
+    } else if (options.allowServiceRole && providedKey && providedKey === env.supabaseServiceKey) {
+      callerType = 'service_role';
+      console.log(`[${options.functionName}] [auth] Authenticated via SUPABASE_SERVICE_ROLE_KEY`, {
+        requestId,
+      });
+    } else {
+      return {
+        valid: false,
+        response: errorResponse(
+          corsHeaders,
+          HTTP_STATUS.unauthorized,
+          'Unauthorized: Invalid Sync Key',
+        ),
+        requestId,
+        corsHeaders,
+      };
+    }
+  } else if (options.allowCronRole || options.requireCron) {
     const cronKeyHeader = options.req.headers.get('x-cron-key')?.trim();
     const authHeader = options.req.headers.get('authorization')?.trim() ?? '';
     const bearerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
