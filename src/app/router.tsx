@@ -7,6 +7,7 @@ import {
   Outlet,
   createBrowserRouter,
   matchPath,
+  redirect,
   useLocation,
   useNavigate,
 } from 'react-router-dom';
@@ -469,7 +470,35 @@ function renderAppRoute({
   );
 }
 
-export const appRouter = createBrowserRouter([
+const legacyExcuseRedirectLoader = () => redirect(ROUTE_PATHS.excuseRequest);
+const legacyExcuseRedirectElement = <Navigate to={ROUTE_PATHS.excuseRequest} replace />;
+
+export const appRoutes = [
+  {
+    path: '/events/excuse-request-2026',
+    loader: legacyExcuseRedirectLoader,
+    element: legacyExcuseRedirectElement,
+  },
+  {
+    path: '/events/excuse-request-2026/register',
+    loader: legacyExcuseRedirectLoader,
+    element: legacyExcuseRedirectElement,
+  },
+  {
+    path: '/events/excuse-request-2026/register-public',
+    loader: legacyExcuseRedirectLoader,
+    element: legacyExcuseRedirectElement,
+  },
+  {
+    path: '/events/excuse-request-2026/countdown',
+    loader: legacyExcuseRedirectLoader,
+    element: legacyExcuseRedirectElement,
+  },
+  {
+    path: '/events/excuse-request-2026/*',
+    loader: legacyExcuseRedirectLoader,
+    element: legacyExcuseRedirectElement,
+  },
   {
     element: <ResponsiveShellLayout />,
     errorElement: <RouteErrorBoundary />,
@@ -504,4 +533,6 @@ export const appRouter = createBrowserRouter([
     ),
     errorElement: <RouteErrorBoundary />,
   },
-]);
+];
+
+export const appRouter = createBrowserRouter(appRoutes);

@@ -15,6 +15,13 @@ import { formatEventSchedule, generateQrCodeDataUrl } from './utils';
 export function EventCountdownPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (slug === 'excuse-request-2026') {
+      navigate(ROUTE_PATHS.excuseRequest, { replace: true });
+    }
+  }, [slug, navigate]);
+
   const { data: availability, isLoading, isError } = usePublicEventQuery(slug ?? null);
   const event = availability?.event;
   const isRegistrationOpen = availability?.status === 'available';

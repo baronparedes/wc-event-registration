@@ -147,6 +147,12 @@ export function useEventRegistrationPageState() {
     'idle',
   );
 
+  useEffect(() => {
+    if (slug === 'excuse-request-2026') {
+      navigate(ROUTE_PATHS.excuseRequest, { replace: true });
+    }
+  }, [slug, navigate]);
+
   const profileQuery = useCurrentProfileQuery();
   const currentProfile = profileQuery.data;
   const isSignedIn = Boolean(currentProfile?.member_id);
