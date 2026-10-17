@@ -7,7 +7,6 @@ import { decodeOffsetCursor, getTotalPages } from '@/lib/infrastructure';
 export interface CommitmentDashboardFilters {
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
   search_query?: string;
   role?: string;
   category?: string;

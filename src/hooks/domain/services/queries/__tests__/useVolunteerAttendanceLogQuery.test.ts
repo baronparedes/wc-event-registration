@@ -63,7 +63,6 @@ describe('useVolunteerAttendanceLogQuery', () => {
         user_id: 'u-1',
         start_date: '2026-01-01',
         end_date: '2026-03-31',
-        excuse_event_id: 'event-123',
       }),
     );
 
@@ -73,7 +72,6 @@ describe('useVolunteerAttendanceLogQuery', () => {
       p_user_id: 'u-1',
       p_start_date: '2026-01-01',
       p_end_date: '2026-03-31',
-      p_excuse_event_id: 'event-123',
     });
 
     expect(result.current.data).toEqual(mockData);

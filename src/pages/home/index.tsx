@@ -2,7 +2,6 @@ import { Calendar } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { env } from '@/config/env';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/components';
@@ -35,7 +34,6 @@ export function HomePage() {
   const isLoading = eventsLoading || formsLoading;
 
   const isLegacyExcuseEvent = (event: { id?: string; title?: string; slug?: string }) =>
-    (Boolean(env.excuseEventId) && event.id === env.excuseEventId) ||
     (event.title ?? '').toLowerCase().includes('excuse') ||
     (event.slug ?? '').toLowerCase().includes('excuse');
 

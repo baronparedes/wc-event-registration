@@ -61,14 +61,12 @@ export type MissedServiceCommitmentsArgs = {
   p_end_date?: string;
   p_time_slot?: string;
   p_role?: string;
-  p_excuse_event_id?: string;
   p_search_query?: string;
 };
 
 export type CommitmentDashboardStatsRpcFilters = {
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
   search_query?: string;
   role?: string;
   category?: string;
@@ -80,7 +78,6 @@ export type VolunteerAttendanceLogRpcFilters = {
   user_id: string;
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
 };
 
 export async function fetchServiceLayouts(): Promise<ServiceLayout[]> {
@@ -397,7 +394,6 @@ export async function fetchCommitmentDashboardStatsPage(
   const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
     p_start_date: filters.start_date,
     p_end_date: filters.end_date,
-    p_excuse_event_id: filters.excuse_event_id || null,
     p_search_query: filters.search_query || null,
     p_role: filters.role || null,
     p_category: filters.category || null,
@@ -421,7 +417,6 @@ export async function fetchAllCommitmentDashboardStatsForExport(
     {
       p_start_date: filters.start_date,
       p_end_date: filters.end_date,
-      p_excuse_event_id: filters.excuse_event_id || null,
       p_search_query: filters.search_query || null,
       p_role: filters.role || null,
       p_category: filters.category || null,
@@ -449,7 +444,6 @@ export async function fetchAllCommitmentDashboardStatsForExport(
         supabase.rpc('get_commitment_dashboard_stats', {
           p_start_date: filters.start_date,
           p_end_date: filters.end_date,
-          p_excuse_event_id: filters.excuse_event_id || null,
           p_search_query: filters.search_query || null,
           p_role: filters.role || null,
           p_category: filters.category || null,
@@ -481,7 +475,6 @@ export async function fetchVolunteerAttendanceLog(
     p_user_id: filters.user_id,
     p_start_date: filters.start_date,
     p_end_date: filters.end_date,
-    p_excuse_event_id: filters.excuse_event_id || null,
   });
 
   if (error) {

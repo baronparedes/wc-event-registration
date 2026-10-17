@@ -21,7 +21,6 @@ const cronEnvironmentSchema = z.object({
     .string()
     .trim()
     .email('UPCOMING_SUNDAY_TARGET_EMAIL must be a valid email address'),
-  EXCUSE_REQUEST_EVENT_ID: z.string().trim().optional(),
   RESEND_FROM_EMAIL: z
     .string()
     .trim()
@@ -32,7 +31,6 @@ const cronEnvironmentSchema = z.object({
 type CronEnvironment = {
   resendApiKey: string;
   targetEmail: string;
-  eventId?: string;
   fromEmail: string;
 };
 
@@ -49,7 +47,6 @@ function parseCronEnvironment(): CronEnvironment | null {
   const parsed = cronEnvironmentSchema.safeParse({
     RESEND_API_KEY: Deno.env.get('RESEND_API_KEY') ?? '',
     UPCOMING_SUNDAY_TARGET_EMAIL: Deno.env.get('UPCOMING_SUNDAY_TARGET_EMAIL') ?? '',
-    EXCUSE_REQUEST_EVENT_ID: Deno.env.get('EXCUSE_REQUEST_EVENT_ID') ?? undefined,
     RESEND_FROM_EMAIL: Deno.env.get('RESEND_FROM_EMAIL') ?? undefined,
   });
 
@@ -63,7 +60,6 @@ function parseCronEnvironment(): CronEnvironment | null {
   return {
     resendApiKey: parsed.data.RESEND_API_KEY,
     targetEmail: parsed.data.UPCOMING_SUNDAY_TARGET_EMAIL,
-    eventId: parsed.data.EXCUSE_REQUEST_EVENT_ID,
     fromEmail: parsed.data.RESEND_FROM_EMAIL,
   };
 }
@@ -303,7 +299,6 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
 
     return jsonResponse(200, {
       success: true,
-      event_id: cronEnv.eventId,
       target_sunday_date: targetSundayDate,
       recipient: cronEnv.targetEmail,
       row_count: payload.length,

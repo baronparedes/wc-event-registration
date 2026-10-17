@@ -31,5 +31,4 @@ export const env = {
   vapidPublicKey: optionalAny(['VITE_VAPID_PUBLIC_KEY', 'NEXT_PUBLIC_VAPID_PUBLIC_KEY']),
   appVersion: import.meta.env.VITE_APP_VERSION as string | undefined,
   appCommitHash: import.meta.env.VITE_APP_COMMIT_HASH as string | undefined,
-  excuseEventId: optionalAny(['VITE_EXCUSE_REQUEST_EVENT_ID', 'NEXT_EXCUSE_REQUEST_EVENT_ID']),
 };

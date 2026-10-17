@@ -14,7 +14,6 @@ export interface MissedServiceCommitmentsFilters {
   end_date?: string | null;
   time_slot?: string | null;
   role?: string | null;
-  excuse_event_id?: string | null;
   search_query?: string | null;
 }
 
@@ -54,10 +53,6 @@ export function useMissedServiceCommitmentsQuery(
 
       if (filters.role && filters.role !== 'All Roles') {
         args.p_role = filters.role;
-      }
-
-      if (filters.excuse_event_id) {
-        args.p_excuse_event_id = filters.excuse_event_id;
       }
 
       if (filters.search_query) {

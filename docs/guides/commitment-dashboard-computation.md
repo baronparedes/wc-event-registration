@@ -317,7 +317,7 @@ The scoring formula is centralized in:
 
 ## 6. Excused Absence Resolution
 
-Excuses are submitted via event registrations (typically `VITE_EXCUSE_REQUEST_EVENT_ID`). The query extracts:
+Excuses are submitted and stored directly in `public.service_excuse_requests` (migrated from legacy event registrations). The query evaluates:
 
 1. `request_date`: The specific date for which the volunteer requested an excuse.
 2. `services`: The specific service slots requested (e.g. `'9AM'`, `'12NN'`, `'3PM'`, `'All Services'`).

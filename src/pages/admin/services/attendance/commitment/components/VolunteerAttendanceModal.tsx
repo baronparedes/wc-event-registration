@@ -29,7 +29,6 @@ export interface VolunteerAttendanceModalProps {
   timeframe: DashboardTimeframe;
   startDate: string;
   endDate: string;
-  excuseEventId?: string | null;
 }
 
 type ViewMode = 'DETAILED' | 'MATRIX';
@@ -41,7 +40,6 @@ export function VolunteerAttendanceModal({
   timeframe,
   startDate,
   endDate,
-  excuseEventId,
 }: VolunteerAttendanceModalProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('DETAILED');
 
@@ -49,7 +47,6 @@ export function VolunteerAttendanceModal({
     user_id: volunteer?.user_id ?? '',
     start_date: startDate,
     end_date: endDate,
-    excuse_event_id: excuseEventId,
   });
 
   const processedLogs = useMemo(() => {

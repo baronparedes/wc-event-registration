@@ -9,7 +9,6 @@ import {
 export interface ExportCommitmentDashboardStatsCSVParams {
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
   search_query?: string;
   role?: string;
   category?: string;

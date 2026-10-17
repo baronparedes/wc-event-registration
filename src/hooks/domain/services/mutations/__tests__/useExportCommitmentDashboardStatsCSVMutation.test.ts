@@ -96,7 +96,6 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
     expect(mockRpc).toHaveBeenCalledWith('get_commitment_dashboard_stats', {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
-      p_excuse_event_id: null,
       p_search_query: 'Test Alpha',
       p_role: 'Usher',
       p_category: 'Women',
@@ -107,7 +106,6 @@ describe('useExportCommitmentDashboardStatsCSVMutation', () => {
     expect(mockRpc).toHaveBeenCalledWith('get_commitment_dashboard_stats', {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
-      p_excuse_event_id: null,
       p_search_query: 'Test Alpha',
       p_role: 'Usher',
       p_category: 'Women',

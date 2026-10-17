@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_STALE_TIME_MS } from '@/config/constants';
-import { env } from '@/config/env';
 import {
   type FetchMembersAttendanceScoresOptions,
   fetchMembersAttendanceScores,
@@ -19,7 +18,6 @@ export function useMembersAttendanceScoresQuery(
     queryKey: [
       'members-attendance-scores',
       weeks,
-      env.excuseEventId,
       dateRange?.startDate ?? null,
       dateRange?.endDate ?? null,
     ] as const,
@@ -27,10 +25,9 @@ export function useMembersAttendanceScoresQuery(
       dateRange
         ? fetchMembersAttendanceScores({
             weeks,
-            excuseEventId: env.excuseEventId,
             dateRange,
           })
-        : fetchMembersAttendanceScores(weeks, env.excuseEventId),
+        : fetchMembersAttendanceScores(weeks),
     staleTime: QUERY_STALE_TIME_MS.oneDay,
   });
 }

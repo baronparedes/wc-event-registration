@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
 import { SectionCard } from '@/components/ui/SectionCard';
-import { env } from '@/config/env';
 import { useMemberEventHistoryQuery } from '@/hooks/domain/members';
 import { formatDateTime } from '@/lib/infrastructure';
 import {
@@ -19,7 +18,6 @@ const isLegacyExcuseEvent = (item: {
   event_slug?: string;
   event_title?: string;
 }) =>
-  (Boolean(env.excuseEventId) && item.event_id === env.excuseEventId) ||
   (item.event_slug ?? '').toLowerCase().includes('excuse') ||
   (item.event_title ?? '').toLowerCase().includes('excuse');
 
