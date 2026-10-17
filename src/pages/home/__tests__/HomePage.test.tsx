@@ -168,6 +168,9 @@ describe('HomePage', () => {
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
     expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
+    expect(mockHubSection).not.toHaveBeenCalled();
+    expect(mockPastEventList).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Available Now/)).not.toBeInTheDocument();
   });
 
   it('renders error state when listing query fails', () => {
@@ -264,6 +267,9 @@ describe('HomePage', () => {
     const { container } = renderHomePage();
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    expect(mockHubSection).not.toHaveBeenCalled();
+    expect(mockPastEventList).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Available Now/)).not.toBeInTheDocument();
   });
 
   it('keeps past events visible alongside Available Now section', () => {

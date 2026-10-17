@@ -96,23 +96,26 @@ export function HomePage() {
           <p className="text-sm text-destructive">Unable to load forms. Please try again.</p>
         )}
 
-        {!isLoading &&
-          !eventsError &&
-          !formsError &&
-          availableItems.length === 0 &&
-          upcomingItems.length === 0 && (
-            <div className="border-y border-border py-8 sm:py-10">
-              <EmptyState
-                icon={<Calendar aria-hidden="true" className="h-6 w-6" />}
-                title="A quiet moment between activities"
-                description="There are no open registrations or forms right now."
-              />
-            </div>
-          )}
+        {!isLoading && (
+          <>
+            {!eventsError &&
+              !formsError &&
+              availableItems.length === 0 &&
+              upcomingItems.length === 0 && (
+                <div className="border-y border-border py-8 sm:py-10">
+                  <EmptyState
+                    icon={<Calendar aria-hidden="true" className="h-6 w-6" />}
+                    title="A quiet moment between activities"
+                    description="There are no open registrations or forms right now."
+                  />
+                </div>
+              )}
 
-        <HubSection items={availableItems} title="Available Now" />
-        <HubSection items={upcomingItems} title="Upcoming Events" />
-        <PastEventList events={filteredPastEvents} />
+            <HubSection items={availableItems} title="Available Now" />
+            <HubSection items={upcomingItems} title="Upcoming Events" />
+            <PastEventList events={filteredPastEvents} />
+          </>
+        )}
       </section>
     </>
   );

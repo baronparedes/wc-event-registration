@@ -39,3 +39,4 @@ supabase/seeds/*.local.sql
 *.env
 
 .vscodecounter
+wc_attend.db
