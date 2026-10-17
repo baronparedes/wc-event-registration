@@ -227,6 +227,30 @@ describe('ServiceAttendanceHeaderControls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
     expect(onNextMonth).toHaveBeenCalledTimes(1);
   });
+
+  it('renders Filed Excuses button and handles click callback', () => {
+    const onViewExcuses = vi.fn();
+    render(
+      <ServiceAttendanceHeaderControls
+        viewYear={2026}
+        viewMonthIndex={5}
+        monthOnlyName="June"
+        isAtToday={false}
+        years={[2026]}
+        onToday={vi.fn()}
+        onSelectYear={vi.fn()}
+        onPreviousMonth={vi.fn()}
+        onNextMonth={vi.fn()}
+        onViewExcuses={onViewExcuses}
+        excuseCount={3}
+      />,
+    );
+
+    const excusesBtn = screen.getByRole('button', { name: /Filed Excuses \(3\)/i });
+    expect(excusesBtn).toBeInTheDocument();
+    fireEvent.click(excusesBtn);
+    expect(onViewExcuses).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('ServiceAttendanceMonthSummary & ServiceAttendanceLegend', () => {

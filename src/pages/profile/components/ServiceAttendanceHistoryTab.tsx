@@ -201,6 +201,8 @@ export function ServiceAttendanceHistoryTab({
           onSelectYear={handleSelectYear}
           onPreviousMonth={handlePreviousMonth}
           onNextMonth={handleNextMonth}
+          onViewExcuses={() => setIsExcusesModalOpen(true)}
+          excuseCount={filedExcuses.length}
         />
       }
     >
@@ -221,8 +223,6 @@ export function ServiceAttendanceHistoryTab({
               fullMonthName={fullMonthName}
               missedCount={missedCount}
               isFetching={isFetching}
-              excuseCount={filedExcuses.length}
-              onViewExcuses={() => setIsExcusesModalOpen(true)}
             />
             <ServiceAttendanceMobileCards sundays={sundays} matrixGrid={matrixGrid} />
             <ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={matrixGrid} />

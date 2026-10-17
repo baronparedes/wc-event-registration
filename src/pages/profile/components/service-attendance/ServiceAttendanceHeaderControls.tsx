@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 import { Button, FormSelectField } from '@/components/ui';
 
@@ -12,6 +12,8 @@ interface ServiceAttendanceHeaderControlsProps {
   onSelectYear: (year: string) => void;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
+  onViewExcuses?: () => void;
+  excuseCount?: number;
 }
 
 export function ServiceAttendanceHeaderControls({
@@ -24,9 +26,23 @@ export function ServiceAttendanceHeaderControls({
   onSelectYear,
   onPreviousMonth,
   onNextMonth,
+  onViewExcuses,
+  excuseCount,
 }: ServiceAttendanceHeaderControlsProps) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {onViewExcuses && (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={onViewExcuses}
+          className="h-10 font-semibold shadow-xs order-last sm:order-first gap-1.5"
+        >
+          <FileText className="h-4 w-4" aria-hidden="true" />
+          Filed Excuses {excuseCount !== undefined && excuseCount > 0 ? `(${excuseCount})` : ''}
+        </Button>
+      )}
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <Button
           type="button"
