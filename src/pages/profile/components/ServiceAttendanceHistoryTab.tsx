@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { SectionCard } from '@/components/ui';
 import { useGetMemberExcusedSchedule } from '@/hooks/domain/members';
 import {
+  useMemberServiceExcusesQuery,
   useServiceAttendanceQuery,
   useServiceExceptionDatesQuery,
   useUserCommitmentHistoryQuery,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/domain/services';
 
 import {
+  FiledExcusesModal,
   NonSundayAttendanceList,
   ServiceAttendanceDesktopMatrix,
   ServiceAttendanceHeaderControls,
@@ -36,6 +38,9 @@ export function ServiceAttendanceHistoryTab({
   memberId,
   metadata,
 }: ServiceAttendanceHistoryTabProps) {
+  const [isExcusesModalOpen, setIsExcusesModalOpen] = useState(false);
+  const { data: filedExcuses = [] } = useMemberServiceExcusesQuery(memberId);
+
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -216,6 +221,8 @@ export function ServiceAttendanceHistoryTab({
               fullMonthName={fullMonthName}
               missedCount={missedCount}
               isFetching={isFetching}
+              excuseCount={filedExcuses.length}
+              onViewExcuses={() => setIsExcusesModalOpen(true)}
             />
             <ServiceAttendanceMobileCards sundays={sundays} matrixGrid={matrixGrid} />
             <ServiceAttendanceDesktopMatrix sundays={sundays} matrixGrid={matrixGrid} />
@@ -224,6 +231,12 @@ export function ServiceAttendanceHistoryTab({
           </div>
         )}
       </div>
+
+      <FiledExcusesModal
+        isOpen={isExcusesModalOpen}
+        onClose={() => setIsExcusesModalOpen(false)}
+        userId={memberId}
+      />
     </SectionCard>
   );
 }
