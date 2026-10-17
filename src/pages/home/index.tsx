@@ -42,11 +42,11 @@ export function HomePage() {
   const filteredUpcomingEvents = upcomingEvents.filter((e) => !isLegacyExcuseEvent(e));
   const filteredPastEvents = pastEvents.filter((e) => !isLegacyExcuseEvent(e));
 
-  // Mix open events, forms, and permanent excuse request
+  // Mix permanent excuse request, open events, and forms
   const availableItems: HubItem[] = [
+    PERMANENT_EXCUSE_ITEM,
     ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
-    PERMANENT_EXCUSE_ITEM,
   ];
 
   // Upcoming items (currently only events)

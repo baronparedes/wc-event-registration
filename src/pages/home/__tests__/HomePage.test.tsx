@@ -205,13 +205,13 @@ describe('HomePage', () => {
       expect.objectContaining({
         title: 'Available Now',
         items: [
-          expect.objectContaining({ id: 'event-1', type: 'event' }),
-          expect.objectContaining({ id: 'form-1', type: 'form' }),
           expect.objectContaining({
             id: 'permanent-volunteer-excuse-request',
             type: 'excuse',
             title: 'Volunteer Excuse Request',
           }),
+          expect.objectContaining({ id: 'event-1', type: 'event' }),
+          expect.objectContaining({ id: 'form-1', type: 'form' }),
         ],
       }),
     );
