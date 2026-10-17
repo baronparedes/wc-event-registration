@@ -2,6 +2,19 @@
 -- Run this script manually in production or target environment when ready.
 begin;
 
+-- Target event identifier: Match specifically by ID or slug
+with
+  target_event as (
+    select
+      id
+    from
+      public.events
+    where
+      id = 'e10c3d21-dafd-462a-bb4f-f6655333aee7'::uuid
+      or slug = 'excuse-request-2026'
+    limit
+      1
+  )
 insert into
   public.service_excuse_requests (
     user_id,
@@ -42,12 +55,8 @@ select distinct
   r.created_at
 from
   public.registrations r
+  join target_event te on te.id = r.event_id
   join public.users u on u.id = r.user_id
-  join public.events e on e.id = r.event_id
-  and (
-    e.slug ilike '%excuse%'
-    or e.title ilike '%excuse%'
-  )
   join public.event_fields ef_date on ef_date.event_id = r.event_id
   and ef_date.field_key = 'request_date'
   join public.registration_answers ra_date on ra_date.registration_id = r.id
