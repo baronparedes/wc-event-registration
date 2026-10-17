@@ -103,7 +103,9 @@ export function SundayCalendarPicker({
         }`}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span className="truncate font-medium">{formatSundayDisplay(value)}</span>
+        <span className={`truncate font-medium ${!value ? 'text-muted' : 'text-text'}`}>
+          {formatSundayDisplay(value)}
+        </span>
         <Calendar
           className={`h-4 w-4 shrink-0 transition-colors ${isOpen ? 'text-primary' : 'text-muted'}`}
           aria-hidden="true"

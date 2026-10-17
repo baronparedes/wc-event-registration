@@ -24,17 +24,14 @@ import { MemberLookupStepCard, ProfileStepCard } from '@/pages/events/[slug]/reg
 
 import { ExcuseHeaderCard } from './components/ExcuseHeaderCard';
 import { SundayCalendarPicker } from './components/SundayCalendarPicker';
-import {
-  EXCUSE_SERVICE_SLOTS,
-  formatServiceSlots,
-  getNearestUpcomingSundayString,
-  parseDateOnly,
-} from './utils';
+import { EXCUSE_SERVICE_SLOTS, formatServiceSlots, parseDateOnly } from './utils';
 
 const excuseFormSchema = z.object({
   request_date: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format')
+    .trim()
+    .min(1, 'Please select a Sunday service date')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid Sunday date')
     .refine((val) => {
       const parsed = parseDateOnly(val);
       if (!parsed) return false;
@@ -106,12 +103,12 @@ export function ExcuseRequestPage() {
     handleLookupSubmit: runMemberLookupSubmit,
   } = memberLookup;
 
-  // Excuse Form (Step 3)
+  // Excuse Form (Step 3) - start with nothing selected
   const excuseForm = useForm<ExcuseFormValues>({
     resolver: zodResolver(excuseFormSchema),
     defaultValues: {
-      request_date: getNearestUpcomingSundayString(),
-      services: ['9AM'],
+      request_date: '',
+      services: [],
       reason: '',
     },
   });
@@ -119,7 +116,7 @@ export function ExcuseRequestPage() {
   const selectedServices = useWatch({
     control: excuseForm.control,
     name: 'services',
-    defaultValue: ['9AM'],
+    defaultValue: [],
   });
 
   // Submission mutation & state
@@ -190,10 +187,6 @@ export function ExcuseRequestPage() {
   const handleToggleService = (serviceValue: string) => {
     const current = selectedServices ?? [];
     if (current.includes(serviceValue)) {
-      if (current.length === 1) {
-        toast.error('At least one service slot must be selected');
-        return;
-      }
       excuseForm.setValue(
         'services',
         current.filter((s) => s !== serviceValue),
@@ -233,7 +226,6 @@ export function ExcuseRequestPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit excuse request';
       setSubmitErrorMessage(message);
-      toast.error(message);
     }
   };
 
@@ -245,7 +237,11 @@ export function ExcuseRequestPage() {
 
   const handleResetForm = () => {
     resetMemberLookup();
-    excuseForm.reset();
+    excuseForm.reset({
+      request_date: '',
+      services: [],
+      reason: '',
+    });
     clearLookupError();
     setSubmitErrorMessage(null);
     setIsSubmissionConfirmed(false);

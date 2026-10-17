@@ -50,6 +50,21 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('react-day-picker', () => ({
+  DayPicker: ({ onSelect }: { onSelect?: (date?: Date) => void }) => (
+    <div data-testid="mock-day-picker">
+      <button
+        type="button"
+        onClick={() => onSelect?.(new Date(2026, 9, 25))} // Oct 25, 2026 is Sunday
+      >
+        Pick Sunday Oct 25
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('react-day-picker/style.css', () => ({}));
+
 describe('ExcuseRequestPage Wizard', () => {
   const mockMutateLookup = vi.fn();
   const mockMutateSubmit = vi.fn();
@@ -136,9 +151,20 @@ describe('ExcuseRequestPage Wizard', () => {
 
     expect(await screen.findByText('Step 3: Excuse Details')).toBeInTheDocument();
     expect(screen.getByLabelText(/Sunday Service Date/i)).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /9:00 AM/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /12:00 NN/i })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /3:00 PM/i })).toBeInTheDocument();
+    // Initially nothing is selected
+    expect(screen.getByText('Select Sunday date')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /9:00 AM/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    expect(screen.getByRole('checkbox', { name: /12:00 NN/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    expect(screen.getByRole('checkbox', { name: /3:00 PM/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
     expect(screen.getByRole('button', { name: 'Submit Excuse Request' })).toBeInTheDocument();
   });
 
@@ -193,7 +219,44 @@ describe('ExcuseRequestPage Wizard', () => {
     expect(screen.getByLabelText(/Sunday Service Date/i)).toBeInTheDocument();
   });
 
-  it('submits excuse request in Step 3 and renders success confirmation screen', async () => {
+  it('displays inline form errors when submitting without selecting date or service slots', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
+        member_id: 'MEM-1001',
+        full_name: 'Test Member',
+        role: 'Prayer Coach',
+      },
+      isLoading: false,
+    });
+    mockMutateLookup.mockResolvedValueOnce({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
+    });
+
+    renderPage();
+
+    // Advance to Step 3
+    const confirmButton = await screen.findByRole('button', { name: 'Yes, I confirm' });
+    fireEvent.click(confirmButton);
+
+    // Click submit without selecting date or services
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Excuse Request' }));
+
+    // Inline form validation errors must be displayed
+    expect(await screen.findByText(/Please select a Sunday service date/i)).toBeInTheDocument();
+    expect(screen.getByText(/Please select at least one service slot/i)).toBeInTheDocument();
+    // No toast error
+    expect(mockToastError).not.toHaveBeenCalled();
+    expect(mockMutateSubmit).not.toHaveBeenCalled();
+  });
+
+  it('submits excuse request in Step 3 and renders success confirmation screen without toast errors', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: {
         id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
@@ -220,9 +283,16 @@ describe('ExcuseRequestPage Wizard', () => {
     const confirmButton = await screen.findByRole('button', { name: 'Yes, I confirm' });
     fireEvent.click(confirmButton);
 
-    // Toggle 12:00 NN service slot
-    const slot12nn = await screen.findByRole('checkbox', { name: /12:00 NN/i });
+    // Select date from SundayCalendarPicker
+    const datePickerButton = screen.getByLabelText(/Sunday Service Date/i);
+    fireEvent.click(datePickerButton);
+    const pickDateButton = await screen.findByRole('button', { name: /Pick Sunday Oct 25/i });
+    fireEvent.click(pickDateButton);
+
+    // Select 12:00 NN service slot
+    const slot12nn = screen.getByRole('checkbox', { name: /12:00 NN/i });
     fireEvent.click(slot12nn);
+    expect(slot12nn).toHaveAttribute('aria-checked', 'true');
 
     // Fill reason
     const reasonInput = screen.getByLabelText(/Reason \/ Notes/i);
@@ -236,7 +306,8 @@ describe('ExcuseRequestPage Wizard', () => {
         expect.objectContaining({
           user_id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
           member_id: 'MEM-1001',
-          services: expect.arrayContaining(['9AM', '12NN']),
+          request_date: '2026-10-25',
+          services: ['12NN'],
           reason: 'Work conference',
         }),
       );
@@ -249,5 +320,50 @@ describe('ExcuseRequestPage Wizard', () => {
     expect(screen.getByRole('button', { name: /Submit Another Request/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Go Home/i })).toBeInTheDocument();
     expect(mockToastSuccess).toHaveBeenCalledWith('Excuse request submitted successfully');
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('displays inline AlertBanner on submission error without toast error', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: {
+        id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
+        member_id: 'MEM-1001',
+        full_name: 'Test Member',
+        role: 'Prayer Coach',
+      },
+      isLoading: false,
+    });
+    mockMutateLookup.mockResolvedValueOnce({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
+    });
+    mockMutateSubmit.mockRejectedValueOnce(new Error('Network error submitting excuse'));
+
+    renderPage();
+
+    // Advance to Step 3
+    const confirmButton = await screen.findByRole('button', { name: 'Yes, I confirm' });
+    fireEvent.click(confirmButton);
+
+    // Select date
+    const datePickerButton = screen.getByLabelText(/Sunday Service Date/i);
+    fireEvent.click(datePickerButton);
+    fireEvent.click(await screen.findByRole('button', { name: /Pick Sunday Oct 25/i }));
+
+    // Select service
+    fireEvent.click(screen.getByRole('checkbox', { name: /9:00 AM/i }));
+
+    // Submit form
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Excuse Request' }));
+
+    // Error banner inside the form is shown
+    expect(await screen.findByText('Network error submitting excuse')).toBeInTheDocument();
+    // No toast error
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 });
