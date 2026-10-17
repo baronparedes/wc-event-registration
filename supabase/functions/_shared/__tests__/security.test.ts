@@ -178,7 +178,7 @@ Deno.test(
     assertEquals(isOriginAllowed(null, ['https://app.example.com']), false);
     assertEquals(buildCorsHeaders('https://app.example.com', ['https://app.example.com']), {
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
       'Access-Control-Expose-Headers': 'Content-Disposition',
       'Access-Control-Allow-Origin': 'https://app.example.com',
       Vary: 'Origin',

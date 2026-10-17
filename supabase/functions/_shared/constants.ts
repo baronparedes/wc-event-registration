@@ -29,7 +29,7 @@ export const AUTH = {
 
 export const CORS = {
   allowMethods: 'POST, OPTIONS',
-  allowHeaders: 'Content-Type, Authorization',
+  allowHeaders: 'Content-Type, Authorization, apikey, x-client-info',
   exposeHeaders: 'Content-Disposition',
   nullOrigin: 'null',
 } as const;
