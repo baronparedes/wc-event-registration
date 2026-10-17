@@ -362,3 +362,87 @@ Deno.test('isLocalBroadcastEnabled detects environments accurately', () => {
     setEnv(originalEnv);
   }
 });
+
+Deno.test('useEdgeHook enforces requireSync authentication', async () => {
+  await withFunctionEnv(async () => {
+    const prevSyncKey = Deno.env.get('ATTENDANCE_SYNC_KEY');
+    Deno.env.set('ATTENDANCE_SYNC_KEY', 'secret-sync-key');
+
+    try {
+      // 1. Missing sync key returns 401
+      const reqMissing = buildRequest('POST', { body: {} });
+      const resMissing = await useEdgeHook({
+        req: reqMissing,
+        functionName: 'test-sync',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireSync: true,
+      });
+      assert(!resMissing.valid);
+      assertEquals(resMissing.response.status, HTTP_STATUS.unauthorized);
+
+      // 2. Invalid sync key returns 401
+      const reqInvalid = new Request('https://example.functions/test-sync', {
+        method: 'POST',
+        headers: new Headers({
+          origin: TEST_ORIGIN,
+          'content-type': 'application/json',
+          'x-sync-key': 'wrong-key',
+        }),
+        body: JSON.stringify({}),
+      });
+      const resInvalid = await useEdgeHook({
+        req: reqInvalid,
+        functionName: 'test-sync',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireSync: true,
+      });
+      assert(!resInvalid.valid);
+      assertEquals(resInvalid.response.status, HTTP_STATUS.unauthorized);
+
+      // 3. Valid sync key succeeds with callerType = 'sync'
+      const reqValid = new Request('https://example.functions/test-sync', {
+        method: 'POST',
+        headers: new Headers({
+          origin: TEST_ORIGIN,
+          'content-type': 'application/json',
+          'x-sync-key': 'secret-sync-key',
+        }),
+        body: JSON.stringify({}),
+      });
+      const resValid = await useEdgeHook({
+        req: reqValid,
+        functionName: 'test-sync',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireSync: true,
+      });
+      assert(resValid.valid);
+      assertEquals(resValid.callerType, 'sync');
+
+      // 4. Service role key accepted when allowServiceRole is true
+      const reqService = new Request('https://example.functions/test-sync', {
+        method: 'POST',
+        headers: new Headers({
+          origin: TEST_ORIGIN,
+          'content-type': 'application/json',
+          authorization: 'Bearer test-service-role-key',
+        }),
+        body: JSON.stringify({}),
+      });
+      const resService = await useEdgeHook({
+        req: reqService,
+        functionName: 'test-sync',
+        allowedOrigins: TEST_ALLOWED_ORIGINS,
+        requireSync: true,
+        allowServiceRole: true,
+      });
+      assert(resService.valid);
+      assertEquals(resService.callerType, 'service_role');
+    } finally {
+      if (prevSyncKey === undefined) {
+        Deno.env.delete('ATTENDANCE_SYNC_KEY');
+      } else {
+        Deno.env.set('ATTENDANCE_SYNC_KEY', prevSyncKey);
+      }
+    }
+  });
+});
