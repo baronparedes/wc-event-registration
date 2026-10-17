@@ -104,4 +104,76 @@ describe('service-commitment-export', () => {
     );
     expect(filename).toMatch(/^service-commitment-2026-01-01-\d{8}-\d{6}\.csv$/);
   });
+
+  it('handles tie-breaking by full_name when attendance scores are equal', () => {
+    const tiedStats: CommitmentDashboardStat[] = [
+      {
+        ...mockStats[0],
+        attendance_score: 10,
+        full_name: 'Test Zeta, Sample',
+      },
+      {
+        ...mockStats[0],
+        attendance_score: 10,
+        full_name: 'Test Alpha, Sample',
+      },
+      {
+        ...mockStats[0],
+        attendance_score: 10,
+        full_name: '',
+      },
+    ];
+
+    const { csvText } = buildCommitmentDashboardCsvExport({
+      stats: tiedStats,
+    });
+
+    const lines = csvText.split('\n');
+    // First should be empty name, then Alpha, then Zeta
+    expect(lines[1]).toContain(',Test B');
+    expect(lines[2]).toContain('"Test Alpha, Sample"');
+    expect(lines[3]).toContain('"Test Zeta, Sample"');
+  });
+
+  it('handles null and undefined stat fields with default values', () => {
+    const nullStats = [
+      {
+        user_id: 'u-null',
+        member_id: null,
+        avatar_object_key: null,
+        full_name: null,
+        nickname: null,
+        email: null,
+        role: null,
+        category: null,
+        start_date: null,
+        committed: undefined as unknown as number,
+        attended: undefined as unknown as number,
+        absences: undefined as unknown as number,
+        excused: undefined as unknown as number,
+        wi_9am_3pm: undefined as unknown as number,
+        wi_12nn: undefined as unknown as number,
+        wi_5th_sunday: undefined as unknown as number,
+        attendance_score: undefined as unknown as number,
+      },
+    ] as unknown as CommitmentDashboardStat[];
+
+    const { csvText, filename } = buildCommitmentDashboardCsvExport({
+      stats: nullStats,
+      timeframe: 'YTD',
+      startDate: '2026-01-01',
+    });
+
+    const lines = csvText.split('\n');
+    expect(lines[1]).toBe(',,,,,,,0,0,0,0,0,0,0,0');
+    expect(filename).toMatch(/^service-commitment-2026-01-01-\d{8}-\d{6}\.csv$/);
+  });
+
+  it('generates generic filename when no dates or timeframe are specified', () => {
+    const { filename } = buildCommitmentDashboardCsvExport({
+      stats: [],
+    });
+
+    expect(filename).toMatch(/^service-commitment-\d{8}-\d{6}\.csv$/);
+  });
 });

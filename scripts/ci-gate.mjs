@@ -74,6 +74,24 @@ function runStep(index, total, step) {
         }
         console.log('==========================================================================\n');
       }
+
+      if (allFilesLine) {
+        const parts = allFilesLine
+          .split('|')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const branchPct = parseFloat(parts[1]);
+        const linePct = parseFloat(parts[3]);
+        const EDGE_THRESHOLD = 80.0;
+        if (!Number.isNaN(branchPct) && !Number.isNaN(linePct)) {
+          if (branchPct < EDGE_THRESHOLD || linePct < EDGE_THRESHOLD) {
+            console.error(
+              `❌ Edge Functions coverage is below ${EDGE_THRESHOLD}% threshold (Branch: ${branchPct}%, Line: ${linePct}%)\n`,
+            );
+            process.exit(1);
+          }
+        }
+      }
     }
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);

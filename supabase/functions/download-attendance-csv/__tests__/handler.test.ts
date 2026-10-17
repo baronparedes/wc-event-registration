@@ -61,7 +61,7 @@ function buildRequest(body: unknown, authenticated = true) {
 }
 
 function mockFetch(options: {
-  eventContext?: typeof EVENT_CONTEXT | null;
+  eventContext?: { title: string | null; attendance_fields: unknown[] } | null;
   rpcData?: unknown;
   eventError?: boolean;
   rpcError?: boolean;
@@ -214,6 +214,107 @@ Deno.test(
         const response = await handleDownloadAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
         assertEquals(response.status, 500);
         assertEquals((await response.json()).error, 'Failed to read event attendance context');
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('download-attendance-csv returns an error when attendees RPC fails', async () => {
+  await withFunctionEnv(async () => {
+    const fetchMock = mockFetch({ rpcError: true });
+    try {
+      const response = await handleDownloadAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error, 'Failed to read event attendees');
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'download-attendance-csv formats public attendees, toggle answers, and numeric answers',
+  async () => {
+    await withFunctionEnv(async () => {
+      const eventContextWithToggle = {
+        title: null, // Test fallback to 'event'
+        attendance_fields: [
+          {
+            id: 'field-toggle',
+            field_key: 'sessions',
+            field_type: 'multi_select_toggle',
+            label: 'Sessions',
+            is_active: true,
+            display_order: 1,
+          },
+          {
+            id: 'field-num',
+            field_key: 'headcount',
+            field_type: 'number',
+            label: 'Headcount',
+            is_active: true,
+            display_order: 2,
+          },
+        ],
+      };
+
+      const fetchMock = mockFetch({
+        eventContext: eventContextWithToggle,
+        rpcData: {
+          attendance_enabled: true,
+          results: [
+            {
+              attendee_kind: 'public',
+              registration_id: null,
+              public_registration_id: 'pub-reg-1',
+              member_id: null,
+              avatar_object_key: null,
+              nickname: 'Sam',
+              last_name: 'Guest',
+              member_metadata: 'guest-string-metadata',
+              full_name: null, // should fall back to Guest Attendee
+              email: 'guest@example.com',
+              role: null,
+              category: null,
+              submitted_at: '2026-09-20T01:02:03.000Z',
+              attendance_answers: [
+                {
+                  attendance_field_id: 'field-toggle',
+                  field_key: 'sessions',
+                  field_type: 'multi_select_toggle',
+                  answer_text: '{"morning": true, "afternoon": false}',
+                  answer_number: null,
+                },
+                {
+                  attendance_field_id: 'field-num',
+                  field_key: 'headcount',
+                  field_type: 'number',
+                  answer_text: null,
+                  answer_number: 4,
+                },
+              ],
+              registration_answers: [
+                { field_key: 'guests_count', answer_text: null, answer_number: 3 },
+              ],
+            },
+          ],
+        },
+      });
+
+      try {
+        const response = await handleDownloadAttendanceCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 200);
+        const csv = await response.text();
+        assertStringIncludes(
+          response.headers.get('content-disposition') ?? '',
+          'event-attendance-data-',
+        );
+        assertStringIncludes(csv, 'Guest Attendee');
+        assertStringIncludes(csv, 'morning:true|afternoon:false');
+        assertStringIncludes(csv, '4');
+        assertStringIncludes(csv, 'guest-string-metadata');
       } finally {
         fetchMock.restore();
       }

@@ -46,9 +46,15 @@ function payload(overrides: Record<string, unknown> = {}) {
 
 type MockOptions = {
   event?: unknown;
+  eventError?: { code?: string; message: string };
   settings?: unknown;
+  settingsError?: { code?: string; message: string };
   registration?: unknown;
+  registrationError?: { code?: string; message: string };
+  publicRegistration?: unknown;
+  publicRegistrationError?: { code?: string; message: string };
   existingCheckIn?: unknown;
+  existingCheckInError?: { code?: string; message: string };
   insertError?: { code: string; message: string };
   slotInsertError?: { code: string; message: string };
 };
@@ -70,6 +76,9 @@ function mockFetch(options: MockOptions = {}) {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
     }
     if (url.pathname === '/rest/v1/events') {
+      if (options.eventError) {
+        return Promise.resolve(Response.json(options.eventError, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json(
           options.event === undefined
@@ -79,6 +88,9 @@ function mockFetch(options: MockOptions = {}) {
       );
     }
     if (url.pathname === '/rest/v1/attendance_settings') {
+      if (options.settingsError) {
+        return Promise.resolve(Response.json(options.settingsError, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json(
           options.settings === undefined
@@ -92,15 +104,29 @@ function mockFetch(options: MockOptions = {}) {
         ),
       );
     }
-    if (
-      url.pathname === '/rest/v1/registrations' ||
-      url.pathname === '/rest/v1/public_registrations'
-    ) {
+    if (url.pathname === '/rest/v1/registrations') {
+      if (options.registrationError) {
+        return Promise.resolve(Response.json(options.registrationError, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json(
           options.registration === undefined
             ? { id: REGISTRATION_ID, status: 'submitted' }
             : options.registration,
+        ),
+      );
+    }
+    if (url.pathname === '/rest/v1/public_registrations') {
+      if (options.publicRegistrationError) {
+        return Promise.resolve(Response.json(options.publicRegistrationError, { status: 500 }));
+      }
+      return Promise.resolve(
+        Response.json(
+          options.publicRegistration === undefined
+            ? options.registration === undefined
+              ? { id: REGISTRATION_ID, status: 'submitted' }
+              : options.registration
+            : options.publicRegistration,
         ),
       );
     }
@@ -112,6 +138,9 @@ function mockFetch(options: MockOptions = {}) {
         return Promise.resolve(
           Response.json({ id: CHECK_IN_ID, first_checked_in_at: FIRST_CHECK_IN }),
         );
+      }
+      if (options.existingCheckInError) {
+        return Promise.resolve(Response.json(options.existingCheckInError, { status: 500 }));
       }
       return Promise.resolve(Response.json(options.existingCheckIn ?? null));
     }
@@ -378,3 +407,184 @@ Deno.test('check-in-attendee returns the first check-in after a concurrent inser
     }
   });
 });
+
+Deno.test('check-in-attendee handles event not found and event lookup error', async () => {
+  await withFunctionEnv(async () => {
+    const notFoundMock = mockFetch({ event: null });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 404);
+      assertEquals((await response.json()).error_code, 'EVENT_NOT_FOUND');
+    } finally {
+      notFoundMock.restore();
+    }
+
+    const errorMock = mockFetch({ eventError: { message: 'Database error' } });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error_code, 'EVENT_LOOKUP_FAILED');
+    } finally {
+      errorMock.restore();
+    }
+  });
+});
+
+Deno.test('check-in-attendee handles settings lookup error and invalid window', async () => {
+  await withFunctionEnv(async () => {
+    const settingsErrorMock = mockFetch({ settingsError: { message: 'Settings query error' } });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error_code, 'SETTINGS_LOOKUP_FAILED');
+    } finally {
+      settingsErrorMock.restore();
+    }
+
+    const invalidWindowMock = mockFetch({
+      event: { starts_at: 'invalid-date', ends_at: null },
+      settings: {
+        attendance_enabled: true,
+        timeslot_enabled: false,
+        enforce_check_in_event_window: true,
+        timeslots: [],
+      },
+    });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 400);
+      assertEquals((await response.json()).error_code, 'INVALID_EVENT_WINDOW');
+    } finally {
+      invalidWindowMock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'check-in-attendee handles unconfigured timeslots and unexpected slot input',
+  async () => {
+    await withFunctionEnv(async () => {
+      // Timeslot enabled, but slot not in configured list
+      const unconfiguredSlotMock = mockFetch({
+        settings: {
+          attendance_enabled: true,
+          timeslot_enabled: true,
+          timeslots: ['9AM'],
+        },
+      });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(payload({ slot: '12NN' })));
+        assertEquals(response.status, 400);
+        assertEquals((await response.json()).error_code, 'INVALID_REQUEST');
+      } finally {
+        unconfiguredSlotMock.restore();
+      }
+
+      // Timeslot disabled, but slot provided
+      const unexpectedSlotMock = mockFetch({
+        settings: {
+          attendance_enabled: true,
+          timeslot_enabled: false,
+          timeslots: [],
+        },
+      });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(payload({ slot: '9AM' })));
+        assertEquals(response.status, 400);
+        assertEquals((await response.json()).error_code, 'INVALID_REQUEST');
+      } finally {
+        unexpectedSlotMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('check-in-attendee handles registration lookup errors and not found', async () => {
+  await withFunctionEnv(async () => {
+    const notFoundMock = mockFetch({ registration: null });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 404);
+      assertEquals((await response.json()).error_code, 'REGISTRATION_NOT_FOUND');
+    } finally {
+      notFoundMock.restore();
+    }
+
+    const regErrorMock = mockFetch({ registrationError: { message: 'DB error' } });
+    try {
+      const response = await handleCheckInAttendee(buildRequest(payload()));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error_code, 'REGISTRATION_LOOKUP_FAILED');
+    } finally {
+      regErrorMock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'check-in-attendee handles public registration lookup errors, not found, and cancelled',
+  async () => {
+    await withFunctionEnv(async () => {
+      const pubPayload = { event_id: EVENT_ID, public_registration_id: REGISTRATION_ID };
+
+      const notFoundMock = mockFetch({ publicRegistration: null });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(pubPayload));
+        assertEquals(response.status, 404);
+        assertEquals((await response.json()).error_code, 'PUBLIC_REGISTRATION_NOT_FOUND');
+      } finally {
+        notFoundMock.restore();
+      }
+
+      const cancelledMock = mockFetch({
+        publicRegistration: { id: REGISTRATION_ID, status: 'cancelled' },
+      });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(pubPayload));
+        assertEquals(response.status, 400);
+        assertEquals((await response.json()).error_code, 'PUBLIC_REGISTRATION_CANCELLED');
+      } finally {
+        cancelledMock.restore();
+      }
+
+      const pubErrorMock = mockFetch({ publicRegistrationError: { message: 'DB error' } });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(pubPayload));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error_code, 'PUBLIC_REGISTRATION_LOOKUP_FAILED');
+      } finally {
+        pubErrorMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'check-in-attendee handles existing check-in lookup error and slot insert error',
+  async () => {
+    await withFunctionEnv(async () => {
+      const lookupErrorMock = mockFetch({
+        existingCheckInError: { message: 'Check-in read failed' },
+      });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(payload()));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error_code, 'CHECK_IN_LOOKUP_FAILED');
+      } finally {
+        lookupErrorMock.restore();
+      }
+
+      const slotErrorMock = mockFetch({
+        settings: { attendance_enabled: true, timeslot_enabled: true, timeslots: ['9AM'] },
+        slotInsertError: { code: '23502', message: 'Slot insert failed' },
+      });
+      try {
+        const response = await handleCheckInAttendee(buildRequest(payload({ slot: '9AM' })));
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error_code, 'SLOT_RECORD_INSERT_FAILED');
+      } finally {
+        slotErrorMock.restore();
+      }
+    });
+  },
+);

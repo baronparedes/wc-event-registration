@@ -10,7 +10,10 @@ import { createGetUserServiceActivityTool } from '../tools/getUserServiceActivit
 import type { ToolContext } from '../tools/types.ts';
 
 // Lightweight in-memory mock client builder for tool execution testing
-function createMockClient(dataMap: Record<string, Record<string, unknown>[]>) {
+function createMockClient(
+  dataMap: Record<string, Record<string, unknown>[]>,
+  errorsMap?: Record<string, { message: string }>,
+) {
   return {
     from: (table: string) => {
       let result: Record<string, unknown>[] = [...(dataMap[table] ?? [])];
@@ -77,12 +80,26 @@ function createMockClient(dataMap: Record<string, Record<string, unknown>[]>) {
           return chain;
         },
         or: () => chain,
-        then: (resolve: (val: { data: Record<string, unknown>[]; error: null }) => unknown) =>
-          resolve({ data: result, error: null }),
+        then: (
+          resolve: (val: {
+            data: Record<string, unknown>[] | null;
+            error: { message: string } | null;
+          }) => unknown,
+        ) => {
+          if (errorsMap?.[table]) {
+            return resolve({ data: null, error: errorsMap[table] });
+          }
+          return resolve({ data: result, error: null });
+        },
       };
       return chain;
     },
-    rpc: () => Promise.resolve({ data: 5, error: null }),
+    rpc: (fn: string) => {
+      if (errorsMap?.['rpc'] || errorsMap?.[fn]) {
+        return Promise.resolve({ data: null, error: errorsMap?.['rpc'] ?? errorsMap?.[fn] });
+      }
+      return Promise.resolve({ data: 5, error: null });
+    },
   } as unknown as ToolContext['client'];
 }
 
@@ -491,4 +508,315 @@ Deno.test('getUnexcusedVolunteers returns volunteers list and count-only breakdo
   assertEquals('tokens' in result.role_breakdown.Usher, false);
   assertEquals(result.service_breakdown['9AM'].count, 1);
   assertEquals('tokens' in result.service_breakdown['9AM'], false);
+});
+
+Deno.test('getUserServiceActivity inactive returns volunteers who did not check in', async () => {
+  const mockUsers = [
+    {
+      id: 'u-1',
+      role: 'Usher',
+      is_active: true,
+      user_tokens: [{ token: 'USR_000001' }],
+    },
+    {
+      id: 'u-2',
+      role: 'Usher',
+      is_active: true,
+      user_tokens: [{ token: 'USR_000002' }],
+    },
+  ];
+
+  // u-1 attended, u-2 did not
+  const mockAttendance = [{ user_id: 'u-1', service_date: '2026-10-11' }];
+
+  const client = createMockClient({
+    users: mockUsers,
+    service_attendance: mockAttendance,
+  });
+
+  const tool = createGetUserServiceActivityTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    {
+      activityType: 'inactive',
+      role: 'usher',
+      targetStartDate: '2026-10-01',
+      targetEndDate: '2026-10-31',
+      limit: 50,
+    },
+    mockOptions,
+  )) as {
+    activity_type: string;
+    total_inactive_count: number;
+    inactive_volunteers: Array<{ token: string; role: string }>;
+  };
+
+  assertEquals(result.activity_type, 'inactive');
+  assertEquals(result.total_inactive_count, 1);
+  assertEquals(result.inactive_volunteers.length, 1);
+  assertEquals(result.inactive_volunteers[0].token, 'USR_000002');
+});
+
+Deno.test('getUserServiceActivity handles walk-ins, lates, and token filtering', async () => {
+  const mockRecords = [
+    {
+      user_id: 'u-1',
+      service_date: '2026-10-11',
+      time_slot: '9AM',
+      checked_in_at: '2026-10-11T09:15:00+08:00',
+      is_walk_in: true,
+      is_override: true,
+      users: {
+        role: 'Usher',
+        user_tokens: [{ token: 'USR_000001' }],
+      },
+    },
+  ];
+
+  const client = createMockClient({
+    service_attendance: mockRecords,
+    user_tokens: [{ user_id: 'u-1', token: 'USR_000001' }],
+  });
+
+  const tool = createGetUserServiceActivityTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    {
+      activityType: 'active',
+      userTokens: 'USR_000001',
+      targetStartDate: '2026-10-01',
+      targetEndDate: '2026-10-31',
+      limit: 50,
+    },
+    mockOptions,
+  )) as {
+    summary: { total_walk_ins: number; total_lates: number; total_checkins: number };
+    volunteers: Array<{ walk_ins: number; lates: number }>;
+  };
+
+  assertEquals(result.summary.total_walk_ins, 1);
+  assertEquals(result.summary.total_lates, 1);
+  assertEquals(result.summary.total_checkins, 1);
+  assertEquals(result.volunteers[0].walk_ins, 1);
+  assertEquals(result.volunteers[0].lates, 1);
+});
+
+Deno.test('getUserServiceActivity handles non-matching tokens gracefully', async () => {
+  const client = createMockClient({
+    user_tokens: [],
+    service_attendance: [],
+  });
+
+  const tool = createGetUserServiceActivityTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    {
+      activityType: 'active',
+      userTokens: ['USR_NONEXISTENT'],
+      targetStartDate: '2026-10-01',
+      targetEndDate: '2026-10-31',
+      limit: 50,
+    },
+    mockOptions,
+  )) as { note: string; summary: { total_active_volunteers: number } };
+
+  assertEquals(result.summary.total_active_volunteers, 0);
+  assertEquals(result.note.includes('USR_NONEXISTENT'), true);
+});
+
+Deno.test('getUserServiceActivity handles database error gracefully', async () => {
+  const client = createMockClient({}, { service_attendance: { message: 'Query failed' } });
+
+  const tool = createGetUserServiceActivityTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    {
+      activityType: 'active',
+      targetStartDate: '2026-10-01',
+      targetEndDate: '2026-10-31',
+      limit: 50,
+    },
+    mockOptions,
+  )) as { error: string };
+
+  assertEquals(result.error, 'Failed to retrieve active users.');
+});
+
+Deno.test('getEvents handles timeframe upcoming, past, open/closed and date ranges', async () => {
+  const mockEvents = [
+    {
+      id: 'e-1',
+      title: 'Youth Camp',
+      slug: null,
+      description: null,
+      starts_at: '2026-12-01T08:00:00Z',
+      ends_at: '2026-12-02T17:00:00Z',
+      registration_opens_at: null,
+      registration_closes_at: null,
+      status: 'published',
+      registration_mode: 'open',
+      location: 'Camp Hall',
+    },
+    {
+      id: 'e-2',
+      title: 'Leadership Summit',
+      slug: 'leadership-summit',
+      description: 'Past summit',
+      starts_at: '2026-01-01T08:00:00Z',
+      ends_at: '2026-01-02T17:00:00Z',
+      registration_opens_at: null,
+      registration_closes_at: null,
+      status: 'published',
+      registration_mode: 'closed',
+      location: 'Auditorium',
+    },
+  ];
+
+  const client = createMockClient({ events: mockEvents });
+  const tool = createGetEventsTool({ client, requestId: 'test-req', userId: 'test-admin' });
+
+  // 1. Search filter with date range
+  const searchResult = (await tool.execute(
+    {
+      status: 'all',
+      timeframe: 'all',
+      search: 'Youth',
+      targetStartDate: '2026-11-01',
+      targetEndDate: '2026-12-31',
+      limit: 10,
+    },
+    mockOptions,
+  )) as { events: Array<{ title: string; public_url: string | null; time_status: string }> };
+
+  assertEquals(searchResult.events.length, 1);
+  assertEquals(searchResult.events[0].title, 'Youth Camp');
+  assertEquals(searchResult.events[0].public_url, null);
+
+  // 2. Status closed and timeframe past
+  const closedResult = (await tool.execute(
+    { status: 'closed', timeframe: 'past', limit: 10 },
+    mockOptions,
+  )) as { events: Array<{ title: string }> };
+  assertEquals(closedResult.events.length, 1);
+  assertEquals(closedResult.events[0].title, 'Leadership Summit');
+});
+
+Deno.test('getEvents handles query error', async () => {
+  const client = createMockClient({}, { events: { message: 'Database unreachable' } });
+  const tool = createGetEventsTool({ client, requestId: 'test-req', userId: 'test-admin' });
+
+  const result = (await tool.execute(
+    { status: 'all', timeframe: 'all', limit: 10 },
+    mockOptions,
+  )) as { error: string };
+  assertEquals(result.error, 'Database unreachable');
+});
+
+Deno.test('getUserCommitments handles token lookup with no matching volunteers', async () => {
+  const client = createMockClient({ user_tokens: [] });
+  const tool = createGetUserCommitmentsTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    {
+      userTokens: 'USR_MISSING',
+      targetStartDate: '2026-10-04',
+      targetEndDate: '2026-10-04',
+    },
+    mockOptions,
+  )) as { count: number; note: string };
+
+  assertEquals(result.count, 0);
+  assertEquals(result.note.includes('USR_MISSING'), true);
+});
+
+Deno.test('getUserCommitments handles date range with no Sundays', async () => {
+  const client = createMockClient({ users: [] });
+  const tool = createGetUserCommitmentsTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  // 2026-10-05 to 2026-10-09 is Mon-Fri
+  const result = (await tool.execute(
+    {
+      targetStartDate: '2026-10-05',
+      targetEndDate: '2026-10-09',
+    },
+    mockOptions,
+  )) as { count: number; note: string };
+
+  assertEquals(result.count, 0);
+  assertEquals(result.note.includes('No Sundays found'), true);
+});
+
+Deno.test('getExcusedMembers handles unknown user tokens gracefully', async () => {
+  const client = createMockClient({ user_tokens: [] });
+  const tool = createGetExcusedMembersTool({ client, requestId: 'test-req', userId: 'test-admin' });
+
+  const result = (await tool.execute(
+    {
+      userTokens: ['USR_NOT_FOUND'],
+      targetStartDate: '2026-10-18',
+      targetEndDate: '2026-10-18',
+    },
+    mockOptions,
+  )) as { count: number; note: string };
+
+  assertEquals(result.count, 0);
+  assertEquals(result.note.includes('USR_NOT_FOUND'), true);
+});
+
+Deno.test('getUnexcusedVolunteers excludes volunteers who checked in to service', async () => {
+  const mockUsers = [
+    {
+      id: 'u-1',
+      role: 'Usher',
+      metadata: { first_sunday: '9AM' },
+      is_active: true,
+      user_tokens: [{ token: 'USR_000001' }],
+    },
+  ];
+
+  // u-1 attended
+  const client = createMockClient({
+    users: mockUsers,
+    service_attendance: [{ user_id: 'u-1', service_date: '2026-10-04', time_slot: '9AM' }],
+    form_submissions: [],
+    forms: [{ id: 'form-excuse', slug: 'volunteer-excuse-request' }],
+  });
+
+  const tool = createGetUnexcusedVolunteersTool({
+    client,
+    requestId: 'test-req',
+    userId: 'test-admin',
+  });
+
+  const result = (await tool.execute(
+    { targetStartDate: '2026-10-04', targetEndDate: '2026-10-04' },
+    mockOptions,
+  )) as { count: number; volunteers: unknown[] };
+
+  assertEquals(result.count, 0);
+  assertEquals(result.volunteers.length, 0);
 });

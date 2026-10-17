@@ -32,7 +32,13 @@ function buildRequest(body: unknown, authenticated = true) {
   });
 }
 
-function mockFetch(options: { registrationsError?: boolean }) {
+function mockFetch(options: {
+  registrationsError?: boolean;
+  usersError?: boolean;
+  fieldError?: boolean;
+  answersError?: boolean;
+  nullTitle?: boolean;
+}) {
   const originalFetch = globalThis.fetch;
   const auditRows: Array<Record<string, unknown>> = [];
   const adminUserId = crypto.randomUUID();
@@ -46,7 +52,9 @@ function mockFetch(options: { registrationsError?: boolean }) {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
     if (requestUrl.pathname === '/rest/v1/events') {
-      return Promise.resolve(Response.json({ title: 'Annual, Gathering' }));
+      return Promise.resolve(
+        Response.json({ title: options.nullTitle ? null : 'Annual, Gathering' }),
+      );
     }
     if (requestUrl.pathname === '/rest/v1/registrations') {
       if (options.registrationsError) {
@@ -67,6 +75,9 @@ function mockFetch(options: { registrationsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/users') {
+      if (options.usersError) {
+        return Promise.resolve(Response.json({ message: 'users error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -83,6 +94,9 @@ function mockFetch(options: { registrationsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/event_fields') {
+      if (options.fieldError) {
+        return Promise.resolve(Response.json({ message: 'fields error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -101,6 +115,9 @@ function mockFetch(options: { registrationsError?: boolean }) {
       );
     }
     if (requestUrl.pathname === '/rest/v1/registration_answers') {
+      if (options.answersError) {
+        return Promise.resolve(Response.json({ message: 'answers error' }, { status: 500 }));
+      }
       return Promise.resolve(
         Response.json([
           {
@@ -224,3 +241,169 @@ Deno.test('export-registrations-csv maps registration query failures', async () 
     }
   });
 });
+
+Deno.test('export-registrations-csv handles failures for users, fields, and answers', async () => {
+  await withFunctionEnv(async () => {
+    // 1. users error
+    const usersMock = mockFetch({ usersError: true });
+    try {
+      const response = await handleExportRegistrationsCsv(buildRequest({ event_id: EVENT_ID }));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error, 'Failed to fetch user data');
+    } finally {
+      usersMock.restore();
+    }
+
+    // 2. field error
+    const fieldMock = mockFetch({ fieldError: true });
+    try {
+      const response = await handleExportRegistrationsCsv(buildRequest({ event_id: EVENT_ID }));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error, 'Failed to fetch event fields');
+    } finally {
+      fieldMock.restore();
+    }
+
+    // 3. answers error
+    const answersMock = mockFetch({ answersError: true });
+    try {
+      const response = await handleExportRegistrationsCsv(buildRequest({ event_id: EVENT_ID }));
+      assertEquals(response.status, 500);
+      assertEquals((await response.json()).error, 'Failed to fetch registration answers');
+    } finally {
+      answersMock.restore();
+    }
+
+    // 4. nullTitle fallback
+    const nullTitleMock = mockFetch({ nullTitle: true });
+    try {
+      const response = await handleExportRegistrationsCsv(buildRequest({ event_id: EVENT_ID }));
+      assertEquals(response.status, 200);
+      assertStringIncludes(
+        response.headers.get('content-disposition') ?? '',
+        `event-${EVENT_ID}-registrations-`,
+      );
+    } finally {
+      nullTitleMock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'export-registrations-csv formats diverse field types, toggle answers, and metadata shapes',
+  async () => {
+    await withFunctionEnv(async () => {
+      const originalFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = (input) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.pathname === '/auth/v1/user')
+            return Promise.resolve(Response.json({ id: crypto.randomUUID() }));
+          if (url.pathname === '/rest/v1/admins')
+            return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/events')
+            return Promise.resolve(Response.json({ title: 'Diverse Event' }));
+          if (url.pathname === '/rest/v1/registrations') {
+            return Promise.resolve(
+              Response.json([
+                {
+                  id: 'reg-1',
+                  user_id: 'user-1',
+                  status: 'submitted',
+                  submitted_at: '2026-03-01T10:00:00Z',
+                  updated_at: null,
+                },
+                {
+                  id: 'reg-2',
+                  user_id: 'user-2',
+                  status: 'updated',
+                  submitted_at: null,
+                  updated_at: null,
+                },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/users') {
+            return Promise.resolve(
+              Response.json([
+                {
+                  id: 'user-1',
+                  member_id: 'M-1',
+                  full_name: 'User One',
+                  email: 'u1@example.com',
+                  phone: '123',
+                  role: 'lead',
+                  category: 'core',
+                  metadata: ['alpha', 'beta'], // array metadata
+                },
+                {
+                  id: 'user-2',
+                  member_id: null,
+                  full_name: null,
+                  email: null,
+                  phone: null,
+                  role: null,
+                  category: null,
+                  metadata: { num: 42, active: true }, // non-string entries
+                },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/event_fields') {
+            return Promise.resolve(
+              Response.json([
+                { id: 'f-num', field_key: 'count', label: 'Count', field_type: 'number' },
+                { id: 'f-nan', field_key: 'nan_num', label: 'Not Num', field_type: 'number' },
+                { id: 'f-bool', field_key: 'flag', label: 'Flag', field_type: 'boolean' },
+                { id: 'f-date', field_key: 'event_date', label: 'Date', field_type: 'date' },
+                {
+                  id: 'f-toggle',
+                  field_key: 'equipment',
+                  label: 'Equipment',
+                  field_type: 'multi_select_toggle',
+                },
+                { id: 'f-select', field_key: 'choice', label: 'Choice', field_type: 'select' },
+                { id: 'f-empty', field_key: 'empty', label: 'Empty', field_type: 'text' },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/registration_answers') {
+            return Promise.resolve(
+              Response.json([
+                { registration_id: 'reg-1', event_field_id: 'f-num', answer_text: '42' },
+                { registration_id: 'reg-1', event_field_id: 'f-nan', answer_text: 'not-a-number' },
+                { registration_id: 'reg-1', event_field_id: 'f-bool', answer_text: '1' },
+                { registration_id: 'reg-1', event_field_id: 'f-date', answer_text: '2026-05-01' },
+                {
+                  registration_id: 'reg-1',
+                  event_field_id: 'f-toggle',
+                  answer_text: JSON.stringify({ mic: true, stand: false, count: 2 }),
+                },
+                {
+                  registration_id: 'reg-1',
+                  event_field_id: 'f-select',
+                  answer_text: 'invalid-json{{',
+                },
+                { registration_id: 'reg-1', event_field_id: 'f-empty', answer_text: '' },
+              ]),
+            );
+          }
+          if (url.pathname === '/rest/v1/admin_audit_logs') {
+            return Promise.resolve(Response.json({ id: 'audit-id' }));
+          }
+          return Promise.resolve(new Response('ok', { status: 200 }));
+        };
+
+        const response = await handleExportRegistrationsCsv(buildRequest({ event_id: EVENT_ID }));
+        assertEquals(response.status, 200);
+        const csv = await response.text();
+        assertStringIncludes(csv, '42');
+        assertStringIncludes(csv, 'not-a-number');
+        assertStringIncludes(csv, 'mic: Yes; stand: No; count: 2');
+        assertStringIncludes(csv, 'invalid-json{{');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);

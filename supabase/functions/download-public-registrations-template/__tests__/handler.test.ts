@@ -34,7 +34,13 @@ function buildRequest(body: unknown, authenticated = true) {
   });
 }
 
-function mockFetch(options: { fieldsError?: boolean; registrationsError?: boolean }) {
+function mockFetch(options: {
+  fieldsError?: boolean;
+  registrationsError?: boolean;
+  answersError?: boolean;
+  nullTitle?: boolean;
+  answers?: unknown[];
+}) {
   const originalFetch = globalThis.fetch;
   const requestedUrls: URL[] = [];
 
@@ -48,7 +54,7 @@ function mockFetch(options: { fieldsError?: boolean; registrationsError?: boolea
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
     }
     if (requestUrl.pathname === '/rest/v1/events') {
-      return Promise.resolve(Response.json({ title: 'Guest Event' }));
+      return Promise.resolve(Response.json({ title: options.nullTitle ? null : 'Guest Event' }));
     }
     if (requestUrl.pathname === '/rest/v1/event_fields') {
       if (options.fieldsError) {
@@ -78,18 +84,23 @@ function mockFetch(options: { fieldsError?: boolean; registrationsError?: boolea
       );
     }
     if (requestUrl.pathname === '/rest/v1/public_registration_answers') {
+      if (options.answersError) {
+        return Promise.resolve(Response.json({ message: 'answers unavailable' }, { status: 500 }));
+      }
       return Promise.resolve(
-        Response.json([
-          {
-            public_registration_id: REGISTRATION_ID,
-            event_field_id: 'field-diet',
-            answer_text: null,
-            answer_number: null,
-            answer_boolean: null,
-            answer_date: null,
-            answer_json: ['Vegetarian', 'No nuts'],
-          },
-        ]),
+        Response.json(
+          options.answers ?? [
+            {
+              public_registration_id: REGISTRATION_ID,
+              event_field_id: 'field-diet',
+              answer_text: null,
+              answer_number: null,
+              answer_boolean: null,
+              answer_date: null,
+              answer_json: ['Vegetarian', 'No nuts'],
+            },
+          ],
+        ),
       );
     }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
@@ -167,3 +178,73 @@ Deno.test('download-public-registrations-template reports field lookup errors', 
     }
   });
 });
+
+Deno.test(
+  'download-public-registrations-template reports registration and answer errors',
+  async () => {
+    await withFunctionEnv(async () => {
+      // 1. Registrations error
+      const regErrorMock = mockFetch({ registrationsError: true });
+      try {
+        const response = await handleDownloadPublicRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(response.status, 500);
+        assertEquals((await response.json()).error, 'Failed to read existing public registrations');
+      } finally {
+        regErrorMock.restore();
+      }
+
+      // 2. Answers error
+      const answersErrorMock = mockFetch({ answersError: true });
+      try {
+        const response = await handleDownloadPublicRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(response.status, 500);
+        assertEquals(
+          (await response.json()).error,
+          'Failed to read existing public registration answers',
+        );
+      } finally {
+        answersErrorMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'download-public-registrations-template formats boolean, number, date, and object answers',
+  async () => {
+    await withFunctionEnv(async () => {
+      const fetchMock = mockFetch({
+        nullTitle: true,
+        answers: [
+          {
+            public_registration_id: REGISTRATION_ID,
+            event_field_id: 'field-diet',
+            answer_text: null,
+            answer_number: 42,
+            answer_boolean: true,
+            answer_date: '2026-10-15',
+            answer_json: { slot: '9AM', confirmed: true },
+          },
+        ],
+      });
+      try {
+        const response = await handleDownloadPublicRegistrationsTemplate(
+          buildRequest({ event_id: EVENT_ID }),
+        );
+        assertEquals(response.status, 200);
+        const csv = await response.text();
+        assertStringIncludes(
+          response.headers.get('content-disposition') ?? '',
+          'event-public-registrations-template-',
+        );
+        assertStringIncludes(csv, 'slot:9AM|confirmed:true');
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);

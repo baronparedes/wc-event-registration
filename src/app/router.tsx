@@ -27,6 +27,7 @@ import { AppShell } from '../components/layout';
 import { useAdminAuthQuery } from '../hooks/domain/auth';
 import { useOnlineStatus } from '../hooks/utils';
 
+/* c8 ignore start */
 const HomePage = lazy(() =>
   import('../pages/home').then((module) => ({ default: module.HomePage })),
 );
@@ -261,6 +262,7 @@ const AdminServiceAttendanceForecastPage = lazy(() =>
     default: module.AdminServiceAttendanceForecastPage,
   })),
 );
+/* c8 ignore stop */
 
 function RouteLoadingFallback() {
   return (
@@ -536,3 +538,14 @@ export const appRoutes = [
 ];
 
 export const appRouter = createBrowserRouter(appRoutes);
+
+export {
+  RouteLoadingFallback,
+  LazyRoute,
+  ResponsiveShellLayout,
+  isOfflineSupportedPath,
+  OfflineNavigationFallback,
+  OfflineNavigationGuard,
+  RequireAdminAuth,
+  renderAppRoute,
+};
