@@ -382,8 +382,6 @@ Deno.test(
 Deno.test(
   'getExcusedMembers returns structured excused_volunteers and count-only breakdowns',
   async () => {
-    Deno.env.set('EXCUSE_REQUEST_EVENT_ID', 'event-excuse-123');
-
     const mockUsers = [
       {
         id: 'u-1',
@@ -394,45 +392,20 @@ Deno.test(
       },
     ];
 
-    const mockDateAnswers = [
+    const mockServiceExcuses = [
       {
-        registration_id: 'reg-1',
-        event_fields: { field_key: 'request_date' },
-        registrations: { status: 'confirmed', event_id: 'event-excuse-123', user_id: 'u-1' },
-        answer_date: '2026-10-18',
-      },
-    ];
-
-    const mockRegistrations = [
-      {
-        id: 'reg-1',
-        users: { id: 'u-1', member_id: 'MEM-001' },
-        registration_answers: [
-          {
-            event_fields: { field_key: 'request_date' },
-            answer_date: '2026-10-18',
-            answer_text: '2026-10-18',
-            answer_json: null,
-          },
-          {
-            event_fields: { field_key: 'services' },
-            answer_date: null,
-            answer_text: '["9AM"]',
-            answer_json: null,
-          },
-          {
-            event_fields: { field_key: 'reason' },
-            answer_date: null,
-            answer_text: 'Out of town',
-            answer_json: null,
-          },
-        ],
+        id: 'excuse-1',
+        user_id: 'u-1',
+        member_id: 'MEM-001',
+        request_date: '2026-10-18',
+        services: ['9AM'],
+        reason: 'Out of town',
+        status: 'approved',
       },
     ];
 
     const client = createMockClient({
-      registration_answers: mockDateAnswers,
-      registrations: mockRegistrations,
+      service_excuse_requests: mockServiceExcuses,
       users: mockUsers,
     });
 

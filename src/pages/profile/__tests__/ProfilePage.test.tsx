@@ -43,6 +43,7 @@ vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: () => ({ data: { pages: [] }, isLoading: false, isError: false }),
   useUserCommitmentHistoryQuery: () => ({ data: [], isLoading: false, isError: false }),
   useServiceExceptionDatesQuery: () => ({ data: [], isLoading: false, isError: false }),
+  useSubmitExcuseMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/hooks/domain/members', async () => {

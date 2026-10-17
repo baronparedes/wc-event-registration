@@ -77,3 +77,15 @@ export const updateServiceAttendanceSchema = z.object({
 });
 
 export type UpdateServiceAttendanceInput = z.input<typeof updateServiceAttendanceSchema>;
+
+export const submitServiceExcuseSchema = z.object({
+  user_id: z.string().uuid('Invalid user ID'),
+  member_id: z.string().trim().min(1, 'Member ID is required'),
+  request_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format'),
+  services: z.array(z.string().trim().min(1)).min(1, 'At least one service slot is required'),
+  reason: z.string().trim().max(500, 'Reason must be 500 characters or less').optional().nullable(),
+});
+
+export type SubmitServiceExcuseInput = z.infer<typeof submitServiceExcuseSchema>;

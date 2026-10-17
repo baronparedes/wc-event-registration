@@ -15,38 +15,6 @@ type ExcusedRecord = {
   reason?: string;
 };
 
-type RegistrationAnswer = {
-  answer_text: string | null;
-  answer_date: string | null;
-  answer_number: number | null;
-  answer_boolean: boolean | null;
-  answer_json: unknown;
-  event_fields: { field_key: string } | { field_key: string }[] | null;
-};
-
-function answerValue(answer: RegistrationAnswer): unknown {
-  if (answer.answer_date !== null) return answer.answer_date;
-  if (answer.answer_json !== null) return answer.answer_json;
-  if (answer.answer_text) {
-    try {
-      return JSON.parse(answer.answer_text);
-    } catch {
-      return answer.answer_text;
-    }
-  }
-  if (answer.answer_boolean !== null) return answer.answer_boolean;
-  return answer.answer_number;
-}
-
-function valueText(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value).trim();
-  }
-  if (Array.isArray(value)) return value.map(valueText).join(', ');
-  return String(value);
-}
-
 function parseServiceSlots(servicesText: string) {
   const normalized = servicesText.trim().toUpperCase();
   if (!normalized || normalized.includes('ALL')) return [...serviceSlots];
@@ -173,87 +141,43 @@ export function createGetExcusedMembersTool({ client, requestId }: ToolContext) 
       const targetYear = queryMonth.getFullYear();
       const targetMonthIndex = queryMonth.getMonth();
 
-      const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
-      if (!eventId) return { error: 'Event ID not configured' };
-
       const monthStr = String(targetMonthIndex + 1).padStart(2, '0');
       const datePrefix = `${targetYear}-${monthStr}`;
       const startDate = `${datePrefix}-01`;
       const daysInMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
       const endDate = `${datePrefix}-${String(daysInMonth).padStart(2, '0')}`;
 
-      let answersQuery = client
-        .from('registration_answers')
-        .select(
-          'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
-        )
-        .eq('registrations.event_id', eventId)
-        .neq('registrations.status', 'cancelled')
-        .eq('event_fields.field_key', 'request_date')
-        .or(
-          `and(answer_date.gte.${startDate},answer_date.lte.${endDate}),answer_text.ilike.%${datePrefix}%`,
-        );
+      let excusesQuery = client
+        .from('service_excuse_requests')
+        .select('id, user_id, member_id, request_date, services, reason')
+        .eq('status', 'approved')
+        .gte('request_date', startDate)
+        .lte('request_date', endDate);
 
       if (targetUserIds && targetUserIds.length > 0) {
-        answersQuery = answersQuery.in('registrations.user_id', targetUserIds);
+        excusesQuery = excusesQuery.in('user_id', targetUserIds);
       }
 
-      const { data: dateAnswers, error: dateAnswersError } = await answersQuery;
-
-      if (dateAnswersError) return { error: dateAnswersError.message };
-
-      const registrationIds = [
-        ...new Set(
-          ((dateAnswers as { registration_id: string }[] | null) ?? [])
-            .map((answer) => answer.registration_id)
-            .filter(Boolean),
-        ),
-      ];
-
-      const { data: registrations, error: registrationsError } = await client
-        .from('registrations')
-        .select(
-          `
-          id,
-          users!inner ( member_id, id ),
-          registration_answers (
-            answer_text, answer_date, answer_number, answer_boolean, answer_json,
-            event_fields ( field_key )
-          )
-        `,
-        )
-        .in('id', registrationIds);
-
-      if (registrationsError) return { error: registrationsError.message };
+      const { data: excuseRows, error: excusesError } = await excusesQuery;
+      if (excusesError) return { error: excusesError.message };
 
       const records: ExcusedRecord[] = [];
-      for (const registration of registrations ?? []) {
-        const relation = Array.isArray(registration.users)
-          ? registration.users[0]
-          : registration.users;
-        if (!relation?.id || !relation.member_id) continue;
-
-        let requestDate = '';
-        let services = '';
-        let reason = '';
-        for (const answer of (registration.registration_answers ?? []) as RegistrationAnswer[]) {
-          const field = Array.isArray(answer.event_fields)
-            ? answer.event_fields[0]?.field_key
-            : answer.event_fields?.field_key;
-          const text = valueText(answerValue(answer));
-          if (field === 'request_date') requestDate = text;
-          if (field === 'services') services = text;
-          if (field === 'reason') reason = text;
-        }
-
-        const cleanDate = requestDate.split('T')[0].trim();
+      for (const row of excuseRows ?? []) {
+        const cleanDate = (row.request_date ?? '').split('T')[0].trim();
         if (cleanDate.startsWith(datePrefix)) {
+          let servicesStr = '';
+          if (Array.isArray(row.services)) {
+            servicesStr = row.services.join(', ');
+          } else if (typeof row.services === 'string') {
+            servicesStr = row.services;
+          }
+
           records.push({
-            userId: relation.id,
-            memberId: relation.member_id,
+            userId: row.user_id,
+            memberId: row.member_id,
             requestDate: cleanDate,
-            services,
-            reason,
+            services: servicesStr,
+            reason: row.reason ?? '',
           });
         }
       }

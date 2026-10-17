@@ -12,6 +12,7 @@ interface ServiceAttendanceHeaderControlsProps {
   onSelectYear: (year: string) => void;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
+  onRequestExcuse?: () => void;
 }
 
 export function ServiceAttendanceHeaderControls({
@@ -24,9 +25,21 @@ export function ServiceAttendanceHeaderControls({
   onSelectYear,
   onPreviousMonth,
   onNextMonth,
+  onRequestExcuse,
 }: ServiceAttendanceHeaderControlsProps) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {onRequestExcuse && (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={onRequestExcuse}
+          className="h-10 font-semibold shadow-xs order-last sm:order-first"
+        >
+          Request Excuse
+        </Button>
+      )}
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <Button
           type="button"

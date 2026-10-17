@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ExcusedMemberRecord } from '@/hooks/domain/members';
@@ -7,7 +8,12 @@ import type { ServiceAttendance, ServiceExceptionDate } from '@/lib/domain/servi
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
 
-function renderWithClient(ui: React.ReactElement) {
+vi.mock('../service-attendance/SubmitExcuseModal', () => ({
+  SubmitExcuseModal: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="mock-submit-excuse-modal">Mock Submit Excuse Modal</div> : null,
+}));
+
+function renderWithClient(ui: React.ReactElement, initialEntries: string[] = ['/']) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -15,7 +21,11 @@ function renderWithClient(ui: React.ReactElement) {
       },
     },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 interface MockExcusedQueryResult {
@@ -501,5 +511,35 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('Service Exception').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Anniversary Service').length).toBeGreaterThan(0);
     expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
+  });
+
+  it('opens excuse modal when Request Excuse button is clicked', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult(sampleAttendance));
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({ data: [] });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({ data: [] });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    expect(screen.queryByTestId('mock-submit-excuse-modal')).not.toBeInTheDocument();
+
+    const requestExcuseBtn = screen.getByRole('button', { name: /Request Excuse/i });
+    fireEvent.click(requestExcuseBtn);
+
+    expect(screen.getByTestId('mock-submit-excuse-modal')).toBeInTheDocument();
+  });
+
+  it('automatically opens excuse modal when URL query param action=excuse is present', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult(sampleAttendance));
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({ data: [] });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({ data: [] });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+      ['/profile?tab=commitments&action=excuse'],
+    );
+
+    expect(screen.getByTestId('mock-submit-excuse-modal')).toBeInTheDocument();
   });
 });

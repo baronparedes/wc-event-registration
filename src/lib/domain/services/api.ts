@@ -4,6 +4,7 @@ import type {
   CreateServiceAttendanceInput,
   CreateServiceLayoutInput,
   CreateServiceSeatInput,
+  SubmitServiceExcuseInput,
   UpdateServiceAttendanceInput,
   UpdateServiceLayoutInput,
   UpdateServiceSeatInput,
@@ -12,6 +13,7 @@ import type {
   MissedServiceCommitment,
   ServiceAttendance,
   ServiceExceptionDate,
+  ServiceExcuseRequest,
   ServiceLayout,
   ServiceSeat,
   UserCommitmentSnapshot,
@@ -496,4 +498,64 @@ export async function fetchServiceExceptionDates(): Promise<ServiceExceptionDate
 
   if (error) throw error;
   return (data as unknown as ServiceExceptionDate[]) || [];
+}
+
+export async function submitServiceExcuse(
+  input: SubmitServiceExcuseInput,
+): Promise<ServiceExcuseRequest> {
+  const { data, error } = await supabase
+    .from('service_excuse_requests')
+    .insert({
+      user_id: input.user_id,
+      member_id: input.member_id,
+      request_date: input.request_date,
+      services: input.services,
+      reason: input.reason?.trim() || null,
+      status: 'approved',
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to submit excuse request: ${error.message}`);
+  }
+
+  return data as unknown as ServiceExcuseRequest;
+}
+
+export async function cancelServiceExcuse(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('service_excuse_requests')
+    .update({ status: 'cancelled' })
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(`Failed to cancel excuse request: ${error.message}`);
+  }
+}
+
+export async function fetchMemberServiceExcuses(
+  userId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<ServiceExcuseRequest[]> {
+  let query = supabase
+    .from('service_excuse_requests')
+    .select('*')
+    .eq('user_id', userId)
+    .order('request_date', { ascending: false });
+
+  if (startDate) {
+    query = query.gte('request_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('request_date', endDate);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch excuse requests: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as ServiceExcuseRequest[];
 }

@@ -24,14 +24,25 @@ export function HomePage() {
 
   const isLoading = eventsLoading || formsLoading;
 
+  const isLegacyExcuseEvent = (title?: string, slug?: string) =>
+    (title ?? '').toLowerCase().includes('excuse') || (slug ?? '').toLowerCase().includes('excuse');
+
+  const filteredOpenEvents = openEvents.filter((e) => !isLegacyExcuseEvent(e.title, e.slug));
+  const filteredUpcomingEvents = upcomingEvents.filter(
+    (e) => !isLegacyExcuseEvent(e.title, e.slug),
+  );
+
   // Mix open events and forms
   const availableItems: HubItem[] = [
-    ...openEvents.map((e) => ({ ...e, type: 'event' as const })),
+    ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
   ];
 
   // Upcoming items (currently only events)
-  const upcomingItems: HubItem[] = upcomingEvents.map((e) => ({ ...e, type: 'event' as const }));
+  const upcomingItems: HubItem[] = filteredUpcomingEvents.map((e) => ({
+    ...e,
+    type: 'event' as const,
+  }));
 
   return (
     <>

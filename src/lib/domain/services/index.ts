@@ -38,4 +38,7 @@ export {
   fetchAllCommitmentDashboardStatsForExport,
   fetchVolunteerAttendanceLog,
   fetchServiceExceptionDates,
+  submitServiceExcuse,
+  cancelServiceExcuse,
+  fetchMemberServiceExcuses,
 } from './api';
