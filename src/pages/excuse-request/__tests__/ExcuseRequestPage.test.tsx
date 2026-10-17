@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,6 +23,10 @@ const {
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+}));
+
+vi.mock('@/hooks/domain/members/queries/useMemberLookupQuery', () => ({
+  useMemberLookupQuery: () => mockUseMemberLookupQuery(),
 }));
 
 vi.mock('@/hooks/domain/members', async (importOriginal) => {
@@ -64,27 +69,35 @@ describe('ExcuseRequestPage Wizard', () => {
   });
 
   function renderPage() {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
     return render(
-      <MemoryRouter>
-        <ExcuseRequestPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ExcuseRequestPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
   }
 
-  it('renders Step 1 lookup form when user is not signed in', () => {
+  it('renders Step 1 method selector when user is not signed in', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Volunteer Excuse Request' })).toBeInTheDocument();
+    expect(screen.getByText('Volunteer Excuse Request')).toBeInTheDocument();
     expect(screen.getByText('Step 1: Find Your Profile')).toBeInTheDocument();
-    expect(screen.getByLabelText(/Enter Member ID or Scan RFID/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Verify' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Search by name instead/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Scan via RFID reader/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Search by my name/i })).toBeInTheDocument();
     // Step 2 & 3 not shown initially
     expect(screen.queryByText('Step 2: Confirm Your Details')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Sunday Service Date/i)).not.toBeInTheDocument();
   });
 
-  it('performs member lookup, advances to Step 2, and proceeds to Step 3', async () => {
+  it('performs member lookup via RFID/ID, advances to Step 2, and proceeds to Step 3', async () => {
     mockMutateLookup.mockResolvedValueOnce({
       profile: {
         member_token: 'mlt2.mock.token',
@@ -97,19 +110,23 @@ describe('ExcuseRequestPage Wizard', () => {
 
     renderPage();
 
-    // Step 1: Scan / Enter ID
-    const input = screen.getByLabelText(/Enter Member ID or Scan RFID/i);
+    // Select RFID/ID method
+    fireEvent.click(screen.getByRole('button', { name: /Scan via RFID reader/i }));
+
+    const input = screen.getByPlaceholderText(/Scan or enter your Member ID/i);
     fireEvent.change(input, { target: { value: 'MEM-2002' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
-      expect(mockMutateLookup).toHaveBeenCalledWith({ memberId: 'MEM-2002' });
+      expect(mockMutateLookup).toHaveBeenCalledWith(
+        expect.objectContaining({ memberId: 'MEM-2002' }),
+      );
     });
 
     // Step 2: Confirm Profile
     expect(await screen.findByText('Step 2: Confirm Your Details')).toBeInTheDocument();
-    expect(screen.getByText('Test V')).toBeInTheDocument();
-    expect(screen.getByText('MEM-2002')).toBeInTheDocument();
+    expect(screen.getByText('Test')).toBeInTheDocument();
+    expect(screen.getByText('V')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Yes, I confirm' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Scan Another Member' })).toBeInTheDocument();
@@ -130,19 +147,18 @@ describe('ExcuseRequestPage Wizard', () => {
 
     renderPage();
 
-    const input = screen.getByLabelText(/Enter Member ID or Scan RFID/i);
-    fireEvent.change(input, { target: { value: 'UNKNOWN-ID' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    // Select RFID/ID method
+    fireEvent.click(screen.getByRole('button', { name: /Scan via RFID reader/i }));
 
-    expect(await screen.findByText(/No active member found matching this ID/i)).toBeInTheDocument();
+    const input = screen.getByPlaceholderText(/Scan or enter your Member ID/i);
+    fireEvent.change(input, { target: { value: 'UNKNOWN-ID' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByText(/could not verify that entry/i)).toBeInTheDocument();
     expect(screen.queryByText('Step 2: Confirm Your Details')).not.toBeInTheDocument();
   });
 
   it('auto-detects signed-in member and advances to Step 2 for confirmation', async () => {
-    mockUseAdminAuthQuery.mockReturnValue({
-      data: { session: { user: { id: 'auth-user-1' } } },
-      isLoading: false,
-    });
     mockUseCurrentProfileQuery.mockReturnValue({
       data: {
         id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
@@ -152,14 +168,23 @@ describe('ExcuseRequestPage Wizard', () => {
       },
       isLoading: false,
     });
+    mockMutateLookup.mockResolvedValueOnce({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
+    });
 
     renderPage();
 
     // Auto-advances to Step 2
     expect(await screen.findByText('Step 2: Confirm Your Details')).toBeInTheDocument();
-    expect(screen.getByText('Test Member')).toBeInTheDocument();
-    expect(screen.getByText('MEM-1001')).toBeInTheDocument();
-    expect(screen.getByText('Signed In')).toBeInTheDocument();
+    expect(screen.getByText('Test')).toBeInTheDocument();
+    expect(screen.getByText('M')).toBeInTheDocument();
+    expect(screen.getByText('Prayer Coach')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Yes, I confirm' })).toBeInTheDocument();
 
     // Confirm and advance to Step 3
@@ -169,10 +194,6 @@ describe('ExcuseRequestPage Wizard', () => {
   });
 
   it('submits excuse request in Step 3 and renders success confirmation screen', async () => {
-    mockUseAdminAuthQuery.mockReturnValue({
-      data: { session: { user: { id: 'auth-user-1' } } },
-      isLoading: false,
-    });
     mockUseCurrentProfileQuery.mockReturnValue({
       data: {
         id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
@@ -181,6 +202,15 @@ describe('ExcuseRequestPage Wizard', () => {
         role: 'Prayer Coach',
       },
       isLoading: false,
+    });
+    mockMutateLookup.mockResolvedValueOnce({
+      profile: {
+        member_token: 'mlt2.mock.token',
+        full_name: 'Test Member',
+        first_name: 'Test',
+        last_initial: 'M',
+        role: 'Prayer Coach',
+      },
     });
     mockMutateSubmit.mockResolvedValueOnce({ id: 'excuse-123' });
 
@@ -213,10 +243,10 @@ describe('ExcuseRequestPage Wizard', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: 'Excuse Request Submitted' }),
+      await screen.findByRole('heading', { name: 'Excuse Request Submitted!' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/"Work conference"/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Submit Another Excuse/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Submit Another Request/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Go Home/i })).toBeInTheDocument();
     expect(mockToastSuccess).toHaveBeenCalledWith('Excuse request submitted successfully');
   });
