@@ -396,6 +396,7 @@ const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.eventPublicRegisterPattern,
   ROUTE_PATHS.eventCountdownPattern,
   ROUTE_PATHS.formSubmitPattern,
+  ROUTE_PATHS.excuseRequest,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
   ROUTE_PATHS.hello,
 ] as const;
