@@ -42,9 +42,17 @@ select distinct
   case
     when ra_serv.answer_text is null
     or trim(ra_serv.answer_text) = '' then array['All Services']::text[]
-    else string_to_array(
-      replace(replace(ra_serv.answer_text, '[', ''), ']', ''),
-      ', '
+    when trim(ra_serv.answer_text) ~ '^\[' then array(
+      select
+        json_array_elements_text(trim(ra_serv.answer_text)::json)
+    )
+    else regexp_split_to_array(
+      replace(
+        replace(trim(ra_serv.answer_text), '"', ''),
+        '''',
+        ''
+      ),
+      '\s*,\s*'
     )
   end as services,
   ra_reason.answer_text as reason,
@@ -82,5 +90,35 @@ where
     end
   ) is not null
 on conflict do nothing;
+
+-- Cleanup existing unparsed quotes or brackets in services arrays if already inserted
+update public.service_excuse_requests
+set
+  services = array(
+    select distinct
+      trim(
+        both '" []'
+        from
+          elem
+      )
+    from
+      unnest(services) as s (elem_str),
+      lateral regexp_split_to_table(elem_str, '\s*,\s*') as elem
+    where
+      trim(
+        both '" []'
+        from
+          elem
+      ) <> ''
+  )
+where
+  exists (
+    select
+      1
+    from
+      unnest(services) as s (elem_str)
+    where
+      elem_str ~ '["\],]'
+  );
 
 commit;

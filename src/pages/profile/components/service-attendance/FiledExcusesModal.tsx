@@ -11,6 +11,40 @@ export interface FiledExcusesModalProps {
   userId: string;
 }
 
+function normalizeServiceList(services: unknown): string[] {
+  if (!services) return [];
+  const rawList = Array.isArray(services) ? services : [services];
+  return rawList
+    .flatMap((item) => {
+      if (typeof item !== 'string') return [String(item)];
+      const cleaned = item.trim();
+      if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(cleaned);
+          if (Array.isArray(parsed)) {
+            return parsed.map((s) =>
+              String(s)
+                .trim()
+                .replace(/^["']|["']$/g, ''),
+            );
+          }
+        } catch {
+          // fall through to comma-split
+        }
+      }
+      return cleaned
+        .split(',')
+        .map((s) =>
+          s
+            .trim()
+            .replace(/^["'[\]]+|["'[\]]+$/g, '')
+            .trim(),
+        )
+        .filter(Boolean);
+    })
+    .filter(Boolean);
+}
+
 function formatExcuseDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return dateStr;
@@ -85,11 +119,12 @@ export function FiledExcusesModal({ isOpen, onClose, userId }: FiledExcusesModal
           excuses.map((excuse) => {
             const isApproved = excuse.status === 'approved';
             const canCancel = isApproved && isUpcomingOrToday(excuse.request_date);
+            const normalizedServices = normalizeServiceList(excuse.services);
 
             return (
               <div
                 key={excuse.id}
-                className="rounded-xl border border-border bg-surface p-4 space-y-2.5 transition-colors"
+                className="rounded-xl border border-border bg-surface p-4 space-y-2.5 shadow-xs transition-colors"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -100,14 +135,9 @@ export function FiledExcusesModal({ isOpen, onClose, userId }: FiledExcusesModal
                   </div>
 
                   {isApproved ? (
-                    <Badge
-                      variant="outline"
-                      className="border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    >
-                      Active
-                    </Badge>
+                    <Badge variant="default">Active</Badge>
                   ) : (
-                    <Badge variant="outline" className="border-muted/30 bg-muted/10 text-muted">
+                    <Badge variant="outline" className="border-border text-muted">
                       Cancelled
                     </Badge>
                   )}
@@ -115,14 +145,20 @@ export function FiledExcusesModal({ isOpen, onClose, userId }: FiledExcusesModal
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs text-muted font-medium">Excused Services:</span>
-                  {excuse.services.map((service) => (
-                    <span
-                      key={service}
-                      className="rounded-md border border-border bg-surface px-2 py-0.5 text-xs font-medium text-text"
-                    >
-                      {service}
+                  {normalizedServices.length > 0 ? (
+                    normalizedServices.map((service) => (
+                      <span
+                        key={service}
+                        className="rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+                      >
+                        {service}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-md border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-muted">
+                      All Services
                     </span>
-                  ))}
+                  )}
                 </div>
 
                 {excuse.reason ? (
@@ -141,7 +177,7 @@ export function FiledExcusesModal({ isOpen, onClose, userId }: FiledExcusesModal
                       variant="ghost"
                       disabled={cancelMutation.isPending}
                       onClick={() => handleCancel(excuse.id)}
-                      className="h-7 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40"
+                      className="h-7 text-xs font-semibold text-danger hover:bg-danger/10 hover:text-danger"
                     >
                       Cancel Request
                     </Button>
@@ -153,7 +189,7 @@ export function FiledExcusesModal({ isOpen, onClose, userId }: FiledExcusesModal
       </Dialog.Body>
 
       <Dialog.Footer>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="primaryOutline" onClick={onClose}>
           Close
         </Button>
       </Dialog.Footer>

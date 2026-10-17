@@ -121,6 +121,43 @@ describe('FiledExcusesModal', () => {
     expect(screen.getByText('All Services')).toBeInTheDocument();
     expect(screen.getByText('"Out of town"')).toBeInTheDocument();
     expect(screen.getByText('(No reason specified)')).toBeInTheDocument();
+
+    const activeBadge = screen.getByText('Active');
+    expect(activeBadge).toHaveClass('bg-primary');
+    expect(activeBadge).toHaveClass('text-white');
+
+    const cancelledBadge = screen.getByText('Cancelled');
+    expect(cancelledBadge).toHaveClass('border-border');
+    expect(cancelledBadge).toHaveClass('text-muted');
+  });
+
+  it('normalizes single quoted comma-separated services into distinct pills', () => {
+    const mockExcuses: ServiceExcuseRequest[] = [
+      {
+        id: 'excuse-dirty',
+        user_id: 'user-1',
+        member_id: 'MEM-001',
+        request_date: '2026-11-15',
+        services: ['"9AM","12NN","3PM"'],
+        reason: 'Testing normalization',
+        status: 'approved',
+        created_at: '2026-10-15T08:00:00Z',
+        updated_at: '2026-10-15T08:00:00Z',
+      },
+    ];
+
+    mockUseMemberServiceExcusesQuery.mockReturnValue({
+      data: mockExcuses,
+      isLoading: false,
+      isError: false,
+    });
+
+    renderWithClient(<FiledExcusesModal isOpen={true} onClose={vi.fn()} userId="user-1" />);
+
+    expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('12NN')).toBeInTheDocument();
+    expect(screen.getByText('3PM')).toBeInTheDocument();
+    expect(screen.queryByText('"9AM","12NN","3PM"')).not.toBeInTheDocument();
   });
 
   it('allows cancelling an upcoming approved excuse request', async () => {
@@ -149,6 +186,7 @@ describe('FiledExcusesModal', () => {
 
     const cancelBtn = screen.getByRole('button', { name: 'Cancel Request' });
     expect(cancelBtn).toBeInTheDocument();
+    expect(cancelBtn).toHaveClass('text-danger');
 
     fireEvent.click(cancelBtn);
 
