@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { getManilaDateString, parseConfig } from './config.js';
-import { openAttendanceDatabase } from './db.js';
+import { createSnapshotDatabase } from './db.js';
 import { logger } from './logger.js';
 import { executeSyncRun } from './sync.js';
 
@@ -27,14 +27,11 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
     process.exit(1);
   }
 
-  let db;
-  try {
-    db = openAttendanceDatabase(config.dbPath);
-    logger.info('Connected to SQLite database (read-only mode).');
-  } catch (err) {
-    logger.error(err.message);
+  if (!fs.existsSync(config.dbPath)) {
+    logger.error(`SQLite database file not found at: ${config.dbPath}`);
     process.exit(1);
   }
+  logger.info('Live SQLite database verified. Zero-locking Snapshot Mode active.');
 
   let isRunning = true;
   let isSyncing = false;
@@ -44,11 +41,6 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
     if (!isRunning) return;
     isRunning = false;
     logger.info('Shutting down attendance sync service...');
-    try {
-      db.close();
-    } catch {
-      // Ignore on exit
-    }
     process.exit(0);
   };
 
@@ -59,6 +51,7 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
   const runCycle = async () => {
     if (isSyncing || !isRunning) return;
     isSyncing = true;
+    let snapshot = null;
     try {
       // Auto-update targetDate to today if not pinned by CLI flag
       const currentDate = getManilaDateString();
@@ -69,10 +62,14 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
         config.targetDate = currentDate;
       }
 
-      await executeSyncRun(db, config);
+      snapshot = createSnapshotDatabase(config.dbPath);
+      await executeSyncRun(snapshot.db, config);
     } catch (err) {
       logger.error('Unexpected error during sync cycle', err);
     } finally {
+      if (snapshot) {
+        snapshot.close();
+      }
       isSyncing = false;
     }
   };

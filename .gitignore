@@ -46,3 +46,4 @@ wc_attend.db
 .sync-state.json
 tools/attendance-sync/bin/
 *.exe
+.*_sync_snapshot*
