@@ -133,7 +133,7 @@ describe('HomePage', () => {
           expect.objectContaining({
             id: 'permanent-volunteer-excuse-request',
             type: 'excuse',
-            title: 'Volunteer Excuse Request',
+            title: 'Excuse Request',
           }),
         ],
       }),
@@ -208,7 +208,7 @@ describe('HomePage', () => {
           expect.objectContaining({
             id: 'permanent-volunteer-excuse-request',
             type: 'excuse',
-            title: 'Volunteer Excuse Request',
+            title: 'Excuse Request',
           }),
           expect.objectContaining({ id: 'event-1', type: 'event' }),
           expect.objectContaining({ id: 'form-1', type: 'form' }),
@@ -242,7 +242,7 @@ describe('HomePage', () => {
           expect.objectContaining({
             id: 'permanent-volunteer-excuse-request',
             type: 'excuse',
-            title: 'Volunteer Excuse Request',
+            title: 'Excuse Request',
           }),
         ],
       }),

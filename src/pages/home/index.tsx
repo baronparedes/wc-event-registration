@@ -12,8 +12,9 @@ import type { HubItem } from '@/pages/home/components/HubSection';
 const PERMANENT_EXCUSE_ITEM: HubItem = {
   type: 'excuse',
   id: 'permanent-volunteer-excuse-request',
-  title: 'Volunteer Excuse Request',
-  description: 'Submit an advance absence notification for Sunday service attendance.',
+  title: 'Excuse Request',
+  description:
+    'Please use this registration form to request an excuse from your committed volunteer schedule. This helps us track and manage volunteer attendance effectively.',
   status: 'published',
 };
 
