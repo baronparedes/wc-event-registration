@@ -8,6 +8,15 @@ import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/comp
 import { CommunityWelcome } from '@/pages/home/components/CommunityWelcome';
 import type { HubItem } from '@/pages/home/components/HubSection';
 
+const PERMANENT_EXCUSE_ITEM: HubItem = {
+  type: 'excuse',
+  id: 'permanent-volunteer-excuse-request',
+  title: 'Excuse Request',
+  description:
+    'Please use this registration form to request an excuse from your committed volunteer schedule. This helps us track and manage volunteer attendance effectively.',
+  status: 'published',
+};
+
 export function HomePage() {
   const {
     data: events,
@@ -24,14 +33,26 @@ export function HomePage() {
 
   const isLoading = eventsLoading || formsLoading;
 
-  // Mix open events and forms
+  const isLegacyExcuseEvent = (event: { id?: string; title?: string; slug?: string }) =>
+    (event.title ?? '').toLowerCase().includes('excuse') ||
+    (event.slug ?? '').toLowerCase().includes('excuse');
+
+  const filteredOpenEvents = openEvents.filter((e) => !isLegacyExcuseEvent(e));
+  const filteredUpcomingEvents = upcomingEvents.filter((e) => !isLegacyExcuseEvent(e));
+  const filteredPastEvents = pastEvents.filter((e) => !isLegacyExcuseEvent(e));
+
+  // Mix permanent excuse request, open events, and forms
   const availableItems: HubItem[] = [
-    ...openEvents.map((e) => ({ ...e, type: 'event' as const })),
+    PERMANENT_EXCUSE_ITEM,
+    ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
   ];
 
   // Upcoming items (currently only events)
-  const upcomingItems: HubItem[] = upcomingEvents.map((e) => ({ ...e, type: 'event' as const }));
+  const upcomingItems: HubItem[] = filteredUpcomingEvents.map((e) => ({
+    ...e,
+    type: 'event' as const,
+  }));
 
   return (
     <>
@@ -91,7 +112,7 @@ export function HomePage() {
 
         <HubSection items={availableItems} title="Available Now" />
         <HubSection items={upcomingItems} title="Upcoming Events" />
-        <PastEventList events={pastEvents} />
+        <PastEventList events={filteredPastEvents} />
       </section>
     </>
   );

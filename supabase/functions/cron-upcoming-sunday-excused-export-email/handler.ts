@@ -5,35 +5,6 @@ import { z } from '@/shared/validation.ts';
 
 const CRON_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000; // Asia/Manila (UTC+8)
 const DAY_MS = 24 * 60 * 60 * 1000;
-const REQUIRED_FIELD_KEYS = ['request_date', 'services', 'reason'] as const;
-
-type FieldKey = (typeof REQUIRED_FIELD_KEYS)[number];
-
-type EventFieldRow = {
-  id: string;
-  field_key: FieldKey;
-};
-
-type RegistrationUserRow = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-};
-
-type RegistrationRow = {
-  id: string;
-  users: RegistrationUserRow | RegistrationUserRow[] | null;
-};
-
-type RegistrationAnswerRow = {
-  registration_id: string;
-  event_field_id: string;
-  answer_text: string | null;
-  answer_number: number | null;
-  answer_boolean: boolean | null;
-  answer_date: string | null;
-  answer_json: unknown;
-};
 
 type SundayRequestRecord = {
   firstName: string;
@@ -50,7 +21,6 @@ const cronEnvironmentSchema = z.object({
     .string()
     .trim()
     .email('UPCOMING_SUNDAY_TARGET_EMAIL must be a valid email address'),
-  EXCUSE_REQUEST_EVENT_ID: z.string().trim().uuid('EXCUSE_REQUEST_EVENT_ID must be a valid UUID'),
   RESEND_FROM_EMAIL: z
     .string()
     .trim()
@@ -61,7 +31,6 @@ const cronEnvironmentSchema = z.object({
 type CronEnvironment = {
   resendApiKey: string;
   targetEmail: string;
-  eventId: string;
   fromEmail: string;
 };
 
@@ -78,7 +47,6 @@ function parseCronEnvironment(): CronEnvironment | null {
   const parsed = cronEnvironmentSchema.safeParse({
     RESEND_API_KEY: Deno.env.get('RESEND_API_KEY') ?? '',
     UPCOMING_SUNDAY_TARGET_EMAIL: Deno.env.get('UPCOMING_SUNDAY_TARGET_EMAIL') ?? '',
-    EXCUSE_REQUEST_EVENT_ID: Deno.env.get('EXCUSE_REQUEST_EVENT_ID') ?? '',
     RESEND_FROM_EMAIL: Deno.env.get('RESEND_FROM_EMAIL') ?? undefined,
   });
 
@@ -92,112 +60,43 @@ function parseCronEnvironment(): CronEnvironment | null {
   return {
     resendApiKey: parsed.data.RESEND_API_KEY,
     targetEmail: parsed.data.UPCOMING_SUNDAY_TARGET_EMAIL,
-    eventId: parsed.data.EXCUSE_REQUEST_EVENT_ID,
     fromEmail: parsed.data.RESEND_FROM_EMAIL,
   };
 }
 
-function getRegistrationUser(value: RegistrationRow['users']): RegistrationUserRow | null {
-  if (!value) {
-    return null;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value;
-}
-
-function readAnswerValue(answer: RegistrationAnswerRow): unknown {
-  if (answer.answer_json !== null && answer.answer_json !== undefined) {
-    return answer.answer_json;
-  }
-
-  if (answer.answer_text !== null) {
-    try {
-      return JSON.parse(answer.answer_text);
-    } catch {
-      return answer.answer_text;
-    }
-  }
-
-  if (answer.answer_boolean !== null) {
-    return answer.answer_boolean;
-  }
-
-  if (answer.answer_date !== null) {
-    return answer.answer_date;
-  }
-
-  if (answer.answer_number !== null) {
-    return answer.answer_number;
-  }
-
-  return null;
-}
-
 function normalizeValueToText(value: unknown): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((entry) => normalizeValueToText(entry))
-      .filter(Boolean)
-      .join(', ');
-  }
-
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return '';
-  }
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(normalizeValueToText).join(', ');
+  return String(value);
 }
 
-function computeForthcomingSundayDateInPht(now = new Date()): string {
-  const phtNowMs = now.getTime() + CRON_TIMEZONE_OFFSET_MS;
-  const phtNow = new Date(phtNowMs);
-  const dayOfWeek = phtNow.getUTCDay();
-  const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
-
-  const targetMs = phtNowMs + daysUntilSunday * DAY_MS;
-  const targetDate = new Date(targetMs);
-  const year = targetDate.getUTCFullYear();
-  const month = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(targetDate.getUTCDate()).padStart(2, '0');
-
+function formatDateInManilaTime(epochMs: number): string {
+  const manilaDate = new Date(epochMs + CRON_TIMEZONE_OFFSET_MS);
+  const year = manilaDate.getUTCFullYear();
+  const month = String(manilaDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(manilaDate.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
+export function computeUpcomingSundayDate(referenceDateEpochMs = Date.now()): string {
+  const manilaDate = new Date(referenceDateEpochMs + CRON_TIMEZONE_OFFSET_MS);
+  const dayOfWeek = manilaDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
+  const daysUntilSunday = (7 - dayOfWeek) % 7;
+  const targetEpochMs = referenceDateEpochMs + daysUntilSunday * DAY_MS;
+  return formatDateInManilaTime(targetEpochMs);
+}
+
 function resolveTargetSundayDate(req: Request): string {
-  const requestedDate = new URL(req.url).searchParams.get('target_sunday_date')?.trim();
-  return requestedDate || computeForthcomingSundayDateInPht();
-}
-
-function encodeBase64Utf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  const chunkSize = 0x8000;
-  let binary = '';
-
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    const chunk = bytes.subarray(offset, offset + chunkSize);
-    binary += String.fromCharCode(...chunk);
+  const queryTargetDate = new URL(req.url).searchParams.get('target_sunday_date');
+  if (queryTargetDate && /^\d{4}-\d{2}-\d{2}$/.test(queryTargetDate)) {
+    return queryTargetDate;
   }
-
-  return btoa(binary);
+  return computeUpcomingSundayDate();
 }
 
-async function sendEmailWithAttachment(options: {
+async function sendEmailWithAttachment(params: {
   resendApiKey: string;
   fromEmail: string;
   toEmail: string;
@@ -205,46 +104,42 @@ async function sendEmailWithAttachment(options: {
   html: string;
   filename: string;
   content: string;
-}): Promise<{ ok: true } | { ok: false; status: number; body: string }> {
-  const result = await sendResendEmail({
-    apiKey: options.resendApiKey,
-    from: options.fromEmail,
-    to: [options.toEmail],
-    subject: options.subject,
-    html: options.html,
-    targetType: 'excused-export-email',
+}): Promise<{ ok: boolean; status: number; body?: unknown }> {
+  const base64Content = btoa(params.content);
+
+  return await sendResendEmail({
+    apiKey: params.resendApiKey,
+    from: params.fromEmail,
+    to: [params.toEmail],
+    subject: params.subject,
+    html: params.html,
     attachments: [
       {
-        filename: options.filename,
-        content: encodeBase64Utf8(options.content),
-        type: 'application/json',
+        filename: params.filename,
+        content: base64Content,
       },
     ],
   });
-
-  if (!result.ok) {
-    console.error('[cron-upcoming-sunday-excused-export-email] Resend API request failed', {
-      status: result.status,
-      body: result.error,
-    });
-    return {
-      ok: false,
-      status: result.status,
-      body: result.error,
-    };
-  }
-
-  return { ok: true };
 }
 
-export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): Promise<Response> {
-  console.log('[cron-upcoming-sunday-excused-export-email] Request received', {
-    method: req.method,
-    origin: req.headers.get('origin'),
-    hasAuthorizationHeader: req.headers.has('authorization'),
-    contentType: req.headers.get('content-type'),
-  });
+type ServiceExcuseWithUserRow = {
+  services: string[] | string | null;
+  reason: string | null;
+  users:
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+      }
+    | Array<{
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+      }>
+    | null;
+};
 
+export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): Promise<Response> {
   const guard = await useEdgeHook({
     req,
     functionName: 'cron-upcoming-sunday-excused-export-email',
@@ -293,83 +188,26 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
       });
     }
 
-    const { data: eventFields, error: eventFieldsError } = await guard.client
-      .from('event_fields')
-      .select('id, field_key')
-      .eq('event_id', cronEnv.eventId)
-      .in('field_key', [...REQUIRED_FIELD_KEYS])
-      .returns<EventFieldRow[]>();
+    const { data: excuses, error: excusesError } = await guard.client
+      .from('service_excuse_requests')
+      .select('services, reason, users!inner(first_name, last_name, email)')
+      .eq('request_date', targetSundayDate)
+      .eq('status', 'approved');
 
-    console.log('[cron-upcoming-sunday-excused-export-email] Event fields lookup completed', {
-      requestId: guard.requestId,
-      fieldCount: eventFields?.length ?? 0,
-      hasError: Boolean(eventFieldsError),
-    });
-
-    if (eventFieldsError) {
+    if (excusesError) {
       console.error(
-        '[cron-upcoming-sunday-excused-export-email] Event fields lookup failed',
-        eventFieldsError,
+        '[cron-upcoming-sunday-excused-export-email] Service excuses lookup failed',
+        excusesError,
       );
       return jsonResponse(500, {
         success: false,
-        error: 'Failed to load event fields',
+        error: 'Failed to query service excuse requests',
       });
     }
 
-    const fieldIdToKey = new Map<string, FieldKey>();
-    for (const field of eventFields ?? []) {
-      fieldIdToKey.set(field.id, field.field_key);
-    }
+    const rows = (excuses as ServiceExcuseWithUserRow[]) ?? [];
 
-    const requestedFieldIds = (eventFields ?? []).map((field) => field.id);
-
-    // Find the event_field ID for 'request_date'
-    const requestDateFieldId = (eventFields ?? []).find((f) => f.field_key === 'request_date')?.id;
-
-    if (!requestDateFieldId) {
-      console.error('[cron-upcoming-sunday-excused-export-email] request_date field not found');
-      return jsonResponse(500, {
-        success: false,
-        error: 'request_date field not configured for event',
-      });
-    }
-
-    // Filter by request_date at database level to reduce result set
-    const { data: requestDateAnswers, error: requestDateAnswersError } = await guard.client
-      .from('registration_answers')
-      .select('registration_id')
-      .eq('event_field_id', requestDateFieldId)
-      .or(`answer_text.ilike.%${targetSundayDate}%,answer_date.eq.${targetSundayDate}`)
-      .returns<{ registration_id: string }[]>();
-
-    console.log(
-      '[cron-upcoming-sunday-excused-export-email] Request date answers lookup completed',
-      {
-        requestId: guard.requestId,
-        matchingAnswerCount: requestDateAnswers?.length ?? 0,
-        hasError: Boolean(requestDateAnswersError),
-      },
-    );
-
-    if (requestDateAnswersError) {
-      console.error(
-        '[cron-upcoming-sunday-excused-export-email] Request date filter lookup failed',
-        requestDateAnswersError,
-      );
-      return jsonResponse(500, {
-        success: false,
-        error: 'Failed to filter by request_date',
-      });
-    }
-
-    const registrationIds = (requestDateAnswers ?? []).map((answer) => answer.registration_id);
-    console.log('[cron-upcoming-sunday-excused-export-email] Registration IDs resolved', {
-      requestId: guard.requestId,
-      registrationCount: registrationIds.length,
-    });
-
-    if (registrationIds.length === 0) {
+    if (rows.length === 0) {
       // No matching requests for this Sunday, send empty report
       const jsonAttachment = JSON.stringify([], null, 2);
       const filename = `sunday-excuse-requests-${targetSundayDate}.json`;
@@ -410,91 +248,18 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
       });
     }
 
-    // Fetch full registrations and answers only for filtered registration IDs
-    const { data: registrations, error: registrationsError } = await guard.client
-      .from('registrations')
-      .select('id, users!inner(first_name, last_name, email)')
-      .eq('event_id', cronEnv.eventId)
-      .neq('status', 'cancelled')
-      .in('id', registrationIds)
-      .returns<RegistrationRow[]>();
-
-    console.log('[cron-upcoming-sunday-excused-export-email] Registrations lookup completed', {
-      requestId: guard.requestId,
-      registrationCount: registrations?.length ?? 0,
-      hasError: Boolean(registrationsError),
-    });
-
-    if (registrationsError) {
-      console.error(
-        '[cron-upcoming-sunday-excused-export-email] Registrations lookup failed',
-        registrationsError,
-      );
-      return jsonResponse(500, {
-        success: false,
-        error: 'Failed to load registrations',
-      });
-    }
-
-    let answers: RegistrationAnswerRow[] = [];
-    if (registrationIds.length > 0 && requestedFieldIds.length > 0) {
-      const { data: answerRows, error: answersError } = await guard.client
-        .from('registration_answers')
-        .select(
-          'registration_id, event_field_id, answer_text, answer_number, answer_boolean, answer_date, answer_json',
-        )
-        .in('registration_id', registrationIds)
-        .in('event_field_id', requestedFieldIds)
-        .returns<RegistrationAnswerRow[]>();
-
-      console.log('[cron-upcoming-sunday-excused-export-email] Answers lookup completed', {
-        requestId: guard.requestId,
-        answerCount: answerRows?.length ?? 0,
-        hasError: Boolean(answersError),
-      });
-
-      if (answersError) {
-        console.error(
-          '[cron-upcoming-sunday-excused-export-email] Registration answers lookup failed',
-          answersError,
-        );
-        return jsonResponse(500, {
-          success: false,
-          error: 'Failed to load registration answers',
-        });
-      }
-
-      answers = answerRows ?? [];
-    }
-
-    const answersByRegistration = new Map<string, Partial<Record<FieldKey, unknown>>>();
-    for (const answer of answers) {
-      const fieldKey = fieldIdToKey.get(answer.event_field_id);
-      if (!fieldKey) {
-        continue;
-      }
-
-      const current = answersByRegistration.get(answer.registration_id) ?? {};
-      current[fieldKey] = readAnswerValue(answer);
-      answersByRegistration.set(answer.registration_id, current);
-    }
-
     const payload: SundayRequestRecord[] = [];
 
-    for (const registration of registrations ?? []) {
-      const user = getRegistrationUser(registration.users);
-      if (!user) {
-        continue;
-      }
-
-      const answerMap = answersByRegistration.get(registration.id) ?? {};
+    for (const item of rows) {
+      const user = Array.isArray(item.users) ? item.users[0] : item.users;
+      if (!user) continue;
 
       payload.push({
         firstName: (user.first_name ?? '').trim(),
         lastName: (user.last_name ?? '').trim(),
         requestDate: targetSundayDate,
-        services: normalizeValueToText(answerMap.services),
-        reason: normalizeValueToText(answerMap.reason),
+        services: normalizeValueToText(item.services),
+        reason: (item.reason ?? '').trim(),
         email: (user.email ?? '').trim(),
       });
     }
@@ -534,7 +299,6 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
 
     return jsonResponse(200, {
       success: true,
-      event_id: cronEnv.eventId,
       target_sunday_date: targetSundayDate,
       recipient: cronEnv.targetEmail,
       row_count: payload.length,

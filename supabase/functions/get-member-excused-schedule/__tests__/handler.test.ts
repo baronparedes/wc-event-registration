@@ -3,22 +3,15 @@ import { assertEquals } from '@std/assert';
 import { handleGetMemberExcusedSchedule } from '../handler.ts';
 
 const TEST_ORIGIN = 'https://app.example.com';
-const EVENT_ID = '11111111-1111-4111-8111-111111111111';
 const MEMBER_USER_ID = '22222222-2222-4222-8222-222222222222';
 const OTHER_USER_ID = '33333333-3333-4333-8333-333333333333';
 
 async function withFunctionEnv(run: () => Promise<void>) {
-  const names = [
-    'SUPABASE_URL',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'ALLOWED_ORIGINS',
-    'EXCUSE_REQUEST_EVENT_ID',
-  ];
+  const names = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ALLOWED_ORIGINS'];
   const previous = new Map(names.map((name) => [name, Deno.env.get(name)]));
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
-  Deno.env.set('EXCUSE_REQUEST_EVENT_ID', EVENT_ID);
   try {
     await run();
   } finally {
@@ -45,13 +38,7 @@ function buildRequest(body: unknown, authenticated = true) {
   });
 }
 
-function mockFetch(options: {
-  adminRole?: string;
-  registrationUserId?: string;
-  dateAnswers?: unknown[];
-  registrations?: unknown[];
-  dateError?: boolean;
-}) {
+function mockFetch(options: { adminRole?: string; excuses?: unknown[]; queryError?: boolean }) {
   const originalFetch = globalThis.fetch;
   const requestedUrls: URL[] = [];
   globalThis.fetch = (input) => {
@@ -63,42 +50,20 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.adminRole ?? 'slod' }));
     }
-    if (requestUrl.pathname === '/rest/v1/registration_answers') {
-      if (options.dateError) {
-        return Promise.resolve(Response.json({ message: 'date lookup failed' }, { status: 500 }));
+    if (requestUrl.pathname === '/rest/v1/service_excuse_requests') {
+      if (options.queryError) {
+        return Promise.resolve(Response.json({ message: 'lookup failed' }, { status: 500 }));
       }
       return Promise.resolve(
-        Response.json(options.dateAnswers ?? [{ registration_id: 'registration-1' }]),
-      );
-    }
-    if (requestUrl.pathname === '/rest/v1/registrations') {
-      return Promise.resolve(
         Response.json(
-          options.registrations ?? [
+          options.excuses ?? [
             {
-              id: 'registration-1',
-              users: {
-                id: options.registrationUserId ?? MEMBER_USER_ID,
-                member_id: 'M-003',
-              },
-              registration_answers: [
-                {
-                  answer_text: '2026-03-08',
-                  answer_number: null,
-                  answer_boolean: null,
-                  answer_date: null,
-                  answer_json: null,
-                  event_fields: { field_key: 'request_date' },
-                },
-                {
-                  answer_text: 'Service commitment',
-                  answer_number: null,
-                  answer_boolean: null,
-                  answer_date: null,
-                  answer_json: null,
-                  event_fields: { field_key: 'reason' },
-                },
-              ],
+              id: 'excuse-1',
+              user_id: MEMBER_USER_ID,
+              member_id: 'M-003',
+              request_date: '2026-03-08',
+              services: [],
+              reason: 'Service commitment',
             },
           ],
         ),
@@ -148,11 +113,10 @@ Deno.test(
             },
           ],
         });
-        const dateQuery = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/registration_answers',
+        const query = fetchMock.requestedUrls.find(
+          (url) => url.pathname === '/rest/v1/service_excuse_requests',
         );
-        assertEquals(dateQuery?.searchParams.get('registrations.user_id'), `eq.${MEMBER_USER_ID}`);
-        assertEquals(dateQuery?.searchParams.get('registrations.event_id'), `eq.${EVENT_ID}`);
+        assertEquals(query?.searchParams.get('user_id'), `eq.${MEMBER_USER_ID}`);
       } finally {
         fetchMock.restore();
       }
@@ -164,16 +128,28 @@ Deno.test(
   'get-member-excused-schedule permits allowed admins to request another member',
   async () => {
     await withFunctionEnv(async () => {
-      const fetchMock = mockFetch({ adminRole: 'imt', registrationUserId: OTHER_USER_ID });
+      const fetchMock = mockFetch({
+        adminRole: 'imt',
+        excuses: [
+          {
+            id: 'excuse-2',
+            user_id: OTHER_USER_ID,
+            member_id: 'M-004',
+            request_date: '2026-03-15',
+            services: ['9AM'],
+            reason: 'Travel',
+          },
+        ],
+      });
       try {
         const response = await handleGetMemberExcusedSchedule(
           buildRequest({ year: 2026, monthIndex: 2, userId: OTHER_USER_ID }),
         );
         assertEquals(response.status, 200);
-        const dateQuery = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/registration_answers',
+        const query = fetchMock.requestedUrls.find(
+          (url) => url.pathname === '/rest/v1/service_excuse_requests',
         );
-        assertEquals(dateQuery?.searchParams.get('registrations.user_id'), `eq.${OTHER_USER_ID}`);
+        assertEquals(query?.searchParams.get('user_id'), `eq.${OTHER_USER_ID}`);
       } finally {
         fetchMock.restore();
       }
@@ -190,7 +166,7 @@ Deno.test('get-member-excused-schedule denies cross-user reads for non-admin rol
       );
       assertEquals(response.status, 403);
       assertEquals(
-        fetchMock.requestedUrls.some((url) => url.pathname === '/rest/v1/registration_answers'),
+        fetchMock.requestedUrls.some((url) => url.pathname === '/rest/v1/service_excuse_requests'),
         false,
       );
     } finally {

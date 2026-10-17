@@ -13,12 +13,23 @@ interface EventHistoryTabProps {
   memberId: string;
 }
 
+const isLegacyExcuseEvent = (item: {
+  event_id: string;
+  event_slug?: string;
+  event_title?: string;
+}) =>
+  (item.event_slug ?? '').toLowerCase().includes('excuse') ||
+  (item.event_title ?? '').toLowerCase().includes('excuse');
+
 export function EventHistoryTab({ memberId }: EventHistoryTabProps) {
   const historyQuery = useMemberEventHistoryQuery(memberId);
 
   const eventGroups = useMemo<MemberEventGroup[]>(() => {
     const map = new Map<string, MemberEventGroup>();
     for (const item of historyQuery.data ?? []) {
+      if (isLegacyExcuseEvent(item)) {
+        continue;
+      }
       if (!map.has(item.event_id)) {
         map.set(item.event_id, {
           event_id: item.event_id,

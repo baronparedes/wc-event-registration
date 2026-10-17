@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { EventHeaderCard } from '@/components/ui/EventHeaderCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { StepIndicator } from '@/components/ui/StepIndicator';
-import { TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
+import { ROUTE_PATHS, TIMING, TOAST_MESSAGES, toRoute } from '@/config/constants';
 import { usePublicEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { usePublicEventQuery } from '@/hooks/domain/events';
 import {
@@ -44,6 +44,12 @@ export function PublicEventRegistrationPage() {
   const stepOneRef = useRef<HTMLDivElement | null>(null);
   const stepTwoRef = useRef<HTMLDivElement | null>(null);
   const stepThreeRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (slug === 'excuse-request-2026') {
+      navigate(ROUTE_PATHS.excuseRequest, { replace: true });
+    }
+  }, [slug, navigate]);
 
   // Auto-redirect to member registration after 3 minutes of inactivity
   const handleInactivityReset = useCallback(() => {

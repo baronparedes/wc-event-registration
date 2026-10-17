@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
 import { ROUTE_PATHS } from '@/config/constants';
-import { env } from '@/config/env';
 import { useCommitmentDashboardStatsQuery } from '@/hooks/domain/services';
 import type { CommitmentDashboardStat } from '@/hooks/domain/services';
 import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
@@ -20,8 +19,6 @@ import {
   VolunteerAttendanceModal,
   VolunteerListTable,
 } from './components';
-
-const excuseEventId = env.excuseEventId;
 
 export function AdminServiceAttendanceCommitmentPage() {
   const currentYear = new Date().getFullYear();
@@ -95,7 +92,6 @@ export function AdminServiceAttendanceCommitmentPage() {
     useCommitmentDashboardStatsQuery({
       start_date: startDate,
       end_date: endDate,
-      excuse_event_id: excuseEventId,
       search_query: normalizedSearchQuery || undefined,
       role: selectedRoles.length > 0 ? selectedRoles.join(',') : undefined,
       category: categoryFilter,
@@ -105,7 +101,6 @@ export function AdminServiceAttendanceCommitmentPage() {
     () => ({
       start_date: startDate,
       end_date: endDate,
-      excuse_event_id: excuseEventId,
       search_query: normalizedSearchQuery || undefined,
       role: selectedRoles.length > 0 ? selectedRoles.join(',') : undefined,
       category: categoryFilter,
@@ -188,7 +183,6 @@ export function AdminServiceAttendanceCommitmentPage() {
           timeframe={timeframe}
           startDate={startDate}
           endDate={endDate}
-          excuseEventId={excuseEventId}
         />
       </AdminPageShell.Content>
     </AdminPageShell>

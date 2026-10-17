@@ -75,40 +75,27 @@ describe('HubSection', () => {
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
   });
 
-  it('presents Excuse Request 2026 as a form while keeping its event registration route', () => {
-    const event = mockItems[0];
-    if (event.type !== 'event') throw new Error('Expected event fixture');
-    const { container } = render(
-      <MemoryRouter>
-        <HubSection
-          title="Available Now"
-          items={[{ ...event, title: 'Excuse Request 2026', slug: 'excuse-request-2026' }]}
-        />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('link', { name: 'Fill out' })).toHaveAttribute(
-      'href',
-      '/events/excuse-request-2026/register',
-    );
-    expect(container.querySelector('time')).toBeNull();
-    expect(screen.queryByText(event.location ?? '')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /countdown/i })).not.toBeInTheDocument();
-  });
-
-  it('does not enable the form-style action before excuse registration opens', () => {
-    const event = mockItems[0];
-    if (event.type !== 'event') throw new Error('Expected event fixture');
+  it('renders excuse request card with route to profile commitments', () => {
     render(
       <MemoryRouter>
         <HubSection
-          title="Upcoming Events"
-          items={[{ ...event, title: 'Excuse Request 2026', listingStatus: 'upcoming' }]}
+          title="Available Now"
+          items={[
+            {
+              type: 'excuse',
+              id: 'volunteer-excuse-request',
+              title: 'Volunteer Excuse Request',
+              description: 'Submit an advance absence notification.',
+            },
+          ]}
         />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Fill out' })).not.toBeInTheDocument();
+    expect(screen.getByText('Volunteer Excuse Request')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Fill out' })).toHaveAttribute(
+      'href',
+      '/excuse-request',
+    );
   });
 });

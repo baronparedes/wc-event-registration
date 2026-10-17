@@ -121,4 +121,28 @@ describe('EventHistoryTab', () => {
       screen.queryByRole('heading', { level: 2, name: 'Camp Retreat' }),
     ).not.toBeInTheDocument();
   });
+
+  it('hides legacy excuse request events from the event history list', () => {
+    const regularEvent = makeMemberEventHistoryItem({
+      event_id: 'ev-reg',
+      event_title: 'Leadership Summit',
+      event_slug: 'leadership-summit',
+    });
+    const legacyExcuseEvent = makeMemberEventHistoryItem({
+      event_id: 'ev-excuse',
+      event_title: 'Sunday Service Excuse Request 2026',
+      event_slug: 'excuse-request-2026',
+    });
+    mockUseMemberEventHistoryQuery.mockReturnValue({
+      data: [regularEvent, legacyExcuseEvent],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<EventHistoryTab memberId="user-123" />);
+
+    expect(screen.getByText('Event History (1)')).toBeInTheDocument();
+    expect(screen.getByText('Leadership Summit')).toBeInTheDocument();
+    expect(screen.queryByText(/Sunday Service Excuse Request/i)).not.toBeInTheDocument();
+  });
 });

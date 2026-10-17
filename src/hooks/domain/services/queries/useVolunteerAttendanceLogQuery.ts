@@ -6,7 +6,6 @@ export interface VolunteerAttendanceLogFilters {
   user_id: string;
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
 }
 
 export interface VolunteerAttendanceLogRecord {

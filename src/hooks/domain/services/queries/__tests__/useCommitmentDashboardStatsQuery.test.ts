@@ -59,7 +59,6 @@ describe('useCommitmentDashboardStatsQuery', () => {
       useCommitmentDashboardStatsQuery({
         start_date: '2025-01-01',
         end_date: '2025-03-31',
-        excuse_event_id: 'event-123',
         search_query: fullName,
         role: 'Usher',
         category: 'Women',
@@ -71,7 +70,6 @@ describe('useCommitmentDashboardStatsQuery', () => {
     expect(mockRpc).toHaveBeenCalledWith('get_commitment_dashboard_stats', {
       p_start_date: '2025-01-01',
       p_end_date: '2025-03-31',
-      p_excuse_event_id: 'event-123',
       p_search_query: fullName,
       p_role: 'Usher',
       p_category: 'Women',

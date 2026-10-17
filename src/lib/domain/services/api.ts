@@ -1,17 +1,20 @@
-import { supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
-import type {
-  CreateServiceAttendanceInput,
-  CreateServiceLayoutInput,
-  CreateServiceSeatInput,
-  UpdateServiceAttendanceInput,
-  UpdateServiceLayoutInput,
-  UpdateServiceSeatInput,
+import {
+  type CreateServiceAttendanceInput,
+  type CreateServiceLayoutInput,
+  type CreateServiceSeatInput,
+  type SubmitServiceExcuseInput,
+  type UpdateServiceAttendanceInput,
+  type UpdateServiceLayoutInput,
+  type UpdateServiceSeatInput,
+  submitServiceExcuseSchema,
 } from './schemas';
 import type {
   MissedServiceCommitment,
   ServiceAttendance,
   ServiceExceptionDate,
+  ServiceExcuseRequest,
   ServiceLayout,
   ServiceSeat,
   UserCommitmentSnapshot,
@@ -58,14 +61,12 @@ export type MissedServiceCommitmentsArgs = {
   p_end_date?: string;
   p_time_slot?: string;
   p_role?: string;
-  p_excuse_event_id?: string;
   p_search_query?: string;
 };
 
 export type CommitmentDashboardStatsRpcFilters = {
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
   search_query?: string;
   role?: string;
   category?: string;
@@ -77,7 +78,6 @@ export type VolunteerAttendanceLogRpcFilters = {
   user_id: string;
   start_date: string;
   end_date: string;
-  excuse_event_id?: string | null;
 };
 
 export async function fetchServiceLayouts(): Promise<ServiceLayout[]> {
@@ -394,7 +394,6 @@ export async function fetchCommitmentDashboardStatsPage(
   const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
     p_start_date: filters.start_date,
     p_end_date: filters.end_date,
-    p_excuse_event_id: filters.excuse_event_id || null,
     p_search_query: filters.search_query || null,
     p_role: filters.role || null,
     p_category: filters.category || null,
@@ -418,7 +417,6 @@ export async function fetchAllCommitmentDashboardStatsForExport(
     {
       p_start_date: filters.start_date,
       p_end_date: filters.end_date,
-      p_excuse_event_id: filters.excuse_event_id || null,
       p_search_query: filters.search_query || null,
       p_role: filters.role || null,
       p_category: filters.category || null,
@@ -446,7 +444,6 @@ export async function fetchAllCommitmentDashboardStatsForExport(
         supabase.rpc('get_commitment_dashboard_stats', {
           p_start_date: filters.start_date,
           p_end_date: filters.end_date,
-          p_excuse_event_id: filters.excuse_event_id || null,
           p_search_query: filters.search_query || null,
           p_role: filters.role || null,
           p_category: filters.category || null,
@@ -478,7 +475,6 @@ export async function fetchVolunteerAttendanceLog(
     p_user_id: filters.user_id,
     p_start_date: filters.start_date,
     p_end_date: filters.end_date,
-    p_excuse_event_id: filters.excuse_event_id || null,
   });
 
   if (error) {
@@ -496,4 +492,60 @@ export async function fetchServiceExceptionDates(): Promise<ServiceExceptionDate
 
   if (error) throw error;
   return (data as unknown as ServiceExceptionDate[]) || [];
+}
+
+interface SubmitServiceExcuseResponse {
+  success: boolean;
+  excuse: ServiceExcuseRequest;
+  message?: string;
+}
+
+const callSubmitServiceExcuse = createEdgeFunctionCaller<
+  SubmitServiceExcuseInput,
+  SubmitServiceExcuseResponse
+>('submit-service-excuse');
+
+export async function submitServiceExcuse(
+  input: SubmitServiceExcuseInput,
+): Promise<ServiceExcuseRequest> {
+  const validated = submitServiceExcuseSchema.parse(input);
+  const response = await callSubmitServiceExcuse(validated);
+  return response.excuse;
+}
+
+export async function cancelServiceExcuse(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('service_excuse_requests')
+    .update({ status: 'cancelled' })
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(`Failed to cancel excuse request: ${error.message}`);
+  }
+}
+
+export async function fetchMemberServiceExcuses(
+  userId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<ServiceExcuseRequest[]> {
+  let query = supabase
+    .from('service_excuse_requests')
+    .select('*')
+    .eq('user_id', userId)
+    .order('request_date', { ascending: false });
+
+  if (startDate) {
+    query = query.gte('request_date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('request_date', endDate);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch excuse requests: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as ServiceExcuseRequest[];
 }

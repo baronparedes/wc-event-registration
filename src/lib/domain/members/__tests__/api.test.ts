@@ -38,12 +38,11 @@ describe('fetchMembersAttendanceScores', () => {
       error: null,
     });
 
-    const result = await fetchMembersAttendanceScores(12, 'excuse-event-1');
+    const result = await fetchMembersAttendanceScores(12);
 
     expect(supabase.rpc).toHaveBeenCalledWith(
       'get_commitment_dashboard_stats',
       expect.objectContaining({
-        p_excuse_event_id: 'excuse-event-1',
         p_page: 1,
         p_page_size: 500,
       }),
@@ -147,7 +146,6 @@ describe('fetchMembersAttendanceScores', () => {
 
     await fetchMembersAttendanceScores({
       dateRange: { startDate: '2026-07-01', endDate: '2026-09-30' },
-      excuseEventId: 'excuse-event-1',
     });
 
     expect(supabase.rpc).toHaveBeenCalledWith(
@@ -155,7 +153,6 @@ describe('fetchMembersAttendanceScores', () => {
       expect.objectContaining({
         p_start_date: '2026-07-01',
         p_end_date: '2026-09-30',
-        p_excuse_event_id: 'excuse-event-1',
       }),
     );
   });

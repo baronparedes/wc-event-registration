@@ -4,15 +4,7 @@ import { handleCronUpcomingSundayExcusedExportEmail } from '../handler.ts';
 
 const SERVICE_ROLE_KEY = 'test-service-role-key';
 const TEST_ORIGIN = 'https://app.example.com';
-const EVENT_ID = '11111111-1111-4111-8111-111111111111';
-const REGISTRATION_ID = '22222222-2222-4222-8222-222222222222';
 const TARGET_DATE = '2026-10-04';
-
-const EVENT_FIELDS = [
-  { id: 'field-request-date', field_key: 'request_date' },
-  { id: 'field-services', field_key: 'services' },
-  { id: 'field-reason', field_key: 'reason' },
-];
 
 async function withFunctionEnv(run: () => Promise<void>) {
   const envNames = [
@@ -22,7 +14,6 @@ async function withFunctionEnv(run: () => Promise<void>) {
     'ALLOWED_ORIGINS',
     'RESEND_API_KEY',
     'UPCOMING_SUNDAY_TARGET_EMAIL',
-    'EXCUSE_REQUEST_EVENT_ID',
     'RESEND_FROM_EMAIL',
   ];
   const previousValues = new Map(envNames.map((name) => [name, Deno.env.get(name)]));
@@ -33,7 +24,6 @@ async function withFunctionEnv(run: () => Promise<void>) {
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
   Deno.env.set('RESEND_API_KEY', 'test-resend-key');
   Deno.env.set('UPCOMING_SUNDAY_TARGET_EMAIL', 'reports@example.com');
-  Deno.env.set('EXCUSE_REQUEST_EVENT_ID', EVENT_ID);
   Deno.env.set('RESEND_FROM_EMAIL', 'events@example.com');
 
   try {
@@ -59,30 +49,14 @@ function buildRequest(authorized = true, cronAuthorized = false) {
   );
 }
 
-function mockFetch(options: {
-  requestDateAnswers?: Array<{ registration_id: string }>;
-  registrations?: Array<Record<string, unknown>>;
-  answers?: Array<Record<string, unknown>>;
-  resendStatus?: number;
-}) {
+function mockFetch(options: { excuses?: Array<Record<string, unknown>>; resendStatus?: number }) {
   const originalFetch = globalThis.fetch;
   const sentEmails: Array<Record<string, unknown>> = [];
 
   globalThis.fetch = (input, init) => {
     const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
-    if (requestUrl.pathname === '/rest/v1/event_fields') {
-      return Promise.resolve(Response.json(EVENT_FIELDS));
-    }
-    if (requestUrl.pathname === '/rest/v1/registration_answers') {
-      const selection = requestUrl.searchParams.get('select');
-      const rows =
-        selection === 'registration_id'
-          ? (options.requestDateAnswers ?? [])
-          : (options.answers ?? []);
-      return Promise.resolve(Response.json(rows));
-    }
-    if (requestUrl.pathname === '/rest/v1/registrations') {
-      return Promise.resolve(Response.json(options.registrations ?? []));
+    if (requestUrl.pathname === '/rest/v1/service_excuse_requests') {
+      return Promise.resolve(Response.json(options.excuses ?? []));
     }
     if (requestUrl.hostname === 'api.resend.com') {
       sentEmails.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
@@ -115,7 +89,7 @@ Deno.test('cron-upcoming-sunday-excused-export-email requires an authorized call
 
 Deno.test('cron-upcoming-sunday-excused-export-email accepts the cron role key', async () => {
   await withFunctionEnv(async () => {
-    const fetchMock = mockFetch({ requestDateAnswers: [] });
+    const fetchMock = mockFetch({ excuses: [] });
     try {
       const response = await handleCronUpcomingSundayExcusedExportEmail(buildRequest(false, true));
       assertEquals(response.status, 200);
@@ -129,7 +103,7 @@ Deno.test(
   'cron-upcoming-sunday-excused-export-email sends an empty export when no requests match',
   async () => {
     await withFunctionEnv(async () => {
-      const fetchMock = mockFetch({ requestDateAnswers: [] });
+      const fetchMock = mockFetch({ excuses: [] });
       try {
         const response = await handleCronUpcomingSundayExcusedExportEmail(buildRequest());
         const email = fetchMock.sentEmails[0];
@@ -153,39 +127,19 @@ Deno.test(
 );
 
 Deno.test(
-  'cron-upcoming-sunday-excused-export-email maps registration answers into the attachment',
+  'cron-upcoming-sunday-excused-export-email maps service excuses into the attachment',
   async () => {
     await withFunctionEnv(async () => {
       const fetchMock = mockFetch({
-        requestDateAnswers: [{ registration_id: REGISTRATION_ID }],
-        registrations: [
+        excuses: [
           {
-            id: REGISTRATION_ID,
+            services: ['9AM', '12NN'],
+            reason: 'Family matter',
             users: {
               first_name: '  Jamie ',
               last_name: ' Lee  ',
               email: ' jamie@example.com ',
             },
-          },
-        ],
-        answers: [
-          {
-            registration_id: REGISTRATION_ID,
-            event_field_id: 'field-services',
-            answer_text: '["9AM","12NN"]',
-            answer_number: null,
-            answer_boolean: null,
-            answer_date: null,
-            answer_json: null,
-          },
-          {
-            registration_id: REGISTRATION_ID,
-            event_field_id: 'field-reason',
-            answer_text: 'Family matter',
-            answer_number: null,
-            answer_boolean: null,
-            answer_date: null,
-            answer_json: null,
           },
         ],
       });
@@ -215,7 +169,7 @@ Deno.test(
   'cron-upcoming-sunday-excused-export-email reports a Resend delivery failure',
   async () => {
     await withFunctionEnv(async () => {
-      const fetchMock = mockFetch({ requestDateAnswers: [], resendStatus: 503 });
+      const fetchMock = mockFetch({ excuses: [], resendStatus: 503 });
       try {
         const response = await handleCronUpcomingSundayExcusedExportEmail(buildRequest());
         assertEquals(response.status, 502);

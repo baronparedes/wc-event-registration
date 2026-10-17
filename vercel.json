@@ -1,4 +1,16 @@
 {
+  "redirects": [
+    {
+      "source": "/events/excuse-request-2026",
+      "destination": "/excuse-request",
+      "permanent": true
+    },
+    {
+      "source": "/events/excuse-request-2026/:path*",
+      "destination": "/excuse-request",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/events/:slug",

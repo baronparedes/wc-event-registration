@@ -12,7 +12,6 @@ import {
   LoadingState,
   SearchInputField,
 } from '@/components/ui';
-import { env } from '@/config/env';
 import { useMissedServiceCommitmentsQuery } from '@/hooks/domain/services';
 import { useIsMobileViewport } from '@/hooks/utils';
 
@@ -101,7 +100,6 @@ export function MissedCommitmentsModal({
       sunday_date: filterMode === 'sunday' ? selectedSunday : undefined,
       year: filterMode !== 'sunday' ? selectedYear : undefined,
       month: filterMode === 'month' ? selectedMonth : undefined,
-      excuse_event_id: env.excuseEventId,
     }),
     [filterMode, selectedSunday, selectedYear, selectedMonth],
   );

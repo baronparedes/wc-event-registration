@@ -109,7 +109,11 @@ export function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="service_attendance">
-            <ServiceAttendanceHistoryTab memberId={member.id} metadata={extraMetadata} />
+            <ServiceAttendanceHistoryTab
+              memberId={member.id}
+              memberCode={member.member_id}
+              metadata={extraMetadata}
+            />
           </TabsContent>
         </Tabs>
       </AdminPageShell.Content>

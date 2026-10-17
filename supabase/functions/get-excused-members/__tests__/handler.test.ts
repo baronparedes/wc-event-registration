@@ -3,20 +3,13 @@ import { assertEquals } from '@std/assert';
 import { handleGetExcusedMembers } from '../handler.ts';
 
 const TEST_ORIGIN = 'https://app.example.com';
-const EVENT_ID = '11111111-1111-4111-8111-111111111111';
 
 async function withFunctionEnv(run: () => Promise<void>) {
-  const names = [
-    'SUPABASE_URL',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'ALLOWED_ORIGINS',
-    'EXCUSE_REQUEST_EVENT_ID',
-  ];
+  const names = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ALLOWED_ORIGINS'];
   const previous = new Map(names.map((name) => [name, Deno.env.get(name)]));
   Deno.env.set('SUPABASE_URL', 'https://example.supabase.co');
   Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
   Deno.env.set('ALLOWED_ORIGINS', TEST_ORIGIN);
-  Deno.env.set('EXCUSE_REQUEST_EVENT_ID', EVENT_ID);
   try {
     await run();
   } finally {
@@ -42,11 +35,7 @@ function buildRequest(body: unknown) {
   });
 }
 
-function mockFetch(options: {
-  dateAnswers?: unknown[];
-  registrations?: unknown[];
-  dateError?: boolean;
-}) {
+function mockFetch(options: { excuses?: unknown[]; queryError?: boolean }) {
   const originalFetch = globalThis.fetch;
   const requestedUrls: URL[] = [];
 
@@ -59,16 +48,11 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
-    if (requestUrl.pathname === '/rest/v1/registration_answers') {
-      if (options.dateError) {
-        return Promise.resolve(
-          Response.json({ message: 'date answer lookup failed' }, { status: 500 }),
-        );
+    if (requestUrl.pathname === '/rest/v1/service_excuse_requests') {
+      if (options.queryError) {
+        return Promise.resolve(Response.json({ message: 'excuse lookup failed' }, { status: 500 }));
       }
-      return Promise.resolve(Response.json(options.dateAnswers ?? []));
-    }
-    if (requestUrl.pathname === '/rest/v1/registrations') {
-      return Promise.resolve(Response.json(options.registrations ?? []));
+      return Promise.resolve(Response.json(options.excuses ?? []));
     }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
   };
@@ -93,37 +77,14 @@ Deno.test(
   async () => {
     await withFunctionEnv(async () => {
       const fetchMock = mockFetch({
-        dateAnswers: [{ registration_id: 'registration-1' }],
-        registrations: [
+        excuses: [
           {
-            id: 'registration-1',
-            users: { id: 'user-1', member_id: 'M-001' },
-            registration_answers: [
-              {
-                answer_text: null,
-                answer_number: null,
-                answer_boolean: null,
-                answer_date: '2026-02-08T00:00:00.000Z',
-                answer_json: null,
-                event_fields: { field_key: 'request_date' },
-              },
-              {
-                answer_text: '["9AM", "12NN"]',
-                answer_number: null,
-                answer_boolean: null,
-                answer_date: null,
-                answer_json: null,
-                event_fields: [{ field_key: 'services' }],
-              },
-              {
-                answer_text: 'Family commitment',
-                answer_number: null,
-                answer_boolean: null,
-                answer_date: null,
-                answer_json: null,
-                event_fields: { field_key: 'reason' },
-              },
-            ],
+            id: 'excuse-1',
+            user_id: 'user-1',
+            member_id: 'M-001',
+            request_date: '2026-02-08',
+            services: ['9AM', '12NN'],
+            reason: 'Family commitment',
           },
         ],
       });
@@ -141,14 +102,10 @@ Deno.test(
             },
           ],
         });
-        const dateQuery = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/registration_answers',
+        const query = fetchMock.requestedUrls.find(
+          (url) => url.pathname === '/rest/v1/service_excuse_requests',
         );
-        assertEquals(
-          dateQuery?.searchParams.get('or'),
-          '(and(answer_date.gte.2026-02-01,answer_date.lte.2026-02-28),answer_text.ilike.%2026-02%)',
-        );
-        assertEquals(dateQuery?.searchParams.get('registrations.event_id'), `eq.${EVENT_ID}`);
+        assertEquals(query?.searchParams.get('request_date'), 'gte.2026-02-01');
       } finally {
         fetchMock.restore();
       }
@@ -156,28 +113,21 @@ Deno.test(
   },
 );
 
-Deno.test(
-  'get-excused-members returns an empty list without a second query when no requests match',
-  async () => {
-    await withFunctionEnv(async () => {
-      const fetchMock = mockFetch({ dateAnswers: [] });
-      try {
-        const response = await handleGetExcusedMembers(buildRequest({ year: 2026, monthIndex: 1 }));
-        assertEquals(await response.json(), { success: true, records: [] });
-        assertEquals(
-          fetchMock.requestedUrls.some((url) => url.pathname === '/rest/v1/registrations'),
-          false,
-        );
-      } finally {
-        fetchMock.restore();
-      }
-    });
-  },
-);
-
-Deno.test('get-excused-members maps date-answer query failures', async () => {
+Deno.test('get-excused-members returns an empty list when no requests match', async () => {
   await withFunctionEnv(async () => {
-    const fetchMock = mockFetch({ dateError: true });
+    const fetchMock = mockFetch({ excuses: [] });
+    try {
+      const response = await handleGetExcusedMembers(buildRequest({ year: 2026, monthIndex: 1 }));
+      assertEquals(await response.json(), { success: true, records: [] });
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});
+
+Deno.test('get-excused-members maps query failures', async () => {
+  await withFunctionEnv(async () => {
+    const fetchMock = mockFetch({ queryError: true });
     try {
       const response = await handleGetExcusedMembers(buildRequest({ year: 2026, monthIndex: 1 }));
       assertEquals(response.status, 500);

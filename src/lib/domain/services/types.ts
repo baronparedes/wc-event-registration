@@ -105,3 +105,15 @@ export type MissedServiceCommitment = {
   status: 'absent' | 'excused';
   category: string | null;
 };
+
+export type ServiceExcuseRequest = {
+  id: string;
+  user_id: string;
+  member_id: string;
+  request_date: string;
+  services: string[];
+  reason: string | null;
+  status: 'approved' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+};

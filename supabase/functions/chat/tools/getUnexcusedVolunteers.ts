@@ -15,26 +15,6 @@ function getToken(userTokens: unknown): string | undefined {
   return (userTokens as { token?: string })?.token;
 }
 
-function answerValue(answer: {
-  answer_date: string | null;
-  answer_json: unknown;
-  answer_text: string | null;
-  answer_boolean: boolean | null;
-  answer_number: number | null;
-}): unknown {
-  if (answer.answer_date !== null) return answer.answer_date;
-  if (answer.answer_json !== null) return answer.answer_json;
-  if (answer.answer_text) {
-    try {
-      return JSON.parse(answer.answer_text);
-    } catch {
-      return answer.answer_text;
-    }
-  }
-  if (answer.answer_boolean !== null) return answer.answer_boolean;
-  return answer.answer_number;
-}
-
 function cleanDateOnly(val: unknown): string {
   if (val === null || val === undefined) return '';
   return String(val).split('T')[0].split(' ')[0].trim();
@@ -224,97 +204,53 @@ export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolCont
 
       const users = (rawUsers ?? []).filter((u) => matchesPrimaryRole(u.role, role));
 
+      const userTokensById = new Map<string, string>();
+      for (const u of rawUsers ?? []) {
+        const token = getToken(u.user_tokens);
+        if (token) userTokensById.set(u.id, token);
+      }
+
       // 2. Fetch approved excuse requests for target Sundays
       const excusedUserDates = new Set<string>(); // `${userId}:${dateStr}` or `${token}:${dateStr}`
       const excusedUserIdsByDate = new Map<string, Set<string>>(); // dateStr -> Set of userIds
       const excusedTokensByDate = new Map<string, Set<string>>(); // dateStr -> Set of tokens
-      const eventId = Deno.env.get('EXCUSE_REQUEST_EVENT_ID');
 
-      if (eventId) {
-        const targetDatesSet = new Set(targetSundayDates.map(formatDate));
-        const firstSunday = targetSundayDates[0];
-        const lastSunday = targetSundayDates[targetSundayDates.length - 1];
-        const minDate = formatDate(firstSunday);
-        const maxDate = formatDate(lastSunday);
+      const targetDatesSet = new Set(targetSundayDates.map(formatDate));
+      const firstSunday = targetSundayDates[0];
+      const lastSunday = targetSundayDates[targetSundayDates.length - 1];
+      const minDate = formatDate(firstSunday);
+      const maxDate = formatDate(lastSunday);
 
-        let dateAnswersQuery = client
-          .from('registration_answers')
-          .select(
-            'registration_id, event_fields!inner(field_key), registrations!inner(status, event_id, user_id)',
-          )
-          .eq('registrations.event_id', eventId)
-          .neq('registrations.status', 'cancelled')
-          .eq('event_fields.field_key', 'request_date')
-          .or(
-            `and(answer_date.gte.${minDate},answer_date.lte.${maxDate}),and(answer_text.gte.${minDate},answer_text.lte.${maxDate})`,
-          );
+      let excusesQuery = client
+        .from('service_excuse_requests')
+        .select('user_id, request_date')
+        .eq('status', 'approved')
+        .gte('request_date', minDate)
+        .lte('request_date', maxDate);
 
-        if (targetUserIds && targetUserIds.length > 0) {
-          dateAnswersQuery = dateAnswersQuery.in('registrations.user_id', targetUserIds);
-        }
+      if (targetUserIds && targetUserIds.length > 0) {
+        excusesQuery = excusesQuery.in('user_id', targetUserIds);
+      }
 
-        const { data: dateAnswers, error: dateAnswersError } = await dateAnswersQuery;
+      const { data: excusesData, error: excusesError } = await excusesQuery;
 
-        if (!dateAnswersError && dateAnswers && dateAnswers.length > 0) {
-          const registrationIds = [
-            ...new Set(
-              (dateAnswers as { registration_id: string }[])
-                .map((a) => a.registration_id)
-                .filter(Boolean),
-            ),
-          ];
-
-          const { data: registrations } = await client
-            .from('registrations')
-            .select(
-              `
-              id,
-              users!inner ( id, user_tokens ( token ) ),
-              registration_answers (
-                answer_text, answer_date, answer_number, answer_boolean, answer_json,
-                event_fields ( field_key )
-              )
-            `,
-            )
-            .in('id', registrationIds);
-
-          for (const reg of registrations ?? []) {
-            const rel = Array.isArray(reg.users) ? reg.users[0] : reg.users;
-            if (!rel?.id) continue;
-
-            const regToken = getToken(rel.user_tokens);
-
-            let requestDate = '';
-            for (const answer of (reg.registration_answers ?? []) as Array<{
-              answer_text: string | null;
-              answer_date: string | null;
-              answer_number: number | null;
-              answer_boolean: boolean | null;
-              answer_json: unknown;
-              event_fields: { field_key: string } | { field_key: string }[];
-            }>) {
-              const field = Array.isArray(answer.event_fields)
-                ? answer.event_fields[0]?.field_key
-                : answer.event_fields?.field_key;
-              if (field === 'request_date') {
-                requestDate = cleanDateOnly(answerValue(answer));
-              }
+      if (!excusesError && excusesData) {
+        for (const row of excusesData) {
+          const requestDate = (row.request_date ?? '').split('T')[0].trim();
+          if (targetDatesSet.has(requestDate)) {
+            excusedUserDates.add(`${row.user_id}:${requestDate}`);
+            if (!excusedUserIdsByDate.has(requestDate)) {
+              excusedUserIdsByDate.set(requestDate, new Set());
             }
+            excusedUserIdsByDate.get(requestDate)!.add(row.user_id);
 
-            if (targetDatesSet.has(requestDate)) {
-              excusedUserDates.add(`${rel.id}:${requestDate}`);
-              if (!excusedUserIdsByDate.has(requestDate)) {
-                excusedUserIdsByDate.set(requestDate, new Set());
+            const token = userTokensById.get(row.user_id);
+            if (token) {
+              excusedUserDates.add(`${token}:${requestDate}`);
+              if (!excusedTokensByDate.has(requestDate)) {
+                excusedTokensByDate.set(requestDate, new Set());
               }
-              excusedUserIdsByDate.get(requestDate)!.add(rel.id);
-
-              if (regToken) {
-                excusedUserDates.add(`${regToken}:${requestDate}`);
-                if (!excusedTokensByDate.has(requestDate)) {
-                  excusedTokensByDate.set(requestDate, new Set());
-                }
-                excusedTokensByDate.get(requestDate)!.add(regToken);
-              }
+              excusedTokensByDate.get(requestDate)!.add(token);
             }
           }
         }

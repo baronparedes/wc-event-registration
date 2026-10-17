@@ -84,7 +84,6 @@ describe('VolunteerAttendanceModal', () => {
         timeframe="YTD"
         startDate="2026-01-01"
         endDate="2026-12-31"
-        excuseEventId="excuse-event-1"
       />,
     );
 

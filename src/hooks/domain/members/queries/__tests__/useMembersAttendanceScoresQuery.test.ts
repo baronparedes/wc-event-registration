@@ -2,7 +2,6 @@ import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithClient } from '@/__tests__/unit-test-utils';
-import { env } from '@/config/env';
 import { useMembersAttendanceScoresQuery } from '@/hooks/domain/members/queries/useMembersAttendanceScoresQuery';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 import * as membersApi from '@/lib/domain/members/api';
@@ -28,7 +27,7 @@ describe('useMembersAttendanceScoresQuery', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(membersApi.fetchMembersAttendanceScores).toHaveBeenCalledWith(12, env.excuseEventId);
+    expect(membersApi.fetchMembersAttendanceScores).toHaveBeenCalledWith(12);
     expect(result.current.data).toEqual(mockMap);
   });
 

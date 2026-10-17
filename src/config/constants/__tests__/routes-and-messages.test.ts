@@ -57,6 +57,7 @@ describe('route constants and builders', () => {
     expect(isMinimizedAppShellRoute('/hello')).toBe(true);
     expect(isMinimizedAppShellRoute('/events/summer-2026/register')).toBe(true);
     expect(isMinimizedAppShellRoute('/events/summer-2026/register-public')).toBe(true);
+    expect(isMinimizedAppShellRoute('/excuse-request')).toBe(true);
     expect(isMinimizedAppShellRoute('/admin/events/event-1/attendance/check-in')).toBe(true);
     expect(isMinimizedAppShellRoute('/admin/events/event-1/attendance')).toBe(false);
     expect(isMinimizedAppShellRoute('/admin/events/event-1/registrations')).toBe(false);

@@ -15,7 +15,7 @@ const calendarContainerClassName = 'relative [container-type:inline-size]';
 const calendarPopoverClassName =
   'absolute z-20 mt-2 max-w-full rounded-md border border-border bg-surface p-3 shadow-lg';
 const calendarDayPickerClassName =
-  '[--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
+  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
 
 type DateFieldRendererProps = {
   field: DynamicFieldLike;

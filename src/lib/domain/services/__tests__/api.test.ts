@@ -2,9 +2,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { supabase } from '@/lib/infrastructure';
 
-import { fetchAllCommitmentDashboardStatsForExport, fetchServiceAttendancePage } from '../api';
+import {
+  cancelServiceExcuse,
+  fetchAllCommitmentDashboardStatsForExport,
+  fetchMemberServiceExcuses,
+  fetchServiceAttendancePage,
+  submitServiceExcuse,
+} from '../api';
 
-vi.mock('@/lib/infrastructure', () => ({ supabase: { from: vi.fn(), rpc: vi.fn() } }));
+const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+  const caller = vi.fn();
+  return {
+    mockCaller: caller,
+    mockCreateEdgeFunctionCaller: vi.fn(() => caller),
+  };
+});
+
+vi.mock('@/lib/infrastructure', () => ({
+  supabase: { from: vi.fn(), rpc: vi.fn() },
+  createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
+}));
 
 describe('service API', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -105,5 +122,113 @@ describe('service API', () => {
       ),
     ).rejects.toThrow('Failed to fetch commitment dashboard stats for export: not authorized');
     expect(supabase.rpc).toHaveBeenCalledOnce();
+  });
+
+  describe('service excuse requests', () => {
+    it('submits a new excuse request successfully via edge function', async () => {
+      const mockResult = {
+        id: 'excuse-1',
+        user_id: 'user-1',
+        member_id: 'MEM-001',
+        request_date: '2026-10-18',
+        services: ['9AM'],
+        reason: 'Out of town',
+        status: 'approved',
+        created_at: '2026-10-17T00:00:00Z',
+        updated_at: '2026-10-17T00:00:00Z',
+      };
+      mockCaller.mockResolvedValueOnce({ success: true, excuse: mockResult });
+
+      const result = await submitServiceExcuse({
+        user_id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
+        member_id: 'MEM-001',
+        request_date: '2026-10-18',
+        services: ['9AM'],
+        reason: 'Out of town',
+      });
+
+      expect(mockCaller).toHaveBeenCalledWith({
+        user_id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
+        member_id: 'MEM-001',
+        request_date: '2026-10-18',
+        services: ['9AM'],
+        reason: 'Out of town',
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('submits an excuse request with member_token for unauthenticated flow', async () => {
+      const mockResult = {
+        id: 'excuse-2',
+        user_id: 'user-2',
+        member_id: 'MEM-002',
+        request_date: '2026-10-18',
+        services: ['All Services'],
+        reason: null,
+        status: 'approved',
+        created_at: '2026-10-17T00:00:00Z',
+        updated_at: '2026-10-17T00:00:00Z',
+      };
+      mockCaller.mockResolvedValueOnce({ success: true, excuse: mockResult });
+
+      const result = await submitServiceExcuse({
+        member_token: 'mlt2.mock.token',
+        request_date: '2026-10-18',
+        services: ['All Services'],
+      });
+
+      expect(mockCaller).toHaveBeenCalledWith({
+        member_token: 'mlt2.mock.token',
+        request_date: '2026-10-18',
+        services: ['All Services'],
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('throws error when edge function call fails', async () => {
+      mockCaller.mockRejectedValueOnce(new Error('Edge function network failure'));
+
+      await expect(
+        submitServiceExcuse({
+          member_id: 'MEM-001',
+          request_date: '2026-10-18',
+          services: ['All Services'],
+          reason: '',
+        }),
+      ).rejects.toThrow('Edge function network failure');
+    });
+
+    it('cancels an excuse request', async () => {
+      const query = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      await cancelServiceExcuse('excuse-1');
+      expect(supabase.from).toHaveBeenCalledWith('service_excuse_requests');
+      expect(query.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(query.eq).toHaveBeenCalledWith('id', 'excuse-1');
+    });
+
+    it('fetches member service excuses with optional date filters', async () => {
+      const mockList = [{ id: 'excuse-1', user_id: 'user-1' }];
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve({ data: mockList, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await fetchMemberServiceExcuses('user-1', '2026-10-01', '2026-10-31');
+      expect(supabase.from).toHaveBeenCalledWith('service_excuse_requests');
+      expect(query.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(query.gte).toHaveBeenCalledWith('request_date', '2026-10-01');
+      expect(query.lte).toHaveBeenCalledWith('request_date', '2026-10-31');
+      expect(result).toEqual(mockList);
+    });
   });
 });

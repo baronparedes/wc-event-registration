@@ -1,13 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ExcusedMemberRecord } from '@/hooks/domain/members';
-import type { ServiceAttendance, ServiceExceptionDate } from '@/lib/domain/services';
+import type {
+  ServiceAttendance,
+  ServiceExceptionDate,
+  ServiceExcuseRequest,
+} from '@/lib/domain/services';
 
 import { ServiceAttendanceHistoryTab } from '../ServiceAttendanceHistoryTab';
 
-function renderWithClient(ui: React.ReactElement) {
+function renderWithClient(ui: React.ReactElement, initialEntries: string[] = ['/']) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -15,7 +20,11 @@ function renderWithClient(ui: React.ReactElement) {
       },
     },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 interface MockExcusedQueryResult {
@@ -36,6 +45,7 @@ const {
   mockUseUserCommitmentHistoryQuery,
   mockUseServiceExceptionDatesQuery,
   mockUseGetMemberExcusedSchedule,
+  mockUseMemberServiceExcusesQuery,
 } = vi.hoisted(() => ({
   mockUseServiceAttendanceQuery: vi.fn(),
   mockUseUserCommitmentHistoryQuery: vi.fn(),
@@ -50,12 +60,27 @@ const {
       options?: { enabled?: boolean },
     ) => MockExcusedQueryResult
   >(() => ({ data: [] })),
+  mockUseMemberServiceExcusesQuery: vi.fn<
+    (
+      userId?: string,
+      startDate?: string,
+      endDate?: string,
+      options?: { enabled?: boolean },
+    ) => { data?: ServiceExcuseRequest[]; isLoading?: boolean; isError?: boolean }
+  >(() => ({ data: [] })),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
   useServiceAttendanceQuery: (...args: unknown[]) => mockUseServiceAttendanceQuery(...args),
   useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
   useServiceExceptionDatesQuery: () => mockUseServiceExceptionDatesQuery(),
+  useMemberServiceExcusesQuery: (
+    userId?: string,
+    startDate?: string,
+    endDate?: string,
+    options?: { enabled?: boolean },
+  ) => mockUseMemberServiceExcusesQuery(userId, startDate, endDate, options),
+  useCancelExcuseMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/hooks/domain/members', async () => {
@@ -501,5 +526,39 @@ describe('ServiceAttendanceHistoryTab', () => {
     expect(screen.getAllByText('Service Exception').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Anniversary Service').length).toBeGreaterThan(0);
     expect(screen.queryByText(/No-Check In$/)).not.toBeInTheDocument();
+  });
+
+  it('opens filed excuses modal when Filed Excuses button is clicked', () => {
+    mockUseServiceAttendanceQuery.mockReturnValue(makeAttendanceQueryResult(sampleAttendance));
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({ data: [] });
+    mockUseGetMemberExcusedSchedule.mockReturnValue({ data: [] });
+    mockUseMemberServiceExcusesQuery.mockReturnValue({
+      data: [
+        {
+          id: 'excuse-1',
+          user_id: 'user-1',
+          member_id: 'MEM-001',
+          request_date: '2026-10-18',
+          services: ['9AM'],
+          reason: 'Sick',
+          status: 'approved' as const,
+          created_at: '2026-10-15T08:00:00Z',
+          updated_at: '2026-10-15T08:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    renderWithClient(
+      <ServiceAttendanceHistoryTab memberId="user-1" metadata={{ first_sunday: '9AM' }} />,
+    );
+
+    const filedExcusesBtn = screen.getByRole('button', { name: /Filed Excuses \(1\)/i });
+    expect(filedExcusesBtn).toBeInTheDocument();
+
+    fireEvent.click(filedExcusesBtn);
+
+    expect(screen.getByRole('heading', { name: 'Filed Excuse Requests' })).toBeInTheDocument();
   });
 });

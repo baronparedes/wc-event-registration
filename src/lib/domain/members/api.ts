@@ -251,19 +251,14 @@ export type MemberAttendanceStats = {
 
 export type FetchMembersAttendanceScoresOptions = {
   weeks?: number;
-  excuseEventId?: string | null;
   dateRange?: { startDate: string; endDate: string };
 };
 
 export async function fetchMembersAttendanceScores(
   weeksOrOptions: number | FetchMembersAttendanceScoresOptions = 12,
-  excuseEventIdParam?: string | null,
 ): Promise<Map<string, MemberAttendanceStats>> {
   const isOptionsObject = typeof weeksOrOptions === 'object' && weeksOrOptions !== null;
   const weeks = isOptionsObject ? (weeksOrOptions.weeks ?? 12) : weeksOrOptions;
-  const excuseEventId = isOptionsObject
-    ? (weeksOrOptions.excuseEventId ?? null)
-    : (excuseEventIdParam ?? null);
   const customDateRange = isOptionsObject ? weeksOrOptions.dateRange : undefined;
 
   const endDate = customDateRange
@@ -282,7 +277,6 @@ export async function fetchMembersAttendanceScores(
   const { data, error } = await supabase.rpc('get_commitment_dashboard_stats', {
     p_start_date: startDate,
     p_end_date: endDate,
-    p_excuse_event_id: excuseEventId || null,
     p_search_query: null,
     p_role: null,
     p_category: null,
@@ -344,7 +338,6 @@ export async function fetchMembersAttendanceScores(
         supabase.rpc('get_commitment_dashboard_stats', {
           p_start_date: startDate,
           p_end_date: endDate,
-          p_excuse_event_id: excuseEventId || null,
           p_search_query: null,
           p_role: null,
           p_category: null,
