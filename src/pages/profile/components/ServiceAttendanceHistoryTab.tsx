@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 
-import { useSearchParams } from 'react-router-dom';
-
 import { SectionCard } from '@/components/ui';
 import { useGetMemberExcusedSchedule } from '@/hooks/domain/members';
 import {
@@ -25,7 +23,6 @@ import {
   ServiceAttendanceLegend,
   ServiceAttendanceMobileCards,
   ServiceAttendanceMonthSummary,
-  SubmitExcuseModal,
 } from './service-attendance';
 
 interface ServiceAttendanceHistoryTabProps {
@@ -37,32 +34,8 @@ interface ServiceAttendanceHistoryTabProps {
 
 export function ServiceAttendanceHistoryTab({
   memberId,
-  memberCode,
   metadata,
 }: ServiceAttendanceHistoryTabProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [isExcuseModalOpen, setIsExcuseModalOpen] = useState(
-    () => searchParams.get('action') === 'excuse',
-  );
-
-  const handleOpenExcuseModal = () => {
-    setIsExcuseModalOpen(true);
-  };
-
-  const handleCloseExcuseModal = () => {
-    setIsExcuseModalOpen(false);
-    if (searchParams.get('action') === 'excuse') {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.delete('action');
-          return next;
-        },
-        { replace: true },
-      );
-    }
-  };
-
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -223,7 +196,6 @@ export function ServiceAttendanceHistoryTab({
           onSelectYear={handleSelectYear}
           onPreviousMonth={handlePreviousMonth}
           onNextMonth={handleNextMonth}
-          onRequestExcuse={handleOpenExcuseModal}
         />
       }
     >
@@ -252,13 +224,6 @@ export function ServiceAttendanceHistoryTab({
           </div>
         )}
       </div>
-
-      <SubmitExcuseModal
-        isOpen={isExcuseModalOpen}
-        onClose={handleCloseExcuseModal}
-        userId={memberId}
-        memberId={memberCode || memberId}
-      />
     </SectionCard>
   );
 }

@@ -7,4 +7,3 @@ export { ServiceAttendanceLegend } from './ServiceAttendanceLegend';
 export { ServiceAttendanceDesktopMatrix } from './ServiceAttendanceDesktopMatrix';
 export { ServiceAttendanceMobileCards } from './ServiceAttendanceMobileCards';
 export { NonSundayAttendanceList } from './NonSundayAttendanceList';
-export { SubmitExcuseModal } from './SubmitExcuseModal';
