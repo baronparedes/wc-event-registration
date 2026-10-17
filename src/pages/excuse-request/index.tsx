@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2 } from 'lucide-react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -23,12 +23,39 @@ import { type SubmitServiceExcuseInput } from '@/lib/domain/services';
 import { MemberLookupStepCard, ProfileStepCard } from '@/pages/events/[slug]/register/components';
 
 import { ExcuseHeaderCard } from './components/ExcuseHeaderCard';
-import { EXCUSE_SERVICE_SLOTS, formatServiceSlots, getUpcomingSundays } from './utils';
+import { SundayCalendarPicker } from './components/SundayCalendarPicker';
+import {
+  EXCUSE_SERVICE_SLOTS,
+  formatServiceSlots,
+  getNearestUpcomingSundayString,
+  parseDateOnly,
+} from './utils';
 
 const excuseFormSchema = z.object({
   request_date: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format'),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format')
+    .refine((val) => {
+      const parsed = parseDateOnly(val);
+      if (!parsed) return false;
+      return parsed.getDay() === 0;
+    }, 'Selected date must be a Sunday')
+    .refine((val) => {
+      const parsed = parseDateOnly(val);
+      if (!parsed) return false;
+      const oldest = new Date();
+      oldest.setHours(0, 0, 0, 0);
+      oldest.setDate(oldest.getDate() - 3);
+      return parsed >= oldest;
+    }, 'Selected Sunday cannot be more than 3 days in the past')
+    .refine((val) => {
+      const parsed = parseDateOnly(val);
+      if (!parsed) return false;
+      const maxFuture = new Date();
+      maxFuture.setHours(23, 59, 59, 999);
+      maxFuture.setMonth(maxFuture.getMonth() + 6);
+      return parsed <= maxFuture;
+    }, 'Selected Sunday cannot be more than 6 months in the future'),
   services: z.array(z.string().trim().min(1)).min(1, 'Please select at least one service slot'),
   reason: z.string().trim().max(500, 'Reason must be 500 characters or less').optional().nullable(),
 });
@@ -79,13 +106,11 @@ export function ExcuseRequestPage() {
     handleLookupSubmit: runMemberLookupSubmit,
   } = memberLookup;
 
-  const upcomingSundays = getUpcomingSundays(6);
-
   // Excuse Form (Step 3)
   const excuseForm = useForm<ExcuseFormValues>({
     resolver: zodResolver(excuseFormSchema),
     defaultValues: {
-      request_date: upcomingSundays[0]?.value ?? '',
+      request_date: getNearestUpcomingSundayString(),
       services: ['9AM'],
       reason: '',
     },
@@ -403,17 +428,20 @@ export function ExcuseRequestPage() {
                     <p className="text-xs text-muted">
                       Select the upcoming Sunday you will be absent.
                     </p>
-                    <select
-                      id="field-request-date"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      {...excuseForm.register('request_date')}
-                    >
-                      {upcomingSundays.map((sunday) => (
-                        <option key={sunday.value} value={sunday.value}>
-                          {sunday.label}
-                        </option>
-                      ))}
-                    </select>
+                    <Controller
+                      control={excuseForm.control}
+                      name="request_date"
+                      render={({ field }) => (
+                        <SundayCalendarPicker
+                          id="field-request-date"
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          maxPastDays={3}
+                          monthsInFuture={6}
+                          allowedWeekdays={[0]}
+                        />
+                      )}
+                    />
                     {excuseForm.formState.errors.request_date && (
                       <p className="text-sm text-danger">
                         {excuseForm.formState.errors.request_date.message}
