@@ -209,6 +209,38 @@ describe('HomePage', () => {
     );
   });
 
+  it('maps legacy excuse event into excuse HubItem in Available Now section', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [
+        {
+          id: 'excuse-event-1',
+          title: 'Excuse Request 2026',
+          slug: 'excuse-request-2026',
+          description: 'Submit Sunday excuse',
+          listingStatus: 'open',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    renderHomePage();
+
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
+    expect(mockHubSection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Available Now',
+        items: [
+          expect.objectContaining({
+            id: 'excuse-event-1',
+            type: 'excuse',
+            title: 'Excuse Request 2026',
+          }),
+        ],
+      }),
+    );
+  });
+
   it('renders loading skeleton when forms query is loading', () => {
     mockUsePublicEventListingQuery.mockReturnValue({
       data: [],

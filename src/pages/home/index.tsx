@@ -2,6 +2,7 @@ import { Calendar } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { env } from '@/config/env';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/components';
@@ -24,17 +25,27 @@ export function HomePage() {
 
   const isLoading = eventsLoading || formsLoading;
 
-  const isLegacyExcuseEvent = (title?: string, slug?: string) =>
-    (title ?? '').toLowerCase().includes('excuse') || (slug ?? '').toLowerCase().includes('excuse');
+  const isLegacyExcuseEvent = (event: { id?: string; title?: string; slug?: string }) =>
+    (Boolean(env.excuseEventId) && event.id === env.excuseEventId) ||
+    (event.title ?? '').toLowerCase().includes('excuse') ||
+    (event.slug ?? '').toLowerCase().includes('excuse');
 
-  const filteredOpenEvents = openEvents.filter((e) => !isLegacyExcuseEvent(e.title, e.slug));
-  const filteredUpcomingEvents = upcomingEvents.filter(
-    (e) => !isLegacyExcuseEvent(e.title, e.slug),
-  );
+  const filteredUpcomingEvents = upcomingEvents.filter((e) => !isLegacyExcuseEvent(e));
+  const filteredPastEvents = pastEvents.filter((e) => !isLegacyExcuseEvent(e));
 
-  // Mix open events and forms
+  // Mix open events, excuse request, and forms
   const availableItems: HubItem[] = [
-    ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
+    ...openEvents.map((e) =>
+      isLegacyExcuseEvent(e)
+        ? {
+            type: 'excuse' as const,
+            id: e.id,
+            title: e.title,
+            description: e.description || 'Submit a volunteer excuse request for Sunday service.',
+            status: 'published' as const,
+          }
+        : { ...e, type: 'event' as const },
+    ),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
   ];
 
@@ -102,7 +113,7 @@ export function HomePage() {
 
         <HubSection items={availableItems} title="Available Now" />
         <HubSection items={upcomingItems} title="Upcoming Events" />
-        <PastEventList events={pastEvents} />
+        <PastEventList events={filteredPastEvents} />
       </section>
     </>
   );
