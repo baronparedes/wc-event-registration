@@ -9,6 +9,14 @@ import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/comp
 import { CommunityWelcome } from '@/pages/home/components/CommunityWelcome';
 import type { HubItem } from '@/pages/home/components/HubSection';
 
+const PERMANENT_EXCUSE_ITEM: HubItem = {
+  type: 'excuse',
+  id: 'permanent-volunteer-excuse-request',
+  title: 'Volunteer Excuse Request',
+  description: 'Submit an advance absence notification for Sunday service attendance.',
+  status: 'published',
+};
+
 export function HomePage() {
   const {
     data: events,
@@ -30,23 +38,15 @@ export function HomePage() {
     (event.title ?? '').toLowerCase().includes('excuse') ||
     (event.slug ?? '').toLowerCase().includes('excuse');
 
+  const filteredOpenEvents = openEvents.filter((e) => !isLegacyExcuseEvent(e));
   const filteredUpcomingEvents = upcomingEvents.filter((e) => !isLegacyExcuseEvent(e));
   const filteredPastEvents = pastEvents.filter((e) => !isLegacyExcuseEvent(e));
 
-  // Mix open events, excuse request, and forms
+  // Mix open events, forms, and permanent excuse request
   const availableItems: HubItem[] = [
-    ...openEvents.map((e) =>
-      isLegacyExcuseEvent(e)
-        ? {
-            type: 'excuse' as const,
-            id: e.id,
-            title: e.title,
-            description: e.description || 'Submit a volunteer excuse request for Sunday service.',
-            status: 'published' as const,
-          }
-        : { ...e, type: 'event' as const },
-    ),
+    ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
+    PERMANENT_EXCUSE_ITEM,
   ];
 
   // Upcoming items (currently only events)

@@ -88,7 +88,7 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 2')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
     expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
   });
@@ -110,16 +110,13 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(screen.getByRole('link', { name: 'My Profile \u2192' })).toHaveAttribute(
-      'href',
-      '/profile',
-    );
+    expect(screen.getByRole('link', { name: 'My Profile →' })).toHaveAttribute('href', '/profile');
     expect(
       screen.getByText('View your profile, commitments, attendance, and events joined.'),
     ).toBeInTheDocument();
   });
 
-  it('renders empty-state text when no events are available', () => {
+  it('renders permanent excuse card in Available Now section when no other events are available', () => {
     mockUsePublicEventListingQuery.mockReturnValue({
       data: [],
       isLoading: false,
@@ -128,10 +125,19 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(screen.getByText('A quiet moment between activities')).toBeInTheDocument();
-    expect(
-      screen.getByText('There are no open registrations or forms right now.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
+    expect(mockHubSection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Available Now',
+        items: [
+          expect.objectContaining({
+            id: 'permanent-volunteer-excuse-request',
+            type: 'excuse',
+            title: 'Volunteer Excuse Request',
+          }),
+        ],
+      }),
+    );
     expect(
       screen.getByRole('heading', { level: 1, name: 'A community serving together.' }),
     ).toBeInTheDocument();
@@ -140,10 +146,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Forms' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Your member profile' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign In \u2192' })).toHaveAttribute(
-      'href',
-      '/profile',
-    );
+    expect(screen.getByRole('link', { name: 'Sign In →' })).toHaveAttribute('href', '/profile');
     expect(
       screen.getByText('Sign in to see your profile, commitments, attendance, and events joined.'),
     ).toBeInTheDocument();
@@ -197,19 +200,24 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(screen.getByText('Available Now: 2')).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 3')).toBeInTheDocument();
     expect(mockHubSection).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Available Now',
         items: [
           expect.objectContaining({ id: 'event-1', type: 'event' }),
           expect.objectContaining({ id: 'form-1', type: 'form' }),
+          expect.objectContaining({
+            id: 'permanent-volunteer-excuse-request',
+            type: 'excuse',
+            title: 'Volunteer Excuse Request',
+          }),
         ],
       }),
     );
   });
 
-  it('maps legacy excuse event into excuse HubItem in Available Now section', () => {
+  it('filters legacy excuse event and renders permanent excuse HubItem in Available Now section', () => {
     mockUsePublicEventListingQuery.mockReturnValue({
       data: [
         {
@@ -232,9 +240,9 @@ describe('HomePage', () => {
         title: 'Available Now',
         items: [
           expect.objectContaining({
-            id: 'excuse-event-1',
+            id: 'permanent-volunteer-excuse-request',
             type: 'excuse',
-            title: 'Excuse Request 2026',
+            title: 'Volunteer Excuse Request',
           }),
         ],
       }),
@@ -256,10 +264,9 @@ describe('HomePage', () => {
     const { container } = renderHomePage();
 
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
-    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
   });
 
-  it('keeps past events visible alongside the empty activity state', () => {
+  it('keeps past events visible alongside Available Now section', () => {
     mockUsePublicEventListingQuery.mockReturnValue({
       data: [{ id: 'past-1', listingStatus: 'past' }],
       isLoading: false,
@@ -273,11 +280,11 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(screen.getByText('A quiet moment between activities')).toBeInTheDocument();
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Past Events List: 1')).toBeInTheDocument();
   });
 
-  it('does not show the empty activity state when upcoming events exist', () => {
+  it('renders upcoming events alongside Available Now section', () => {
     mockUsePublicEventListingQuery.mockReturnValue({
       data: [{ id: 'upcoming-1', listingStatus: 'upcoming' }],
       isLoading: false,
@@ -286,8 +293,8 @@ describe('HomePage', () => {
 
     renderHomePage();
 
+    expect(screen.getByText('Available Now: 1')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Events: 1')).toBeInTheDocument();
-    expect(screen.queryByText('A quiet moment between activities')).not.toBeInTheDocument();
   });
 
   it('shows a forms error without implying that no activities exist', () => {
