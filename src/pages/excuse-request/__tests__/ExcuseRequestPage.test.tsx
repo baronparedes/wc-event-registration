@@ -251,6 +251,7 @@ describe('ExcuseRequestPage Wizard', () => {
     // Inline form validation errors must be displayed
     expect(await screen.findByText(/Please select a Sunday service date/i)).toBeInTheDocument();
     expect(screen.getByText(/Please select at least one service slot/i)).toBeInTheDocument();
+    expect(screen.getByText(/Please provide a reason for your absence/i)).toBeInTheDocument();
     // No toast error
     expect(mockToastError).not.toHaveBeenCalled();
     expect(mockMutateSubmit).not.toHaveBeenCalled();
@@ -295,7 +296,7 @@ describe('ExcuseRequestPage Wizard', () => {
     expect(slot12nn).toHaveAttribute('aria-checked', 'true');
 
     // Fill reason
-    const reasonInput = screen.getByLabelText(/Reason \/ Notes/i);
+    const reasonInput = screen.getByLabelText(/Reason for Absence/i);
     fireEvent.change(reasonInput, { target: { value: 'Work conference' } });
 
     // Submit form
@@ -357,6 +358,11 @@ describe('ExcuseRequestPage Wizard', () => {
 
     // Select service
     fireEvent.click(screen.getByRole('checkbox', { name: /9:00 AM/i }));
+
+    // Fill reason
+    fireEvent.change(screen.getByLabelText(/Reason for Absence/i), {
+      target: { value: 'Feeling unwell' },
+    });
 
     // Submit form
     fireEvent.click(screen.getByRole('button', { name: 'Submit Excuse Request' }));

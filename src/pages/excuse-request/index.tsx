@@ -54,7 +54,11 @@ const excuseFormSchema = z.object({
       return parsed <= maxFuture;
     }, 'Selected Sunday cannot be more than 6 months in the future'),
   services: z.array(z.string().trim().min(1)).min(1, 'Please select at least one service slot'),
-  reason: z.string().trim().max(500, 'Reason must be 500 characters or less').optional().nullable(),
+  reason: z
+    .string()
+    .trim()
+    .min(1, 'Please provide a reason for your absence')
+    .max(500, 'Reason must be 500 characters or less'),
 });
 
 type ExcuseFormValues = z.infer<typeof excuseFormSchema>;
@@ -203,7 +207,7 @@ export function ExcuseRequestPage() {
       const payload: SubmitServiceExcuseInput = {
         request_date: data.request_date,
         services: data.services,
-        reason: data.reason?.trim() ? data.reason.trim() : null,
+        reason: data.reason.trim(),
       };
 
       if (isSignedIn && currentProfile) {
@@ -219,7 +223,7 @@ export function ExcuseRequestPage() {
       setSubmissionResult({
         request_date: data.request_date,
         services: data.services,
-        reason: data.reason?.trim() ? data.reason.trim() : null,
+        reason: data.reason.trim(),
       });
       setIsSubmissionConfirmed(true);
       toast.success('Excuse request submitted successfully');
@@ -498,11 +502,10 @@ export function ExcuseRequestPage() {
                   {/* Reason / Notes */}
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-text" htmlFor="field-reason">
-                      Reason / Notes{' '}
-                      <span className="text-xs text-muted font-normal">(Optional)</span>
+                      Reason for Absence <span className="text-danger"> *</span>
                     </label>
                     <p className="text-xs text-muted">
-                      Add any context for your coordinators or team leaders.
+                      Please provide details for your coordinators and team leaders.
                     </p>
                     <textarea
                       id="field-reason"
