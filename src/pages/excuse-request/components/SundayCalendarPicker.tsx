@@ -11,9 +11,9 @@ const baseInputClassName =
 
 const calendarContainerClassName = 'relative [container-type:inline-size]';
 const calendarPopoverClassName =
-  'absolute z-20 mt-2 max-w-full rounded-md border border-border bg-surface p-3 shadow-lg';
+  'absolute z-20 mt-2 max-w-full rounded-xl border border-border bg-surface p-3.5 shadow-xl';
 const calendarDayPickerClassName =
-  '[--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
+  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
 
 export type SundayCalendarPickerProps = {
   id?: string;
@@ -98,11 +98,16 @@ export function SundayCalendarPicker({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? popoverId : undefined}
-        className={`${baseInputClassName} flex items-center justify-between gap-3 text-left`}
+        className={`${baseInputClassName} flex items-center justify-between gap-3 text-left ${
+          isOpen ? 'border-primary ring-2 ring-primary/20' : ''
+        }`}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span className="truncate">{formatSundayDisplay(value)}</span>
-        <Calendar className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+        <span className="truncate font-medium">{formatSundayDisplay(value)}</span>
+        <Calendar
+          className={`h-4 w-4 shrink-0 transition-colors ${isOpen ? 'text-primary' : 'text-muted'}`}
+          aria-hidden="true"
+        />
       </button>
 
       {isOpen && (
@@ -119,6 +124,12 @@ export function SundayCalendarPicker({
               setIsOpen(false);
             }}
           />
+          <div className="mt-2.5 border-t border-border pt-2 text-center">
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              Only upcoming Sunday service dates can be selected
+            </span>
+          </div>
         </div>
       )}
     </div>
