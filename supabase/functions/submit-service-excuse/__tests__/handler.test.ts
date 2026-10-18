@@ -115,6 +115,9 @@ function mockFetch(
         );
       }
     }
+    if (url.pathname === '/rest/v1/approval_requests' && method === 'POST') {
+      return Promise.resolve(Response.json({ id: 'appr-1', access_token: 'token-xyz' }));
+    }
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
   };
   return {
@@ -253,3 +256,52 @@ Deno.test('submit-service-excuse returns 404 when member is not found or inactiv
     }
   });
 });
+
+Deno.test(
+  'submit-service-excuse creates pending approval request for multi-week long leave',
+  async () => {
+    await withEnv(async () => {
+      const fetchMock = mockFetch();
+      try {
+        const response = await handleSubmitServiceExcuse(
+          request({
+            user_id: USER_ID,
+            start_date: '2026-11-01',
+            end_date: '2026-11-29',
+            is_long_leave: true,
+            services: ['All Services'],
+            reason: 'Extended mission trip',
+            assigned_to_email: 'leader@example.com',
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.message, 'Long leave request submitted and is pending approval');
+
+        // Check excuse insertion with pending status
+        const excuseInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/service_excuse_requests' && call.method === 'POST',
+        );
+        assertEquals((excuseInsert?.body as Record<string, unknown>)?.status, 'pending');
+        assertEquals((excuseInsert?.body as Record<string, unknown>)?.is_long_leave, true);
+
+        // Check approval request insertion
+        const approvalInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(Boolean(approvalInsert), true);
+        assertEquals(
+          (approvalInsert?.body as Record<string, unknown>)?.assigned_to_email,
+          'leader@example.com',
+        );
+        assertEquals(
+          (approvalInsert?.body as Record<string, unknown>)?.title,
+          'Long Leave Request',
+        );
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);

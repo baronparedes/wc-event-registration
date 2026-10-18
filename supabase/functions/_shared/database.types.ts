@@ -23,6 +23,100 @@ export type Database = {
   };
   public: {
     Tables: {
+      approval_requests: {
+        Row: {
+          access_token: string;
+          assigned_to_email: string | null;
+          assigned_to_user_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by_email: string | null;
+          decided_by_user_id: string | null;
+          decision_notes: string | null;
+          entity_id: string;
+          entity_type: Database['public']['Enums']['approval_entity_type'];
+          id: string;
+          metadata: Json;
+          requester_email: string | null;
+          requester_name: string;
+          requester_user_id: string | null;
+          status: Database['public']['Enums']['approval_status'];
+          summary: string | null;
+          title: string;
+          token_expires_at: string;
+          token_used_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          access_token?: string;
+          assigned_to_email?: string | null;
+          assigned_to_user_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by_email?: string | null;
+          decided_by_user_id?: string | null;
+          decision_notes?: string | null;
+          entity_id: string;
+          entity_type: Database['public']['Enums']['approval_entity_type'];
+          id?: string;
+          metadata?: Json;
+          requester_email?: string | null;
+          requester_name: string;
+          requester_user_id?: string | null;
+          status?: Database['public']['Enums']['approval_status'];
+          summary?: string | null;
+          title: string;
+          token_expires_at?: string;
+          token_used_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          access_token?: string;
+          assigned_to_email?: string | null;
+          assigned_to_user_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by_email?: string | null;
+          decided_by_user_id?: string | null;
+          decision_notes?: string | null;
+          entity_id?: string;
+          entity_type?: Database['public']['Enums']['approval_entity_type'];
+          id?: string;
+          metadata?: Json;
+          requester_email?: string | null;
+          requester_name?: string;
+          requester_user_id?: string | null;
+          status?: Database['public']['Enums']['approval_status'];
+          summary?: string | null;
+          title?: string;
+          token_expires_at?: string;
+          token_used_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'approval_requests_requester_user_id_fkey';
+            columns: ['requester_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'approval_requests_assigned_to_user_id_fkey';
+            columns: ['assigned_to_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'approval_requests_decided_by_user_id_fkey';
+            columns: ['decided_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       admin_audit_logs: {
         Row: {
           action: string;
@@ -698,6 +792,7 @@ export type Database = {
       };
       form_submissions: {
         Row: {
+          approval_request_id: string | null;
           created_at: string;
           form_id: string;
           id: string;
@@ -710,6 +805,7 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          approval_request_id?: string | null;
           created_at?: string;
           form_id: string;
           id?: string;
@@ -722,6 +818,7 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          approval_request_id?: string | null;
           created_at?: string;
           form_id?: string;
           id?: string;
@@ -1134,34 +1231,46 @@ export type Database = {
       };
       service_excuse_requests: {
         Row: {
+          approval_request_id: string | null;
           created_at: string;
+          end_date: string | null;
           id: string;
+          is_long_leave: boolean;
           member_id: string;
           reason: string | null;
           request_date: string;
           services: string[];
+          start_date: string | null;
           status: string;
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          approval_request_id?: string | null;
           created_at?: string;
+          end_date?: string | null;
           id?: string;
+          is_long_leave?: boolean;
           member_id: string;
           reason?: string | null;
           request_date: string;
           services?: string[];
+          start_date?: string | null;
           status?: string;
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          approval_request_id?: string | null;
           created_at?: string;
+          end_date?: string | null;
           id?: string;
+          is_long_leave?: boolean;
           member_id?: string;
           reason?: string | null;
           request_date?: string;
           services?: string[];
+          start_date?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string;
@@ -1428,6 +1537,16 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_approval_decision: {
+        Args: {
+          p_approval_id: string;
+          p_decision: string;
+          p_decision_notes?: string | null;
+          p_decided_by_user_id?: string | null;
+          p_decided_by_email?: string | null;
+        };
+        Returns: Json;
+      };
       archive_push_reminder: {
         Args: { message_id: number };
         Returns: boolean;
@@ -1712,6 +1831,8 @@ export type Database = {
       trigger_email_processor: { Args: Record<PropertyKey, never>; Returns: undefined };
     };
     Enums: {
+      approval_entity_type: 'form_submission' | 'service_excuse';
+      approval_status: 'pending' | 'approved' | 'rejected' | 'cancelled';
       attendance_field_type:
         | 'text'
         | 'textarea'

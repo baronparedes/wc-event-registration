@@ -1,6 +1,8 @@
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import { escapeHtml } from '../_shared/emailTemplate.ts';
 import { decodeMemberLookupToken } from '../_shared/memberLookupToken.ts';
+import { sendResendEmail } from '../_shared/resend.ts';
 import {
   EventFieldWithValidation,
   FieldValidationError,
@@ -100,7 +102,7 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
     // Step 1: Look up form by slug
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('id, duplicate_policy, audience, status')
+      .select('id, title, duplicate_policy, audience, status, metadata')
       .eq('slug', form_slug)
       .eq('status', 'published')
       .maybeSingle();
@@ -136,6 +138,8 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
 
     // Step 2: Handle Member lookup if member_id is supplied
     let userId: string | null = null;
+    let userFullName: string | null = null;
+    let userEmail: string | null = null;
     if (member_id) {
       let resolvedMemberId = member_id;
       if (member_id.startsWith('mlt2.')) {
@@ -147,7 +151,7 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
 
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, full_name, email')
         .eq('member_id', resolvedMemberId)
         .maybeSingle();
 
@@ -165,6 +169,8 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
         );
       }
       userId = userData.id;
+      userFullName = userData.full_name;
+      userEmail = userData.email;
     }
 
     const formId = formData.id;
@@ -295,6 +301,14 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
       }
     }
 
+    const formMeta = (formData.metadata ?? {}) as Record<string, unknown>;
+    const requiresApproval = Boolean(formMeta.requires_approval);
+    const assignedApproverEmail =
+      typeof formMeta.approver_email === 'string' && formMeta.approver_email.trim()
+        ? formMeta.approver_email.trim()
+        : null;
+    const initialSubmissionStatus = requiresApproval ? 'pending_approval' : 'submitted';
+
     if (!submissionId) {
       const { data: newSub, error: createError } = await supabase
         .from('form_submissions')
@@ -303,7 +317,7 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
           user_id: userId,
           public_registrant_info: public_registrant_info || {},
           idempotency_key: idempotency_key,
-          status: 'submitted',
+          status: initialSubmissionStatus,
           source: userId ? 'member' : 'public',
         })
         .select('id')
@@ -324,6 +338,80 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
         );
       }
       submissionId = newSub.id;
+
+      // Handle approval request creation if requires_approval is enabled
+      if (requiresApproval) {
+        const requesterName =
+          userFullName ||
+          [public_registrant_info?.first_name, public_registrant_info?.last_name]
+            .filter(Boolean)
+            .join(' ') ||
+          'Public Registrant';
+        const requesterEmail = userEmail || public_registrant_info?.email || null;
+
+        const { data: approvalRecord, error: approvalErr } = await supabase
+          .from('approval_requests')
+          .insert({
+            entity_type: 'form_submission',
+            entity_id: submissionId,
+            status: 'pending',
+            title: formData.title || 'Form Registration',
+            summary: `Registration for ${formData.title || 'Form'} by ${requesterName}`,
+            requester_user_id: userId,
+            requester_name: requesterName,
+            requester_email: requesterEmail,
+            assigned_to_email: assignedApproverEmail,
+            metadata: JSON.parse(JSON.stringify({ form_slug, responses })),
+          })
+          .select('id, access_token')
+          .single();
+
+        if (!approvalErr && approvalRecord) {
+          await supabase
+            .from('form_submissions')
+            .update({ approval_request_id: approvalRecord.id })
+            .eq('id', submissionId);
+
+          if (assignedApproverEmail) {
+            const appUrl = (
+              Deno.env.get('APP_URL') ||
+              Deno.env.get('PUBLIC_APP_URL') ||
+              'https://welcomehub.app'
+            ).replace(/\/+$/, '');
+            const reviewUrl = `${appUrl}/approvals/review/${approvalRecord.access_token}`;
+
+            try {
+              await sendResendEmail({
+                to: assignedApproverEmail,
+                subject: `[Approval Required] ${formData.title || 'Form Submission'} - ${requesterName}`,
+                html: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+                    <h2 style="color: #1f2937; margin-top: 0;">Approval Required</h2>
+                    <p style="font-size: 15px; color: #374151;">A new form registration requires your review and approval:</p>
+                    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                      <p style="margin: 0 0 8px 0;"><strong>Form:</strong> ${escapeHtml(formData.title || 'Form')}</p>
+                      <p style="margin: 0 0 8px 0;"><strong>Applicant:</strong> ${escapeHtml(requesterName)}</p>
+                      ${requesterEmail ? `<p style="margin: 0;"><strong>Email:</strong> ${escapeHtml(requesterEmail)}</p>` : ''}
+                    </div>
+                    <div style="margin-top: 24px; text-align: center;">
+                      <a href="${reviewUrl}" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
+                        Review & Take Action
+                      </a>
+                    </div>
+                    <p style="margin-top: 24px; font-size: 13px; color: #6b7280; text-align: center;">
+                      Or copy this review link: <br /><a href="${reviewUrl}" style="color: #4f46e5;">${reviewUrl}</a>
+                    </p>
+                  </div>
+                `,
+                text: `Approval Required\n\nForm: ${formData.title}\nApplicant: ${requesterName}\n\nReview link: ${reviewUrl}`,
+                targetType: 'approval-request',
+              });
+            } catch (emailErr) {
+              console.error('Failed to dispatch approval request email:', emailErr);
+            }
+          }
+        }
+      }
     }
 
     // Clear old answers if updating
@@ -366,13 +454,19 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
       }
     }
 
+    const successMessage = requiresApproval
+      ? 'Form submitted successfully and is pending approval'
+      : isNew
+        ? 'Form submitted successfully'
+        : 'Form submission updated successfully';
+
     return new Response(
       JSON.stringify({
         success: true,
         submission_id: submissionId,
         status,
         is_new: isNew,
-        message: isNew ? 'Form submitted successfully' : 'Form submission updated successfully',
+        message: successMessage,
       } as SubmitFormSubmissionSuccess),
       {
         status: 200,

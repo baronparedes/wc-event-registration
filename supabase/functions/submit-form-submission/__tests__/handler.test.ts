@@ -99,6 +99,10 @@ function mockFetch(
       return Promise.resolve(Response.json(options.existing ?? null));
     if (url.pathname === '/rest/v1/form_submissions' && method === 'POST')
       return Promise.resolve(Response.json({ id: SUBMISSION_ID }));
+    if (url.pathname === '/rest/v1/form_submissions' && method === 'PATCH')
+      return Promise.resolve(Response.json({ id: SUBMISSION_ID }));
+    if (url.pathname === '/rest/v1/approval_requests' && method === 'POST')
+      return Promise.resolve(Response.json({ id: 'approval-1', access_token: 'token-abc' }));
     if (url.pathname === '/rest/v1/form_submission_answers' && method === 'POST')
       return Promise.resolve(new Response(null, { status: 201 }));
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
@@ -238,6 +242,65 @@ Deno.test(
             (call) => call.path === '/rest/v1/form_submissions' && call.method === 'POST',
           ),
           false,
+        );
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'submit-form-submission creates approval request when form requires approval',
+  async () => {
+    await withEnv(async () => {
+      const fetchMock = mockFetch({
+        form: {
+          id: FORM_ID,
+          title: 'Volunteer Application',
+          duplicate_policy: 'allow_multiple',
+          audience: 'public',
+          status: 'published',
+          metadata: {
+            requires_approval: true,
+            approver_email: 'leader@example.com',
+          },
+        },
+      });
+      try {
+        const response = await handleSubmitFormSubmission(
+          request({
+            ...payload(),
+            public_registrant_info: {
+              first_name: 'John',
+              last_name: 'Smith',
+              email: 'john@example.com',
+            },
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.message, 'Form submitted successfully and is pending approval');
+
+        // Verify initial submission status is pending_approval
+        const subInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/form_submissions' && call.method === 'POST',
+        );
+        assertEquals((subInsert?.body as Record<string, unknown>)?.status, 'pending_approval');
+
+        // Verify approval_requests insertion
+        const approvalInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(Boolean(approvalInsert), true);
+        assertEquals(
+          (approvalInsert?.body as Record<string, unknown>)?.assigned_to_email,
+          'leader@example.com',
+        );
+        assertEquals(
+          (approvalInsert?.body as Record<string, unknown>)?.requester_name,
+          'John Smith',
         );
       } finally {
         fetchMock.restore();
