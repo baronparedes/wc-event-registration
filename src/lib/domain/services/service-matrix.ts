@@ -48,6 +48,7 @@ export type MatrixSlotStatus =
   | 'off_schedule'
   | 'not_applicable'
   | 'excused'
+  | 'pending_excusal'
   | 'service_exception'
   | 'loading';
 
@@ -59,6 +60,7 @@ export interface MatrixCellData {
   attendance?: ServiceAttendance;
   status: MatrixSlotStatus;
   excusedReason?: string;
+  excusedStatus?: 'approved' | 'pending';
   exceptionReason?: string;
 }
 
@@ -163,7 +165,12 @@ export function computeMatrixGrid(
   attendances: ServiceAttendance[],
   currentMetadata: Record<string, string> | null | undefined,
   snapshots: UserCommitmentSnapshot[],
-  excusedRecords: { requestDate: string; services: string; reason?: string }[] = [],
+  excusedRecords: {
+    requestDate: string;
+    services: string;
+    reason?: string;
+    status?: 'approved' | 'pending';
+  }[] = [],
   todayStr: string = toISODate(new Date()),
   isLoadingAttendance: boolean = false,
   isLoadingExcused: boolean = false,
@@ -217,7 +224,9 @@ export function computeMatrixGrid(
       const excusedRecord = excusedRecords.find(
         (er) =>
           er.requestDate === sunday.dateStr &&
-          er.services.toUpperCase().replace(/\s+/g, '').includes(timeSlot.toUpperCase()),
+          (er.services.toUpperCase().replace(/\s+/g, '').includes(timeSlot.toUpperCase()) ||
+            er.services.toUpperCase().includes('ALL') ||
+            !er.services.trim()),
       );
 
       let status: MatrixSlotStatus;
@@ -229,7 +238,7 @@ export function computeMatrixGrid(
         status = isCommitted ? 'service_exception' : 'off_schedule';
       } else if (isCommitted) {
         if (excusedRecord) {
-          status = 'excused';
+          status = excusedRecord.status === 'pending' ? 'pending_excusal' : 'excused';
         } else if (isLoadingExcused) {
           status = 'loading';
         } else {
@@ -247,6 +256,7 @@ export function computeMatrixGrid(
         attendance,
         status,
         excusedReason: excusedRecord?.reason,
+        excusedStatus: excusedRecord?.status,
         exceptionReason: exceptionRecord?.reason,
       };
     }

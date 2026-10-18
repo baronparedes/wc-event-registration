@@ -86,6 +86,11 @@ export function VolunteerAttendanceModal({
     [processedLogs],
   );
 
+  const pendingExcusedLogs = useMemo(
+    () => processedLogs.filter((log) => log.status === 'pending_excusal'),
+    [processedLogs],
+  );
+
   const sections = useMemo(
     () => [
       {
@@ -125,8 +130,28 @@ export function VolunteerAttendanceModal({
         ),
         hideWhenEmpty: true,
       },
+      {
+        key: 'pending_excuses',
+        title: 'PENDING EXCUSES',
+        dotColor: 'bg-accent',
+        titleColor: 'text-amber-700',
+        logs: pendingExcusedLogs,
+        emptyMessage: 'No pending excuse requests for this period.',
+        renderSlot: (log: (typeof processedLogs)[number]) => (
+          <div className="flex items-center gap-1.5">
+            <Badge
+              variant="outline"
+              className="border-dashed border-accent bg-accent/15 text-amber-800"
+            >
+              {log.time_slot}
+            </Badge>
+            <span className="text-xs text-muted">Pending Approval</span>
+          </div>
+        ),
+        hideWhenEmpty: true,
+      },
     ],
-    [loginLogs, absentLogs, excusedLogs],
+    [loginLogs, absentLogs, excusedLogs, pendingExcusedLogs],
   );
 
   const matrixRows = useMemo(() => {
@@ -148,13 +173,14 @@ export function VolunteerAttendanceModal({
     return Array.from(groupedByDate.entries()).map(([serviceDate, dateLogs]) => {
       const weekLabel = dateLogs[0]?.weekLabel ?? '';
 
-      // Committed: present & not walk-in, absent, or excused
+      // Committed: present & not walk-in, absent, excused, or pending
       const committedSlots = dateLogs
         .filter(
           (l) =>
             (!l.is_walk_in && l.status === 'present') ||
             l.status === 'absent' ||
-            l.status === 'excused',
+            l.status === 'excused' ||
+            l.status === 'pending_excusal',
         )
         .map((l) => l.time_slot)
         .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
@@ -180,6 +206,12 @@ export function VolunteerAttendanceModal({
       // Excused
       const excusedSlots = dateLogs
         .filter((l) => l.status === 'excused')
+        .map((l) => l.time_slot)
+        .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
+
+      // Pending Excuses
+      const pendingExcusedSlots = dateLogs
+        .filter((l) => l.status === 'pending_excusal')
         .map((l) => l.time_slot)
         .sort((a, b) => (slotOrder[a] ?? 99) - (slotOrder[b] ?? 99));
 
@@ -221,6 +253,7 @@ export function VolunteerAttendanceModal({
         absentSlots,
         walkInSlots,
         excusedSlots,
+        pendingExcusedSlots,
         score,
       };
     });
@@ -512,8 +545,21 @@ export function VolunteerAttendanceModal({
                           )}
                         </ListTableCell>
                         <ListTableCell className="!py-1.5 !px-3 text-center whitespace-nowrap">
-                          {row.excusedSlots.length > 0 ? (
-                            <Badge variant="accent">{row.excusedSlots.join(', ')}</Badge>
+                          {row.excusedSlots.length > 0 || row.pendingExcusedSlots.length > 0 ? (
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              {row.excusedSlots.length > 0 && (
+                                <Badge variant="accent">{row.excusedSlots.join(', ')}</Badge>
+                              )}
+                              {row.pendingExcusedSlots.length > 0 && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-dashed border-accent bg-accent/15 text-amber-800"
+                                  title="Pending Approval"
+                                >
+                                  {row.pendingExcusedSlots.join(', ')} (Pending)
+                                </Badge>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-muted">&mdash;</span>
                           )}

@@ -1534,7 +1534,36 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      service_excuse_sundays: {
+        Row: {
+          excuse_id: string;
+          user_id: string;
+          member_id: string;
+          sunday_date: string;
+          request_date_str: string;
+          services: string[] | null;
+          services_str: string | null;
+          reason: string | null;
+          status: string;
+          is_long_leave: boolean | null;
+        };
+        Relationships: [];
+      };
+      approved_service_excuse_sundays: {
+        Row: {
+          excuse_id: string;
+          user_id: string;
+          member_id: string;
+          sunday_date: string;
+          request_date_str: string;
+          services: string[] | null;
+          services_str: string | null;
+          reason: string | null;
+          status: string;
+          is_long_leave: boolean | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       apply_approval_decision: {

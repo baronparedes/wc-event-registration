@@ -174,7 +174,14 @@ describe('service-matrix domain logic', () => {
     });
 
     it('classifies excused when not attended, committed, but excused', () => {
-      const excusedRecords = [{ requestDate: '2026-09-13', services: '12NN', reason: 'sick' }];
+      const excusedRecords = [
+        {
+          requestDate: '2026-09-13',
+          services: '12NN',
+          reason: 'sick',
+          status: 'approved' as const,
+        },
+      ];
       const grid = computeMatrixGrid(
         sundays,
         attendances,
@@ -188,6 +195,74 @@ describe('service-matrix domain logic', () => {
       expect(cell.isCommitted).toBe(true);
       expect(cell.attendance).toBeUndefined();
       expect(cell.excusedReason).toBe('sick');
+      expect(cell.excusedStatus).toBe('approved');
+    });
+
+    it('classifies pending_excusal when not attended, committed, but pending excuse approval', () => {
+      const excusedRecords = [
+        { requestDate: '2026-09-13', services: '12NN', reason: 'sick', status: 'pending' as const },
+      ];
+      const grid = computeMatrixGrid(
+        sundays,
+        attendances,
+        currentMetadata,
+        [],
+        excusedRecords,
+        '2026-09-20',
+      );
+      const cell = grid.second_sunday['12NN'];
+      expect(cell.status).toBe('pending_excusal');
+      expect(cell.isCommitted).toBe(true);
+      expect(cell.attendance).toBeUndefined();
+      expect(cell.excusedReason).toBe('sick');
+      expect(cell.excusedStatus).toBe('pending');
+    });
+
+    it('classifies future committed slots as excused or pending_excusal instead of upcoming_committed', () => {
+      // Fourth Sunday 3PM is 2026-09-27, after todayStr 2026-09-20
+      const excusedRecords = [
+        {
+          requestDate: '2026-09-27',
+          services: '3PM',
+          reason: 'Vacation',
+          status: 'approved' as const,
+        },
+      ];
+      const grid = computeMatrixGrid(
+        sundays,
+        attendances,
+        currentMetadata,
+        [],
+        excusedRecords,
+        '2026-09-20',
+      );
+      const cell = grid.fourth_sunday['3PM'];
+      expect(cell.status).toBe('excused');
+      expect(cell.isCommitted).toBe(true);
+      expect(cell.excusedReason).toBe('Vacation');
+    });
+
+    it('classifies future committed slots as pending_excusal when excuse is pending', () => {
+      const excusedRecords = [
+        {
+          requestDate: '2026-09-27',
+          services: '3PM',
+          reason: 'Vacation',
+          status: 'pending' as const,
+        },
+      ];
+      const grid = computeMatrixGrid(
+        sundays,
+        attendances,
+        currentMetadata,
+        [],
+        excusedRecords,
+        '2026-09-20',
+      );
+      const cell = grid.fourth_sunday['3PM'];
+      expect(cell.status).toBe('pending_excusal');
+      expect(cell.isCommitted).toBe(true);
+      expect(cell.excusedReason).toBe('Vacation');
     });
 
     it('classifies committed slots as loading when isLoadingAttendance is true', () => {

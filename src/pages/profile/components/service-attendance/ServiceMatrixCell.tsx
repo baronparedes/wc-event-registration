@@ -127,8 +127,8 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
         <div>
           <Badge
             variant="accent"
-            icon={<Info className="h-3 w-3 shrink-0 text-amber-800" />}
-            className="border border-accent/40 bg-accent/20 px-2 py-0.5 text-[11px] text-amber-900"
+            icon={<Info className="h-3 w-3 shrink-0" />}
+            className="px-2 py-0.5 text-[11px]"
           >
             Excused
           </Badge>
@@ -138,6 +138,28 @@ export function ServiceMatrixCell({ cell }: ServiceMatrixCellProps) {
           title={cell.excusedReason || undefined}
         >
           {cell.excusedReason ? cell.excusedReason : 'Excused from schedule'}
+        </p>
+      </div>
+    );
+  }
+
+  if (status === 'pending_excusal') {
+    return (
+      <div className="flex h-[104px] w-full flex-col justify-between gap-1.5 rounded-xl border-2 border-dashed border-accent bg-surface p-2.5 text-left shadow-xs">
+        <div>
+          <Badge
+            variant="outline"
+            icon={<Clock className="h-3 w-3 shrink-0 text-accent" />}
+            className="border-dashed border-accent bg-accent/15 px-2 py-0.5 text-[11px] text-accent"
+          >
+            Pending Approval
+          </Badge>
+        </div>
+        <p
+          className="text-[11px] text-muted font-medium line-clamp-2"
+          title={cell.excusedReason || undefined}
+        >
+          {cell.excusedReason ? cell.excusedReason : 'Excuse request pending approval'}
         </p>
       </div>
     );

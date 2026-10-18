@@ -50,7 +50,10 @@ function mockFetch(options: { adminRole?: string; excuses?: unknown[]; queryErro
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.adminRole ?? 'slod' }));
     }
-    if (requestUrl.pathname === '/rest/v1/service_excuse_requests') {
+    if (
+      requestUrl.pathname === '/rest/v1/service_excuse_sundays' ||
+      requestUrl.pathname === '/rest/v1/service_excuse_requests'
+    ) {
       if (options.queryError) {
         return Promise.resolve(Response.json({ message: 'lookup failed' }, { status: 500 }));
       }
@@ -58,12 +61,14 @@ function mockFetch(options: { adminRole?: string; excuses?: unknown[]; queryErro
         Response.json(
           options.excuses ?? [
             {
-              id: 'excuse-1',
+              excuse_id: 'excuse-1',
               user_id: MEMBER_USER_ID,
               member_id: 'M-003',
-              request_date: '2026-03-08',
+              sunday_date: '2026-03-08',
               services: [],
+              services_str: '',
               reason: 'Service commitment',
+              status: 'approved',
             },
           ],
         ),
@@ -110,11 +115,12 @@ Deno.test(
               requestDate: '2026-03-08',
               services: '',
               reason: 'Service commitment',
+              status: 'approved',
             },
           ],
         });
         const query = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/service_excuse_requests',
+          (url) => url.pathname === '/rest/v1/service_excuse_sundays',
         );
         assertEquals(query?.searchParams.get('user_id'), `eq.${MEMBER_USER_ID}`);
       } finally {
@@ -132,12 +138,14 @@ Deno.test(
         adminRole: 'imt',
         excuses: [
           {
-            id: 'excuse-2',
+            excuse_id: 'excuse-2',
             user_id: OTHER_USER_ID,
             member_id: 'M-004',
-            request_date: '2026-03-15',
+            sunday_date: '2026-03-15',
             services: ['9AM'],
+            services_str: '9AM',
             reason: 'Travel',
+            status: 'pending',
           },
         ],
       });
@@ -147,7 +155,7 @@ Deno.test(
         );
         assertEquals(response.status, 200);
         const query = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/service_excuse_requests',
+          (url) => url.pathname === '/rest/v1/service_excuse_sundays',
         );
         assertEquals(query?.searchParams.get('user_id'), `eq.${OTHER_USER_ID}`);
       } finally {
