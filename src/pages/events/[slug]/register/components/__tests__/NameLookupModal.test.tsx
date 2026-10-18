@@ -132,7 +132,7 @@ describe('NameLookupModal', () => {
     expect(screen.getByText('Find Your Profile')).toBeInTheDocument();
 
     // Click on overlay to close (modal closes when clicking outside)
-    const overlay = document.querySelector('.fixed.inset-0');
+    const overlay = screen.getByLabelText('Close dialog overlay');
 
     if (overlay) {
       await act(async () => {

@@ -51,3 +51,7 @@
 **Deviation:** `DuplicateEntityDialog` used `useWatch` and `useEffect` to sync the `slug` form field when the `title` field changed. Additionally, it used `useEffect` to `reset` the form based on prop changes (`isOpen`, `sourceItem`).
 **Learning:** This architectural deviation leads to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events and computing values during render.
 **Standard:** Compute initial `values` for `useForm` directly during render. Extract dependent field updates out of `useEffect` lifecycle hooks and into the driving field's `onChange` event handler, calling both the internal React Hook Form `field.onChange` and updating the dependent state via `setValue`.
+## 2025-02-12 - Removed interactive div from Dialog
+**Deviation:** Dialog component was using generic `<div onClick={...}>` to handle background clicks and `e.stopPropagation()` on inner divs.
+**Learning:** This is poor semantics and accessibility, and also leads to bugs with scrollbar clicking.
+**Standard:** Extract interactive background elements into dedicated, absolute-positioned `<button type="button">` sibling layers with `tabIndex={-1}` rather than binding `onClick` on layout divs.

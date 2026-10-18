@@ -125,19 +125,28 @@ export function Dialog({
   return createPortal(
     <DialogContext.Provider value={{ onClose, titleId, descriptionId }}>
       <div
-        className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain bg-black/40 py-4 sm:py-8 ${containerClassName}`}
+        className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain py-4 sm:py-8 ${containerClassName}`}
         style={{ touchAction: 'pan-y' }}
-        onClick={closeOnBackdropClick ? onClose : undefined}
       >
+        {closeOnBackdropClick ? (
+          <button
+            type="button"
+            aria-label="Close dialog overlay"
+            className="fixed inset-0 bg-black/40 outline-none cursor-default"
+            onClick={onClose}
+            tabIndex={-1}
+          />
+        ) : (
+          <div className="fixed inset-0 bg-black/40 pointer-events-none" aria-hidden="true" />
+        )}
         <div
           role={role}
           aria-modal="true"
           aria-label={ariaLabel}
           aria-labelledby={ariaLabel ? undefined : titleId}
           aria-describedby={descriptionId}
-          className={`mx-3 sm:mx-4 w-full ${resolvedMaxWidth} rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
+          className={`relative z-10 mx-3 sm:mx-4 w-full ${resolvedMaxWidth} rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
           style={{ touchAction: 'pan-y' }}
-          onClick={(e) => e.stopPropagation()}
         >
           {children}
         </div>

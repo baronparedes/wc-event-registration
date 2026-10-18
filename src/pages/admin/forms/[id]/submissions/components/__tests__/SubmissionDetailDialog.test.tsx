@@ -350,7 +350,7 @@ describe('SubmissionDetailDialog', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
 
     // Backdrop click
-    const backdrop = document.body.querySelector('.fixed.inset-0') as HTMLElement;
+    const backdrop = screen.getByLabelText('Close dialog overlay') as HTMLElement;
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(3);
   });

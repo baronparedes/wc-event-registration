@@ -582,7 +582,7 @@ describe('AttendanceFieldEditPanel', () => {
       const onClose = vi.fn();
       render(<AttendanceFieldEditPanel eventId="event-1" field={null} onClose={onClose} />);
 
-      const closeButton = screen.getByRole('button', { name: /close/i });
+      const closeButton = screen.getByRole('button', { name: 'Close dialog' });
       fireEvent.click(closeButton);
 
       expect(onClose).toHaveBeenCalled();

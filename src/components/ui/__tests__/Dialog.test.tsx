@@ -85,7 +85,7 @@ describe('Dialog', () => {
       </Dialog>,
     );
 
-    const backdrop = screen.getByRole('dialog').parentElement as HTMLElement;
+    const backdrop = screen.getByLabelText('Close dialog overlay') as HTMLElement;
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
