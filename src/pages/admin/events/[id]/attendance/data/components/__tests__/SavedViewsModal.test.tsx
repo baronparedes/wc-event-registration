@@ -229,7 +229,7 @@ describe('SavedViewsModal', () => {
     expect(screen.getByText('Save Current View')).toBeInTheDocument();
 
     // Click the backdrop (last fixed div — the save dialog sits on top of the main modal)
-    const backdrops = document.querySelectorAll('.fixed.inset-0.z-50');
+    const backdrops = screen.getAllByLabelText('Close dialog overlay');
     fireEvent.click(backdrops[backdrops.length - 1]);
 
     await waitFor(() => {

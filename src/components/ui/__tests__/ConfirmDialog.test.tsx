@@ -43,7 +43,7 @@ describe('ConfirmDialog', () => {
     fireEvent.click(screen.getByRole('alertdialog'));
     expect(props.onCancel).not.toHaveBeenCalled();
 
-    const backdrop = screen.getByRole('alertdialog').parentElement as HTMLElement;
+    const backdrop = screen.getByLabelText('Close dialog overlay') as HTMLElement;
     fireEvent.click(backdrop);
     expect(props.onCancel).toHaveBeenCalledTimes(1);
   });
