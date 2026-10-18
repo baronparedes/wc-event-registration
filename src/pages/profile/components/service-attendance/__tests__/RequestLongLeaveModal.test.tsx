@@ -48,7 +48,7 @@ describe('RequestLongLeaveModal', () => {
     });
   });
 
-  it('renders modal in member mode with default controls', () => {
+  it('renders modal in member mode with default controls and Sunday pickers', () => {
     renderWithClient(
       <RequestLongLeaveModal
         isOpen={true}
@@ -59,6 +59,8 @@ describe('RequestLongLeaveModal', () => {
     );
 
     expect(screen.getByText('Request Long Leave')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Start Sunday/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/End Sunday/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Reason for Extended Leave/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Submit Leave Request/i })).toBeInTheDocument();
     expect(screen.queryByLabelText(/Delegate Review to SLOD/i)).not.toBeInTheDocument();
@@ -93,7 +95,7 @@ describe('RequestLongLeaveModal', () => {
     expect(screen.getByLabelText(/Delegate Review to SLOD/i)).toBeInTheDocument();
   });
 
-  it('shows validation error when start date is not a Sunday', async () => {
+  it('opens calendar popover dialog when Sunday picker trigger is clicked', () => {
     renderWithClient(
       <RequestLongLeaveModal
         isOpen={true}
@@ -103,83 +105,12 @@ describe('RequestLongLeaveModal', () => {
       />,
     );
 
-    const startDateInput = screen.getByLabelText(/Start Date/i);
-    const endDateInput = screen.getByLabelText(/End Date/i);
-    const reasonInput = screen.getByLabelText(/Reason for Extended Leave/i);
+    const startPicker = screen.getByLabelText(/Start Sunday/i);
+    fireEvent.click(startPicker);
 
-    // 2026-11-02 is a Monday
-    fireEvent.change(startDateInput, { target: { value: '2026-11-02' } });
-    fireEvent.change(endDateInput, { target: { value: '2026-11-29' } });
-    fireEvent.change(reasonInput, { target: { value: 'Monday start test' } });
-
-    const submitBtn = screen.getByRole('button', { name: /Submit Leave Request/i });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('Start date must be a Sunday')).toBeInTheDocument();
-    });
-
-    expect(mockMutateAsync).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error when end date is not a Sunday', async () => {
-    renderWithClient(
-      <RequestLongLeaveModal
-        isOpen={true}
-        onClose={mockOnClose}
-        userId="user-1"
-        isAdminView={false}
-      />,
-    );
-
-    const startDateInput = screen.getByLabelText(/Start Date/i);
-    const endDateInput = screen.getByLabelText(/End Date/i);
-    const reasonInput = screen.getByLabelText(/Reason for Extended Leave/i);
-
-    // 2026-11-01 is Sunday, 2026-11-30 is Monday
-    fireEvent.change(startDateInput, { target: { value: '2026-11-01' } });
-    fireEvent.change(endDateInput, { target: { value: '2026-11-30' } });
-    fireEvent.change(reasonInput, { target: { value: 'Monday end test' } });
-
-    const submitBtn = screen.getByRole('button', { name: /Submit Leave Request/i });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('End date must be a Sunday')).toBeInTheDocument();
-    });
-
-    expect(mockMutateAsync).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error when end date is less than 28 days from start date', async () => {
-    renderWithClient(
-      <RequestLongLeaveModal
-        isOpen={true}
-        onClose={mockOnClose}
-        userId="user-1"
-        isAdminView={false}
-      />,
-    );
-
-    const startDateInput = screen.getByLabelText(/Start Date/i);
-    const endDateInput = screen.getByLabelText(/End Date/i);
-    const reasonInput = screen.getByLabelText(/Reason for Extended Leave/i);
-
-    // Set end date to only 7 days later (both Sundays)
-    fireEvent.change(startDateInput, { target: { value: '2026-11-01' } });
-    fireEvent.change(endDateInput, { target: { value: '2026-11-08' } });
-    fireEvent.change(reasonInput, { target: { value: 'Too short leave request' } });
-
-    const submitBtn = screen.getByRole('button', { name: /Submit Leave Request/i });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Long leave must span at least 4 weeks (28 days) from start date'),
-      ).toBeInTheDocument();
-    });
-
-    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Only upcoming Sunday service dates can be selected'),
+    ).toBeInTheDocument();
   });
 
   it('submits form with valid data and calls mutation', async () => {

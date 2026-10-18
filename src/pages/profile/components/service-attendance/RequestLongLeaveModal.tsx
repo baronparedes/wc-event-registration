@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarRange, Send } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, Dialog, FormInputField, FormSelectField } from '@/components/ui';
+import { Button, Dialog, FormSelectField } from '@/components/ui';
 import { useSlodUsersQuery } from '@/hooks/domain/approvals';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { MATRIX_TIME_SLOTS } from '@/lib/domain/services';
+import { SundayCalendarPicker } from '@/pages/excuse-request/components/SundayCalendarPicker';
 
 function isSundayDateString(val?: string): boolean {
   if (!val) return true;
@@ -112,6 +113,7 @@ export function RequestLongLeaveModal({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -126,6 +128,18 @@ export function RequestLongLeaveModal({
       assigned_to_email: '',
     },
   });
+
+  const startDateValue = watch('start_date');
+  const endDateValue = watch('end_date');
+
+  const minEndDate = useMemo(() => {
+    if (!startDateValue) return undefined;
+    const [y, m, d] = startDateValue.split('-').map(Number);
+    if (!y || !m || !d) return undefined;
+    const start = new Date(y, m - 1, d);
+    start.setDate(start.getDate() + 28);
+    return start;
+  }, [startDateValue]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -183,27 +197,66 @@ export function RequestLongLeaveModal({
       <form onSubmit={handleSubmit(onSubmit)}>
         <Dialog.Body className="space-y-4 py-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <FormInputField
-                id="leave-start-date"
-                label="Start Date (Sunday)"
-                type="date"
-                required
-                registration={register('start_date')}
-                error={errors.start_date?.message}
-                helperText="Must be a Sunday service date"
+            <div className="space-y-1.5">
+              <label
+                className="flex items-center gap-1.5 text-sm font-semibold text-text"
+                htmlFor="leave-start-date"
+              >
+                Start Sunday <span className="text-danger">*</span>
+              </label>
+              <Controller
+                control={control}
+                name="start_date"
+                render={({ field }) => (
+                  <SundayCalendarPicker
+                    id="leave-start-date"
+                    value={field.value}
+                    onChange={(val) => {
+                      field.onChange(val);
+                      const [y, m, d] = val.split('-').map(Number);
+                      if (y && m && d) {
+                        const newMin = new Date(y, m - 1, d);
+                        newMin.setDate(newMin.getDate() + 28);
+                        const [ey, em, ed] = (endDateValue || '').split('-').map(Number);
+                        const currentEnd = ey && em && ed ? new Date(ey, em - 1, ed) : null;
+                        if (!currentEnd || currentEnd < newMin) {
+                          setValue('end_date', getFourWeeksOut(val), { shouldValidate: true });
+                        }
+                      }
+                    }}
+                    maxPastDays={0}
+                    monthsInFuture={12}
+                  />
+                )}
               />
+              <p className="text-xs text-muted">Must be a Sunday service date</p>
+              {errors.start_date && (
+                <p className="text-xs text-danger">{errors.start_date.message}</p>
+              )}
             </div>
-            <div>
-              <FormInputField
-                id="leave-end-date"
-                label="End Date (Sunday)"
-                type="date"
-                required
-                registration={register('end_date')}
-                error={errors.end_date?.message}
-                helperText="Must be a Sunday service date"
+
+            <div className="space-y-1.5">
+              <label
+                className="flex items-center gap-1.5 text-sm font-semibold text-text"
+                htmlFor="leave-end-date"
+              >
+                End Sunday <span className="text-danger">*</span>
+              </label>
+              <Controller
+                control={control}
+                name="end_date"
+                render={({ field }) => (
+                  <SundayCalendarPicker
+                    id="leave-end-date"
+                    value={field.value}
+                    onChange={(val) => field.onChange(val)}
+                    minDate={minEndDate}
+                    monthsInFuture={18}
+                  />
+                )}
               />
+              <p className="text-xs text-muted">Must be at least 4 weeks from start Sunday</p>
+              {errors.end_date && <p className="text-xs text-danger">{errors.end_date.message}</p>}
             </div>
           </div>
 

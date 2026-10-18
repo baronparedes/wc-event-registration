@@ -22,6 +22,8 @@ export type SundayCalendarPickerProps = {
   maxPastDays?: number; // default: 3
   monthsInFuture?: number; // default: 6
   allowedWeekdays?: number[]; // default: [0] (Sunday)
+  minDate?: Date;
+  maxDate?: Date;
 };
 
 export function SundayCalendarPicker({
@@ -31,6 +33,8 @@ export function SundayCalendarPicker({
   maxPastDays = 3,
   monthsInFuture = 6,
   allowedWeekdays = [0],
+  minDate,
+  maxDate,
 }: SundayCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -74,6 +78,10 @@ export function SundayCalendarPicker({
       disabled.push({ before: oldestAllowed });
     }
 
+    if (minDate) {
+      disabled.push({ before: minDate });
+    }
+
     // Rule 2: max_days: 6 months from today
     if (typeof monthsInFuture === 'number' && monthsInFuture > 0) {
       const maxFutureDate = new Date();
@@ -82,13 +90,17 @@ export function SundayCalendarPicker({
       disabled.push({ after: maxFutureDate });
     }
 
+    if (maxDate) {
+      disabled.push({ after: maxDate });
+    }
+
     // Rule 3: allowed_weekdays: [0] (Sundays only)
     if (allowedWeekdays.length > 0) {
       disabled.push((date: Date) => !allowedWeekdays.includes(date.getDay()));
     }
 
     return disabled;
-  }, [maxPastDays, monthsInFuture, allowedWeekdays]);
+  }, [maxPastDays, monthsInFuture, allowedWeekdays, minDate, maxDate]);
 
   return (
     <div ref={containerRef} className={calendarContainerClassName}>

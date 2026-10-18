@@ -142,6 +142,7 @@ RLS on `approval_requests`:
    - `SECURITY DEFINER` with `search_path = public`.
    - Restricted to administrators (`is_admin_viewer()`).
    - Returns all active users in `public.admins` where `role = 'slod'`:
+
      ```sql
      select
        auth_user_id,
@@ -151,6 +152,7 @@ RLS on `approval_requests`:
      from
        list_slod_users ();
      ```
+
 2. **`public.delegate_approval_request(p_approval_id, p_assigned_to_email, p_assigned_to_user_id)`**:
    - Updates `assigned_to_email`, `assigned_to_user_id`, and `updated_at`.
    - Validates that the request is currently in `'pending'` status.
