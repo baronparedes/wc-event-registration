@@ -57,8 +57,12 @@ describe('approvals API', () => {
       expect(supabase.from).toHaveBeenCalledWith('approval_requests');
       expect(query.eq).toHaveBeenCalledWith('status', 'pending');
       expect(query.eq).toHaveBeenCalledWith('entity_type', 'form_submission');
-      expect(query.or).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
+      expect(result).toEqual([
+        {
+          ...mockData[0],
+          requester_avatar_object_key: null,
+        },
+      ]);
     });
 
     it('throws error when query fails', async () => {

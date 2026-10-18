@@ -14,7 +14,7 @@ import {
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { Button, Skeleton } from '@/components/ui';
+import { Avatar, Button, Skeleton } from '@/components/ui';
 import {
   useApprovalReviewQuery,
   useSubmitApprovalDecisionMutation,
@@ -182,17 +182,20 @@ export function ApprovalReviewPage() {
           <User className="h-4 w-4" />
           Applicant Details
         </h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <div className="text-xs text-muted">Full Name</div>
-            <div className="text-sm font-semibold text-text">{approval.requester_name}</div>
-          </div>
-          {approval.requester_email && (
-            <div>
-              <div className="text-xs text-muted">Email Address</div>
-              <div className="text-sm font-semibold text-text">{approval.requester_email}</div>
+        <div className="mt-4 flex items-center gap-3.5">
+          <Avatar
+            name={approval.requester_name}
+            avatarObjectKey={approval.requester_avatar_object_key}
+            size="md"
+          />
+          <div className="min-w-0">
+            <div className="font-heading text-lg font-bold text-text">
+              {approval.requester_name}
             </div>
-          )}
+            {approval.requester_email && (
+              <div className="text-sm text-muted mt-0.5">{approval.requester_email}</div>
+            )}
+          </div>
         </div>
       </div>
 

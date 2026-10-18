@@ -11,6 +11,7 @@ export interface ApprovalRequest {
   requester_user_id: string | null;
   requester_name: string;
   requester_email: string | null;
+  requester_avatar_object_key?: string | null;
   assigned_to_email: string | null;
   assigned_to_user_id: string | null;
   decided_by_user_id: string | null;
@@ -35,6 +36,7 @@ export interface ApprovalReviewData {
     summary: string | null;
     requester_name: string;
     requester_email: string | null;
+    requester_avatar_object_key?: string | null;
     assigned_to_email: string | null;
     decided_at: string | null;
     decided_by_email: string | null;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
+  Avatar,
   Badge,
   Button,
   ButtonGroup,
@@ -288,12 +289,23 @@ export function AdminApprovalsPage() {
 
                       <MobileCardContent>
                         <MobileCardContentItem label="Requester">
-                          <span className="font-medium text-text">{req.requester_name}</span>
-                          {req.requester_email && (
-                            <span className="block text-xs text-muted truncate">
-                              {req.requester_email}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2.5 mt-0.5">
+                            <Avatar
+                              name={req.requester_name}
+                              avatarObjectKey={req.requester_avatar_object_key}
+                              size="xs"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-medium text-text block truncate">
+                                {req.requester_name}
+                              </span>
+                              {req.requester_email && (
+                                <span className="block text-xs text-muted truncate">
+                                  {req.requester_email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </MobileCardContentItem>
                         <MobileCardContentItem label="Date">
                           <span className="text-text">{formatDateOnly(req.created_at)}</span>
@@ -362,10 +374,19 @@ export function AdminApprovalsPage() {
                           </Badge>
                         </ListTableCell>
                         <ListTableCell>
-                          <p className="font-medium text-text">{req.requester_name}</p>
-                          {req.requester_email && (
-                            <p className="text-xs text-muted">{req.requester_email}</p>
-                          )}
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              name={req.requester_name}
+                              avatarObjectKey={req.requester_avatar_object_key}
+                              size="sm"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-text truncate">{req.requester_name}</p>
+                              {req.requester_email && (
+                                <p className="text-xs text-muted truncate">{req.requester_email}</p>
+                              )}
+                            </div>
+                          </div>
                         </ListTableCell>
                         <ListTableCell>
                           <span className="text-sm text-text">
@@ -442,6 +463,28 @@ export function AdminApprovalsPage() {
         </Dialog.Header>
 
         <Dialog.Body className="space-y-4 py-3">
+          {/* Requester Profile with Avatar */}
+          {inspectingRequest && (
+            <div className="flex items-center gap-3.5 rounded-2xl border border-border bg-background p-3.5 shadow-xs">
+              <Avatar
+                name={inspectingRequest.requester_name}
+                avatarObjectKey={inspectingRequest.requester_avatar_object_key}
+                size="md"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted block">
+                  Requester
+                </span>
+                <p className="font-heading font-bold text-text text-base truncate">
+                  {inspectingRequest.requester_name}
+                </p>
+                {inspectingRequest.requester_email && (
+                  <p className="text-xs text-muted truncate">{inspectingRequest.requester_email}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Metadata overview */}
           {inspectingRequest?.metadata && (
             <div className="rounded-xl border border-border bg-background p-4 text-xs">

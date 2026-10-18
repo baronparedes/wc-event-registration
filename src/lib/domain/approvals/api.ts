@@ -38,7 +38,7 @@ export async function fetchApprovalRequests(
 ): Promise<ApprovalRequest[]> {
   let query = supabase
     .from('approval_requests')
-    .select('*')
+    .select('*, requester_user:users!requester_user_id(avatar_object_key)')
     .order('created_at', { ascending: false });
 
   if (filters?.status && filters.status !== 'all') {
@@ -61,7 +61,18 @@ export async function fetchApprovalRequests(
     throw new Error(`Failed to fetch approval requests: ${error.message}`);
   }
 
-  return (data ?? []) as unknown as ApprovalRequest[];
+  return (data ?? []).map((row) => {
+    const raw = row as Record<string, unknown>;
+    const requesterUser = raw.requester_user as
+      | { avatar_object_key?: string | null }
+      | null
+      | undefined;
+
+    return {
+      ...raw,
+      requester_avatar_object_key: requesterUser?.avatar_object_key ?? null,
+    } as unknown as ApprovalRequest;
+  });
 }
 
 export async function fetchApprovalRequestById(id: string): Promise<ApprovalRequest> {
