@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { escapeHtml } from './emailTemplate.ts';
-import { sendResendEmail } from './resend.ts';
+import { enqueueEmailNotification, triggerEmailProcessor } from './emailQueue.ts';
+import { buildApprovalOutcomeEmail, buildApprovalReviewEmail } from './emailTemplates/index.ts';
 
 export type ApprovalEntityType = 'service_excuse' | 'form_submission';
 
@@ -78,15 +78,6 @@ export async function createApprovalRequest(
   };
 }
 
-export interface SendApprovalNotificationParams {
-  assignedToEmail: string;
-  subjectTitle: string;
-  heading: string;
-  description: string;
-  details: Array<{ label: string; value: string }>;
-  accessToken: string;
-}
-
 /**
  * Builds the external review URL using the configured public app URL and access token.
  */
@@ -99,45 +90,113 @@ export function buildApprovalReviewUrl(accessToken: string): string {
   return `${appUrl}/approvals/review/${accessToken}`;
 }
 
+export interface EnqueueApprovalReviewParams {
+  assignedToEmail: string;
+  subjectTitle: string;
+  heading?: string;
+  description?: string;
+  details: Array<{ label: string; value: string }>;
+  accessToken: string;
+  approvalId?: string;
+}
+
 /**
- * Sends a standardized notification email to the assigned approver with action links.
+ * Enqueues an approval review request email into the pgmq queue and triggers the processor.
  */
-export async function sendApprovalReviewEmail(
-  params: SendApprovalNotificationParams,
-): Promise<void> {
-  const { assignedToEmail, subjectTitle, heading, description, details, accessToken } = params;
+export async function enqueueApprovalReviewEmail(
+  supabase: SupabaseClient,
+  params: EnqueueApprovalReviewParams,
+): Promise<{ success: boolean; messageId: number | null }> {
+  const { assignedToEmail, subjectTitle, heading, description, details, accessToken, approvalId } =
+    params;
+
   const reviewUrl = buildApprovalReviewUrl(accessToken);
-
-  const detailsHtml = details
-    .map(
-      (d) =>
-        `<p style="margin: 0 0 8px 0;"><strong>${escapeHtml(d.label)}:</strong> ${escapeHtml(d.value)}</p>`,
-    )
-    .join('\n');
-
-  const detailsText = details.map((d) => `${d.label}: ${d.value}`).join('\n');
-
-  await sendResendEmail({
-    to: assignedToEmail,
-    subject: `[Approval Required] ${subjectTitle}`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #1f2937; margin-top: 0;">${escapeHtml(heading)}</h2>
-        <p style="font-size: 15px; color: #374151;">${escapeHtml(description)}</p>
-        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
-          ${detailsHtml}
-        </div>
-        <div style="margin-top: 24px; text-align: center;">
-          <a href="${reviewUrl}" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
-            Review & Take Action
-          </a>
-        </div>
-        <p style="margin-top: 24px; font-size: 13px; color: #6b7280; text-align: center;">
-          Or copy this review link: <br /><a href="${reviewUrl}" style="color: #4f46e5;">${reviewUrl}</a>
-        </p>
-      </div>
-    `,
-    text: `${heading}\n\n${detailsText}\n\nReview link: ${reviewUrl}`,
-    targetType: 'approval-request',
+  const template = buildApprovalReviewEmail({
+    subjectTitle,
+    heading,
+    description,
+    details,
+    reviewUrl,
   });
+
+  const { messageId, error } = await enqueueEmailNotification(supabase, {
+    recipient: assignedToEmail,
+    category: 'approval',
+    event_type: 'approval_review_request',
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    metadata: {
+      target_type: 'approval-request',
+      approval_id: approvalId,
+      access_token: accessToken,
+    },
+  });
+
+  if (error) {
+    console.error('[approvals] Failed to enqueue approval review email:', error);
+    return { success: false, messageId: null };
+  }
+
+  // Trigger background processor to drain queue immediately
+  try {
+    await triggerEmailProcessor(supabase);
+  } catch (triggerErr) {
+    console.warn('[approvals] Background email processor trigger warning:', triggerErr);
+  }
+
+  return { success: true, messageId };
+}
+
+export interface EnqueueApprovalOutcomeParams {
+  recipientEmail: string;
+  requesterName: string;
+  title: string;
+  decision: 'approved' | 'rejected';
+  notes?: string | null;
+  approvalId?: string;
+}
+
+/**
+ * Enqueues an approval outcome decision email (approved or rejected) to the requester.
+ */
+export async function enqueueApprovalOutcomeEmail(
+  supabase: SupabaseClient,
+  params: EnqueueApprovalOutcomeParams,
+): Promise<{ success: boolean; messageId: number | null }> {
+  const { recipientEmail, requesterName, title, decision, notes, approvalId } = params;
+
+  const template = buildApprovalOutcomeEmail({
+    title,
+    requesterName,
+    decision,
+    notes,
+  });
+
+  const { messageId, error } = await enqueueEmailNotification(supabase, {
+    recipient: recipientEmail,
+    category: 'approval',
+    event_type: 'approval_outcome_notification',
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    metadata: {
+      target_type: 'approval-outcome',
+      approval_id: approvalId,
+      decision,
+    },
+  });
+
+  if (error) {
+    console.error('[approvals] Failed to enqueue approval outcome email:', error);
+    return { success: false, messageId: null };
+  }
+
+  try {
+    await triggerEmailProcessor(supabase);
+  } catch (triggerErr) {
+    console.warn('[approvals] Background email processor trigger warning:', triggerErr);
+  }
+
+  return { success: true, messageId };
 }

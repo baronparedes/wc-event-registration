@@ -3,7 +3,8 @@ import { assertEquals } from '@std/assert';
 import {
   buildApprovalReviewUrl,
   createApprovalRequest,
-  sendApprovalReviewEmail,
+  enqueueApprovalOutcomeEmail,
+  enqueueApprovalReviewEmail,
 } from '../approvals.ts';
 
 const APPROVAL_ID = '33333333-3333-4333-8333-333333333333';
@@ -59,39 +60,75 @@ Deno.test('createApprovalRequest inserts approval record with metadata', async (
   assertEquals(payload?.assigned_to_email, 'approver@example.com');
 });
 
-Deno.test('sendApprovalReviewEmail dispatches notification', async () => {
-  const originalFetch = globalThis.fetch;
-  const originalKey = Deno.env.get('RESEND_API_KEY');
-  const originalLocal = Deno.env.get('LOCAL_BROADCAST');
-  let fetchCall: { url: string; body: unknown } | null = null;
+Deno.test('enqueueApprovalReviewEmail enqueues notification and triggers worker', async () => {
+  const rpcCalls: Array<{ name: string; args?: unknown }> = [];
+  const mockSupabase = {
+    rpc: (name: string, args?: unknown) => {
+      rpcCalls.push({ name, args });
+      if (name === 'enqueue_email_notification') {
+        return Promise.resolve({ data: 101, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
+  } as never;
 
-  try {
-    Deno.env.set('RESEND_API_KEY', 'test_key');
-    Deno.env.set('LOCAL_BROADCAST', 'false');
+  const result = await enqueueApprovalReviewEmail(mockSupabase, {
+    assignedToEmail: 'approver@example.com',
+    subjectTitle: 'Test Leave - Test Member',
+    heading: 'Approval Required',
+    description: 'Please review this request:',
+    details: [{ label: 'Member', value: 'Test Member' }],
+    accessToken: ACCESS_TOKEN,
+    approvalId: APPROVAL_ID,
+  });
 
-    globalThis.fetch = (input, init) => {
-      fetchCall = {
-        url: input.toString(),
-        body: init?.body ? JSON.parse(String(init.body)) : null,
-      };
-      return Promise.resolve(Response.json({ id: 'resend-123' }));
-    };
+  assertEquals(result.success, true);
+  assertEquals(result.messageId, 101);
 
-    await sendApprovalReviewEmail({
-      assignedToEmail: 'approver@example.com',
-      subjectTitle: 'Test Approval',
-      heading: 'Approval Required',
-      description: 'Please review',
-      details: [{ label: 'Member', value: 'Jane' }],
-      accessToken: 'token-abc',
-    });
+  const enqueueCall = rpcCalls.find((c) => c.name === 'enqueue_email_notification');
+  assertEquals(Boolean(enqueueCall), true);
+  const queuePayload = (enqueueCall?.args as { payload: Record<string, unknown> })?.payload;
+  assertEquals(queuePayload?.recipient, 'approver@example.com');
+  assertEquals(queuePayload?.category, 'approval');
+  assertEquals(queuePayload?.subject, '[Approval Required] Test Leave - Test Member');
+  assertEquals(typeof queuePayload?.html, 'string');
+  assertEquals((queuePayload?.html as string).includes('Test Member'), true);
 
-    assertEquals(Boolean(fetchCall), true);
-  } finally {
-    globalThis.fetch = originalFetch;
-    if (originalKey === undefined) Deno.env.delete('RESEND_API_KEY');
-    else Deno.env.set('RESEND_API_KEY', originalKey);
-    if (originalLocal === undefined) Deno.env.delete('LOCAL_BROADCAST');
-    else Deno.env.set('LOCAL_BROADCAST', originalLocal);
-  }
+  const triggerCall = rpcCalls.find((c) => c.name === 'trigger_email_processor');
+  assertEquals(Boolean(triggerCall), true);
+});
+
+Deno.test('enqueueApprovalOutcomeEmail enqueues decision notification to requester', async () => {
+  const rpcCalls: Array<{ name: string; args?: unknown }> = [];
+  const mockSupabase = {
+    rpc: (name: string, args?: unknown) => {
+      rpcCalls.push({ name, args });
+      if (name === 'enqueue_email_notification') {
+        return Promise.resolve({ data: 102, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
+  } as never;
+
+  const result = await enqueueApprovalOutcomeEmail(mockSupabase, {
+    recipientEmail: 'requester@example.com',
+    requesterName: 'Test Requester',
+    title: 'Medical Leave',
+    decision: 'approved',
+    notes: 'Rest well',
+    approvalId: APPROVAL_ID,
+  });
+
+  assertEquals(result.success, true);
+  assertEquals(result.messageId, 102);
+
+  const enqueueCall = rpcCalls.find((c) => c.name === 'enqueue_email_notification');
+  assertEquals(Boolean(enqueueCall), true);
+  const queuePayload = (enqueueCall?.args as { payload: Record<string, unknown> })?.payload;
+  assertEquals(queuePayload?.recipient, 'requester@example.com');
+  assertEquals(queuePayload?.category, 'approval');
+  assertEquals(queuePayload?.subject, 'Your request for "Medical Leave" has been Approved');
+  assertEquals(typeof queuePayload?.html, 'string');
+  assertEquals((queuePayload?.html as string).includes('Rest well'), true);
+  assertEquals((queuePayload?.html as string).includes('approved'), true);
 });

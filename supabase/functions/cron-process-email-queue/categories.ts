@@ -1,6 +1,9 @@
 import type { EmailQueuePayload, NotificationCategory } from './types.ts';
 
 export function resolveNotificationCategory(payload: EmailQueuePayload): NotificationCategory {
+  if (payload.category === 'approval') {
+    return 'approval';
+  }
   if (payload.category === 'sunday_reminder' || payload.template_slug === 'volunteer-schedule') {
     return 'sunday_reminder';
   }

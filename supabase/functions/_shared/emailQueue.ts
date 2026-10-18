@@ -1,6 +1,6 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
-export type NotificationCategory = 'sunday_reminder' | 'broadcast';
+export type NotificationCategory = 'sunday_reminder' | 'broadcast' | 'approval';
 
 export type EmailQueuePayload = {
   event_type: string;
@@ -9,6 +9,7 @@ export type EmailQueuePayload = {
   template_slug?: string;
   subject?: string;
   text?: string;
+  html?: string;
   metadata?: Record<string, unknown>;
   idempotency_key?: string;
 };
@@ -19,6 +20,7 @@ export type EnqueueEmailInput = {
   event_type?: string;
   subject?: string;
   text?: string;
+  html?: string;
   template_slug?: string;
   metadata?: Record<string, unknown>;
   idempotency_key?: string;
@@ -49,6 +51,7 @@ export async function enqueueEmailNotification(
     template_slug: input.template_slug,
     subject: input.subject,
     text: input.text,
+    ...(input.html !== undefined ? { html: input.html } : {}),
     metadata: input.metadata,
     idempotency_key: input.idempotency_key,
   };

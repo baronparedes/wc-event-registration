@@ -1,4 +1,4 @@
-import { createApprovalRequest, sendApprovalReviewEmail } from '../_shared/approvals.ts';
+import { createApprovalRequest, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { resolveMemberUser } from '../_shared/memberResolution.ts';
@@ -181,7 +181,7 @@ export async function handleSubmitServiceExcuse(req: Request): Promise<Response>
             details.push({ label: 'Reason', value: reason });
           }
 
-          await sendApprovalReviewEmail({
+          await enqueueApprovalReviewEmail(supabase, {
             assignedToEmail: assigned_to_email,
             subjectTitle: `Long Leave Request - ${requesterName}`,
             heading: 'Long Leave Approval Required',
@@ -189,6 +189,7 @@ export async function handleSubmitServiceExcuse(req: Request): Promise<Response>
               'A volunteer has submitted an extended leave request requiring your sign-off:',
             details,
             accessToken: approvalResult.approval.access_token,
+            approvalId: approvalResult.approval.id,
           });
         } catch (emailErr) {
           console.error('Failed to dispatch long leave approval email:', emailErr);

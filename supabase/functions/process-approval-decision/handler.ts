@@ -1,7 +1,6 @@
+import { enqueueApprovalOutcomeEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
-import { escapeHtml } from '../_shared/emailTemplate.ts';
-import { sendResendEmail } from '../_shared/resend.ts';
 import { z } from '../_shared/validation.ts';
 
 export const processApprovalDecisionSchema = z
@@ -247,41 +246,17 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
 
       // Dispatch outcome notification email to requester if requester_email is known
       if (approval.requester_email) {
-        const isApproved = decision === 'approved';
-        const subject = `Your request for "${approval.title}" has been ${isApproved ? 'Approved' : 'Declined'}`;
-        const noteHtml = notes
-          ? `<div style="margin-top: 16px; padding: 12px; background-color: #f3f4f6; border-radius: 8px; border-left: 4px solid ${isApproved ? '#10b981' : '#f43f5e'};">
-              <strong style="color: #374151;">Reviewer Note:</strong>
-              <p style="margin: 4px 0 0; color: #4b5563;">${escapeHtml(notes)}</p>
-            </div>`
-          : '';
-
         try {
-          await sendResendEmail({
-            to: approval.requester_email,
-            subject,
-            html: `
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
-                <h2 style="color: ${isApproved ? '#059669' : '#e11d48'}; margin-top: 0;">
-                  Request ${isApproved ? 'Approved' : 'Declined'}
-                </h2>
-                <p style="font-size: 15px; color: #1f2937;">Hello ${escapeHtml(approval.requester_name)},</p>
-                <p style="font-size: 15px; color: #1f2937;">
-                  Your request for <strong>${escapeHtml(approval.title)}</strong> has been
-                  <strong style="color: ${isApproved ? '#059669' : '#e11d48'};">${isApproved ? 'approved' : 'declined'}</strong>.
-                </p>
-                ${noteHtml}
-                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-                <p style="font-size: 13px; color: #9ca3af; margin: 0;">
-                  This is an automated notification from the Welcome Hub approval system.
-                </p>
-              </div>
-            `,
-            text: `Hello ${approval.requester_name},\n\nYour request for "${approval.title}" has been ${isApproved ? 'approved' : 'declined'}.\n${notes ? `\nReviewer Note: ${notes}\n` : ''}\n---\nWelcome Hub`,
-            targetType: 'approval-outcome',
+          await enqueueApprovalOutcomeEmail(supabase, {
+            recipientEmail: approval.requester_email,
+            requesterName: approval.requester_name,
+            title: approval.title,
+            decision: decision!,
+            notes,
+            approvalId: approval.id,
           });
         } catch (emailErr) {
-          console.error('Failed to send approval outcome email:', emailErr);
+          console.error('Failed to enqueue approval outcome email:', emailErr);
           // Non-blocking: decision was recorded successfully
         }
       }

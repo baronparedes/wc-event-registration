@@ -47,7 +47,7 @@ export async function processDirectMessage(
         await archiveAfterRetryLimit(client, msg, 'template not found', tracker);
         return;
       }
-    } else if (!emailText) {
+    } else if (!emailText && !payload.html && !payload.metadata?.html) {
       console.error(`[cron-process-email-queue] Invalid message ${messageId}: no email body`);
       tracker.record(sundayDate, 'failed');
       await client.rpc('archive_email_notification', { message_id: messageId });
@@ -66,14 +66,30 @@ export async function processDirectMessage(
         ? payload.metadata.broadcast_message
         : emailText;
 
-    let emailHtml: string | undefined;
-    if (!templateId && rawUrl) {
+    let emailHtml: string | undefined =
+      typeof payload.html === 'string' && payload.html.trim().length > 0
+        ? payload.html
+        : typeof payload.metadata?.html === 'string' &&
+            (payload.metadata.html as string).trim().length > 0
+          ? (payload.metadata.html as string)
+          : undefined;
+
+    if (!emailHtml && !templateId && rawUrl) {
       emailHtml = wrapPlainTextAsHtml(bodyText || emailText || '', emailSubject, {
         actionUrl: rawUrl,
       });
     }
 
     const isSundayReminder = typeof sundayDate === 'string' && sundayDate.length > 0;
+    const targetType =
+      typeof payload.metadata?.target_type === 'string'
+        ? (payload.metadata.target_type as string)
+        : payload.category === 'approval'
+          ? 'approval-notification'
+          : isSundayReminder
+            ? 'sunday-schedule-reminder'
+            : 'broadcast-notification';
+
     const sendResult = await sendResendEmail({
       to: payload.recipient,
       subject: emailSubject,
@@ -83,7 +99,7 @@ export async function processDirectMessage(
       variables: payload.metadata,
       data: payload.metadata,
       metadata: payload.metadata,
-      targetType: isSundayReminder ? 'sunday-schedule-reminder' : 'broadcast-notification',
+      targetType,
     });
 
     if (!sendResult.ok) {

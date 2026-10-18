@@ -137,7 +137,12 @@ async function dispatchSingleOutlookBatch(
   tracker: EmailDeliveryTracker,
 ): Promise<void> {
   const isSundayBatch = category === 'sunday_reminder';
-  const typeTag = isSundayBatch ? '[SUNDAY-REMINDER]' : '[BROADCAST]';
+  const isApprovalBatch = category === 'approval';
+  const typeTag = isSundayBatch
+    ? '[SUNDAY-REMINDER]'
+    : isApprovalBatch
+      ? '[APPROVAL]'
+      : '[BROADCAST]';
   const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const batchPayload: PowerAutomateBatchPayload = {
     batch_id: batchId,
@@ -152,8 +157,8 @@ async function dispatchSingleOutlookBatch(
   const sendResult = await sendResendEmail({
     to: targetDispatchEmail,
     subject: `[WC-BROADCAST-DISPATCH] ${typeTag} ${batchId} (${items.length} emails)`,
-    text: `Automated ${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'} batch for Power Automate processing.\nBatch ID: ${batchId}\nBatch Type: ${category}\nEmail Count: ${items.length}\nCreated At: ${batchPayload.created_at}`,
-    html: `<p>Automated <strong>${isSundayBatch ? 'Sunday schedule reminder' : 'broadcast'}</strong> batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Batch Type:</strong> ${category}</li><li><strong>Count:</strong> ${items.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
+    text: `Automated ${isSundayBatch ? 'Sunday schedule reminder' : isApprovalBatch ? 'approval notification' : 'broadcast'} batch for Power Automate processing.\nBatch ID: ${batchId}\nBatch Type: ${category}\nEmail Count: ${items.length}\nCreated At: ${batchPayload.created_at}`,
+    html: `<p>Automated <strong>${isSundayBatch ? 'Sunday schedule reminder' : isApprovalBatch ? 'approval notification' : 'broadcast'}</strong> batch for Power Automate processing.</p><ul><li><strong>Batch ID:</strong> ${batchId}</li><li><strong>Batch Type:</strong> ${category}</li><li><strong>Count:</strong> ${items.length}</li><li><strong>Timestamp:</strong> ${batchPayload.created_at}</li></ul><p>Please ensure your Power Automate flow is active to process the attached <code>batch-emails.json</code> file.</p>`,
     attachments: [
       {
         filename: 'batch-emails.json',
@@ -194,6 +199,7 @@ export async function processMessagesWithOutlookBatch(
   > = {
     sunday_reminder: { items: [], messages: [] },
     broadcast: { items: [], messages: [] },
+    approval: { items: [], messages: [] },
   };
 
   for (const msg of messages) {
