@@ -192,11 +192,12 @@ Handles submission of single-Sunday and multi-week Long Leave requests.
 
 - **Accessible Location**: User profile page (`/profile?tab=commitments`).
 - **Input Fields**:
-  - `Start Date` (date picker)
-  - `End Date` (date picker)
+  - `Start Date (Sunday)` (date picker, helper text: "Must be a Sunday service date")
+  - `End Date (Sunday)` (date picker, helper text: "Must be a Sunday service date")
   - `Reason for Extended Leave` (text area)
 - **Validation Rules**:
-  - `end_date >= start_date + 28 days`: Validates that the leave duration spans at least 4 weeks. Shows a clear inline error if an insufficient window is selected.
+  - **Sunday-Only Dates**: Both `start_date` and `end_date` are strictly validated to fall on a Sunday (`date.getDay() === 0`).
+  - **Minimum 4-Week Duration**: `end_date >= start_date + 28 days` validates that the leave duration spans at least 4 weeks (28 days / 4 Sundays). Shows a clear inline error if an insufficient window is selected.
   - Form validation handled via React Hook Form and Zod (`longLeaveFormSchema`).
 - **Audience Mode**:
   - **Member View (`isAdminView: false`)**: Reviewer email field is completely omitted.

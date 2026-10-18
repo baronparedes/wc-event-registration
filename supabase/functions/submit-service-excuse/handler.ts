@@ -5,6 +5,14 @@ import { resolveMemberUser } from '../_shared/memberResolution.ts';
 import { z } from '../_shared/validation.ts';
 import { linkApprovalToExcuse, upsertServiceExcuse } from './serviceExcuseService.ts';
 
+function isSundayDateString(dateStr?: string): boolean {
+  if (!dateStr) return true;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return false;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCDay() === 0;
+}
+
 export const submitServiceExcuseRequestSchema = z
   .object({
     member_token: z.string().trim().optional(),
@@ -13,14 +21,17 @@ export const submitServiceExcuseRequestSchema = z
     request_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format')
+      .refine(isSundayDateString, 'Request date must be a Sunday')
       .optional(),
     start_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format')
+      .refine(isSundayDateString, 'Start date must be a Sunday')
       .optional(),
     end_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format')
+      .refine(isSundayDateString, 'End date must be a Sunday')
       .optional(),
     is_long_leave: z.boolean().optional(),
     services: z.array(z.string().trim().min(1)).min(1, 'At least one service slot is required'),

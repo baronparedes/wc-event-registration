@@ -11,18 +11,28 @@ import { useSlodUsersQuery } from '@/hooks/domain/approvals';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { MATRIX_TIME_SLOTS } from '@/lib/domain/services';
 
+function isSundayDateString(val?: string): boolean {
+  if (!val) return true;
+  const [y, m, d] = val.split('-').map(Number);
+  if (!y || !m || !d) return false;
+  const date = new Date(y, m - 1, d);
+  return date.getDay() === 0;
+}
+
 const longLeaveFormSchema = z
   .object({
     start_date: z
       .string()
       .trim()
       .min(1, 'Please select a start date')
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format'),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
+      .refine(isSundayDateString, 'Start date must be a Sunday'),
     end_date: z
       .string()
       .trim()
       .min(1, 'Please select an end date')
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format'),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
+      .refine(isSundayDateString, 'End date must be a Sunday'),
     reason: z
       .string()
       .trim()
@@ -176,21 +186,23 @@ export function RequestLongLeaveModal({
             <div>
               <FormInputField
                 id="leave-start-date"
-                label="Start Date"
+                label="Start Date (Sunday)"
                 type="date"
                 required
                 registration={register('start_date')}
                 error={errors.start_date?.message}
+                helperText="Must be a Sunday service date"
               />
             </div>
             <div>
               <FormInputField
                 id="leave-end-date"
-                label="End Date"
+                label="End Date (Sunday)"
                 type="date"
                 required
                 registration={register('end_date')}
                 error={errors.end_date?.message}
+                helperText="Must be a Sunday service date"
               />
             </div>
           </div>

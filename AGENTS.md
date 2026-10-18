@@ -107,7 +107,7 @@ This file contains the core principles, architecture rules, and domain logic con
   - Admins can inspect details, track review assignment status, delegate review to SLOD users (`list_slod_users`), or approve/decline directly at any time.
 - **Volunteer Long Leave (Service Excuses)**:
   - Members self-file from `/profile?tab=commitments` without entering reviewer emails.
-  - Duration validation strictly enforces at least 4 weeks (28 days / 4 Sundays) between `start_date` and `end_date`.
+  - Leave Dates & Duration: Both `start_date` and `end_date` must strictly fall on a Sunday, spanning at least 4 weeks (28 days / 4 Sundays).
   - Approved excuses populate `approved_service_excuse_sundays_view` (declared with `security_invoker = true`), automatically excusing commitments on the Hub Calendar and Sunday schedules.
   - See [`docs/guides/unified-approval-workflow-and-slod-delegation.md`](docs/guides/unified-approval-workflow-and-slod-delegation.md).
 
