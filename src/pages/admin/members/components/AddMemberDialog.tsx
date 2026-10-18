@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
@@ -46,17 +46,16 @@ export function AddMemberDialog({ className }: { className?: string }) {
     .filter(Boolean)
     .join(' ');
 
-  useEffect(() => {
-    if (!isOpen) {
-      reset(DEFAULT_VALUES);
-    }
-  }, [isOpen, reset]);
+  function handleClose() {
+    setIsOpen(false);
+    reset(DEFAULT_VALUES);
+  }
 
   async function onSubmit(values: CreateMemberInput) {
     try {
       await createMemberMutation.mutateAsync(values);
       toast.success('Member created successfully.');
-      setIsOpen(false);
+      handleClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create member.';
       toast.error(errorMessage);
@@ -77,7 +76,7 @@ export function AddMemberDialog({ className }: { className?: string }) {
         <span className="hidden sm:inline">Add Member</span>
       </Button>
 
-      <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} size="5xl">
+      <Dialog isOpen={isOpen} onClose={handleClose} size="5xl">
         <Dialog.Header showCloseButton>
           <Dialog.Title>Add New Member</Dialog.Title>
           <Dialog.Description>Create a new member profile</Dialog.Description>
@@ -163,7 +162,7 @@ export function AddMemberDialog({ className }: { className?: string }) {
             <Button
               type="button"
               variant="primaryOutline"
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               disabled={isLoading}
             >
               Cancel
