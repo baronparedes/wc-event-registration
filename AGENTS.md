@@ -22,6 +22,20 @@ This file contains the core principles, architecture rules, and domain logic con
   - **No Mutations in Effects**: Never trigger mutations, network submissions, or cascading state chains inside `useEffect`. Orchestrate submissions directly from event handlers.
   - **Form State with RHF**: Do NOT use `useState` for form fields; use React Hook Form (`register`, `useWatch`) and `useFieldArray` for array structures.
   - See `.agent/skills/react-best-practices/references/anti-patterns.md` for full guidance.
+- **UI Theme & Styling Rules (Strict No `dark:` Modifiers)**:
+  - **No `dark:` Modifiers**: NEVER use Tailwind `dark:` variant classes (e.g., `dark:bg-neutral-900`, `dark:text-neutral-100`). The application uses centralized CSS root variables on `:root` (`--color-primary`, `--color-background`, `--color-surface`, `--color-text`, etc.) and does not support media-query dark mode. Using `dark:` causes unreadable white-on-white text or mismatched jet-black cards on devices with OS dark mode enabled.
+  - **Semantic Theme Tokens**: Strictly use semantic design tokens: `text-text`, `text-muted`, `bg-surface`, `bg-background`, `border-border`, `text-primary`, `bg-primary`, `bg-accent`, `text-danger`. Avoid hardcoding arbitrary neutral/gray Tailwind color utilities (`neutral-*`, `gray-*`, `slate-*`) for backgrounds, surfaces, borders, or typography.
+- **Admin UI Layout & Component Standards**:
+  - **Admin Layout Shell**: All admin listing and management views MUST use `AdminPageShell` with its subcomponents: `AdminPageShell.Header`, `AdminBaseNavigation`, `AdminPageShell.Filters`, and `AdminPageShell.Content`.
+  - **Responsive Data Lists (Desktop vs Mobile)**: Admin data views must use `useIsMobileViewport` to conditionally render:
+    - **Desktop**: `ListTable` primitives (`ListTableHead`, `ListTableHeaderRow`, `ListTableHeaderCell`, `ListTableBody`, `ListTableRow`, `ListTableCell`).
+    - **Mobile**: `MobileCard` primitives (`MobileCardHeader`, `MobileCardBody`, `MobileCardContent`, `MobileCardActions`).
+  - **Filter Toolbars & Controls**:
+    - Status/tab filter switches MUST use `ButtonGroup` or `Tabs`.
+    - Search bars MUST use `SearchInputField`.
+    - Dropdowns MUST use `FormSelectField`.
+  - **Status Badges**: Use `Badge` with semantic variants (`default`, `secondary`, `accent`, `destructive`, `outline`) rather than custom raw-color pill containers.
+  - **User Avatars**: Whenever displaying users, requesters, volunteers, or attendees in lists, tables, cards, dialogs, or drawers, ALWAYS include the `Avatar` component with `avatarObjectKey` and `name` fallback.
 
 ## 3. Architecture & Code Organization
 
@@ -34,6 +48,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Pagination**: Admin paginated data views (Events, Members, Member Registrations, Public Registrations) must use the `useInfiniteScrollTrigger` custom hook (`src/hooks/utils/useInfiniteScrollTrigger.ts`). It utilizes `IntersectionObserver` for infinite scroll pagination via React Query's `useInfiniteQuery`.
 - **Legal/Org Config**: Application legal and organization configuration details (app name, organization name, privacy contact email) are defined centrally in `src/config/constants/legal.ts`.
 - **HTML-to-Image Sharing**: Any "share as image" feature must use the `ImageCanvas` compound component pattern (`<ImageCanvas.Provider>`, `<ImageCanvas>`, `<ImageCanvas.Actions>`, `<ImageCanvas.CancelButton>`) or `useImageCanvasGroup` (multiple cards, captured sequentially) from `@/components/ui`. Do not call `html-to-image`, `navigator.share`, or `navigator.clipboard.write` directly in dialogs. Non-React helpers (render options, `ensureResourcesReady`, `shareFiles`, device detection) live in `src/lib/infrastructure/share-image/`.
+- **Database Views & RLS**: All public database views created in `supabase/migrations/` (`create or replace view ...`) MUST be created `with (security_invoker = true)`. By default, PostgreSQL views execute with owner privileges and bypass underlying RLS policies, triggering an "Unrestricted" warning in Supabase Studio. Declaring `with (security_invoker = true)` ensures the view runs under the querying caller's credentials and strictly respects table RLS.
 - **Tech Debt**: The React codebase technical debt audit and multi-phase refactoring roadmap are documented in `docs/analysis/tech-debt-analysis.md`. Refer to this document before embarking on large refactors.
 
 ## 4. Authentication, Roles & Security

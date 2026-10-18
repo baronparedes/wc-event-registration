@@ -15,16 +15,28 @@ A specialized AI agent skill designed to enforce the WC Event Registration Platf
   - Components receive data via props and render UI.
 - **Composition over Props:** Avoid prop explosion. Use `children` or slot props to compose complex UIs rather than passing countless configuration props.
 - **Extraction Threshold:** If a JSX block exceeds ~30 lines of repeatable structure, extract it into a named component in the same file or a co-located file. Do not define components inside other components.
-- **UI Primitives:** Always prioritize using existing shared primitives in `src/components/ui/` (e.g., `Button`, `Dialog`, `FormInputField`) instead of building custom one-off variants.
+- **UI Primitives:** Always prioritize using existing shared primitives in `src/components/ui/` (e.g., `Button`, `Dialog`, `FormInputField`, `Badge`, `Avatar`) instead of building custom one-off variants.
+- **Admin Page Architecture:** Admin list and management pages must be composed using standardized primitives:
+  - Page layout: `AdminPageShell`, `AdminPageShell.Header`, `AdminBaseNavigation`, `AdminPageShell.Filters`, and `AdminPageShell.Content`.
+  - Responsive tables: `ListTable` primitives for desktop and `MobileCard` primitives for mobile, switched via `useIsMobileViewport`.
+  - Filter toolbars: `ButtonGroup` or `Tabs` for status switches, `SearchInputField` for search queries, and `FormSelectField` for dropdown filters.
+  - Status display: `Badge` with semantic variants (`default`, `secondary`, `accent`, `destructive`, `outline`).
+- **User Representation:** Whenever displaying users, requesters, volunteers, or attendees in tables, cards, dialogs, or drawers, always include the `Avatar` component with `avatarObjectKey` and `name` fallback.
 - **No External UI Libraries:** For simple interaction patterns (like Tabs), do not install external headless libraries. Build them using custom React state and standard HTML `<button>` elements styled with Tailwind.
 
 ## 2. Tailwind & Styling Rules
 
-- **Theme Colors:** Restrict color usage to the CSS variables defined in `tailwind.config.js` (e.g., `text-primary`, `bg-surface`, `border-border`, `bg-accent`).
+- **Strict Prohibition of `dark:` Modifiers:** NEVER use Tailwind `dark:` classes (`dark:bg-*`, `dark:text-*`, etc.). The platform theme is driven exclusively by root CSS variables on `:root` and does NOT support media-query dark mode. Using `dark:` variants triggers severe contrast breaks (e.g., white-on-white text or pitch-black cards) on devices with OS dark mode enabled.
+- **Theme Colors & Semantic Tokens:** Restrict color usage to the CSS variables defined in `tailwind.config.js`:
+  - `bg-background`, `bg-surface`
+  - `text-text`, `text-muted`
+  - `border-border`
+  - `text-primary`, `bg-primary`, `bg-secondary`, `bg-accent`, `text-danger`
+  - Do NOT use hardcoded gray/neutral palettes (`neutral-*`, `gray-*`, `slate-*`) for backgrounds, cards, borders, or text.
 - **Class Merging:** Use utility functions (e.g., `cx`, `clsx`, `twMerge`) to safely compose dynamic classes.
 - **Focus Outlines:** Never use `focus:outline-none` without providing an explicit replacement. The standard pattern is `focus-visible:ring-2 focus-visible:ring-primary/50`.
 - **Responsive Gotchas:**
-  - Standard Admin lists should use the `useIsMobileViewport` hook to conditionally render mobile card layouts versus desktop `ListTable` layouts.
+  - Standard Admin lists should use the `useIsMobileViewport` hook to conditionally render mobile card layouts (`MobileCard`) versus desktop `ListTable` layouts.
   - Native `<input type="date">` elements must include `min-w-0 appearance-none` to prevent iOS Safari horizontal overflow bugs.
 
 ## 3. State & Hooks Rules

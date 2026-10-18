@@ -114,6 +114,33 @@ When modifying an existing PostgreSQL function with `create or replace function`
   grant execute on function public.my_function(...) to authenticated, service_role;
   ```
 
+### E. Database Views and Security Invoker (CRITICAL)
+
+By default, PostgreSQL views run with the privileges of the view owner (equivalent to `security_definer`), completely bypassing the Row Level Security (RLS) policies of underlying tables. This causes Supabase Studio to flag the view as **"Unrestricted"**.
+
+All public views created in migrations MUST include `with (security_invoker = true)`:
+
+```sql
+create
+or replace view public.my_custom_view
+with
+  (security_invoker = true) as
+select
+  t.id,
+  t.name,
+  t.created_at
+from
+  public.my_table t;
+
+grant
+select
+  on public.my_custom_view to authenticated;
+
+grant all on public.my_custom_view to service_role;
+```
+
+Declaring `with (security_invoker = true)` ensures that queries against the view execute with the privileges and RLS context of the querying user.
+
 ---
 
 ## 4. Verification Checklist
@@ -123,6 +150,7 @@ Before finalizing any migration:
 - [ ] Migration filename matches `YYYYMMDDHHMMSS_description.sql`.
 - [ ] Scope is focused (1 table or 1 RPC per file when possible).
 - [ ] Strictly no `anon` access or table privileges granted.
+- [ ] All database views declare `with (security_invoker = true)` to enforce underlying RLS.
 - [ ] RLS policies include `drop policy if exists` guards.
 - [ ] Modified functions maintain parameter signatures and `service_role` checks.
 - [ ] Run `npm run format` to ensure SQL syntax and file formatting align.

@@ -62,19 +62,26 @@ This document outlines the coding standards, patterns, and conventions for the f
 ## 5. Styling & Tailwind CSS
 
 - **Utility First:** Use Tailwind utility classes for all styling.
-- **Custom Theme Colors:** Use the defined theme colors from `tailwind.config.js`:
+- **Strict Prohibition of `dark:` Modifiers:** NEVER use Tailwind `dark:` variant classes (`dark:bg-*`, `dark:text-*`, etc.). The theme is controlled exclusively via CSS root variables on `:root` and does not support media-query dark mode. `dark:` variants cause severe contrast bugs on OS dark mode.
+- **Custom Theme Colors & Semantic Tokens:** Use the defined theme colors from `tailwind.config.js`:
   - `primary`, `secondary`, `accent`
   - `background`, `surface`
   - `text`, `muted`
   - `border`, `danger`
+  - Avoid raw hardcoded color palettes (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, tables, borders, and typography.
 - **Class Concatenation:** Use utility functions (like `clsx` and `tailwind-merge`, or custom `cx`) to merge dynamic Tailwind classes safely.
 - **Focus & Accessibility:**
   - Never remove focus outlines without providing a replacement.
   - When removing default focus (`focus:outline-none`), apply custom rings: `focus-visible:ring-2 focus-visible:ring-primary/50`.
 - **Responsive Design:**
-  - Admin tables: Use `useIsMobileViewport` to switch between desktop `ListTable` components and mobile card-based layouts.
+  - Admin tables: Use `useIsMobileViewport` to switch between desktop `ListTable` components and mobile card-based layouts (`MobileCard`).
   - Form Inputs: On iOS, native `<input type="date">` requires `min-w-0 appearance-none` to prevent horizontal layout overflow.
-- **UI Components:** Do not use external headless UI libraries for simple components like tabs; implement them with custom React state and standard `<button>` elements styled with Tailwind.
+- **Admin UI Components & Standards:**
+  - Use `AdminPageShell` and `AdminBaseNavigation` for administrative pages.
+  - Use `ButtonGroup` or `Tabs` for status filters, `SearchInputField` for search bars.
+  - Always render `Avatar` for people (requesters, attendees, volunteers, members).
+  - Use `Badge` with semantic variants (`default`, `secondary`, `accent`, `destructive`, `outline`) for status chips.
+  - Do not use external headless UI libraries for simple components like tabs; implement them with custom React state and standard `<button>` elements styled with Tailwind.
 
 ---
 
