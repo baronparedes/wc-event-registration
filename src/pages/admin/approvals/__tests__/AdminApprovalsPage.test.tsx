@@ -156,6 +156,6 @@ describe('AdminApprovalsPage', () => {
     expect(screen.getByText(/Review request details/i)).toBeInTheDocument();
     expect(screen.getByText(/Dietary Needs/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Decline/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Decline$/i })).toBeInTheDocument();
   });
 });
