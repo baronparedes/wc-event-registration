@@ -92,10 +92,38 @@ Options:
   --interval <seconds>  Poll interval in seconds (default: 3)
   --batch-size <number> Maximum rows per HTTP request (default: 500)
   --watch               Run continuously and monitor for new records (default)
+  --tray                Run with Windows System Tray icon and balloon notifications
   --once                Run once and exit
   --dry-run             Read and preview records without sending to Supabase
   --reset-state         Ignore checkpoint state and sync all rows for date
 ```
+
+---
+
+## 🪟 Windows System Tray Mode
+
+You can run the sync service directly inside the **Windows System Tray** (notification area next to the clock) with a native right-click context menu and balloon toast notifications:
+
+```bash
+# Via executable directly (automatically hides console window in Windows 11)
+wc-attendance-sync.exe --tray
+
+# Or via batch launcher
+run-tray.bat
+```
+
+### System Tray Features:
+
+- **Silently Runs in Background**: Zero terminal or black console windows cluttering the screen.
+- **Context Menu**:
+  - `🟢 Status: Active (Watching)`: Displays real-time status and time of the last sync.
+  - `📅 Target Date`: Shows currently active sync target date.
+  - `🔄 Sync Now`: Instantly forces a synchronization pass on demand without waiting.
+  - `📋 View Logs...`: Opens the `logs/` directory in Windows Explorer.
+  - `⚙️ Settings (.env)...`: Opens `.env` in Notepad for easy configuration.
+  - `❌ Exit`: Gracefully cleans up database snapshot files and shuts down.
+- **Native Windows Toast/Balloon Alerts**: Pops up a native bubble notification whenever new records are synced or when errors happen.
+- **Windows Startup**: Choose **Option [3]** in `install-windows-service.bat` to launch automatically into the System Tray when any user logs in.
 
 ---
 
