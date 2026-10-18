@@ -257,22 +257,48 @@ Deno.test('submit-service-excuse returns 404 when member is not found or inactiv
   });
 });
 
+Deno.test('submit-service-excuse rejects public unauthorized long leave requests', async () => {
+  await withEnv(async () => {
+    const fetchMock = mockFetch();
+    try {
+      const response = await handleSubmitServiceExcuse(
+        request({
+          user_id: USER_ID,
+          start_date: '2026-11-01',
+          end_date: '2026-11-29',
+          is_long_leave: true,
+          services: ['All Services'],
+          reason: 'Extended mission trip',
+        }),
+      );
+      assertEquals(response.status, 401);
+      const data = await response.json();
+      assertEquals(data.error_code, 'UNAUTHORIZED_LONG_LEAVE');
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});
+
 Deno.test(
-  'submit-service-excuse creates pending approval request for multi-week long leave',
+  'submit-service-excuse creates pending approval request for authorized long leave',
   async () => {
     await withEnv(async () => {
       const fetchMock = mockFetch();
       try {
         const response = await handleSubmitServiceExcuse(
-          request({
-            user_id: USER_ID,
-            start_date: '2026-11-01',
-            end_date: '2026-11-29',
-            is_long_leave: true,
-            services: ['All Services'],
-            reason: 'Extended mission trip',
-            assigned_to_email: 'leader@example.com',
-          }),
+          request(
+            {
+              user_id: USER_ID,
+              start_date: '2026-11-01',
+              end_date: '2026-11-29',
+              is_long_leave: true,
+              services: ['All Services'],
+              reason: 'Extended mission trip',
+              assigned_to_email: 'leader@example.com',
+            },
+            'Bearer valid-session-token',
+          ),
         );
         assertEquals(response.status, 200);
         const data = await response.json();

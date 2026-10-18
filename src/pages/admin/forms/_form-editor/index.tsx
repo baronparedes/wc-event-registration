@@ -270,7 +270,25 @@ export function FormEditorPage() {
                 description="Send an email confirmation when submission is completed"
                 registration={register('metadata.send_email_after_completion')}
               />
+              <CheckboxField
+                id="requires-approval"
+                label="Require Approval"
+                description="Submissions will enter the approval workflow before being accepted"
+                registration={register('metadata.requires_approval')}
+              />
             </div>
+
+            {Boolean(useWatch({ control, name: 'metadata.requires_approval' })) && (
+              <FormInputField
+                label="Designated Reviewer Email (Optional)"
+                placeholder="leader@example.com"
+                registration={register('metadata.approver_email')}
+                error={
+                  (errors.metadata as Record<string, { message?: string }> | undefined)
+                    ?.approver_email?.message
+                }
+              />
+            )}
           </div>
 
           {isEditing && (existingForm?.status === 'draft' || watchedStatus === 'draft') && (

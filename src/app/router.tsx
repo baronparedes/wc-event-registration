@@ -135,6 +135,16 @@ const AdminSettingsEmailTemplatesPage = lazy(() =>
     default: module.EmailTemplatesPage,
   })),
 );
+const AdminApprovalsPage = lazy(() =>
+  import('../pages/admin/approvals').then((module) => ({
+    default: module.AdminApprovalsPage,
+  })),
+);
+const ApprovalReviewPage = lazy(() =>
+  import('../pages/approvals/review/[token]').then((module) => ({
+    default: module.ApprovalReviewPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -351,6 +361,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminSundayReminders: AdminSundayRemindersPage,
   adminSettings: AdminSettingsPage,
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
+  adminApprovals: AdminApprovalsPage,
+  approvalReview: ApprovalReviewPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

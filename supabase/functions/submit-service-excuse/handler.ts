@@ -232,6 +232,23 @@ export async function handleSubmitServiceExcuse(req: Request): Promise<Response>
   const isLongLeave = Boolean(is_long_leave || (start_date && end_date && start_date !== end_date));
   const excuseStatus = isLongLeave ? 'pending' : 'approved';
 
+  // Long leave requests cannot be public - must be signed in user or admin
+  const authHeader = req.headers.get('authorization');
+  if (isLongLeave && !authHeader) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error:
+          'Long leave requests cannot be submitted publicly. Please sign in or contact an administrator.',
+        error_code: 'UNAUTHORIZED_LONG_LEAVE',
+      }),
+      {
+        status: 401,
+        headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
+  }
+
   // Check if an excuse request already exists for this date/range
   const { data: existing, error: existingError } = await supabase
     .from('service_excuse_requests')

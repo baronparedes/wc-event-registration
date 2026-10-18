@@ -85,7 +85,17 @@ export const submitServiceExcuseSchema = z
     member_token: z.string().trim().optional(),
     request_date: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format'),
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Request date must be in YYYY-MM-DD format')
+      .optional(),
+    start_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be in YYYY-MM-DD format')
+      .optional(),
+    end_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be in YYYY-MM-DD format')
+      .optional(),
+    is_long_leave: z.boolean().optional(),
     services: z.array(z.string().trim().min(1)).min(1, 'At least one service slot is required'),
     reason: z
       .string()
@@ -93,10 +103,15 @@ export const submitServiceExcuseSchema = z
       .max(500, 'Reason must be 500 characters or less')
       .optional()
       .nullable(),
+    assigned_to_email: z.string().trim().email().optional().nullable(),
   })
   .refine((data) => Boolean(data.user_id || data.member_id || data.member_token), {
     message: 'Either member_token, member_id, or user_id must be provided',
     path: ['member_id'],
+  })
+  .refine((data) => Boolean(data.request_date || (data.start_date && data.end_date)), {
+    message: 'Either request_date or both start_date and end_date must be provided',
+    path: ['request_date'],
   });
 
 export type SubmitServiceExcuseInput = z.infer<typeof submitServiceExcuseSchema>;

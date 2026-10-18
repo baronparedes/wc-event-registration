@@ -61,6 +61,8 @@ export const ROUTE_PATHS = {
   adminSundayReminders: '/admin/settings/notifications/sunday-reminders',
   adminSettings: '/admin/settings',
   adminSettingsEmailTemplates: '/admin/settings/email-templates',
+  adminApprovals: '/admin/approvals',
+  approvalReviewPattern: '/approvals/review/:token',
 } as const;
 export type AppRouteKey =
   | 'home'
@@ -116,7 +118,9 @@ export type AppRouteKey =
   | 'adminNotificationsDashboard'
   | 'adminSundayReminders'
   | 'adminSettings'
-  | 'adminSettingsEmailTemplates';
+  | 'adminSettingsEmailTemplates'
+  | 'adminApprovals'
+  | 'approvalReview';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -127,6 +131,17 @@ export type AppRouteDefinition = {
   requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
 };
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
+  {
+    key: 'adminApprovals',
+    path: ROUTE_PATHS.adminApprovals,
+    layout: 'shell',
+    allowedRoles: ['admin', 'super_admin'],
+  },
+  {
+    key: 'approvalReview',
+    path: ROUTE_PATHS.approvalReviewPattern,
+    layout: 'shell',
+  },
   {
     key: 'adminHubCalendar',
     path: ROUTE_PATHS.adminHubCalendar,
