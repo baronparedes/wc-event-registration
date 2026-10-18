@@ -2,15 +2,14 @@ import { useEffect, useMemo } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarRange, Send } from 'lucide-react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, Dialog, FormSelectField } from '@/components/ui';
+import { Button, Dialog, FormSelectField, SundayCalendarPicker } from '@/components/ui';
 import { useSlodUsersQuery } from '@/hooks/domain/approvals';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { MATRIX_TIME_SLOTS } from '@/lib/domain/services';
-import { SundayCalendarPicker } from '@/pages/excuse-request/components/SundayCalendarPicker';
 
 function isSundayDateString(val?: string): boolean {
   if (!val) return true;
@@ -116,7 +115,6 @@ export function RequestLongLeaveModal({
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<LongLeaveFormValues>({
@@ -129,8 +127,9 @@ export function RequestLongLeaveModal({
     },
   });
 
-  const startDateValue = watch('start_date');
-  const endDateValue = watch('end_date');
+  const startDateValue = useWatch({ control, name: 'start_date' });
+  const endDateValue = useWatch({ control, name: 'end_date' });
+  const assignedToEmail = useWatch({ control, name: 'assigned_to_email' });
 
   const minEndDate = useMemo(() => {
     if (!startDateValue) return undefined;
@@ -279,7 +278,7 @@ export function RequestLongLeaveModal({
               <FormSelectField
                 id="admin-slod-delegate"
                 label="Delegate Review to SLOD (Optional)"
-                value={watch('assigned_to_email') || 'none'}
+                value={assignedToEmail || 'none'}
                 onChange={(val) => setValue('assigned_to_email', val === 'none' ? '' : val)}
                 disabled={isLoadingSlod}
                 options={[
@@ -296,7 +295,7 @@ export function RequestLongLeaveModal({
         </Dialog.Body>
 
         <Dialog.Footer className="flex items-center justify-end gap-2 border-t border-border pt-3">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="primaryOutline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button type="submit" variant="default" disabled={isSubmitting} className="gap-1.5">
