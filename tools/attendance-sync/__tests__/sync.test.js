@@ -7,6 +7,7 @@ import test from 'node:test';
 import { getManilaDateString, parseConfig } from '../config.js';
 import { fetchNewAttendanceRecords, getDatabaseSignature } from '../db.js';
 import { getStateFilePath, loadSyncState, saveSyncState } from '../state.js';
+import { createSystemTray } from '../tray.js';
 
 test('getManilaDateString produces valid YYYY-MM-DD date format', () => {
   const result = getManilaDateString(new Date('2026-10-18T00:00:00Z'));
@@ -41,6 +42,12 @@ test('parseConfig parses CLI flags accurately', () => {
   assert.equal(config.once, true);
   assert.equal(config.watch, false);
   assert.equal(config.dryRun, true);
+  assert.equal(config.tray, false);
+
+  const trayConfig = parseConfig(['--tray']);
+  assert.equal(trayConfig.tray, true);
+  assert.equal(trayConfig.watch, true);
+  assert.equal(trayConfig.once, false);
 });
 
 test('state management saves and restores checkpoints by date', () => {
@@ -150,4 +157,36 @@ test('getDatabaseSignature detects modifications in SQLite database and WAL file
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+});
+
+test('createSystemTray initializes and responds to lifecycle methods safely', () => {
+  let syncTriggered = false;
+  let exitTriggered = false;
+
+  const tray = createSystemTray({
+    targetDate: '2026-10-18',
+    onSyncNow: () => {
+      syncTriggered = true;
+    },
+    onExit: () => {
+      exitTriggered = true;
+    },
+  });
+
+  assert.ok(tray);
+  tray.init();
+
+  // Test status and date update methods without throwing
+  tray.updateStatus('Status: Testing', 'WC Sync - Test');
+  tray.updateDate('2026-10-19');
+  tray.notify({ title: 'Test Title', message: 'Test message body', type: 'Info' });
+
+  // Test callback hooks
+  tray.options.onSyncNow?.();
+  tray.options.onExit?.();
+  assert.equal(syncTriggered, true);
+  assert.equal(exitTriggered, true);
+
+  // Close safely
+  tray.close();
 });

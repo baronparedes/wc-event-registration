@@ -35,16 +35,18 @@ echo.
 echo Choose an installation option:
 echo [1] Install as Windows Background Task (Task Scheduler, starts on boot)
 echo [2] Install via NSSM (if nssm.exe is in PATH or directory)
-echo [3] Uninstall service / task
-echo [4] Exit
+echo [3] Install to Windows Startup (System Tray mode, starts silently on user login)
+echo [4] Uninstall service / task / startup
+echo [5] Exit
 echo.
 
-set /p OPTION="Select option [1-4]: "
+set /p OPTION="Select option [1-5]: "
 
 if "%OPTION%"=="1" goto INSTALL_TASK
 if "%OPTION%"=="2" goto INSTALL_NSSM
-if "%OPTION%"=="3" goto UNINSTALL
-if "%OPTION%"=="4" exit /b 0
+if "%OPTION%"=="3" goto INSTALL_STARTUP
+if "%OPTION%"=="4" goto UNINSTALL
+if "%OPTION%"=="5" exit /b 0
 
 echo Invalid selection.
 pause
@@ -90,11 +92,28 @@ echo [SUCCESS] Windows Service "%SERVICE_NAME%" installed and started!
 pause
 exit /b 0
 
-:UNINSTALL
+:INSTALL_STARTUP
 echo.
-echo Removing service/task...
-schtasks /delete /f /tn "%SERVICE_NAME%" >nul 2>&1
-where nssm >nul 2>&1 && nssm stop "%SERVICE_NAME%" >nul 2>&1 && nssm remove "%SERVICE_NAME%" confirm >nul 2>&1
-echo [SUCCESS] "%SERVICE_NAME%" uninstalled.
+echo Registering in Windows Startup (System Tray mode)...
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "%SERVICE_NAME%" /t REG_SZ /d "\"%EXE_PATH%\" --tray" /f
+if %errorlevel% equ 0 (
+    echo.
+    echo [SUCCESS] Registered to Windows Startup!
+    echo Starting System Tray service now...
+    start "" "%EXE_PATH%" --tray
+) else (
+    echo [ERROR] Failed to add registry startup entry.
+)
 pause
 exit /b 0
+
+:UNINSTALL
+echo.
+echo Removing service/task/startup entry...
+schtasks /delete /f /tn "%SERVICE_NAME%" >nul 2>&1
+where nssm >nul 2>&1 && nssm stop "%SERVICE_NAME%" >nul 2>&1 && nssm remove "%SERVICE_NAME%" confirm >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "%SERVICE_NAME%" /f >nul 2>&1
+echo [SUCCESS] "%SERVICE_NAME%" uninstalled from background tasks and startup.
+pause
+exit /b 0
+

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +7,7 @@ import { getManilaDateString, parseConfig } from './config.js';
 import { createSnapshotDatabase, getDatabaseSignature } from './db.js';
 import { logger } from './logger.js';
 import { executeSyncRun } from './sync.js';
+import { createSystemTray } from './tray.js';
 
 async function main() {
   const config = parseConfig();
@@ -17,7 +19,7 @@ async function main() {
 Database:    ${path.resolve(config.dbPath)}
 Endpoint:    ${config.endpoint}
 Date:        ${config.targetDate}
-Mode:        ${config.once ? 'Single-Run (--once)' : `Continuous Watch (${config.pollIntervalMs / 1000}s interval)`}
+Mode:        ${config.once ? 'Single-Run (--once)' : config.tray ? `System Tray & Watch (${config.pollIntervalMs / 1000}s interval)` : `Continuous Watch (${config.pollIntervalMs / 1000}s interval)`}
 Sync Key:    ${config.syncKey ? 'Configured (***)' : 'MISSING (Must configure SYNC_API_KEY)'}
 ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=====================================================
 `);
@@ -36,6 +38,7 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
   let isRunning = true;
   let isSyncing = false;
   let intervalId = null;
+  let tray = null;
 
   const cleanup = () => {
     if (!isRunning) return;
@@ -43,6 +46,10 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
     if (intervalId) {
       clearInterval(intervalId);
       intervalId = null;
+    }
+    if (tray) {
+      tray.close();
+      tray = null;
     }
     logger.info('Shutting down attendance sync service...');
     process.exit(0);
@@ -55,6 +62,9 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
   const runCycle = async () => {
     if (isSyncing || !isRunning) return;
     isSyncing = true;
+    if (tray) {
+      tray.updateStatus('Status: Syncing...', `WC Attendance Sync - Syncing ${config.targetDate}`);
+    }
     let snapshot = null;
     try {
       // Auto-update targetDate to today if not pinned by CLI flag or env
@@ -68,12 +78,53 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
           `Date changed from ${config.targetDate} to ${currentDate}. Updating sync target.`,
         );
         config.targetDate = currentDate;
+        if (tray) {
+          tray.updateDate(currentDate);
+        }
       }
 
       snapshot = createSnapshotDatabase(config.dbPath);
-      await executeSyncRun(snapshot.db, config);
+      const result = await executeSyncRun(snapshot.db, config);
+
+      if (tray) {
+        const timeStr = new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        });
+
+        if (result?.error) {
+          tray.updateStatus('Status: Error (Sync failed)', 'WC Attendance Sync - Error');
+          tray.notify({
+            title: 'Attendance Sync Error',
+            message: result.error,
+            type: 'Error',
+          });
+        } else if (result && result.syncedCount > 0) {
+          tray.updateStatus(`Status: Idle (Synced ${timeStr})`, 'WC Attendance Sync - Active');
+          tray.notify({
+            title: 'Attendance Records Synced',
+            message: `Successfully synced ${result.syncedCount} record(s) for ${config.targetDate}.`,
+            type: 'Info',
+          });
+        } else {
+          tray.updateStatus(
+            `Status: Watching (Last check ${timeStr})`,
+            'WC Attendance Sync - Active',
+          );
+        }
+      }
     } catch (err) {
       logger.error('Unexpected error during sync cycle', err);
+      if (tray) {
+        tray.updateStatus('Status: Error', 'WC Attendance Sync - Error');
+        tray.notify({
+          title: 'Attendance Sync Exception',
+          message: err.message,
+          type: 'Error',
+        });
+      }
     } finally {
       if (snapshot) {
         snapshot.close();
@@ -81,6 +132,42 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
       isSyncing = false;
     }
   };
+
+  if (config.tray) {
+    const openLogsDir = () => {
+      const logsDir = path.resolve(process.cwd(), 'logs');
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+      if (process.platform === 'win32') {
+        spawn('explorer.exe', [logsDir], { detached: true, stdio: 'ignore' }).unref();
+      } else if (process.platform === 'darwin') {
+        spawn('open', [logsDir], { detached: true, stdio: 'ignore' }).unref();
+      } else if (process.platform === 'linux') {
+        spawn('xdg-open', [logsDir], { detached: true, stdio: 'ignore' }).unref();
+      }
+    };
+
+    const openConfigFile = () => {
+      const envPath = path.resolve(process.cwd(), '.env');
+      if (process.platform === 'win32') {
+        spawn('notepad.exe', [envPath], { detached: true, stdio: 'ignore' }).unref();
+      } else if (process.platform === 'darwin') {
+        spawn('open', ['-t', envPath], { detached: true, stdio: 'ignore' }).unref();
+      } else if (process.platform === 'linux') {
+        spawn('xdg-open', [envPath], { detached: true, stdio: 'ignore' }).unref();
+      }
+    };
+
+    tray = createSystemTray({
+      targetDate: config.targetDate,
+      onSyncNow: () => runCycle(),
+      onViewLogs: openLogsDir,
+      onOpenConfig: openConfigFile,
+      onExit: cleanup,
+    });
+    tray.init();
+  }
 
   // Run initial pass
   await runCycle();
