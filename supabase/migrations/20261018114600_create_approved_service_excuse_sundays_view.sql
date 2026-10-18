@@ -1,7 +1,9 @@
 begin;
 
 -- Create helper view for expanding single-date and date-range approved service excuses into Sundays
-create or replace view public.approved_service_excuse_sundays as
+create or replace view public.approved_service_excuse_sundays
+with
+  (security_invoker = true) as
 select distinct
   ser.id as excuse_id,
   ser.user_id,
