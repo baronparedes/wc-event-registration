@@ -28,8 +28,23 @@ try {
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
+$targetDate = if ($args.Length -gt 0) { $args[0] } else { (Get-Date).ToString("yyyy-MM-dd") }
+$iconSource = if ($args.Length -gt 1) { $args[1] } else { "" }
+
 $notify = New-Object System.Windows.Forms.NotifyIcon
-$notify.Icon = [System.Drawing.SystemIcons]::Application
+try {
+    if ($iconSource -and (Test-Path $iconSource)) {
+        if ($iconSource.ToLower().EndsWith(".ico")) {
+            $notify.Icon = New-Object System.Drawing.Icon($iconSource)
+        } else {
+            $notify.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconSource)
+        }
+    } else {
+        $notify.Icon = [System.Drawing.SystemIcons]::Application
+    }
+} catch {
+    $notify.Icon = [System.Drawing.SystemIcons]::Application
+}
 $notify.Text = "WC Attendance Sync - Active"
 $notify.Visible = $true
 
@@ -38,7 +53,6 @@ $menu = New-Object System.Windows.Forms.ContextMenuStrip
 $statusItem = $menu.Items.Add("Status: Watching")
 $statusItem.Enabled = $false
 
-$targetDate = if ($args.Length -gt 0) { $args[0] } else { (Get-Date).ToString("yyyy-MM-dd") }
 $dateItem = $menu.Items.Add("Date: " + $targetDate)
 $dateItem.Enabled = $false
 
@@ -168,6 +182,25 @@ export class SystemTray {
       this.scriptPath = path.join(os.tmpdir(), 'wc_attendance_tray.ps1');
       fs.writeFileSync(this.scriptPath, WINDOWS_TRAY_SCRIPT, 'utf-8');
 
+      const candidateIcons = [
+        path.resolve(process.cwd(), 'app.ico'),
+        typeof import.meta?.dirname === 'string'
+          ? path.resolve(import.meta.dirname, 'app.ico')
+          : null,
+        typeof import.meta?.dirname === 'string'
+          ? path.resolve(import.meta.dirname, '../../public/favicon.ico')
+          : null,
+        process.execPath,
+      ].filter(Boolean);
+
+      let iconSource = '';
+      for (const candidate of candidateIcons) {
+        if (candidate && fs.existsSync(candidate)) {
+          iconSource = candidate;
+          break;
+        }
+      }
+
       this.child = spawn(
         'powershell.exe',
         [
@@ -178,6 +211,7 @@ export class SystemTray {
           '-File',
           this.scriptPath,
           this.options.targetDate || '',
+          iconSource,
         ],
         {
           stdio: ['pipe', 'pipe', 'pipe'],
