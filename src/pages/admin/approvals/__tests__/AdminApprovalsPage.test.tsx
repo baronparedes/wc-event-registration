@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApprovalRequest } from '@/lib/domain/approvals';
@@ -16,6 +17,18 @@ vi.mock('@/hooks/domain/approvals', () => ({
   useSubmitApprovalDecisionMutation: () => mockUseSubmitApprovalDecisionMutation(),
 }));
 
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => ({
+    data: {
+      adminRole: 'admin',
+      isAuthenticated: true,
+      session: null,
+    },
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -27,7 +40,11 @@ function renderWithClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
+  );
 }
 
 const mockRequests: ApprovalRequest[] = [
@@ -136,7 +153,7 @@ describe('AdminApprovalsPage', () => {
     const reviewButtons = screen.getAllByRole('button', { name: /Review/i });
     fireEvent.click(reviewButtons[0]);
 
-    expect(screen.getByText('Review Request Details')).toBeInTheDocument();
+    expect(screen.getByText(/Review request details/i)).toBeInTheDocument();
     expect(screen.getByText(/Dietary Needs/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Decline/i })).toBeInTheDocument();

@@ -41,6 +41,10 @@ describe('AdminBaseNavigation', () => {
       'href',
       ROUTE_PATHS.adminForms,
     );
+    expect(screen.getByRole('link', { name: 'Approvals' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminApprovals,
+    );
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminMembers,
@@ -82,6 +86,10 @@ describe('AdminBaseNavigation', () => {
       'href',
       ROUTE_PATHS.adminForms,
     );
+    expect(screen.getByRole('link', { name: 'Approvals' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminApprovals,
+    );
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminMembers,
@@ -116,6 +124,7 @@ describe('AdminBaseNavigation', () => {
 
     expect(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Forms' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Approvals' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Members' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'User Roles' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Services' })).not.toBeInTheDocument();
@@ -140,6 +149,10 @@ describe('AdminBaseNavigation', () => {
 
     expect(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Forms' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Approvals' })).toHaveAttribute(
+      'href',
+      ROUTE_PATHS.adminApprovals,
+    );
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
       'href',
       ROUTE_PATHS.adminMembers,
