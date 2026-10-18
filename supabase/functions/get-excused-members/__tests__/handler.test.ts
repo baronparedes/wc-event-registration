@@ -48,7 +48,7 @@ function mockFetch(options: { excuses?: unknown[]; queryError?: boolean }) {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
-    if (requestUrl.pathname === '/rest/v1/service_excuse_requests') {
+    if (requestUrl.pathname === '/rest/v1/service_excuse_sundays') {
       if (options.queryError) {
         return Promise.resolve(Response.json({ message: 'excuse lookup failed' }, { status: 500 }));
       }
@@ -79,12 +79,15 @@ Deno.test(
       const fetchMock = mockFetch({
         excuses: [
           {
-            id: 'excuse-1',
+            excuse_id: 'excuse-1',
             user_id: 'user-1',
             member_id: 'M-001',
-            request_date: '2026-02-08',
+            sunday_date: '2026-02-08',
             services: ['9AM', '12NN'],
+            services_str: '9AM, 12NN',
             reason: 'Family commitment',
+            status: 'approved',
+            is_long_leave: false,
           },
         ],
       });
@@ -99,13 +102,15 @@ Deno.test(
               requestDate: '2026-02-08',
               services: '9AM, 12NN',
               reason: 'Family commitment',
+              status: 'approved',
+              isLongLeave: false,
             },
           ],
         });
         const query = fetchMock.requestedUrls.find(
-          (url) => url.pathname === '/rest/v1/service_excuse_requests',
+          (url) => url.pathname === '/rest/v1/service_excuse_sundays',
         );
-        assertEquals(query?.searchParams.get('request_date'), 'gte.2026-02-01');
+        assertEquals(query?.searchParams.get('sunday_date'), 'gte.2026-02-01');
       } finally {
         fetchMock.restore();
       }

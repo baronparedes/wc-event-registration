@@ -4,6 +4,7 @@ import type { TimeSlot } from '@/hooks/domain/members';
 
 import {
   buildCalendarCells,
+  buildExcusedMap,
   buildMobileWeekCells,
   getMemberExcusedDetails,
   getMonthWeekRanges,
@@ -291,6 +292,38 @@ describe('hub-calendar calendar utils', () => {
       });
     });
 
+    it('returns status and isLongLeave when available', () => {
+      const mapWithLongLeave: ExcusedMemberMap = new Map([
+        [
+          '2026-09-20',
+          new Map<string, Set<TimeSlot> | ExcusedSlotData>([
+            [
+              'mem-pending-leave',
+              {
+                slots: new Set<TimeSlot>(['9AM', '12NN']),
+                reasons: new Map<TimeSlot, string>([['9AM', 'Sabbatical leave']]),
+                status: 'pending',
+                isLongLeave: true,
+              },
+            ],
+          ]),
+        ],
+      ]);
+
+      const result = getMemberExcusedDetails(
+        mapWithLongLeave,
+        '2026-09-20',
+        { member_id: 'MEM-PENDING-LEAVE' },
+        '9AM',
+      );
+      expect(result).toEqual({
+        isExcused: true,
+        reason: 'Sabbatical leave',
+        status: 'pending',
+        isLongLeave: true,
+      });
+    });
+
     it('returns isExcused: false for unknown member or missing map', () => {
       expect(
         getMemberExcusedDetails(detailedExcusedMap, '2026-09-20', { member_id: 'UNKNOWN' }, '9AM'),
@@ -299,6 +332,31 @@ describe('hub-calendar calendar utils', () => {
       expect(
         getMemberExcusedDetails(undefined, '2026-09-20', { member_id: 'MEM-WITH-REASON' }, '9AM'),
       ).toEqual({ isExcused: false });
+    });
+  });
+
+  describe('buildExcusedMap', () => {
+    it('correctly maps records with status and isLongLeave', () => {
+      const records = [
+        {
+          memberId: 'MEM-001',
+          requestDate: '2026-09-20',
+          services: '9AM, 12NN',
+          reason: 'Medical treatment',
+          status: 'pending' as const,
+          isLongLeave: true,
+        },
+      ];
+
+      const map = buildExcusedMap(records, 2026, 8); // Sep 2026
+      const details = getMemberExcusedDetails(map, '2026-09-20', { member_id: 'mem-001' }, '9AM');
+
+      expect(details).toEqual({
+        isExcused: true,
+        reason: 'Medical treatment',
+        status: 'pending',
+        isLongLeave: true,
+      });
     });
   });
 });

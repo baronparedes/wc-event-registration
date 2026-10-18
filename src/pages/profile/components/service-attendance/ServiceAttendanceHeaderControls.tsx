@@ -38,7 +38,7 @@ export function ServiceAttendanceHeaderControls({
       {onRequestLongLeave && (
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={onRequestLongLeave}
           className="h-10 font-semibold shadow-xs order-last sm:order-first gap-1.5"

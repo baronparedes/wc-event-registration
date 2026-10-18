@@ -46,6 +46,8 @@ describe('useHubCalendarData', () => {
         ['9AM', 'Test absence'],
         ['12NN', 'Test appointment'],
       ]),
+      status: 'approved',
+      isLongLeave: false,
     });
     expect(excuses?.get('user-001')).toEqual(excuses?.get('mem-001'));
     expect(result.current.isCurrentSelectedSunday).toBe(true);

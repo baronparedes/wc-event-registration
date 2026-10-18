@@ -4,6 +4,8 @@ import type { AdminMember } from '@/lib/domain/members';
 export type ExcusedSlotData = {
   slots: Set<TimeSlot>;
   reasons?: Map<TimeSlot, string>;
+  status?: 'approved' | 'pending';
+  isLongLeave?: boolean;
 };
 
 export type ExcusedMemberMap = Map<string, Map<string, Set<TimeSlot> | ExcusedSlotData>>;

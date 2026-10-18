@@ -1,4 +1,4 @@
-import { CalendarOff } from 'lucide-react';
+import { CalendarOff, Clock } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 
@@ -10,6 +10,7 @@ export type ServiceScheduleAvatarProps = {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   className?: string;
   excused?: boolean;
+  excusedStatus?: 'approved' | 'pending';
   border?: 'primary' | 'secondary' | 'destructive' | 'accent' | 'success' | 'none';
   turnupRate?: number | null;
   attendanceScore?: number | null;
@@ -23,6 +24,7 @@ export function ServiceScheduleAvatar({
   size = 'sm',
   className = '',
   excused = false,
+  excusedStatus = 'approved',
   border,
   turnupRate,
   attendanceScore,
@@ -78,6 +80,11 @@ export function ServiceScheduleAvatar({
     '3xl': 'h-10 w-10',
   };
 
+  const isPending = excusedStatus === 'pending';
+  const badgeBgClass = isPending ? 'bg-amber-500 text-white' : 'bg-danger text-white';
+  const badgeTitle = tooltip ? undefined : isPending ? 'Pending Approval' : 'Excused';
+  const IconComponent = isPending ? Clock : CalendarOff;
+
   return (
     <div className="relative inline-flex shrink-0" title={tooltip}>
       <Avatar
@@ -88,10 +95,10 @@ export function ServiceScheduleAvatar({
         className={className}
       />
       <span
-        title={tooltip ? undefined : 'Excused'}
-        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm bg-danger text-white ${badgeSizeClasses[size]}`}
+        title={badgeTitle}
+        className={`absolute flex items-center justify-center rounded-full border-surface shadow-sm ${badgeBgClass} ${badgeSizeClasses[size]}`}
       >
-        <CalendarOff className={`${iconSizeClasses[size]} shrink-0`} />
+        <IconComponent className={`${iconSizeClasses[size]} shrink-0`} />
       </span>
     </div>
   );
