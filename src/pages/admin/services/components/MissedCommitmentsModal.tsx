@@ -196,8 +196,11 @@ export function MissedCommitmentsModal({
     // Sort commitments inside each volunteer chronologically
     map.forEach((volunteer) => {
       volunteer.commitments.sort((a, b) => {
+        // ⚡ Bolt: Performance Improvement
+        // Use native string comparison for ISO-8601 dates instead of localeCompare
+        // to avoid significant overhead in the sorting loop.
         if (a.service_date !== b.service_date) {
-          return a.service_date.localeCompare(b.service_date);
+          return a.service_date < b.service_date ? -1 : a.service_date > b.service_date ? 1 : 0;
         }
         return (
           TIME_SLOTS.indexOf(a.time_slot as ServiceTimeSlot) -
