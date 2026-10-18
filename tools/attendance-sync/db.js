@@ -12,7 +12,8 @@ export function createSnapshotDatabase(liveDbPath) {
     throw new Error(`SQLite database file not found at: ${liveDbPath}`);
   }
 
-  const parsed = path.parse(path.resolve(liveDbPath));
+  const resolvedLiveDb = path.resolve(liveDbPath);
+  const parsed = path.parse(resolvedLiveDb);
   const snapshotPath = path.format({
     dir: parsed.dir || '.',
     name: `.${parsed.name}_sync_snapshot`,
@@ -20,11 +21,11 @@ export function createSnapshotDatabase(liveDbPath) {
   });
 
   // Fast OS file copy (1-3ms) - does not acquire SQLite database locks
-  fs.copyFileSync(liveDbPath, snapshotPath);
+  fs.copyFileSync(resolvedLiveDb, snapshotPath);
 
   // Also copy WAL and SHM files if they happen to exist
-  const walPath = `${liveDbPath}-wal`;
-  const shmPath = `${liveDbPath}-shm`;
+  const walPath = `${resolvedLiveDb}-wal`;
+  const shmPath = `${resolvedLiveDb}-shm`;
   if (fs.existsSync(walPath)) {
     try {
       fs.copyFileSync(walPath, `${snapshotPath}-wal`);
@@ -196,4 +197,27 @@ function normalizeDbRow(row) {
     manual_entry: Number(row.manual_entry || 0),
     is_walk_in: Boolean(row.is_walk_in),
   };
+}
+
+/**
+ * Computes a lightweight signature of the database file and its auxiliary files (-wal, -shm, -journal).
+ * Returns a string incorporating timestamps and file sizes.
+ * If any file is modified or changes size, the signature changes.
+ */
+export function getDatabaseSignature(liveDbPath) {
+  const resolved = path.resolve(liveDbPath);
+  const targets = [resolved, `${resolved}-wal`, `${resolved}-shm`, `${resolved}-journal`];
+
+  let sig = '';
+  for (const file of targets) {
+    try {
+      if (fs.existsSync(file)) {
+        const stats = fs.statSync(file);
+        sig += `${file}:${stats.mtimeMs}:${stats.size};`;
+      }
+    } catch {
+      // Ignore if file was unlinked or temporarily locked
+    }
+  }
+  return sig;
 }

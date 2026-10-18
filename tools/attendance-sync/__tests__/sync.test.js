@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 
 import { getManilaDateString, parseConfig } from '../config.js';
-import { fetchNewAttendanceRecords } from '../db.js';
+import { fetchNewAttendanceRecords, getDatabaseSignature } from '../db.js';
 import { getStateFilePath, loadSyncState, saveSyncState } from '../state.js';
 
 test('getManilaDateString produces valid YYYY-MM-DD date format', () => {
@@ -124,4 +124,30 @@ test('fetchNewAttendanceRecords reads matching date records and advances checkpo
   assert.equal(secondPass.records.length, 0);
 
   memDb.close();
+});
+
+test('getDatabaseSignature detects modifications in SQLite database and WAL files', async () => {
+  const tempDir = fs.mkdtempSync(path.join(process.cwd(), '.tmp-sig-test-'));
+  const dbPath = path.join(tempDir, 'test_wal_sig.db');
+
+  try {
+    const db = new DatabaseSync(dbPath);
+    db.exec('PRAGMA journal_mode = WAL;');
+    db.exec('CREATE TABLE test_tab (id INTEGER PRIMARY KEY, note TEXT);');
+
+    const initialSig = getDatabaseSignature(dbPath);
+    assert.ok(initialSig.length > 0);
+
+    // Wait slightly to ensure filesystem timestamp ticks
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    db.exec("INSERT INTO test_tab (note) VALUES ('WAL record');");
+    const updatedSig = getDatabaseSignature(dbPath);
+
+    assert.notEqual(initialSig, updatedSig, 'Signature should change after WAL insert');
+
+    db.close();
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });

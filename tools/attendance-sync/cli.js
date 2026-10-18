@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { getManilaDateString, parseConfig } from './config.js';
-import { createSnapshotDatabase } from './db.js';
+import { createSnapshotDatabase, getDatabaseSignature } from './db.js';
 import { logger } from './logger.js';
 import { executeSyncRun } from './sync.js';
 
@@ -35,11 +35,15 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
 
   let isRunning = true;
   let isSyncing = false;
-  let lastMtime = 0;
+  let intervalId = null;
 
   const cleanup = () => {
     if (!isRunning) return;
     isRunning = false;
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
     logger.info('Shutting down attendance sync service...');
     process.exit(0);
   };
@@ -53,9 +57,13 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
     isSyncing = true;
     let snapshot = null;
     try {
-      // Auto-update targetDate to today if not pinned by CLI flag
+      // Auto-update targetDate to today if not pinned by CLI flag or env
       const currentDate = getManilaDateString();
-      if (!process.argv.includes('--date') && config.targetDate !== currentDate) {
+      if (
+        !process.argv.includes('--date') &&
+        !process.env.TARGET_DATE &&
+        config.targetDate !== currentDate
+      ) {
         logger.info(
           `Date changed from ${config.targetDate} to ${currentDate}. Updating sync target.`,
         );
@@ -82,18 +90,25 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
     return;
   }
 
+  let lastSignature = getDatabaseSignature(config.dbPath);
+
   logger.info(`Watching for new attendance records... (Press Ctrl+C to stop)`);
 
-  // Watch for changes via polling + mtime check
-  const intervalId = setInterval(async () => {
-    if (!isRunning) return;
+  // Watch for changes via polling + signature check
+  intervalId = setInterval(async () => {
+    if (!isRunning || isSyncing) return;
 
     try {
       if (fs.existsSync(config.dbPath)) {
-        const stats = fs.statSync(config.dbPath);
-        // If file modified or WAL changed, or routine poll check
-        if (stats.mtimeMs !== lastMtime) {
-          lastMtime = stats.mtimeMs;
+        const currentSignature = getDatabaseSignature(config.dbPath);
+        const currentDate = getManilaDateString();
+        const dateChanged =
+          !process.argv.includes('--date') &&
+          !process.env.TARGET_DATE &&
+          config.targetDate !== currentDate;
+
+        if (currentSignature !== lastSignature || dateChanged) {
+          lastSignature = currentSignature;
           await runCycle();
         }
       }
@@ -101,9 +116,6 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
       // Silently retry on next tick if file temporarily locked by writer
     }
   }, config.pollIntervalMs);
-
-  // Prevent interval from blocking cleanup if needed
-  intervalId.unref?.();
 }
 
 main().catch((err) => {
