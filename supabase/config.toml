@@ -300,6 +300,10 @@ import_map = "./functions/deno.json"
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.sync-kiosk-attendance]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.update-attendance-settings]
 verify_jwt = true
 import_map = "./functions/deno.json"
