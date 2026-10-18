@@ -100,7 +100,18 @@ This file contains the core principles, architecture rules, and domain logic con
 - Service commitments are snapshotted in `public.user_commitment_history` via the `users_snapshot_commitment_metadata` trigger on `public.users`. The trigger function `snapshot_user_commitment_metadata` is declared `SECURITY DEFINER` with `search_path = public`, and only snapshots when Sunday commitment keys (`first_sunday` through `fifth_sunday`) change. Snapshots are effective-dated to the nearest upcoming Sunday (`get_nearest_upcoming_sunday`).
 - The profile service attendance history UI (`ServiceAttendanceHistoryTab`) queries snapshots to evaluate historical schedule alignment per Sunday using `resolveMetadataForDate`.
 
-## 8. Domain Logic: App Notifications & Multi-Channel Broadcasting
+## 8. Domain Logic: Unified Approval Workflow & SLOD Delegation
+
+- **Unified Approval Requests (`/admin/approvals`)**:
+  - Centralizes review workflows across `form_submission` and `service_excuse` (Long Leave).
+  - Admins can inspect details, track review assignment status, delegate review to SLOD users (`list_slod_users`), or approve/decline directly at any time.
+- **Volunteer Long Leave (Service Excuses)**:
+  - Members self-file from `/profile?tab=commitments` without entering reviewer emails.
+  - Duration validation strictly enforces at least 4 weeks (28 days / 4 Sundays) between `start_date` and `end_date`.
+  - Approved excuses populate `approved_service_excuse_sundays_view` (declared with `security_invoker = true`), automatically excusing commitments on the Hub Calendar and Sunday schedules.
+  - See [`docs/guides/unified-approval-workflow-and-slod-delegation.md`](docs/guides/unified-approval-workflow-and-slod-delegation.md).
+
+## 9. Domain Logic: App Notifications & Multi-Channel Broadcasting
 
 - **Notification Center & Header Drawer**:
   - The notification bell in the main app header renders unread alert badges, supports real-time listening via Supabase Realtime on `app_notification_recipients`, and offers a slide-over drawer with filtering (`All` and `Unread`), tab switching, mark-as-read, and deletion.
@@ -119,14 +130,14 @@ This file contains the core principles, architecture rules, and domain logic con
   - **`cron-process-email-queue`**: Consumes `email_queue` messages and dispatches via Resend API (`/emails`).
   - **Local Broadcast Safety Harness (`_shared/resend.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all email dispatches through `sendResendEmail` are safely simulated and logged locally (`./local-broadcasts.log`) instead of reaching real email addresses. Output files are gitignored.
 
-## 9. Testing
+## 10. Testing
 
 - **Unit Tests (React/Frontend)**: Executed with `npm run test:unit` using Vitest.
 - **Unit Tests (Edge Functions)**: Executed with Deno test runner (`npm run test:edge` or `npm run precommit`). Tests reside in `supabase/functions/<name>/__tests__/`. AI Agents modifying or adding Edge Functions MUST always author or update corresponding Deno unit tests.
 - **Environment**: Vitest expects Supabase environment variables to be defined in `.env.local`.
 - **Coverage**: Supabase Edge Functions (`supabase/functions/**`) are intentionally excluded from Vitest test coverage reporting as they are tested via Deno.
 
-## 10. Repository Skills & Specialized Guides (`.agent/skills/`)
+## 11. Repository Skills & Specialized Guides (`.agent/skills/`)
 
 The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 
