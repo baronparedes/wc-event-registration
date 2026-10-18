@@ -76,7 +76,7 @@ $exitItem.add_Click({
 
 $notify.ContextMenuStrip = $menu
 
-$queue = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
+$queue = [System.Collections.Queue]::Synchronized((New-Object System.Collections.Queue))
 
 $thread = [System.Threading.Thread]::new([System.Threading.ThreadStart]{
     while ($true) {
@@ -94,8 +94,8 @@ $thread.Start()
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 200
 $timer.add_Tick({
-    $item = $null
-    while ($queue.TryDequeue([ref]$item)) {
+    while ($queue.Count -gt 0) {
+        $item = $queue.Dequeue()
         if (-not [string]::IsNullOrWhiteSpace($item)) {
             try {
                 $cmd = $item | ConvertFrom-Json
@@ -211,6 +211,24 @@ export class SystemTray {
           }
         } catch {
           // Ignore non-json output
+        }
+      });
+
+      this.child.stderr?.on('data', (data) => {
+        const text = data.toString().trim();
+        if (text) {
+          logger.warn(`Windows System Tray stderr: ${text}`);
+          try {
+            const logsDir = path.resolve(process.cwd(), 'logs');
+            if (!fs.existsSync(logsDir)) {
+              fs.mkdirSync(logsDir, { recursive: true });
+            }
+            fs.appendFileSync(
+              path.join(logsDir, 'tray.log'),
+              `[${new Date().toISOString()}] ${text}\n`,
+              'utf-8',
+            );
+          } catch {}
         }
       });
 

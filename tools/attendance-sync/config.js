@@ -2,16 +2,45 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
+ * Locates the application root directory (where .env or wc_attend.db lives).
+ * Handles standalone binary execution (Deno compile), npm scripts, and arbitrary CWD.
+ */
+export function getAppBaseDirectory() {
+  const candidates = [
+    process.cwd(),
+    typeof import.meta?.dirname === 'string' ? import.meta.dirname : null,
+    typeof import.meta?.dirname === 'string' ? path.resolve(import.meta.dirname, '../..') : null,
+    process.execPath ? path.dirname(process.execPath) : null,
+    process.execPath ? path.resolve(path.dirname(process.execPath), '..') : null,
+    process.execPath ? path.resolve(path.dirname(process.execPath), '../..') : null,
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, '.env')) || fs.existsSync(path.join(dir, 'wc_attend.db'))) {
+      return dir;
+    }
+  }
+  return process.cwd();
+}
+
+/**
  * Basic .env loader (zero external dependencies).
- * Reads .env from cwd or script dir if it exists.
+ * Reads .env from cwd, app directory, or executable directory.
  */
 export function loadEnvFile(explicitPath) {
+  const appBase = getAppBaseDirectory();
   const candidates = [
     explicitPath,
     path.resolve(process.cwd(), '.env'),
     path.resolve(process.cwd(), '.env.local'),
-    path.resolve(import.meta.dirname, '.env'),
-    path.resolve(import.meta.dirname, '../../.env'),
+    path.resolve(appBase, '.env'),
+    path.resolve(appBase, '.env.local'),
+    typeof import.meta?.dirname === 'string' ? path.resolve(import.meta.dirname, '.env') : null,
+    typeof import.meta?.dirname === 'string'
+      ? path.resolve(import.meta.dirname, '../../.env')
+      : null,
+    process.execPath ? path.resolve(path.dirname(process.execPath), '.env') : null,
+    process.execPath ? path.resolve(path.dirname(process.execPath), '..', '.env') : null,
   ].filter(Boolean);
 
   for (const envPath of candidates) {
@@ -46,6 +75,27 @@ export function loadEnvFile(explicitPath) {
 }
 
 /**
+ * Resolves the default database path. If ATTENDANCE_DB_PATH is not set,
+ * searches known candidate locations for wc_attend.db.
+ */
+export function resolveDefaultDbPath() {
+  if (process.env.ATTENDANCE_DB_PATH) {
+    return process.env.ATTENDANCE_DB_PATH;
+  }
+  const appBase = getAppBaseDirectory();
+  const candidates = [
+    path.resolve(process.cwd(), 'wc_attend.db'),
+    path.resolve(appBase, 'wc_attend.db'),
+    path.resolve(appBase, '..', 'wc_attend.db'),
+    path.resolve(appBase, '../..', 'wc_attend.db'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return './wc_attend.db';
+}
+
+/**
  * Returns current date formatted as YYYY-MM-DD in Asia/Manila timezone (UTC+8).
  */
 export function getManilaDateString(date = new Date()) {
@@ -65,7 +115,7 @@ export function parseConfig(args = process.argv.slice(2)) {
   loadEnvFile();
 
   const config = {
-    dbPath: process.env.ATTENDANCE_DB_PATH || './wc_attend.db',
+    dbPath: resolveDefaultDbPath(),
     endpoint:
       process.env.SYNC_ENDPOINT ||
       (process.env.VITE_SUPABASE_URL

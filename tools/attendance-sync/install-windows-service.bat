@@ -1,6 +1,8 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+cd /d "%~dp0"
+
 :: Check for Administrator privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
@@ -100,7 +102,7 @@ if %errorlevel% equ 0 (
     echo.
     echo [SUCCESS] Registered to Windows Startup!
     echo Starting System Tray service now...
-    start "" "%EXE_PATH%" --tray
+    start "" /d "%~dp0" "%EXE_PATH%" --tray
 ) else (
     echo [ERROR] Failed to add registry startup entry.
 )

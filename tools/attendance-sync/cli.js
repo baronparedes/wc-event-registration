@@ -3,13 +3,36 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { getManilaDateString, parseConfig } from './config.js';
+import { getAppBaseDirectory, getManilaDateString, parseConfig } from './config.js';
 import { createSnapshotDatabase, getDatabaseSignature } from './db.js';
 import { logger } from './logger.js';
 import { executeSyncRun } from './sync.js';
 import { createSystemTray } from './tray.js';
 
+function recordStartupFailure(msg) {
+  logger.error(msg);
+  try {
+    const logsDir = path.resolve(process.cwd(), 'logs');
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    fs.appendFileSync(
+      path.join(logsDir, 'startup-error.log'),
+      `[${new Date().toISOString()}] ${msg}\n`,
+      'utf-8',
+    );
+  } catch {}
+}
+
 async function main() {
+  // Ensure process working directory aligns with the app root even when launched from System32
+  const appBase = getAppBaseDirectory();
+  if (appBase && appBase !== process.cwd()) {
+    try {
+      process.chdir(appBase);
+    } catch {}
+  }
+
   const config = parseConfig();
 
   console.log(`
@@ -25,12 +48,14 @@ ${config.dryRun ? 'DRY RUN:     ENABLED (No data will be sent)\n' : ''}=========
 `);
 
   if (!config.syncKey && !config.dryRun) {
-    logger.error('Missing SYNC_API_KEY. Configure SYNC_API_KEY in .env or pass --key <key>');
+    recordStartupFailure(
+      'Missing SYNC_API_KEY. Configure SYNC_API_KEY in .env or pass --key <key>',
+    );
     process.exit(1);
   }
 
   if (!fs.existsSync(config.dbPath)) {
-    logger.error(`SQLite database file not found at: ${config.dbPath}`);
+    recordStartupFailure(`SQLite database file not found at: ${config.dbPath}`);
     process.exit(1);
   }
   logger.info('Live SQLite database verified. Zero-locking Snapshot Mode active.');

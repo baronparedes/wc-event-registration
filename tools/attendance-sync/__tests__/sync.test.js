@@ -4,10 +4,22 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 
-import { getManilaDateString, parseConfig } from '../config.js';
+import {
+  getAppBaseDirectory,
+  getManilaDateString,
+  parseConfig,
+  resolveDefaultDbPath,
+} from '../config.js';
 import { fetchNewAttendanceRecords, getDatabaseSignature } from '../db.js';
 import { getStateFilePath, loadSyncState, saveSyncState } from '../state.js';
 import { createSystemTray } from '../tray.js';
+
+test('getAppBaseDirectory and resolveDefaultDbPath return non-empty strings', () => {
+  const baseDir = getAppBaseDirectory();
+  assert.ok(typeof baseDir === 'string' && baseDir.length > 0);
+  const dbPath = resolveDefaultDbPath();
+  assert.ok(typeof dbPath === 'string' && dbPath.length > 0);
+});
 
 test('getManilaDateString produces valid YYYY-MM-DD date format', () => {
   const result = getManilaDateString(new Date('2026-10-18T00:00:00Z'));

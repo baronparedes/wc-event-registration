@@ -47,8 +47,8 @@
     "supabase:fn": "supabase functions serve --env-file .env",
     "seed:members:generate": "ruby scripts/generate-local-member-seed.rb",
     "sync:attendance": "node tools/attendance-sync/cli.js",
-    "build:sync:exe": "deno compile --no-config --node-modules-dir=none --target x86_64-pc-windows-msvc --allow-read --allow-write --allow-net --allow-env --output tools/attendance-sync/bin/wc-attendance-sync.exe tools/attendance-sync/cli.js",
-    "build:sync:mac": "deno compile --no-config --node-modules-dir=none --target aarch64-apple-darwin --allow-read --allow-write --allow-net --allow-env --output tools/attendance-sync/bin/wc-attendance-sync tools/attendance-sync/cli.js",
+    "build:sync:exe": "deno compile --no-config --node-modules-dir=none --target x86_64-pc-windows-msvc --allow-read --allow-write --allow-net --allow-env --allow-run --output tools/attendance-sync/bin/wc-attendance-sync.exe tools/attendance-sync/cli.js",
+    "build:sync:mac": "deno compile --no-config --node-modules-dir=none --target aarch64-apple-darwin --allow-read --allow-write --allow-net --allow-env --allow-run --output tools/attendance-sync/bin/wc-attendance-sync tools/attendance-sync/cli.js",
     "env:validate:production": "node scripts/validate-production-env.mjs",
     "git:clean": "bash scripts/clean-merged-branches.sh",
     "prepare": "husky"

@@ -10,14 +10,14 @@ if not exist "%EXE_PATH%" (
 
 if exist "%EXE_PATH%" (
     echo Starting Word Community Attendance Sync in System Tray mode...
-    start "" "%EXE_PATH%" --tray %*
+    start "" /d "%~dp0" "%EXE_PATH%" --tray %*
     exit /b 0
 )
 
 where node >nul 2>nul
 if %errorlevel% equ 0 (
     echo Starting Word Community Attendance Sync with Node.js in System Tray mode...
-    start "" node cli.js --tray %*
+    start "" /d "%~dp0" node cli.js --tray %*
     exit /b 0
 )
 
