@@ -5,17 +5,22 @@ import type {
   ApprovalDecisionResponse,
   ApprovalRequest,
   ApprovalReviewData,
+  DelegateApprovalInput,
+  DelegateApprovalResponse,
   FetchApprovalsFilters,
+  SlodUserItem,
   SubmitApprovalDecisionInput,
 } from './types';
 
 interface ProcessApprovalDecisionPayload {
-  action: 'get_review_data' | 'submit_decision';
+  action: 'get_review_data' | 'submit_decision' | 'delegate_approval';
   token?: string;
   approval_id?: string;
   decision?: 'approved' | 'rejected';
   notes?: string | null;
   reviewer_email?: string | null;
+  assigned_to_email?: string | null;
+  assigned_to_user_id?: string | null;
 }
 
 interface ProcessApprovalDecisionResponse {
@@ -128,5 +133,35 @@ export async function submitApprovalDecision(
     message: response.message || `Decision recorded as ${validated.decision}`,
     status: response.status || validated.decision,
     result: response.result,
+  };
+}
+
+export async function fetchSlodUsers(): Promise<SlodUserItem[]> {
+  const { data, error } = await supabase.rpc('list_slod_users');
+  if (error) {
+    throw new Error(`Failed to fetch SLOD users: ${error.message}`);
+  }
+  return (data as SlodUserItem[]) ?? [];
+}
+
+export async function delegateApproval(
+  input: DelegateApprovalInput,
+): Promise<DelegateApprovalResponse> {
+  const response = await callProcessApprovalDecision({
+    action: 'delegate_approval',
+    approval_id: input.approval_id,
+    assigned_to_email: input.assigned_to_email,
+    assigned_to_user_id: input.assigned_to_user_id,
+  });
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delegate approval');
+  }
+
+  return {
+    success: true,
+    message: response.message || `Approval delegated to ${input.assigned_to_email}`,
+    approval_id: input.approval_id,
+    assigned_to_email: input.assigned_to_email,
   };
 }

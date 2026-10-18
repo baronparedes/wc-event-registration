@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, Dialog, FormInputField } from '@/components/ui';
+import { Button, Dialog, FormInputField, FormSelectField } from '@/components/ui';
+import { useSlodUsersQuery } from '@/hooks/domain/approvals';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { MATRIX_TIME_SLOTS } from '@/lib/domain/services';
 
@@ -37,10 +38,16 @@ const longLeaveFormSchema = z
   .refine(
     (data) => {
       if (!data.start_date || !data.end_date) return true;
-      return data.end_date >= data.start_date;
+      const [sy, sm, sd] = data.start_date.split('-').map(Number);
+      const [ey, em, ed] = data.end_date.split('-').map(Number);
+      if (!sy || !sm || !sd || !ey || !em || !ed) return true;
+      const start = new Date(sy, sm - 1, sd);
+      const end = new Date(ey, em - 1, ed);
+      const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 28;
     },
     {
-      message: 'End date must be on or after start date',
+      message: 'Long leave must span at least 4 weeks (28 days) from start date',
       path: ['end_date'],
     },
   );
@@ -86,6 +93,9 @@ export function RequestLongLeaveModal({
   isAdminView = false,
 }: RequestLongLeaveModalProps) {
   const submitMutation = useSubmitExcuseMutation();
+  const { data: slodUsers = [], isLoading: isLoadingSlod } = useSlodUsersQuery({
+    enabled: isAdminView,
+  });
 
   const initialStartDate = getNextSundayDate();
   const initialEndDate = getFourWeeksOut(initialStartDate);
@@ -94,6 +104,8 @@ export function RequestLongLeaveModal({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LongLeaveFormValues>({
     resolver: zodResolver(longLeaveFormSchema),
@@ -127,7 +139,7 @@ export function RequestLongLeaveModal({
         is_long_leave: true,
         services: [...MATRIX_TIME_SLOTS],
         reason: values.reason.trim(),
-        assigned_to_email: values.assigned_to_email?.trim() || null,
+        assigned_to_email: isAdminView ? values.assigned_to_email?.trim() || null : null,
       });
 
       toast.success(
@@ -163,6 +175,7 @@ export function RequestLongLeaveModal({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <FormInputField
+                id="leave-start-date"
                 label="Start Date"
                 type="date"
                 required
@@ -172,6 +185,7 @@ export function RequestLongLeaveModal({
             </div>
             <div>
               <FormInputField
+                id="leave-end-date"
                 label="End Date"
                 type="date"
                 required
@@ -195,16 +209,25 @@ export function RequestLongLeaveModal({
             {errors.reason && <p className="mt-1 text-xs text-danger">{errors.reason.message}</p>}
           </div>
 
-          <div>
-            <FormInputField
-              label="Designated Reviewer Email (Optional)"
-              type="email"
-              placeholder="e.g. ministry.leader@example.com (leave blank for team review)"
-              registration={register('assigned_to_email')}
-              error={errors.assigned_to_email?.message}
-              helperText="If specified, an approval request email will be sent directly to this reviewer."
-            />
-          </div>
+          {isAdminView && (
+            <div>
+              <FormSelectField
+                id="admin-slod-delegate"
+                label="Delegate Review to SLOD (Optional)"
+                value={watch('assigned_to_email') || 'none'}
+                onChange={(val) => setValue('assigned_to_email', val === 'none' ? '' : val)}
+                disabled={isLoadingSlod}
+                options={[
+                  { value: 'none', label: 'None (Open to all Admins)' },
+                  ...slodUsers.map((u) => ({
+                    value: u.email,
+                    label: `${u.name} (${u.email})`,
+                  })),
+                ]}
+                helperText="If selected, an approval review email will be sent directly to this SLOD reviewer."
+              />
+            </div>
+          )}
         </Dialog.Body>
 
         <Dialog.Footer className="flex items-center justify-end gap-2 border-t border-border pt-3">

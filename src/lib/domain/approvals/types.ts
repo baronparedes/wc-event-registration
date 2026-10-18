@@ -69,3 +69,23 @@ export interface FetchApprovalsFilters {
   entity_type?: ApprovalEntityType | 'all';
   search?: string;
 }
+
+export interface SlodUserItem {
+  auth_user_id: string;
+  email: string;
+  name: string;
+  avatar_object_key: string | null;
+}
+
+export interface DelegateApprovalInput {
+  approval_id: string;
+  assigned_to_email: string;
+  assigned_to_user_id?: string | null;
+}
+
+export interface DelegateApprovalResponse {
+  success: boolean;
+  message: string;
+  approval_id: string;
+  assigned_to_email: string;
+}

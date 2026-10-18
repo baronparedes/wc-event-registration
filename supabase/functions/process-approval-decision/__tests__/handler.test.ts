@@ -133,6 +133,19 @@ function mockFetch(
       );
     }
 
+    if (url.pathname === '/rest/v1/rpc/delegate_approval_request') {
+      return Promise.resolve(
+        Response.json({
+          success: true,
+          approval_id: APPROVAL_ID,
+          assigned_to_email: 'slod.reviewer@example.com',
+          access_token: VALID_TOKEN,
+          title: 'Long Leave Request',
+          requester_name: 'Jane Doe',
+        }),
+      );
+    }
+
     return Promise.resolve(Response.json({}));
   };
 
@@ -328,3 +341,41 @@ Deno.test(
     });
   },
 );
+
+Deno.test('process-approval-decision delegate_approval requires assigned_to_email', async () => {
+  await withEnv(async () => {
+    const res = await handleProcessApprovalDecision(
+      createRequest({
+        action: 'delegate_approval',
+        approval_id: APPROVAL_ID,
+      }),
+    );
+    assertEquals(res.status, 400);
+    const body = await res.json();
+    assertEquals(body.success, false);
+  });
+});
+
+Deno.test('process-approval-decision delegate_approval calls RPC and returns success', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch();
+    try {
+      const res = await handleProcessApprovalDecision(
+        createRequest({
+          action: 'delegate_approval',
+          approval_id: APPROVAL_ID,
+          assigned_to_email: 'slod.reviewer@example.com',
+        }),
+      );
+      assertEquals(res.status, 200);
+      const body = await res.json();
+      assertEquals(body.success, true);
+      assertEquals(body.assigned_to_email, 'slod.reviewer@example.com');
+
+      const rpcCall = mock.calls.find((c) => c.path === '/rest/v1/rpc/delegate_approval_request');
+      assertEquals(Boolean(rpcCall), true);
+    } finally {
+      mock.restore();
+    }
+  });
+});

@@ -201,7 +201,6 @@ export function AdminMemberDetailPage() {
         actions={
           <Button
             type="button"
-            variant="outline"
             size="sm"
             onClick={() => setIsLongLeaveModalOpen(true)}
             className="gap-1.5"

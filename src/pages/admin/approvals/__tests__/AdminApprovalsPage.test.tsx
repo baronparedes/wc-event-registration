@@ -7,14 +7,23 @@ import type { ApprovalRequest } from '@/lib/domain/approvals';
 
 import { AdminApprovalsPage } from '../index';
 
-const { mockUseApprovalRequestsQuery, mockUseSubmitApprovalDecisionMutation } = vi.hoisted(() => ({
+const {
+  mockUseApprovalRequestsQuery,
+  mockUseSubmitApprovalDecisionMutation,
+  mockUseSlodUsersQuery,
+  mockUseDelegateApprovalMutation,
+} = vi.hoisted(() => ({
   mockUseApprovalRequestsQuery: vi.fn(),
   mockUseSubmitApprovalDecisionMutation: vi.fn(),
+  mockUseSlodUsersQuery: vi.fn(),
+  mockUseDelegateApprovalMutation: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/approvals', () => ({
   useApprovalRequestsQuery: (params: unknown) => mockUseApprovalRequestsQuery(params),
   useSubmitApprovalDecisionMutation: () => mockUseSubmitApprovalDecisionMutation(),
+  useSlodUsersQuery: () => mockUseSlodUsersQuery(),
+  useDelegateApprovalMutation: () => mockUseDelegateApprovalMutation(),
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
@@ -103,11 +112,29 @@ const mockRequests: ApprovalRequest[] = [
 ];
 
 describe('AdminApprovalsPage', () => {
+  const mockSubmitDecision = vi.fn();
+  const mockDelegateApproval = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseSubmitApprovalDecisionMutation.mockReturnValue({
-      mutate: vi.fn(),
+      mutate: mockSubmitDecision,
       isPending: false,
+    });
+    mockUseDelegateApprovalMutation.mockReturnValue({
+      mutate: mockDelegateApproval,
+      isPending: false,
+    });
+    mockUseSlodUsersQuery.mockReturnValue({
+      data: [
+        {
+          auth_user_id: 'slod-1',
+          email: 'slod1@example.com',
+          name: 'SLOD Leader',
+          avatar_object_key: null,
+        },
+      ],
+      isLoading: false,
     });
   });
 
@@ -140,7 +167,7 @@ describe('AdminApprovalsPage', () => {
     expect(screen.getByText('Jane Smith')).toBeInTheDocument();
   });
 
-  it('opens review dialog when Review button is clicked', () => {
+  it('opens review dialog when Review button is clicked with delegation section', () => {
     mockUseApprovalRequestsQuery.mockReturnValue({
       data: mockRequests,
       isLoading: false,
@@ -155,7 +182,67 @@ describe('AdminApprovalsPage', () => {
 
     expect(screen.getByText(/Review request details/i)).toBeInTheDocument();
     expect(screen.getByText(/Dietary Needs/i)).toBeInTheDocument();
+    expect(screen.getByText(/Delegate Review to SLOD/i)).toBeInTheDocument();
+    expect(screen.getByText(/Assigned to/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Decline$/i })).toBeInTheDocument();
+  });
+
+  it('allows admin to delegate review to an SLOD user', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: mockRequests,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButtons = screen.getAllByRole('button', { name: /Review/i });
+    fireEvent.click(reviewButtons[0]);
+
+    const trigger = screen.getByLabelText(/Select SLOD Reviewer/i);
+    fireEvent.click(trigger);
+
+    const option = screen.getByRole('option', { name: /SLOD Leader/i });
+    fireEvent.click(option);
+
+    const delegateBtn = screen.getByRole('button', { name: /Assign & Notify/i });
+    expect(delegateBtn).not.toBeDisabled();
+    fireEvent.click(delegateBtn);
+
+    expect(mockDelegateApproval).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approval_id: 'req-1',
+        assigned_to_email: 'slod1@example.com',
+        assigned_to_user_id: 'slod-1',
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('allows admin to approve directly at any time', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: mockRequests,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButtons = screen.getAllByRole('button', { name: /Review/i });
+    fireEvent.click(reviewButtons[0]);
+
+    const approveBtn = screen.getByRole('button', { name: /Approve Request/i });
+    fireEvent.click(approveBtn);
+
+    expect(mockSubmitDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approval_id: 'req-1',
+        decision: 'approved',
+      }),
+      expect.any(Object),
+    );
   });
 });

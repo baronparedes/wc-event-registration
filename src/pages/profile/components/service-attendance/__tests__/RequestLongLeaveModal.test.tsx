@@ -5,12 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RequestLongLeaveModal } from '../RequestLongLeaveModal';
 
-const { mockUseSubmitExcuseMutation } = vi.hoisted(() => ({
+const { mockUseSubmitExcuseMutation, mockUseSlodUsersQuery } = vi.hoisted(() => ({
   mockUseSubmitExcuseMutation: vi.fn(),
+  mockUseSlodUsersQuery: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/services', () => ({
   useSubmitExcuseMutation: () => mockUseSubmitExcuseMutation(),
+}));
+
+vi.mock('@/hooks/domain/approvals', () => ({
+  useSlodUsersQuery: () => mockUseSlodUsersQuery(),
 }));
 
 vi.mock('sonner', () => ({
@@ -37,6 +42,10 @@ describe('RequestLongLeaveModal', () => {
       mutateAsync: mockMutateAsync,
       isPending: false,
     });
+    mockUseSlodUsersQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
   });
 
   it('renders modal in member mode with default controls', () => {
@@ -52,9 +61,23 @@ describe('RequestLongLeaveModal', () => {
     expect(screen.getByText('Request Long Leave')).toBeInTheDocument();
     expect(screen.getByLabelText(/Reason for Extended Leave/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Submit Leave Request/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Delegate Review to SLOD/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Reviewer Email/i)).not.toBeInTheDocument();
   });
 
-  it('renders modal in admin mode with target member name', () => {
+  it('renders modal in admin mode with target member name and SLOD selector', () => {
+    mockUseSlodUsersQuery.mockReturnValue({
+      data: [
+        {
+          auth_user_id: 'slod-1',
+          email: 'slod1@example.com',
+          name: 'SLOD Leader One',
+          avatar_object_key: null,
+        },
+      ],
+      isLoading: false,
+    });
+
     renderWithClient(
       <RequestLongLeaveModal
         isOpen={true}
@@ -67,6 +90,38 @@ describe('RequestLongLeaveModal', () => {
 
     expect(screen.getByText('File Long Leave for Jane Doe')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /File Leave Request/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Delegate Review to SLOD/i)).toBeInTheDocument();
+  });
+
+  it('shows validation error when end date is less than 28 days from start date', async () => {
+    renderWithClient(
+      <RequestLongLeaveModal
+        isOpen={true}
+        onClose={mockOnClose}
+        userId="user-1"
+        isAdminView={false}
+      />,
+    );
+
+    const startDateInput = screen.getByLabelText(/Start Date/i);
+    const endDateInput = screen.getByLabelText(/End Date/i);
+    const reasonInput = screen.getByLabelText(/Reason for Extended Leave/i);
+
+    // Set end date to only 7 days later
+    fireEvent.change(startDateInput, { target: { value: '2026-11-01' } });
+    fireEvent.change(endDateInput, { target: { value: '2026-11-08' } });
+    fireEvent.change(reasonInput, { target: { value: 'Too short leave request' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Submit Leave Request/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Long leave must span at least 4 weeks (28 days) from start date'),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 
   it('submits form with valid data and calls mutation', async () => {

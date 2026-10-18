@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react';
 
-import { AlertCircle, CheckCircle2, Clock, Inbox, UserCheck, XCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Inbox,
+  UserCheck,
+  UserPlus,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
@@ -29,6 +37,8 @@ import {
 } from '@/components/ui';
 import {
   useApprovalRequestsQuery,
+  useDelegateApprovalMutation,
+  useSlodUsersQuery,
   useSubmitApprovalDecisionMutation,
 } from '@/hooks/domain/approvals';
 import { useIsMobileViewport } from '@/hooks/utils';
@@ -42,6 +52,7 @@ export function AdminApprovalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectingRequest, setInspectingRequest] = useState<ApprovalRequest | null>(null);
   const [decisionNotes, setDecisionNotes] = useState('');
+  const [delegatedEmail, setDelegatedEmail] = useState('');
 
   const {
     data: requests = [],
@@ -55,7 +66,21 @@ export function AdminApprovalsPage() {
     search: searchQuery,
   });
 
+  const { data: slodUsers = [], isLoading: isLoadingSlod } = useSlodUsersQuery();
+  const { mutate: delegateApproval, isPending: isDelegating } = useDelegateApprovalMutation();
   const { mutate: submitDecision, isPending: isSubmitting } = useSubmitApprovalDecisionMutation();
+
+  const openInspectRequest = (req: ApprovalRequest) => {
+    setInspectingRequest(req);
+    setDecisionNotes(req.decision_notes || '');
+    setDelegatedEmail(req.assigned_to_email || '');
+  };
+
+  const closeInspectRequest = () => {
+    setInspectingRequest(null);
+    setDecisionNotes('');
+    setDelegatedEmail('');
+  };
 
   // Metrics calculation across requests
   const metrics = useMemo(() => {
@@ -72,6 +97,39 @@ export function AdminApprovalsPage() {
 
     return { total, pending, approved, rejected };
   }, [requests]);
+
+  const handleDelegate = () => {
+    if (!inspectingRequest || !delegatedEmail) return;
+    const slodUser = slodUsers.find((u) => u.email.toLowerCase() === delegatedEmail.toLowerCase());
+
+    delegateApproval(
+      {
+        approval_id: inspectingRequest.id,
+        assigned_to_email: delegatedEmail,
+        assigned_to_user_id: slodUser?.auth_user_id,
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            `Review delegated to ${slodUser?.name ? `${slodUser.name} (${delegatedEmail})` : delegatedEmail}`,
+          );
+          setInspectingRequest((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  assigned_to_email: delegatedEmail,
+                  assigned_to_user_id: slodUser?.auth_user_id || prev.assigned_to_user_id,
+                }
+              : null,
+          );
+          refetch();
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Failed to delegate approval');
+        },
+      },
+    );
+  };
 
   const handleDecision = (decision: 'approved' | 'rejected') => {
     if (!inspectingRequest) return;
@@ -90,8 +148,7 @@ export function AdminApprovalsPage() {
       {
         onSuccess: (data) => {
           toast.success(data.message || `Request ${decision} successfully`);
-          setInspectingRequest(null);
-          setDecisionNotes('');
+          closeInspectRequest();
           refetch();
         },
         onError: (err) => {
@@ -310,6 +367,13 @@ export function AdminApprovalsPage() {
                         <MobileCardContentItem label="Date">
                           <span className="text-text">{formatDateOnly(req.created_at)}</span>
                         </MobileCardContentItem>
+                        {req.assigned_to_email && (
+                          <MobileCardContentItem label="Assigned">
+                            <span className="text-xs text-muted truncate">
+                              {req.assigned_to_email}
+                            </span>
+                          </MobileCardContentItem>
+                        )}
                         {req.summary && (
                           <MobileCardContentItem label="Details">
                             <span className="text-muted line-clamp-2">{req.summary}</span>
@@ -322,10 +386,7 @@ export function AdminApprovalsPage() {
                           className="w-full"
                           size="sm"
                           variant={req.status === 'pending' ? 'default' : 'outline'}
-                          onClick={() => {
-                            setInspectingRequest(req);
-                            setDecisionNotes(req.decision_notes || '');
-                          }}
+                          onClick={() => openInspectRequest(req)}
                         >
                           {req.status === 'pending' ? 'Review & Decide' : 'View Details'}
                         </Button>
@@ -353,10 +414,7 @@ export function AdminApprovalsPage() {
                       <ListTableRow
                         key={req.id}
                         className="cursor-pointer"
-                        onClick={() => {
-                          setInspectingRequest(req);
-                          setDecisionNotes(req.decision_notes || '');
-                        }}
+                        onClick={() => openInspectRequest(req)}
                       >
                         <ListTableCell className="px-6">
                           <p className="font-heading font-semibold text-text">{req.title}</p>
@@ -405,6 +463,14 @@ export function AdminApprovalsPage() {
                           >
                             {req.status}
                           </Badge>
+                          {req.assigned_to_email && (
+                            <p
+                              className="mt-1 text-[11px] text-muted truncate max-w-[130px]"
+                              title={req.assigned_to_email}
+                            >
+                              {req.assigned_to_email}
+                            </p>
+                          )}
                         </ListTableCell>
                         <ListTableCell
                           className="text-right px-6"
@@ -413,10 +479,7 @@ export function AdminApprovalsPage() {
                           <Button
                             size="sm"
                             variant={req.status === 'pending' ? 'default' : 'outline'}
-                            onClick={() => {
-                              setInspectingRequest(req);
-                              setDecisionNotes(req.decision_notes || '');
-                            }}
+                            onClick={() => openInspectRequest(req)}
                           >
                             {req.status === 'pending' ? 'Review & Decide' : 'Details'}
                           </Button>
@@ -432,14 +495,7 @@ export function AdminApprovalsPage() {
       </AdminPageShell.Content>
 
       {/* Review & Decide Modal */}
-      <Dialog
-        isOpen={Boolean(inspectingRequest)}
-        onClose={() => {
-          setInspectingRequest(null);
-          setDecisionNotes('');
-        }}
-        size="lg"
-      >
+      <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="lg">
         <Dialog.Header>
           <div className="flex items-center gap-2">
             <Dialog.Title className="flex items-center gap-2.5 text-lg font-heading font-bold text-text">
@@ -481,6 +537,83 @@ export function AdminApprovalsPage() {
                 {inspectingRequest.requester_email && (
                   <p className="text-xs text-muted truncate">{inspectingRequest.requester_email}</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Reviewer Assignment & Delegation (Pending Only) */}
+          {inspectingRequest?.status === 'pending' && (
+            <div className="rounded-2xl border border-border bg-background p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted block">
+                    Reviewer Assignment
+                  </span>
+                  <p className="text-sm font-medium text-text mt-0.5">
+                    {inspectingRequest.assigned_to_email ? (
+                      <>
+                        Assigned to{' '}
+                        <span className="font-semibold text-primary">
+                          {slodUsers.find(
+                            (u) =>
+                              u.email.toLowerCase() ===
+                              inspectingRequest.assigned_to_email?.toLowerCase(),
+                          )?.name || inspectingRequest.assigned_to_email}
+                        </span>{' '}
+                        ({inspectingRequest.assigned_to_email})
+                      </>
+                    ) : (
+                      'Unassigned (Open to all Admins)'
+                    )}
+                  </p>
+                </div>
+                <Badge variant={inspectingRequest.assigned_to_email ? 'secondary' : 'outline'}>
+                  {inspectingRequest.assigned_to_email ? 'Delegated' : 'Unassigned'}
+                </Badge>
+              </div>
+
+              {/* Delegation Controls */}
+              <div className="pt-2 border-t border-border">
+                <div className="text-xs font-semibold text-text mb-1.5 flex items-center gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5 text-primary" />
+                  Delegate Review to SLOD
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1">
+                    <FormSelectField
+                      id="delegate-slod-select"
+                      ariaLabel="Select SLOD Reviewer"
+                      value={delegatedEmail}
+                      onChange={(val) => setDelegatedEmail(val)}
+                      disabled={isDelegating || isLoadingSlod}
+                      options={[
+                        { value: '', label: 'Select SLOD reviewer...' },
+                        ...slodUsers.map((u) => ({
+                          value: u.email,
+                          label: `${u.name} (${u.email})`,
+                        })),
+                      ]}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      !delegatedEmail ||
+                      delegatedEmail === inspectingRequest.assigned_to_email ||
+                      isDelegating
+                    }
+                    onClick={handleDelegate}
+                    className="shrink-0"
+                  >
+                    {isDelegating ? 'Delegating...' : 'Assign & Notify'}
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted mt-1.5">
+                  Delegating will send an approval review link to the SLOD. You can still approve
+                  directly at any time.
+                </p>
               </div>
             </div>
           )}
@@ -546,7 +679,7 @@ export function AdminApprovalsPage() {
             type="button"
             variant="ghost"
             disabled={isSubmitting}
-            onClick={() => setInspectingRequest(null)}
+            onClick={closeInspectRequest}
           >
             Close
           </Button>

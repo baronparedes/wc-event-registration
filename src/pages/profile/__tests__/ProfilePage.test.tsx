@@ -48,6 +48,10 @@ vi.mock('@/hooks/domain/services', () => ({
   useCancelExcuseMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
+vi.mock('@/hooks/domain/approvals', () => ({
+  useSlodUsersQuery: () => ({ data: [], isLoading: false, isError: false }),
+}));
+
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');

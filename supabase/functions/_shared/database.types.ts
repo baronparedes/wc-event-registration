@@ -1576,6 +1576,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      delegate_approval_request: {
+        Args: {
+          p_approval_id: string;
+          p_assigned_to_email: string;
+          p_assigned_to_user_id?: string | null;
+        };
+        Returns: Json;
+      };
+      list_slod_users: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          auth_user_id: string;
+          email: string;
+          name: string;
+          avatar_object_key: string | null;
+        }[];
+      };
       archive_push_reminder: {
         Args: { message_id: number };
         Returns: boolean;

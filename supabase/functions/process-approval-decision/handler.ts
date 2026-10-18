@@ -1,16 +1,18 @@
-import { enqueueApprovalOutcomeEmail } from '../_shared/approvals.ts';
+import { enqueueApprovalOutcomeEmail, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { z } from '../_shared/validation.ts';
 
 export const processApprovalDecisionSchema = z
   .object({
-    action: z.enum(['get_review_data', 'submit_decision']),
+    action: z.enum(['get_review_data', 'submit_decision', 'delegate_approval']),
     token: z.string().trim().optional(),
     approval_id: z.string().uuid().optional(),
     decision: z.enum(['approved', 'rejected']).optional(),
     notes: z.string().trim().max(1000).optional().nullable(),
     reviewer_email: z.string().trim().email().optional().nullable(),
+    assigned_to_email: z.string().trim().email().optional().nullable(),
+    assigned_to_user_id: z.string().uuid().optional().nullable(),
   })
   .refine((data) => Boolean(data.token || data.approval_id), {
     message: 'Either token or approval_id must be provided',
@@ -19,6 +21,10 @@ export const processApprovalDecisionSchema = z
   .refine((data) => data.action !== 'submit_decision' || Boolean(data.decision), {
     message: 'Decision (approved or rejected) is required when submitting a decision',
     path: ['decision'],
+  })
+  .refine((data) => data.action !== 'delegate_approval' || Boolean(data.assigned_to_email), {
+    message: 'assigned_to_email is required when delegating approval',
+    path: ['assigned_to_email'],
   });
 
 export type ProcessApprovalDecisionRequest = z.infer<typeof processApprovalDecisionSchema>;
@@ -40,7 +46,16 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
     return guard.response;
   }
 
-  const { action, token, approval_id, decision, notes, reviewer_email } = guard.data;
+  const {
+    action,
+    token,
+    approval_id,
+    decision,
+    notes,
+    reviewer_email,
+    assigned_to_email,
+    assigned_to_user_id,
+  } = guard.data;
   const supabase = guard.client;
 
   try {
@@ -267,6 +282,112 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
           message: `Request successfully ${decision}`,
           status: decision,
           result: rpcResult,
+        }),
+        {
+          status: 200,
+          headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    // 4. Handle Action: delegate_approval
+    if (action === 'delegate_approval') {
+      if (!approval_id) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'approval_id is required to delegate approval',
+          }),
+          {
+            status: 400,
+            headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      const { data: rawDelegateResult, error: delegateError } = await supabase.rpc(
+        'delegate_approval_request',
+        {
+          p_approval_id: approval_id,
+          p_assigned_to_email: assigned_to_email!,
+          p_assigned_to_user_id: assigned_to_user_id ?? null,
+        },
+      );
+
+      if (delegateError) {
+        console.error('delegate_approval_request RPC error:', delegateError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: delegateError?.message || 'Failed to delegate approval request',
+            error_code: 'RPC_ERROR',
+          }),
+          {
+            status: 500,
+            headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      type DelegateRpcData = {
+        success?: boolean;
+        approval_id?: string;
+        assigned_to_email?: string;
+        assigned_to_user_id?: string | null;
+        title?: string;
+        access_token?: string;
+        requester_name?: string;
+        requester_email?: string | null;
+        summary?: string | null;
+        entity_type?: string;
+        error?: string;
+      };
+
+      const delegateResult = (rawDelegateResult as unknown as DelegateRpcData) ?? null;
+
+      if (!delegateResult || delegateResult.success === false) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: delegateResult?.error || 'Failed to delegate request',
+          }),
+          {
+            status: 400,
+            headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      // Enqueue review email to newly assigned reviewer
+      if (delegateResult.assigned_to_email && delegateResult.access_token) {
+        try {
+          const detailList: Array<{ label: string; value: string }> = [
+            { label: 'Requester', value: delegateResult.requester_name || 'Requester' },
+          ];
+          if (delegateResult.summary) {
+            detailList.push({ label: 'Summary', value: delegateResult.summary });
+          }
+
+          await enqueueApprovalReviewEmail(supabase, {
+            assignedToEmail: delegateResult.assigned_to_email,
+            subjectTitle: `${delegateResult.title || 'Approval Request'} - ${delegateResult.requester_name || 'Requester'}`,
+            heading: 'Approval Review Required',
+            description: 'An approval request has been delegated to you for sign-off:',
+            details: detailList,
+            accessToken: delegateResult.access_token,
+            approvalId: delegateResult.approval_id,
+          });
+        } catch (emailErr) {
+          console.error('Failed to enqueue review email during delegation:', emailErr);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Approval delegated to ${delegateResult.assigned_to_email}`,
+          approval_id: delegateResult.approval_id,
+          assigned_to_email: delegateResult.assigned_to_email,
         }),
         {
           status: 200,
