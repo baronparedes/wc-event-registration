@@ -17,6 +17,9 @@ vi.mock('react-day-picker', () => ({
         <button type="button" onClick={() => typedProps.onSelect?.(new Date(2026, 9, 25))}>
           Pick Oct 25
         </button>
+        <button type="button" onClick={() => typedProps.onSelect?.(undefined)}>
+          Clear Date
+        </button>
       </div>
     );
   },
@@ -30,9 +33,9 @@ describe('SundayCalendarPicker Component', () => {
   });
 
   describe('Rendering & Interaction', () => {
-    it('renders the picker trigger button with placeholder when empty', () => {
+    it('renders the picker trigger button with placeholder when empty or invalid', () => {
       const handleChange = vi.fn();
-      render(
+      const { rerender } = render(
         <SundayCalendarPicker
           value=""
           onChange={handleChange}
@@ -47,12 +50,25 @@ describe('SundayCalendarPicker Component', () => {
       expect(button).toHaveAttribute('aria-haspopup', 'dialog');
       expect(button).toHaveAttribute('aria-expanded', 'false');
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Test with invalid short string
+      rerender(<SundayCalendarPicker value="bad" onChange={handleChange} />);
+      expect(screen.getByRole('button', { name: /Select Sunday date/i })).toBeInTheDocument();
+
+      // Test with invalid non-numeric string
+      rerender(<SundayCalendarPicker value="xxxx-yy-zz" onChange={handleChange} />);
+      expect(screen.getByRole('button', { name: /Select Sunday date/i })).toBeInTheDocument();
+
+      // Test with invalid day out of range
+      rerender(<SundayCalendarPicker value="2026-02-31" onChange={handleChange} />);
+      expect(screen.getByRole('button', { name: /Select Sunday date/i })).toBeInTheDocument();
     });
 
-    it('renders the picker trigger button with formatted date', () => {
+    it('renders the picker trigger button with formatted date and custom id', () => {
       const handleChange = vi.fn();
       render(
         <SundayCalendarPicker
+          id="custom-sunday-picker"
           value="2026-10-18"
           onChange={handleChange}
           maxPastDays={3}
@@ -63,6 +79,7 @@ describe('SundayCalendarPicker Component', () => {
 
       const button = screen.getByRole('button', { name: /Oct 18, 2026/i });
       expect(button).toBeInTheDocument();
+      expect(button).toHaveAttribute('id', 'custom-sunday-picker');
       expect(button).toHaveAttribute('aria-haspopup', 'dialog');
       expect(button).toHaveAttribute('aria-expanded', 'false');
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -92,24 +109,32 @@ describe('SundayCalendarPicker Component', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('closes popover on Escape key', () => {
+    it('ignores non-Escape keyboard events while open', () => {
       const handleChange = vi.fn();
-      render(
-        <SundayCalendarPicker
-          value="2026-10-18"
-          onChange={handleChange}
-          maxPastDays={3}
-          monthsInFuture={6}
-          allowedWeekdays={[0]}
-        />,
-      );
+      render(<SundayCalendarPicker value="2026-10-18" onChange={handleChange} />);
 
       const button = screen.getByRole('button', { name: /Oct 18, 2026/i });
       fireEvent.click(button);
       expect(screen.getByRole('dialog')).toBeInTheDocument();
 
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('keeps popover open when clicking inside the container', () => {
+      const handleChange = vi.fn();
+      render(<SundayCalendarPicker value="2026-10-18" onChange={handleChange} />);
+
+      const triggerButton = screen.getByRole('button', { name: /Oct 18, 2026/i });
+      fireEvent.click(triggerButton);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      // Click inside dialog
+      fireEvent.mouseDown(screen.getByRole('dialog'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('closes popover when clicking outside', () => {
@@ -158,12 +183,27 @@ describe('SundayCalendarPicker Component', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('applies custom calendar rules correctly (max_past_days: 3, allowed_weekdays: [0], max_days: 6 months, minDate, maxDate)', () => {
+    it('does nothing when selecting undefined/null date', () => {
+      const handleChange = vi.fn();
+      render(<SundayCalendarPicker value="2026-10-18" onChange={handleChange} />);
+
+      const triggerButton = screen.getByRole('button', { name: /Oct 18, 2026/i });
+      fireEvent.click(triggerButton);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      const clearButton = screen.getByRole('button', { name: 'Clear Date' });
+      fireEvent.click(clearButton);
+
+      expect(handleChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('applies custom calendar rules correctly and handles edge configuration cases', () => {
       const handleChange = vi.fn();
       const minDate = new Date(2026, 10, 15);
       const maxDate = new Date(2027, 3, 1);
 
-      render(
+      const { rerender } = render(
         <SundayCalendarPicker
           value="2026-10-18"
           onChange={handleChange}
@@ -213,14 +253,25 @@ describe('SundayCalendarPicker Component', () => {
       // Rule 5: allowed_weekdays: [0] (Sundays only)
       const weekdayFn = disabledRules[4] as (date: Date) => boolean;
       expect(typeof weekdayFn).toBe('function');
-      // Sunday (0) should NOT be disabled (returns false)
-      const sunday = new Date(2026, 9, 18); // Oct 18, 2026 is Sunday
-      expect(weekdayFn(sunday)).toBe(false);
-      // Monday (1) SHOULD be disabled (returns true)
-      const monday = new Date(2026, 9, 19);
-      expect(weekdayFn(monday)).toBe(true);
-      // Saturday (6) SHOULD be disabled (returns true)
-      expect(weekdayFn(new Date(2026, 9, 24))).toBe(true);
+      expect(weekdayFn(new Date(2026, 9, 18))).toBe(false); // Sunday
+      expect(weekdayFn(new Date(2026, 9, 19))).toBe(true); // Monday
+      expect(weekdayFn(new Date(2026, 9, 24))).toBe(true); // Saturday
+
+      // Test with maxPastDays=-1, monthsInFuture=0, and allowedWeekdays=[]
+      rerender(
+        <SundayCalendarPicker
+          value="2026-10-18"
+          onChange={handleChange}
+          maxPastDays={-1}
+          monthsInFuture={0}
+          allowedWeekdays={[]}
+        />,
+      );
+
+      const emptyRulesProps = mockDayPicker.mock.calls[mockDayPicker.mock.calls.length - 1][0] as {
+        disabled: Array<{ before?: Date; after?: Date } | ((date: Date) => boolean)>;
+      };
+      expect(emptyRulesProps.disabled).toHaveLength(0);
     });
   });
 });

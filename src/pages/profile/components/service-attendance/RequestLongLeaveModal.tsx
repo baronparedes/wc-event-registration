@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarRange, Send } from 'lucide-react';
@@ -113,9 +113,9 @@ export function RequestLongLeaveModal({
   const {
     register,
     control,
+    setValue,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LongLeaveFormValues>({
     resolver: zodResolver(longLeaveFormSchema),
@@ -129,7 +129,6 @@ export function RequestLongLeaveModal({
 
   const startDateValue = useWatch({ control, name: 'start_date' });
   const endDateValue = useWatch({ control, name: 'end_date' });
-  const assignedToEmail = useWatch({ control, name: 'assigned_to_email' });
 
   const minEndDate = useMemo(() => {
     if (!startDateValue) return undefined;
@@ -140,9 +139,11 @@ export function RequestLongLeaveModal({
     return start;
   }, [startDateValue]);
 
-  // Reset form when modal opens
+  const prevOpenRef = useRef(isOpen);
+
+  // Reset form only when modal transitions from closed to open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevOpenRef.current) {
       const start = getNextSundayDate();
       reset({
         start_date: start,
@@ -151,6 +152,7 @@ export function RequestLongLeaveModal({
         assigned_to_email: '',
       });
     }
+    prevOpenRef.current = isOpen;
   }, [isOpen, reset]);
 
   const onSubmit = async (values: LongLeaveFormValues) => {
@@ -275,20 +277,26 @@ export function RequestLongLeaveModal({
 
           {isAdminView && (
             <div>
-              <FormSelectField
-                id="admin-slod-delegate"
-                label="Delegate Review to SLOD (Optional)"
-                value={assignedToEmail || 'none'}
-                onChange={(val) => setValue('assigned_to_email', val === 'none' ? '' : val)}
-                disabled={isLoadingSlod}
-                options={[
-                  { value: 'none', label: 'None (Open to all Admins)' },
-                  ...slodUsers.map((u) => ({
-                    value: u.email,
-                    label: `${u.name} (${u.email})`,
-                  })),
-                ]}
-                helperText="If selected, an approval review email will be sent directly to this SLOD reviewer."
+              <Controller
+                control={control}
+                name="assigned_to_email"
+                render={({ field }) => (
+                  <FormSelectField
+                    id="admin-slod-delegate"
+                    label="Delegate Review to SLOD (Optional)"
+                    value={field.value || 'none'}
+                    onChange={(val) => field.onChange(val === 'none' ? '' : val)}
+                    disabled={isLoadingSlod}
+                    options={[
+                      { value: 'none', label: 'None (Open to all Admins)' },
+                      ...slodUsers.map((u) => ({
+                        value: u.email,
+                        label: `${u.name} (${u.email})`,
+                      })),
+                    ]}
+                    helperText="If selected, an approval review email will be sent directly to this SLOD reviewer."
+                  />
+                )}
               />
             </div>
           )}
