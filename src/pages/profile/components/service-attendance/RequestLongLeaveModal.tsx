@@ -1,16 +1,14 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarRange, Clock, Send } from 'lucide-react';
-import { useForm, useWatch } from 'react-hook-form';
+import { CalendarRange, Send } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { Button, Dialog, FormInputField } from '@/components/ui';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { MATRIX_TIME_SLOTS } from '@/lib/domain/services';
-
-const SERVICE_OPTIONS = MATRIX_TIME_SLOTS;
 
 const longLeaveFormSchema = z
   .object({
@@ -24,7 +22,6 @@ const longLeaveFormSchema = z
       .trim()
       .min(1, 'Please select an end date')
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format'),
-    services: z.array(z.string().trim().min(1)).min(1, 'Please select at least one service slot'),
     reason: z
       .string()
       .trim()
@@ -96,8 +93,6 @@ export function RequestLongLeaveModal({
   const {
     register,
     handleSubmit,
-    setValue,
-    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<LongLeaveFormValues>({
@@ -105,16 +100,9 @@ export function RequestLongLeaveModal({
     defaultValues: {
       start_date: initialStartDate,
       end_date: initialEndDate,
-      services: [...SERVICE_OPTIONS],
       reason: '',
       assigned_to_email: '',
     },
-  });
-
-  const selectedServices = useWatch({
-    control,
-    name: 'services',
-    defaultValue: [...SERVICE_OPTIONS],
   });
 
   // Reset form when modal opens
@@ -124,33 +112,11 @@ export function RequestLongLeaveModal({
       reset({
         start_date: start,
         end_date: getFourWeeksOut(start),
-        services: [...SERVICE_OPTIONS],
         reason: '',
         assigned_to_email: '',
       });
     }
   }, [isOpen, reset]);
-
-  const handleToggleService = useCallback(
-    (slot: string) => {
-      const current = selectedServices ?? [];
-      if (current.includes(slot)) {
-        if (current.length === 1) return; // keep at least one
-        setValue(
-          'services',
-          current.filter((s) => s !== slot),
-          { shouldValidate: true },
-        );
-      } else {
-        setValue('services', [...current, slot], { shouldValidate: true });
-      }
-    },
-    [selectedServices, setValue],
-  );
-
-  const handleSelectAllServices = useCallback(() => {
-    setValue('services', [...SERVICE_OPTIONS], { shouldValidate: true });
-  }, [setValue]);
 
   const onSubmit = async (values: LongLeaveFormValues) => {
     try {
@@ -159,7 +125,7 @@ export function RequestLongLeaveModal({
         start_date: values.start_date,
         end_date: values.end_date,
         is_long_leave: true,
-        services: values.services,
+        services: [...MATRIX_TIME_SLOTS],
         reason: values.reason.trim(),
         assigned_to_email: values.assigned_to_email?.trim() || null,
       });
@@ -187,8 +153,8 @@ export function RequestLongLeaveModal({
         </div>
         <Dialog.Description>
           {isAdminView
-            ? 'Submit a multi-week extended leave on behalf of this volunteer. This request will enter the approval workflow to excuse upcoming Sunday commitments.'
-            : 'Submit a multi-week extended leave request for upcoming Sunday commitments. Your request will enter the approval workflow.'}
+            ? 'Submit a multi-week extended leave on behalf of this volunteer. This request will enter the approval workflow to excuse all Sunday commitments during this period.'
+            : 'Submit a multi-week extended leave request. Once approved, all Sunday commitments during this period will be excused automatically.'}
         </Dialog.Description>
       </Dialog.Header>
 
@@ -213,44 +179,6 @@ export function RequestLongLeaveModal({
                 error={errors.end_date?.message}
               />
             </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium text-text flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-muted" aria-hidden="true" />
-                Excused Service Slots
-              </label>
-              <button
-                type="button"
-                onClick={handleSelectAllServices}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Select All
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {SERVICE_OPTIONS.map((slot) => {
-                const isSelected = selectedServices.includes(slot);
-                return (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => handleToggleService(slot)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      isSelected
-                        ? 'border-primary bg-primary/10 text-primary font-bold'
-                        : 'border-border bg-surface text-muted hover:bg-surface-elevated hover:text-text'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.services && (
-              <p className="mt-1 text-xs text-danger">{errors.services.message}</p>
-            )}
           </div>
 
           <div>
