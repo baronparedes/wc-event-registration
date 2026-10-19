@@ -9,6 +9,7 @@
 **Discovery:** The entire `src/pages/admin/forms` component hierarchy lacks corresponding documentation in `docs/features/`.
 **Learning:** This is a major admin feature that allows configuring custom data collection via dynamic forms, fields, and viewing their submissions.
 **Standard:** Documented under the new `11-admin-forms` directory, separating view list, create/edit, fields configuration, and submissions into distinct `.feature` files.
+
 ## 2024-10-19 - Excuse Request Form
 
 **Discovery:** Found that the new excuse request form page logic and components were undocumented.
