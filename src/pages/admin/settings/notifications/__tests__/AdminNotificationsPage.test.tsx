@@ -10,9 +10,20 @@ import { sendAppNotification } from '@/lib/domain/notifications';
 
 import { AdminNotificationsPage } from '../index';
 
-vi.mock('@/lib/domain/notifications', () => ({
-  sendAppNotification: vi.fn(),
-}));
+vi.mock('@/lib/domain/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/domain/notifications')>();
+  return {
+    ...actual,
+    sendAppNotification: vi.fn(),
+    generateBroadcastDraft: vi.fn().mockResolvedValue({
+      success: true,
+      draft: {
+        title: 'Sunday Usher Alert',
+        message: 'Report at 8:15 AM for prayer.',
+      },
+    }),
+  };
+});
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAuthUsersQuery: vi.fn(),
@@ -23,9 +34,13 @@ vi.mock('@/hooks/domain/events', () => ({
   useAdminEventsQuery: vi.fn(),
 }));
 
-vi.mock('@/hooks/domain/notifications', () => ({
-  useBroadcastAudienceStatsQuery: vi.fn(),
-}));
+vi.mock('@/hooks/domain/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/domain/notifications')>();
+  return {
+    ...actual,
+    useBroadcastAudienceStatsQuery: vi.fn(),
+  };
+});
 
 describe('AdminNotificationsPage', () => {
   let queryClient: QueryClient;
@@ -195,8 +210,6 @@ describe('AdminNotificationsPage', () => {
     vi.mocked(sendAppNotification).mockResolvedValueOnce({
       success: true,
       count: 25,
-      pushCount: 18,
-      emailCount: 24,
       notificationId: 'notif-event-1',
     });
 
@@ -510,16 +523,52 @@ describe('AdminNotificationsPage', () => {
     expect(titleInput).toHaveAttribute('maxlength', '100');
     expect(messageInput).toHaveAttribute('maxlength', '500');
 
-    expect(
-      screen.getByText('0/100 characters (max 100 for push notifications)'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('0/500 characters (max 500 for push notifications)'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('0/100 characters')).toBeInTheDocument();
+    expect(screen.getByText('0/500 characters')).toBeInTheDocument();
 
     fireEvent.change(titleInput, { target: { value: 'Sunday Alert' } });
-    expect(
-      screen.getByText('12/100 characters (max 100 for push notifications)'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('12/100 characters')).toBeInTheDocument();
+  });
+
+  it('opens BroadcastDraftAiModal and populates form fields when applying AI draft', async () => {
+    renderPage();
+
+    const draftAiButton = screen.getByRole('button', { name: /Draft with.*AI/i });
+    expect(draftAiButton).toBeInTheDocument();
+
+    fireEvent.click(draftAiButton);
+
+    expect(screen.getByText('AI Broadcast Assistant')).toBeInTheDocument();
+
+    const textarea = screen.getByRole('textbox', { name: /Bullet Points & Notes/i });
+    fireEvent.change(textarea, { target: { value: 'Sunday prayer meeting at 8 AM' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /generate draft/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Sunday Usher Alert')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /apply draft/i }));
+
+    // Form inputs should now have AI draft values
+    const titleInput = screen.getByLabelText(/^Title/i) as HTMLInputElement;
+    const messageInput = screen.getByLabelText(/^Message/i) as HTMLTextAreaElement;
+
+    expect(titleInput.value).toBe('Sunday Usher Alert');
+    expect(messageInput.value).toBe('Report at 8:15 AM for prayer.');
+  });
+
+  it('allows closing BroadcastDraftAiModal without applying draft', () => {
+    renderPage();
+
+    const draftAiButton = screen.getByRole('button', { name: /Draft with.*AI/i });
+    fireEvent.click(draftAiButton);
+
+    expect(screen.getByText('AI Broadcast Assistant')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
+
+    expect(screen.queryByText('AI Broadcast Assistant')).not.toBeInTheDocument();
   });
 });

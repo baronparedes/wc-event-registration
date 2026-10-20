@@ -144,7 +144,7 @@ describe('useAppDrawerNavigation', () => {
       'Manage Members',
       'Manage Services',
       'Settings',
-      'AI Assistant',
+      'Chat with Hub AI',
     ]);
     expect(result.current.eventWorkspaceNavItems.map((i) => i.label)).toEqual([
       'Manage Event',
@@ -213,7 +213,7 @@ describe('useAppDrawerNavigation', () => {
       'Approvals',
       'Manage Members',
       'Manage Services',
-      'AI Assistant',
+      'Chat with Hub AI',
     ]);
   });
 

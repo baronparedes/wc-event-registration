@@ -45,19 +45,23 @@ graph TD
 
 ### Phase 1: High-Impact Admin Productivity & Automated Briefings
 
-#### Phase 1.1: Broadcast AI Draft Assistant & Tone Polisher
+#### Phase 1.1: Broadcast AI Draft Assistant & Tone Polisher `[Completed]`
 
-- **Location**: Broadcast creation modal in [`/admin/notifications`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/broadcasts).
+- **Location**: Broadcast creation form in [`/admin/settings/notifications`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/settings/notifications).
 - **User Workflow**:
-  1. Admin clicks **"Draft with AI"** or **"Polish Tone"**.
-  2. Input: Quick bullet points (e.g., _"Usher reminder for Sunday: Call time 8:15 AM for prayer, wear blue vest, communion preparation"_).
-  3. Edge Function dispatches prompt to Gemini Flash-Lite.
-  4. Returns:
-     - **Push Notification**: Punchy, urgent title (<= 50 chars) and body (<= 120 chars).
-     - **Email Body**: Pastoral, encouraging HTML email template with greeting and structured bullet points.
+  1. Admin clicks **"Draft with Hub AI"** in the Broadcast section card header.
+  2. Input: Quick bullet points or notes (or pre-fills existing draft when switching to "Polish Existing" mode).
+  3. Tone Selection: Pastoral & Warm, Urgent & Direct, or Informative & Clear.
+  4. Edge Function dispatches prompt to Gemini Flash-Lite (`gemini-3.5-flash-lite`).
+  5. Returns structured drafts:
+     - **Push Notification**: Action-oriented title (<= 100 chars) and concise body (<= 500 chars).
+     - **Email / In-App Announcement**: Structured, pastoral subject (<= 100 chars) and message (<= 500 chars).
+  6. Admin previews drafts across channel tabs, can copy to clipboard, or apply directly into the broadcast form with 1 click.
 - **Architecture**:
-  - Edge Function: `supabase/functions/generate-broadcast-draft/`.
-  - Frontend: Reusable hook `useBroadcastDraftAi` integrating with React Hook Form.
+  - Edge Function: `supabase/functions/generate-broadcast-draft/` with rate limiting, admin-role verification, and strict length clamping.
+  - API Client: Strongly typed `generateBroadcastDraft` in `src/lib/domain/notifications/api.ts` via `createEdgeFunctionCaller`.
+  - Frontend Hook: `useBroadcastDraftAi` in `src/hooks/domain/notifications/useBroadcastDraftAi.ts`.
+  - UI Component: `BroadcastDraftAiModal` in `src/pages/admin/settings/notifications/components/BroadcastDraftAiModal.tsx`.
 
 #### Phase 1.2: Weekly Sunday Executive Debrief (Automated Cron)
 

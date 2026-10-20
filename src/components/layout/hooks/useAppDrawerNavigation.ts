@@ -2,7 +2,6 @@ import { type ComponentType, useMemo } from 'react';
 
 import {
   BarChart3,
-  Bot,
   Calendar,
   CalendarDays,
   CheckSquare,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
+import { BrandIcon } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminFormQuery } from '@/hooks/domain/forms';
@@ -194,8 +194,8 @@ export function useAppDrawerNavigation({
     if (canRead) {
       items.push({
         to: ROUTE_PATHS.adminChat,
-        label: 'AI Assistant',
-        icon: Bot,
+        label: 'Chat with Hub AI',
+        icon: BrandIcon,
       });
     }
 

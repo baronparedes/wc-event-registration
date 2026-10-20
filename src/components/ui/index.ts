@@ -47,6 +47,7 @@ export { Avatar } from './Avatar';
 export { ColorSwatchDisplay } from './ColorSwatchDisplay';
 export { StepIndicator } from './StepIndicator';
 export { BrandAvatar, type BrandAvatarProps } from './BrandAvatar';
+export { BrandIcon, type BrandIconProps } from './BrandIcon';
 export {
   Tabs,
   TabsList,

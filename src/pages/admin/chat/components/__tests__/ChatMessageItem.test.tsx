@@ -50,7 +50,7 @@ describe('ChatMessageItem', () => {
     );
 
     expect(screen.getByText('Here are the attendees.')).toBeInTheDocument();
-    expect(screen.getByAltText('AI Assistant')).toBeInTheDocument();
+    expect(screen.getByAltText('Chat with Hub AI')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Copy/i })).toBeInTheDocument();
   });
 

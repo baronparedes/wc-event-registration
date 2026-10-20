@@ -19,7 +19,7 @@ const sizeClasses = {
 
 export const BrandAvatar: FC<BrandAvatarProps> = ({
   size = 'md',
-  alt = 'AI Assistant',
+  alt = 'Chat with Hub AI',
   className = '',
 }) => {
   return (

@@ -13,3 +13,4 @@ export {
   SUNDAY_SCHEDULE_PREVIEW_QUERY_KEY,
 } from './useSundaySchedulePreviewQuery';
 export { useDispatchSundayRemindersMutation } from './useDispatchSundayRemindersMutation';
+export { useBroadcastDraftAi } from './useBroadcastDraftAi';
