@@ -1,11 +1,10 @@
 import { CheckCircle2 } from 'lucide-react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 
-import { AlertBanner, Button, WizardStep } from '@/components/ui';
+import { AlertBanner, Button, SundayCalendarPicker, WizardStep } from '@/components/ui';
 
 import { type ExcuseFormValues } from '../hooks/useExcuseRequestPageState';
 import { EXCUSE_SERVICE_SLOTS } from '../utils';
-import { SundayCalendarPicker } from './SundayCalendarPicker';
 
 export type ExcuseDetailsStepCardProps = {
   excuseForm: UseFormReturn<ExcuseFormValues>;

@@ -320,4 +320,55 @@ describe('VolunteerAttendanceModal', () => {
     // 5th Sunday 12NN walk-in should score +1 instead of 0
     expect(screen.getByText('+1')).toBeInTheDocument();
   });
+
+  it('renders pending excuses and future excuses properly in Detailed and Matrix views', () => {
+    (useVolunteerAttendanceLogQuery as Mock).mockReturnValue({
+      data: [
+        {
+          id: null,
+          service_date: '2026-11-08',
+          time_slot: '9AM',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'pending_excusal',
+          checked_in_at: null,
+        },
+        {
+          id: null,
+          service_date: '2026-11-15',
+          time_slot: '12NN',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          status: 'excused',
+          checked_in_at: null,
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(
+      <VolunteerAttendanceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        volunteer={mockVolunteer}
+        timeframe="YTD"
+        startDate="2026-01-01"
+        endDate="2026-12-31"
+      />,
+    );
+
+    // Detailed view should show PENDING EXCUSES and EXCUSED sections
+    expect(screen.getByText(/PENDING EXCUSES — 1 RECORDS/)).toBeInTheDocument();
+    expect(screen.getByText(/EXCUSED — 1 RECORDS/)).toBeInTheDocument();
+    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+
+    // Switch to Matrix view
+    const matrixTab = screen.getByRole('tab', { name: /Matrix/i });
+    fireEvent.click(matrixTab);
+
+    expect(screen.getByText('9AM (Pending)')).toBeInTheDocument();
+    expect(screen.getAllByText('12NN').length).toBeGreaterThanOrEqual(1);
+  });
 });

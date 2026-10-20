@@ -213,7 +213,12 @@ export function getMemberExcusedDetails(
   dateKey: string | null | undefined,
   member: { id?: string | null; member_id?: string | null },
   serviceSlot?: TimeSlot,
-): { isExcused: boolean; reason?: string } {
+): {
+  isExcused: boolean;
+  reason?: string;
+  status?: 'approved' | 'pending';
+  isLongLeave?: boolean;
+} {
   if (!excusedMap || !dateKey) return { isExcused: false };
   const memberMap = excusedMap.get(dateKey);
   if (!memberMap) return { isExcused: false };
@@ -230,6 +235,8 @@ export function getMemberExcusedDetails(
 
   const slots = entry instanceof Set ? entry : entry.slots;
   const reasons = entry instanceof Set ? undefined : entry.reasons;
+  const status = entry instanceof Set ? undefined : entry.status;
+  const isLongLeave = entry instanceof Set ? undefined : entry.isLongLeave;
 
   if (!slots || slots.size === 0) return { isExcused: false };
 
@@ -238,6 +245,8 @@ export function getMemberExcusedDetails(
     return {
       isExcused,
       reason: isExcused ? (reasons?.get(serviceSlot) ?? '') : undefined,
+      status: isExcused ? status : undefined,
+      isLongLeave: isExcused ? isLongLeave : undefined,
     };
   }
 
@@ -245,6 +254,8 @@ export function getMemberExcusedDetails(
   return {
     isExcused: true,
     reason: firstReason,
+    status,
+    isLongLeave,
   };
 }
 
@@ -271,6 +282,8 @@ export type RawExcusedRecord = {
   requestDate?: string | null;
   services?: string | null;
   reason?: string | null;
+  status?: 'approved' | 'pending' | null;
+  isLongLeave?: boolean | null;
 };
 
 export function buildExcusedMap(
@@ -298,6 +311,9 @@ export function buildExcusedMap(
       }
       const memberMap = map.get(isoKey)!;
       const slots = parseServiceSlots(record.services);
+      const recordStatus: 'approved' | 'pending' =
+        record.status === 'pending' ? 'pending' : 'approved';
+      const isLongLeave = Boolean(record.isLongLeave);
 
       const addSlots = (id: string) => {
         const key = id.trim().toLowerCase();
@@ -308,15 +324,33 @@ export function buildExcusedMap(
         if (!existing) {
           slotSet = new Set<TimeSlot>();
           reasonMap = new Map<TimeSlot, string>();
-          memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          memberMap.set(key, {
+            slots: slotSet,
+            reasons: reasonMap,
+            status: recordStatus,
+            isLongLeave,
+          });
         } else if (existing instanceof Set) {
           slotSet = existing;
           reasonMap = new Map<TimeSlot, string>();
-          memberMap.set(key, { slots: slotSet, reasons: reasonMap });
+          memberMap.set(key, {
+            slots: slotSet,
+            reasons: reasonMap,
+            status: recordStatus,
+            isLongLeave,
+          });
         } else {
           slotSet = existing.slots;
           reasonMap = existing.reasons ?? new Map<TimeSlot, string>();
           existing.reasons = reasonMap;
+          if (recordStatus === 'approved') {
+            existing.status = 'approved';
+          } else if (!existing.status) {
+            existing.status = recordStatus;
+          }
+          if (isLongLeave) {
+            existing.isLongLeave = true;
+          }
         }
 
         for (const slot of slots) {

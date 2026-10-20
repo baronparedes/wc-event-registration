@@ -17,15 +17,18 @@ export type ExcusedMemberRecord = {
   requestDate: string; // The date of the Sunday/service (YYYY-MM-DD)
   services: string; // The services they are excused from
   reason: string; // The reason they are excused
+  status: 'approved' | 'pending';
 };
 
 type ServiceExcuseRow = {
-  id: string;
+  excuse_id: string;
   user_id: string;
   member_id: string;
-  request_date: string;
+  sunday_date: string;
   services: string[] | string | null;
+  services_str?: string | null;
   reason: string | null;
+  status: string;
 };
 
 export async function handleGetMemberExcusedSchedule(req: Request): Promise<Response> {
@@ -98,13 +101,12 @@ export async function handleGetMemberExcusedSchedule(req: Request): Promise<Resp
     });
 
     const { data: excuses, error: excusesError } = await supabase
-      .from('service_excuse_requests')
-      .select('id, user_id, member_id, request_date, services, reason')
+      .from('service_excuse_sundays')
+      .select('excuse_id, user_id, member_id, sunday_date, services, services_str, reason, status')
       .eq('user_id', targetUserId)
-      .eq('status', 'approved')
-      .gte('request_date', startDate)
-      .lte('request_date', endDate)
-      .order('request_date', { ascending: true });
+      .gte('sunday_date', startDate)
+      .lte('sunday_date', endDate)
+      .order('sunday_date', { ascending: true });
 
     if (excusesError) {
       console.error('[get-member-excused-schedule] Query error', {
@@ -121,7 +123,9 @@ export async function handleGetMemberExcusedSchedule(req: Request): Promise<Resp
 
     const records: ExcusedMemberRecord[] = ((excuses as ServiceExcuseRow[]) ?? []).map((excuse) => {
       let servicesStr = '';
-      if (Array.isArray(excuse.services)) {
+      if (typeof excuse.services_str === 'string') {
+        servicesStr = excuse.services_str;
+      } else if (Array.isArray(excuse.services)) {
         servicesStr = excuse.services.join(', ');
       } else if (typeof excuse.services === 'string') {
         servicesStr = excuse.services;
@@ -130,9 +134,10 @@ export async function handleGetMemberExcusedSchedule(req: Request): Promise<Resp
       return {
         userId: excuse.user_id,
         memberId: excuse.member_id,
-        requestDate: excuse.request_date.split('T')[0].trim(),
+        requestDate: (excuse.sunday_date || '').split('T')[0].trim(),
         services: servicesStr,
         reason: excuse.reason ?? '',
+        status: (excuse.status === 'pending' ? 'pending' : 'approved') as 'approved' | 'pending',
       };
     });
 

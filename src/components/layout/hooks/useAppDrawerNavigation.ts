@@ -5,6 +5,7 @@ import {
   Bot,
   Calendar,
   CalendarDays,
+  CheckSquare,
   ClipboardList,
   FormInput,
   Globe,
@@ -158,6 +159,11 @@ export function useAppDrawerNavigation({
         to: ROUTE_PATHS.adminForms,
         label: 'Manage Forms',
         icon: ClipboardList,
+      });
+      items.push({
+        to: ROUTE_PATHS.adminApprovals,
+        label: 'Approvals',
+        icon: CheckSquare,
       });
     }
 

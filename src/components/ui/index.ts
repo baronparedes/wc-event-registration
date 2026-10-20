@@ -167,3 +167,4 @@ export {
   type ContactButtonsVariant,
 } from './ContactButtons';
 export { StatCard, type StatCardProps, type StatCardVariant } from './StatCard';
+export { SundayCalendarPicker, type SundayCalendarPickerProps } from './SundayCalendarPicker';

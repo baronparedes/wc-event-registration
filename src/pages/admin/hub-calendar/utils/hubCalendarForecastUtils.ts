@@ -236,9 +236,18 @@ export function getMemberConfidenceTooltip(
   stats?: MemberAttendanceStats,
   thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
   member?: { created_at?: string | null },
+  excusedStatus?: 'approved' | 'pending',
+  isLongLeave?: boolean,
 ): string {
   if (isExcused) {
-    return 'Excused: Submitted an approved excuse request for this service slot.';
+    if (excusedStatus === 'pending') {
+      return isLongLeave
+        ? 'Pending Approval: Long leave request awaiting review.'
+        : 'Pending Approval: Service excuse request awaiting review.';
+    }
+    return isLongLeave
+      ? 'Excused: Approved long leave request for this service slot.'
+      : 'Excused: Submitted an approved excuse request for this service slot.';
   }
 
   if (member && isMemberInactiveWithoutAttendance(member, stats)) {

@@ -1,6 +1,4 @@
-import React from 'react';
-
-import { Cake, CalendarOff, HeartIcon } from 'lucide-react';
+import { Cake, CalendarOff, Clock, HeartIcon } from 'lucide-react';
 
 import { Avatar } from '@/components/ui';
 import type { MilestoneType } from '@/lib/domain/hub-calendar';
@@ -11,6 +9,7 @@ export type MilestoneAvatarProps = {
   type?: MilestoneType;
   types?: MilestoneType[];
   excused?: boolean;
+  excusedStatus?: 'approved' | 'pending';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   className?: string;
 };
@@ -86,6 +85,7 @@ export function MilestoneAvatar({
   type,
   types,
   excused = false,
+  excusedStatus = 'approved',
   size = 'sm',
   className = '',
 }: MilestoneAvatarProps) {
@@ -117,11 +117,12 @@ export function MilestoneAvatar({
   }
 
   if (excused) {
+    const isPending = excusedStatus === 'pending';
     badgeList.push({
       key: 'excused',
-      title: 'Excused',
-      Icon: CalendarOff,
-      colorClass: 'bg-danger text-white',
+      title: isPending ? 'Pending Approval' : 'Excused',
+      Icon: isPending ? Clock : CalendarOff,
+      colorClass: isPending ? 'bg-amber-500 text-white' : 'bg-danger text-white',
     });
   }
 

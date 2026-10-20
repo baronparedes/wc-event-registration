@@ -7,7 +7,7 @@ export interface PowerAutomateBatchItem {
 
 export interface PowerAutomateBatchPayload {
   batch_id: string;
-  batch_type?: 'sunday_reminder' | 'broadcast';
+  batch_type?: 'sunday_reminder' | 'broadcast' | 'approval';
   count: number;
   created_at: string;
   items: PowerAutomateBatchItem[];

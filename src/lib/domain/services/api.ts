@@ -533,13 +533,14 @@ export async function fetchMemberServiceExcuses(
     .from('service_excuse_requests')
     .select('*')
     .eq('user_id', userId)
+    .order('start_date', { ascending: false, nullsFirst: false })
     .order('request_date', { ascending: false });
 
   if (startDate) {
-    query = query.gte('request_date', startDate);
+    query = query.or(`request_date.gte.${startDate},end_date.gte.${startDate}`);
   }
   if (endDate) {
-    query = query.lte('request_date', endDate);
+    query = query.or(`request_date.lte.${endDate},start_date.lte.${endDate}`);
   }
 
   const { data, error } = await query;

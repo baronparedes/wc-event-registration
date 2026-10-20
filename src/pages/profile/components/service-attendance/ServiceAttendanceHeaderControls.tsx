@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { CalendarRange, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 import { Button, FormSelectField } from '@/components/ui';
 
@@ -14,6 +14,8 @@ interface ServiceAttendanceHeaderControlsProps {
   onNextMonth: () => void;
   onViewExcuses?: () => void;
   excuseCount?: number;
+  onRequestLongLeave?: () => void;
+  longLeaveButtonLabel?: string;
 }
 
 export function ServiceAttendanceHeaderControls({
@@ -28,9 +30,23 @@ export function ServiceAttendanceHeaderControls({
   onNextMonth,
   onViewExcuses,
   excuseCount,
+  onRequestLongLeave,
+  longLeaveButtonLabel,
 }: ServiceAttendanceHeaderControlsProps) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {onRequestLongLeave && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onRequestLongLeave}
+          className="h-10 font-semibold shadow-xs order-last sm:order-first gap-1.5"
+        >
+          <CalendarRange className="h-4 w-4" aria-hidden="true" />
+          {longLeaveButtonLabel || 'Request Long Leave'}
+        </Button>
+      )}
       {onViewExcuses && (
         <Button
           type="button"

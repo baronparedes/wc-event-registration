@@ -217,8 +217,7 @@ describe('service API', () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
-        gte: vi.fn().mockReturnThis(),
-        lte: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
         then: (resolve: (value: unknown) => void) => resolve({ data: mockList, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(query as never);
@@ -226,8 +225,10 @@ describe('service API', () => {
       const result = await fetchMemberServiceExcuses('user-1', '2026-10-01', '2026-10-31');
       expect(supabase.from).toHaveBeenCalledWith('service_excuse_requests');
       expect(query.eq).toHaveBeenCalledWith('user_id', 'user-1');
-      expect(query.gte).toHaveBeenCalledWith('request_date', '2026-10-01');
-      expect(query.lte).toHaveBeenCalledWith('request_date', '2026-10-31');
+      expect(query.or).toHaveBeenCalledWith('request_date.gte.2026-10-01,end_date.gte.2026-10-01');
+      expect(query.or).toHaveBeenCalledWith(
+        'request_date.lte.2026-10-31,start_date.lte.2026-10-31',
+      );
       expect(result).toEqual(mockList);
     });
   });

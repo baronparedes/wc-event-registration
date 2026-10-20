@@ -15,7 +15,7 @@ export interface VolunteerAttendanceLogRecord {
   is_walk_in: boolean;
   is_override: boolean;
   is_manual_entry: boolean;
-  status: 'present' | 'absent' | 'excused';
+  status: 'present' | 'absent' | 'excused' | 'pending_excusal';
   checked_in_at?: string | null;
 }
 

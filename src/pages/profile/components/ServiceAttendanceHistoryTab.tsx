@@ -20,6 +20,7 @@ import {
 import {
   FiledExcusesModal,
   NonSundayAttendanceList,
+  RequestLongLeaveModal,
   ServiceAttendanceDesktopMatrix,
   ServiceAttendanceHeaderControls,
   ServiceAttendanceLegend,
@@ -32,13 +33,17 @@ interface ServiceAttendanceHistoryTabProps {
   memberCode?: string;
   metadata?: Record<string, string>;
   isAdminView?: boolean;
+  memberName?: string;
 }
 
 export function ServiceAttendanceHistoryTab({
   memberId,
   metadata,
+  isAdminView = false,
+  memberName,
 }: ServiceAttendanceHistoryTabProps) {
   const [isExcusesModalOpen, setIsExcusesModalOpen] = useState(false);
+  const [isLongLeaveModalOpen, setIsLongLeaveModalOpen] = useState(false);
   const { data: filedExcuses = [] } = useMemberServiceExcusesQuery(memberId);
 
   const today = useMemo(() => new Date(), []);
@@ -203,6 +208,8 @@ export function ServiceAttendanceHistoryTab({
           onNextMonth={handleNextMonth}
           onViewExcuses={() => setIsExcusesModalOpen(true)}
           excuseCount={filedExcuses.length}
+          onRequestLongLeave={() => setIsLongLeaveModalOpen(true)}
+          longLeaveButtonLabel={isAdminView ? 'File Long Leave' : 'Request Long Leave'}
         />
       }
     >
@@ -236,6 +243,14 @@ export function ServiceAttendanceHistoryTab({
         isOpen={isExcusesModalOpen}
         onClose={() => setIsExcusesModalOpen(false)}
         userId={memberId}
+      />
+
+      <RequestLongLeaveModal
+        isOpen={isLongLeaveModalOpen}
+        onClose={() => setIsLongLeaveModalOpen(false)}
+        userId={memberId}
+        memberName={memberName}
+        isAdminView={isAdminView}
       />
     </SectionCard>
   );

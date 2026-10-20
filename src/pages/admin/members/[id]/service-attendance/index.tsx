@@ -66,6 +66,7 @@ export function AdminMemberServiceAttendancePage() {
             memberId={member.id}
             metadata={member.extra_metadata}
             isAdminView={true}
+            memberName={member.full_name}
           />
         </div>
       </AdminPageShell.Content>

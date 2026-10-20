@@ -1,5 +1,7 @@
+import { useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, CalendarRange } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -26,6 +28,7 @@ import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 import { formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
+import { RequestLongLeaveModal } from '@/pages/profile/components/service-attendance';
 
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
@@ -73,6 +76,7 @@ export function AdminMemberDetailPage() {
   const deleteMemberMutation = useSoftDeleteMemberMutation();
   const restoreMemberMutation = useRestoreMemberMutation();
   const uploadMemberAvatarMutation = useUploadMemberAvatarMutation();
+  const [isLongLeaveModalOpen, setIsLongLeaveModalOpen] = useState(false);
 
   const {
     register,
@@ -193,6 +197,17 @@ export function AdminMemberDetailPage() {
           canWrite
             ? 'Update the member profile, contact details, and admin metadata.'
             : 'View the member profile, contact details, and admin metadata.'
+        }
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsLongLeaveModalOpen(true)}
+            className="gap-1.5"
+          >
+            <CalendarRange className="h-4 w-4" aria-hidden="true" />
+            File Long Leave
+          </Button>
         }
       />
 
@@ -391,6 +406,14 @@ export function AdminMemberDetailPage() {
           </div>
         </form>
       </AdminPageShell.Content>
+
+      <RequestLongLeaveModal
+        isOpen={isLongLeaveModalOpen}
+        onClose={() => setIsLongLeaveModalOpen(false)}
+        userId={member.id}
+        memberName={member.full_name}
+        isAdminView={true}
+      />
     </AdminPageShell>
   );
 }

@@ -18,6 +18,7 @@ import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import {
   type ExcusedMemberMap,
   type MilestoneEntry,
+  getMemberExcusedDetails,
   isMemberExcused,
   toIsoDateKey,
 } from '@/lib/domain/hub-calendar';
@@ -347,7 +348,13 @@ export function SelectedDateDetails({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {filteredEntries.map((entry) => {
-              const isExcused = isMemberExcused(excusedMap, isoDateKey, entry.member, targetSlot);
+              const excusedDetails = getMemberExcusedDetails(
+                excusedMap,
+                isoDateKey,
+                entry.member,
+                targetSlot,
+              );
+              const isExcused = excusedDetails.isExcused;
               const stats = attendanceScoreMap?.get(entry.member.id);
               const isInactive = isMemberInactiveWithoutAttendance(entry.member, stats);
               const avatarTurnupRate = isInactive ? undefined : stats?.turnupRate;
@@ -356,6 +363,8 @@ export function SelectedDateDetails({
                 stats,
                 confidenceThresholds,
                 entry.member,
+                excusedDetails.status,
+                excusedDetails.isLongLeave,
               );
 
               return (
@@ -373,6 +382,7 @@ export function SelectedDateDetails({
                     avatarObjectKey={entry.member.avatar_object_key}
                     className="border-2 border-surface shadow-sm"
                     excused={isExcused}
+                    excusedStatus={excusedDetails.status}
                     turnupRate={avatarTurnupRate}
                     thresholds={confidenceThresholds}
                   />
@@ -403,7 +413,23 @@ export function SelectedDateDetails({
                         })}
                       </div>
                     )}
-                    {isInactive && (
+                    {isExcused && (
+                      <div className="mt-1 flex justify-center">
+                        {excusedDetails.status === 'pending' ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-2 py-0.5 border-amber-500/50 text-amber-600 bg-amber-500/10 font-medium"
+                          >
+                            Pending {excusedDetails.isLongLeave ? 'Leave' : 'Excuse'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
+                            {excusedDetails.isLongLeave ? 'On Leave' : 'Excused'}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {isInactive && !isExcused && (
                       <div className="mt-1 flex justify-center">
                         <Badge
                           variant="destructive"
@@ -456,7 +482,7 @@ export function SelectedDateDetails({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {selectedMilestones.map((milestone) => {
-                  const isExcused = isMemberExcused(
+                  const excused = getMemberExcusedDetails(
                     excusedMap,
                     toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber),
                     milestone.member,
@@ -473,7 +499,8 @@ export function SelectedDateDetails({
                         name={milestone.member.full_name}
                         avatarObjectKey={milestone.member.avatar_object_key}
                         type={milestone.type}
-                        excused={isExcused}
+                        excused={excused.isExcused}
+                        excusedStatus={excused.status}
                         className="shrink-0"
                       />
                       <div className="min-w-0 flex-1">

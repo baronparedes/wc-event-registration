@@ -8,6 +8,7 @@ export type ExcusedMemberRecord = {
   requestDate: string;
   services: string;
   reason?: string;
+  status?: 'approved' | 'pending';
 };
 
 type GetMemberExcusedScheduleRequest = {

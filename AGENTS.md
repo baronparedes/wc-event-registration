@@ -22,6 +22,20 @@ This file contains the core principles, architecture rules, and domain logic con
   - **No Mutations in Effects**: Never trigger mutations, network submissions, or cascading state chains inside `useEffect`. Orchestrate submissions directly from event handlers.
   - **Form State with RHF**: Do NOT use `useState` for form fields; use React Hook Form (`register`, `useWatch`) and `useFieldArray` for array structures.
   - See `.agent/skills/react-best-practices/references/anti-patterns.md` for full guidance.
+- **UI Theme & Styling Rules (Strict No `dark:` Modifiers)**:
+  - **No `dark:` Modifiers**: NEVER use Tailwind `dark:` variant classes (e.g., `dark:bg-neutral-900`, `dark:text-neutral-100`). The application uses centralized CSS root variables on `:root` (`--color-primary`, `--color-background`, `--color-surface`, `--color-text`, etc.) and does not support media-query dark mode. Using `dark:` causes unreadable white-on-white text or mismatched jet-black cards on devices with OS dark mode enabled.
+  - **Semantic Theme Tokens**: Strictly use semantic design tokens: `text-text`, `text-muted`, `bg-surface`, `bg-background`, `border-border`, `text-primary`, `bg-primary`, `bg-accent`, `text-danger`. Avoid hardcoding arbitrary neutral/gray Tailwind color utilities (`neutral-*`, `gray-*`, `slate-*`) for backgrounds, surfaces, borders, or typography.
+- **Admin UI Layout & Component Standards**:
+  - **Admin Layout Shell**: All admin listing and management views MUST use `AdminPageShell` with its subcomponents: `AdminPageShell.Header`, `AdminBaseNavigation`, `AdminPageShell.Filters`, and `AdminPageShell.Content`.
+  - **Responsive Data Lists (Desktop vs Mobile)**: Admin data views must use `useIsMobileViewport` to conditionally render:
+    - **Desktop**: `ListTable` primitives (`ListTableHead`, `ListTableHeaderRow`, `ListTableHeaderCell`, `ListTableBody`, `ListTableRow`, `ListTableCell`).
+    - **Mobile**: `MobileCard` primitives (`MobileCardHeader`, `MobileCardBody`, `MobileCardContent`, `MobileCardActions`).
+  - **Filter Toolbars & Controls**:
+    - Status/tab filter switches MUST use `ButtonGroup` or `Tabs`.
+    - Search bars MUST use `SearchInputField`.
+    - Dropdowns MUST use `FormSelectField`.
+  - **Status Badges**: Use `Badge` with semantic variants (`default`, `secondary`, `accent`, `destructive`, `outline`) rather than custom raw-color pill containers.
+  - **User Avatars**: Whenever displaying users, requesters, volunteers, or attendees in lists, tables, cards, dialogs, or drawers, ALWAYS include the `Avatar` component with `avatarObjectKey` and `name` fallback.
 
 ## 3. Architecture & Code Organization
 
@@ -34,6 +48,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Pagination**: Admin paginated data views (Events, Members, Member Registrations, Public Registrations) must use the `useInfiniteScrollTrigger` custom hook (`src/hooks/utils/useInfiniteScrollTrigger.ts`). It utilizes `IntersectionObserver` for infinite scroll pagination via React Query's `useInfiniteQuery`.
 - **Legal/Org Config**: Application legal and organization configuration details (app name, organization name, privacy contact email) are defined centrally in `src/config/constants/legal.ts`.
 - **HTML-to-Image Sharing**: Any "share as image" feature must use the `ImageCanvas` compound component pattern (`<ImageCanvas.Provider>`, `<ImageCanvas>`, `<ImageCanvas.Actions>`, `<ImageCanvas.CancelButton>`) or `useImageCanvasGroup` (multiple cards, captured sequentially) from `@/components/ui`. Do not call `html-to-image`, `navigator.share`, or `navigator.clipboard.write` directly in dialogs. Non-React helpers (render options, `ensureResourcesReady`, `shareFiles`, device detection) live in `src/lib/infrastructure/share-image/`.
+- **Database Views & RLS**: All public database views created in `supabase/migrations/` (`create or replace view ...`) MUST be created `with (security_invoker = true)`. By default, PostgreSQL views execute with owner privileges and bypass underlying RLS policies, triggering an "Unrestricted" warning in Supabase Studio. Declaring `with (security_invoker = true)` ensures the view runs under the querying caller's credentials and strictly respects table RLS.
 - **Tech Debt**: The React codebase technical debt audit and multi-phase refactoring roadmap are documented in `docs/analysis/tech-debt-analysis.md`. Refer to this document before embarking on large refactors.
 
 ## 4. Authentication, Roles & Security
@@ -85,7 +100,18 @@ This file contains the core principles, architecture rules, and domain logic con
 - Service commitments are snapshotted in `public.user_commitment_history` via the `users_snapshot_commitment_metadata` trigger on `public.users`. The trigger function `snapshot_user_commitment_metadata` is declared `SECURITY DEFINER` with `search_path = public`, and only snapshots when Sunday commitment keys (`first_sunday` through `fifth_sunday`) change. Snapshots are effective-dated to the nearest upcoming Sunday (`get_nearest_upcoming_sunday`).
 - The profile service attendance history UI (`ServiceAttendanceHistoryTab`) queries snapshots to evaluate historical schedule alignment per Sunday using `resolveMetadataForDate`.
 
-## 8. Domain Logic: App Notifications & Multi-Channel Broadcasting
+## 8. Domain Logic: Unified Approval Workflow & SLOD Delegation
+
+- **Unified Approval Requests (`/admin/approvals`)**:
+  - Centralizes review workflows across `form_submission` and `service_excuse` (Long Leave).
+  - Admins can inspect details, track review assignment status, delegate review to SLOD users (`list_slod_users`), or approve/decline directly at any time.
+- **Volunteer Long Leave (Service Excuses)**:
+  - Members self-file from `/profile?tab=commitments` without entering reviewer emails.
+  - Leave Dates & Duration: Both `start_date` and `end_date` must strictly fall on a Sunday, spanning at least 4 weeks (28 days / 4 Sundays).
+  - Approved excuses populate `approved_service_excuse_sundays_view` (declared with `security_invoker = true`), automatically excusing commitments on the Hub Calendar and Sunday schedules.
+  - See [`docs/guides/unified-approval-workflow-and-slod-delegation.md`](docs/guides/unified-approval-workflow-and-slod-delegation.md).
+
+## 9. Domain Logic: App Notifications & Multi-Channel Broadcasting
 
 - **Notification Center & Header Drawer**:
   - The notification bell in the main app header renders unread alert badges, supports real-time listening via Supabase Realtime on `app_notification_recipients`, and offers a slide-over drawer with filtering (`All` and `Unread`), tab switching, mark-as-read, and deletion.
@@ -104,14 +130,14 @@ This file contains the core principles, architecture rules, and domain logic con
   - **`cron-process-email-queue`**: Consumes `email_queue` messages and dispatches via Resend API (`/emails`).
   - **Local Broadcast Safety Harness (`_shared/resend.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all email dispatches through `sendResendEmail` are safely simulated and logged locally (`./local-broadcasts.log`) instead of reaching real email addresses. Output files are gitignored.
 
-## 9. Testing
+## 10. Testing
 
 - **Unit Tests (React/Frontend)**: Executed with `npm run test:unit` using Vitest.
 - **Unit Tests (Edge Functions)**: Executed with Deno test runner (`npm run test:edge` or `npm run precommit`). Tests reside in `supabase/functions/<name>/__tests__/`. AI Agents modifying or adding Edge Functions MUST always author or update corresponding Deno unit tests.
 - **Environment**: Vitest expects Supabase environment variables to be defined in `.env.local`.
 - **Coverage**: Supabase Edge Functions (`supabase/functions/**`) are intentionally excluded from Vitest test coverage reporting as they are tested via Deno.
 
-## 10. Repository Skills & Specialized Guides (`.agent/skills/`)
+## 11. Repository Skills & Specialized Guides (`.agent/skills/`)
 
 The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 
