@@ -5,8 +5,15 @@ import { getGoogleAiApiKey, getGoogleAiModel } from '@/shared/ai.ts';
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import type { Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
+import {
+  type EnqueueEmailInput,
+  enqueueEmailNotificationsBatch,
+  triggerEmailProcessor,
+} from '@/shared/emailQueue.ts';
+import { toAbsoluteUrl } from '@/shared/emailTemplate.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 import { sendWebPushNotification } from '@/shared/push.ts';
+import { resolveRoleEmails } from '@/shared/roleEmails.ts';
 
 import { getSystemPrompt, getUserPrompt, parseDebriefResponse } from './prompt.ts';
 import {
@@ -14,7 +21,12 @@ import {
   type ServiceDashboardRpcResponse,
   cronWeeklySundayDebriefPayloadSchema,
 } from './types.ts';
-import { computeSundayMetrics, resolvePreviousSunday } from './utils.ts';
+import {
+  computeSundayMetrics,
+  generateDebriefEmailHtml,
+  generateDebriefEmailText,
+  resolvePreviousSunday,
+} from './utils.ts';
 
 export async function handleCronWeeklySundayDebrief(req: Request): Promise<Response> {
   const startTime = performance.now();
@@ -152,6 +164,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
     // 4. Dispatch notification to role 'OIC' exclusively
     let broadcastId: string | null = null;
     let pushDeliveries = 0;
+    let emailDeliveries = 0;
 
     if (payload.notify !== false) {
       try {
@@ -162,6 +175,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
         const message = `${briefTeaser}. View complete debrief in Services Dashboard.`;
         const targetUrl = '/admin/services';
 
+        // 4a. In-App Notification
         const { data: createdNotificationId, error: broadcastError } = await supabase.rpc(
           'broadcast_app_notification',
           {
@@ -183,7 +197,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
         } else if (createdNotificationId) {
           broadcastId = createdNotificationId;
 
-          // Dispatch Web Push to recipients with active subscriptions
+          // 4b. Web Push Notification to recipients with active subscriptions
           const { data: recipients } = await supabase
             .from('app_notification_recipients')
             .select('user_id')
@@ -221,6 +235,68 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
             }
           }
         }
+
+        // 4c. Email Notification to role OIC
+        const oicEmails = await resolveRoleEmails(supabase, ['OIC']);
+        if (oicEmails.length > 0) {
+          const emailSubject = title;
+          const absoluteUrl = toAbsoluteUrl(targetUrl);
+          const emailText = generateDebriefEmailText({
+            sundayDate: metrics.sundayDate,
+            turnupRate: metrics.turnupRate,
+            peakSlot: metrics.peakSlot,
+            totalCommitted: metrics.totalCommitted,
+            totalPresent: metrics.totalPresent,
+            totalWalkIns: metrics.totalWalkIns,
+            summary: parsed.summary,
+            keyHighlights: parsed.keyHighlights,
+            actionUrl: absoluteUrl,
+          });
+
+          const emailHtml = generateDebriefEmailHtml({
+            sundayDate: metrics.sundayDate,
+            turnupRate: metrics.turnupRate,
+            peakSlot: metrics.peakSlot,
+            totalCommitted: metrics.totalCommitted,
+            totalPresent: metrics.totalPresent,
+            totalWalkIns: metrics.totalWalkIns,
+            summary: parsed.summary,
+            keyHighlights: parsed.keyHighlights,
+            actionUrl: absoluteUrl,
+          });
+
+          const queueInputs: EnqueueEmailInput[] = oicEmails.map((email) => ({
+            recipient: email,
+            category: 'broadcast',
+            event_type: 'email_notification',
+            template_slug: 'broadcast',
+            subject: emailSubject,
+            text: emailText,
+            html: emailHtml,
+            metadata: {
+              broadcast_title: emailSubject,
+              title: emailSubject,
+              broadcast_message: emailText,
+              message: emailText,
+              broadcast_message_html: emailHtml,
+              message_html: emailHtml,
+              url: absoluteUrl,
+              action_url: absoluteUrl,
+              action_text: 'View in Services Dashboard',
+              target_type: 'role',
+              sunday_date: metrics.sundayDate,
+            },
+          }));
+
+          const batchResult = await enqueueEmailNotificationsBatch(supabase, queueInputs, {
+            concurrency: 10,
+          });
+          emailDeliveries = batchResult.successfulCount;
+
+          if (emailDeliveries > 0) {
+            await triggerEmailProcessor(supabase);
+          }
+        }
       } catch (notifyErr) {
         console.error('[cron-weekly-sunday-debrief] Notification dispatch encountered error', {
           requestId,
@@ -236,6 +312,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
       sundayDate,
       broadcastId,
       pushDeliveries,
+      emailDeliveries,
     });
 
     return jsonResponse(corsHeaders, {
@@ -251,6 +328,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
       },
       broadcastId,
       pushDeliveries,
+      emailDeliveries,
     });
   } catch (err) {
     console.error('[cron-weekly-sunday-debrief] Generation error', {

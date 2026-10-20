@@ -145,3 +145,117 @@ export function computeSundayMetrics(
     overallDeficitRoles,
   };
 }
+
+export interface GenerateDebriefEmailParams {
+  sundayDate: string;
+  turnupRate: number;
+  peakSlot: string;
+  totalCommitted: number;
+  totalPresent: number;
+  totalWalkIns: number;
+  summary: string;
+  keyHighlights: string[];
+  actionUrl: string;
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function generateDebriefEmailText(params: GenerateDebriefEmailParams): string {
+  const highlightsList = params.keyHighlights.map((h) => `• ${h}`).join('\n');
+  return `CCF Welcome Center — Sunday Executive Debrief (${params.sundayDate})
+Turn-up Rate: ${params.turnupRate}% | Peak: ${params.peakSlot}
+Present: ${params.totalPresent} / ${params.totalCommitted} | Walk-ins: +${params.totalWalkIns}
+
+${params.summary}
+
+Executive Highlights:
+${highlightsList}
+
+View the full debrief in the Services Dashboard:
+${params.actionUrl}
+`;
+}
+
+export function generateDebriefEmailHtml(params: GenerateDebriefEmailParams): string {
+  const paragraphs = params.summary.split(/\n\s*\n/).filter(Boolean);
+  const highlightsHtml = params.keyHighlights
+    .map((h) => `<li style="margin-bottom: 6px; color: #334155;">${escapeHtml(h)}</li>`)
+    .join('');
+  const paragraphsHtml = paragraphs
+    .map(
+      (p) =>
+        `<p style="margin: 0 0 14px 0; line-height: 1.6; color: #1e293b;">${escapeHtml(p)}</p>`,
+    )
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunday Executive Debrief</title>
+</head>
+<body style="margin: 0; padding: 24px 16px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+    <div style="background-color: #009688; padding: 24px 32px; color: #ffffff;">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff;">Sunday Executive Debrief</h1>
+      <p style="margin: 4px 0 0 0; font-size: 13px; color: #e6fffa;">CCF Welcome Center • ${escapeHtml(params.sundayDate)}</p>
+    </div>
+    <div style="padding: 32px;">
+      <table style="width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 20px;">
+        <tr>
+          <td style="background-color: #f1f5f9; border-radius: 8px; padding: 12px 16px; width: 50%;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Turn-up Rate</div>
+            <div style="font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 2px;">${params.turnupRate}%</div>
+          </td>
+          <td style="background-color: #f1f5f9; border-radius: 8px; padding: 12px 16px; width: 50%;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Peak Slot</div>
+            <div style="font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 2px;">${escapeHtml(params.peakSlot)}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color: #f1f5f9; border-radius: 8px; padding: 12px 16px; width: 50%;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Present / Committed</div>
+            <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 2px;">${params.totalPresent} <span style="font-size: 13px; font-weight: 400; color: #64748b;">/ ${params.totalCommitted}</span></div>
+          </td>
+          <td style="background-color: #f1f5f9; border-radius: 8px; padding: 12px 16px; width: 50%;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Walk-ins</div>
+            <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 2px;">+${params.totalWalkIns}</div>
+          </td>
+        </tr>
+      </table>
+
+      ${
+        params.keyHighlights.length > 0
+          ? `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; margin-bottom: 6px;">Executive Highlights</div>
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px 8px 18px; margin-bottom: 24px;">
+        <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5;">
+          ${highlightsHtml}
+        </ul>
+      </div>`
+          : ''
+      }
+
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; margin-bottom: 8px;">Executive Summary</div>
+      <div style="font-size: 14px; line-height: 1.6; color: #1e293b; margin-bottom: 28px;">
+        ${paragraphsHtml}
+      </div>
+
+      <div style="text-align: center; margin: 28px 0 8px 0;">
+        <a href="${escapeHtml(params.actionUrl)}" style="display: inline-block; background-color: #009688; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View in Services Dashboard</a>
+      </div>
+    </div>
+    <div style="padding: 16px 32px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+      Automated executive debrief generated by Hub AI for the OIC role.
+    </div>
+  </div>
+</body>
+</html>`;
+}

@@ -1,7 +1,12 @@
 import { assertEquals, assertMatch } from '@std/assert';
 
 import { getSystemPrompt, getUserPrompt, parseDebriefResponse } from '../prompt.ts';
-import { computeSundayMetrics, resolvePreviousSunday } from '../utils.ts';
+import {
+  computeSundayMetrics,
+  generateDebriefEmailHtml,
+  generateDebriefEmailText,
+  resolvePreviousSunday,
+} from '../utils.ts';
 
 const ORIGIN = 'https://app.example.com';
 
@@ -117,6 +122,22 @@ async function withEnv(
           },
         ]),
       );
+    }
+    // Table: users for resolving OIC role emails
+    if (url.pathname === '/rest/v1/users') {
+      return Promise.resolve(Response.json([{ email: 'oic@example.com', role: 'OIC' }]));
+    }
+    // RPC: enqueue_email_notification
+    if (url.pathname === '/rest/v1/rpc/enqueue_email_notification') {
+      return Promise.resolve(Response.json(1));
+    }
+    // RPC: trigger_email_processor
+    if (url.pathname === '/rest/v1/rpc/trigger_email_processor') {
+      return Promise.resolve(Response.json(null));
+    }
+    // Edge Function: cron-process-email-queue
+    if (url.pathname.includes('/cron-process-email-queue')) {
+      return Promise.resolve(Response.json({ success: true, processed: 1 }));
     }
 
     // Google Generative AI API endpoint
@@ -283,6 +304,37 @@ Deno.test('parseDebriefResponse handles JSON string and code fence wrappers', ()
   assertEquals(parsed2.keyHighlights[0], 'Highlight 1');
 });
 
+Deno.test('generateDebriefEmailText and generateDebriefEmailHtml produce valid templates', () => {
+  const emailParams = {
+    sundayDate: '2026-10-18',
+    turnupRate: 90.0,
+    peakSlot: '9AM',
+    totalCommitted: 70,
+    totalPresent: 63,
+    totalWalkIns: 7,
+    summary: 'Executive brief paragraph 1.\n\nExecutive brief paragraph 2.',
+    keyHighlights: ['Turn-up at 90%', 'Peak slot 9AM'],
+    actionUrl: 'https://welcomehub.app/admin/services',
+  };
+
+  const text = generateDebriefEmailText(emailParams);
+  assertMatch(text, /CCF Welcome Center — Sunday Executive Debrief \(2026-10-18\)/);
+  assertMatch(text, /Turn-up Rate: 90% \| Peak: 9AM/);
+  assertMatch(text, /Executive brief paragraph 1/);
+  assertMatch(text, /• Turn-up at 90%/);
+  assertMatch(text, /https:\/\/welcomehub\.app\/admin\/services/);
+
+  const html = generateDebriefEmailHtml(emailParams);
+  assertMatch(html, /Sunday Executive Debrief/);
+  assertMatch(html, /90%/);
+  assertMatch(html, /9AM/);
+  assertMatch(html, /63 <span.*?>\/ 70<\/span>/);
+  assertMatch(html, /\+7/);
+  assertMatch(html, /Turn-up at 90%/);
+  assertMatch(html, /Executive brief paragraph 1/);
+  assertMatch(html, /href="https:\/\/welcomehub\.app\/admin\/services"/);
+});
+
 // 2. HTTP & Edge Function Handler Tests
 Deno.test(
   'handleCronWeeklySundayDebrief returns 401 when unauthenticated and missing cron key',
@@ -317,6 +369,8 @@ Deno.test(
       assertEquals(body.metrics.turnupRate, 90);
       assertEquals(body.metrics.peakSlot, '9AM');
       assertEquals(body.broadcastId, 'mock-notification-id');
+      assertEquals(body.pushDeliveries, 1);
+      assertEquals(body.emailDeliveries, 1);
     });
   },
 );
@@ -332,6 +386,7 @@ Deno.test(
       const body = await res.json();
       assertEquals(body.success, true);
       assertEquals(body.brief.sunday_date, '2026-10-18');
+      assertEquals(body.emailDeliveries, 1);
     });
   },
 );
