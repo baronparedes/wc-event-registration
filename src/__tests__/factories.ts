@@ -231,6 +231,7 @@ export function makeAdminMember(overrides: Partial<AdminMember> = {}): AdminMemb
     extra_metadata: {},
     created_at: createdAt,
     updated_at: createdAt,
+    notes: [],
     ...overrides,
   };
 }

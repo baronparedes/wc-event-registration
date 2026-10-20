@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import { Button, SectionCard } from '@/components/ui';
-import { useAddMemberNoteMutation, useDeleteMemberNoteMutation } from '@/hooks/domain/members';
+import {
+  useAddMemberNoteMutation,
+  useDeleteMemberNoteMutation,
+} from '@/hooks/domain/members/mutations';
 import type { MemberNote } from '@/lib/domain/members';
 import { formatDateTime } from '@/lib/infrastructure';
 

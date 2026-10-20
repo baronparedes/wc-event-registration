@@ -30,6 +30,7 @@ function makeMember(overrides?: Partial<AdminMember>): AdminMember {
     },
     created_at: '2025-01-01',
     updated_at: '2025-01-01',
+    notes: [],
     ...overrides,
   };
 }

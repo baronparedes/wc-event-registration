@@ -24,6 +24,7 @@ function createMockMember(id: string, name: string, role: string): AdminMember {
     created_at: '2025-01-01',
     updated_at: '2025-01-01',
     extra_metadata: {},
+    notes: [],
   };
 }
 

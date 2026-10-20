@@ -35,6 +35,7 @@ const mockMember1: AdminMember = {
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
   extra_metadata: {},
+  notes: [],
 };
 
 const mockMember2: AdminMember = {
@@ -54,6 +55,7 @@ const mockMember2: AdminMember = {
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
   extra_metadata: {},
+  notes: [],
 };
 
 const entry1: MemberScheduleEntry = {

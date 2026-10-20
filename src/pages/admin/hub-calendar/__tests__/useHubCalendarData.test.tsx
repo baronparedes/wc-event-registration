@@ -72,6 +72,7 @@ describe('useHubCalendarData', () => {
       category: 'adult',
       extra_metadata: { wedanniv_date: '2015-03-01' },
       created_at: '2026-01-01',
+      notes: [],
       updated_at: '2026-01-01',
     };
     const schedule: MemberScheduleEntry = {

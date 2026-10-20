@@ -34,6 +34,7 @@ function makeMember(overrides?: Partial<AdminMember>): AdminMember {
     category: 'adult',
     extra_metadata: {},
     created_at: '2026-01-01T00:00:00.000Z',
+    notes: [],
     updated_at: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };

@@ -33,6 +33,7 @@ function makeMember(overrides?: Partial<Record<string, unknown>>) {
     category: 'adult',
     extra_metadata: {},
     created_at: '2026-06-15T00:00:00.000Z',
+    notes: [],
     updated_at: '2026-06-15T00:00:00.000Z',
     ...overrides,
   };

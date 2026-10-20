@@ -32,6 +32,7 @@ describe('SundayScheduleShareCard', () => {
     created_at: '2025-01-01',
     updated_at: '2025-01-01',
     extra_metadata: {},
+    notes: [],
   };
 
   const mockMember2: AdminMember = {
@@ -51,6 +52,7 @@ describe('SundayScheduleShareCard', () => {
     created_at: '2025-01-01',
     updated_at: '2025-01-01',
     extra_metadata: {},
+    notes: [],
   };
 
   const entries: MemberScheduleEntry[] = [
