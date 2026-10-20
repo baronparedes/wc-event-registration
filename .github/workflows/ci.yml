@@ -72,7 +72,21 @@ jobs:
         run: pip install semgrep
 
       - name: Run Semgrep (JS/TS)
-        run: semgrep --config p/javascript --config p/typescript --error --metrics=off
+        run: >-
+          semgrep
+          --config p/javascript
+          --config p/typescript
+          --error
+          --metrics=off
+          --jobs 2
+          --max-memory 3000
+          --max-target-bytes 1000000
+          --exclude "node_modules"
+          --exclude "dist"
+          --exclude "dev-dist"
+          --exclude "coverage*"
+          --exclude ".agent*"
+          src supabase/functions api scripts
 
   gitleaks:
     runs-on: ubuntu-latest

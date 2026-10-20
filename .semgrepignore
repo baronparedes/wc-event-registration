@@ -1,0 +1,13 @@
+# Semgrep ignore file
+node_modules/
+dist/
+dev-dist/
+coverage/
+coverage-edge/
+test-results/
+.agent/
+.agents/
+docs/
+*.min.js
+*.bundle.js
+*.map
