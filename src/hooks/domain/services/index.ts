@@ -23,3 +23,5 @@ export * from './queries/useServiceExceptionDatesQuery';
 export * from './mutations/useSubmitExcuseMutation';
 export * from './mutations/useCancelExcuseMutation';
 export * from './queries/useMemberServiceExcusesQuery';
+export * from './queries/useServiceWeeklyBriefQuery';
+export * from './mutations/useTriggerWeeklyDebriefMutation';

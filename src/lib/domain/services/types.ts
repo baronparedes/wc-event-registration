@@ -117,3 +117,40 @@ export type ServiceExcuseRequest = {
   created_at: string;
   updated_at: string;
 };
+
+export type ServiceWeeklyBrief = {
+  id: string;
+  sunday_date: string;
+  turnup_rate: number;
+  total_committed: number;
+  total_present: number;
+  total_walk_ins: number;
+  peak_slot: string;
+  summary: string;
+  key_highlights: string[];
+  metrics_snapshot?: Record<string, unknown>;
+  generated_by?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TriggerWeeklyDebriefParams = {
+  sunday_date?: string;
+  force?: boolean;
+  notify?: boolean;
+};
+
+export type TriggerWeeklyDebriefResponse = {
+  success: boolean;
+  brief: ServiceWeeklyBrief;
+  metrics: {
+    sundayDate: string;
+    turnupRate: number;
+    peakSlot: string;
+    totalCommitted: number;
+    totalPresent: number;
+    totalWalkIns: number;
+  };
+  broadcastId?: string | null;
+  pushDeliveries?: number;
+};

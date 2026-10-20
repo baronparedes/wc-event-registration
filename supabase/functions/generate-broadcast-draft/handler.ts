@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
+import { getGoogleAiApiKey, getGoogleAiModel } from '@/shared/ai.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 
@@ -39,9 +40,8 @@ export async function handleGenerateBroadcastDraft(req: Request): Promise<Respon
 
   const { data: payload, corsHeaders, requestId } = hook;
 
-  const apiKey =
-    Deno.env.get('GOOGLE_API_KEY') ?? Deno.env.get('GOOGLE_GENERATIVE_AI_API_KEY') ?? undefined;
-  const model = Deno.env.get('GOOGLE_AI_MODEL') ?? 'gemini-3.5-flash-lite';
+  const apiKey = getGoogleAiApiKey();
+  const model = getGoogleAiModel();
 
   if (!apiKey) {
     console.error('[generate-broadcast-draft] GOOGLE_API_KEY is not configured', { requestId });

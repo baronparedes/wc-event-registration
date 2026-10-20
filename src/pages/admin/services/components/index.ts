@@ -7,4 +7,5 @@ export * from './MissedCommitmentsModal';
 export * from './MissedCommitmentsTable';
 export * from './MissedCommitmentsMobileList';
 export * from './ExportMissedCommitmentsButton';
+export * from './WeeklyDebriefModal';
 export * from './types';

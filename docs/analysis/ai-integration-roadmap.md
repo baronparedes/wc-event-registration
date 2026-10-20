@@ -63,16 +63,25 @@ graph TD
   - Frontend Hook: `useBroadcastDraftAi` in `src/hooks/domain/notifications/useBroadcastDraftAi.ts`.
   - UI Component: `BroadcastDraftAiModal` in `src/pages/admin/settings/notifications/components/BroadcastDraftAiModal.tsx`.
 
-#### Phase 1.2: Weekly Sunday Executive Debrief (Automated Cron)
+#### Phase 1.2: Weekly Sunday Executive Debrief (Automated Cron & Admin View) `[Completed]`
 
-- **Location**: Automatic Monday 8:00 AM Manila time cron.
+- **Location**: Automatic Monday 8:00 AM Manila time cron (`pg_cron`) and Services Dashboard ([`/admin/services`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/services)).
 - **User Workflow**:
   - Automatically queries `get_service_dashboard_stats` for the previous Sunday.
+  - Synthesizes metrics via Gemini Flash-Lite (`gemini-3.5-flash-lite`, centralized in `_shared/ai.ts`).
   - Generates a concise, 3-paragraph executive brief highlighting:
     1. Overall turn-up rate and peak attendance slot.
     2. Role surplus and deficit highlights (e.g. _"Prayer coaches reached 110% target, while 12NN Ushers experienced a 3-person deficit"_).
-    3. Notable anomalies or walk-in counts.
-  - Stores summary in `service_weekly_briefs` table and broadcasts notification to `slod` and `admin` roles.
+    3. Notable anomalies, walk-in counts, and operational takeaways.
+  - Stores summary in `service_weekly_briefs` table with unique constraint on `sunday_date`.
+  - Dispatches an in-app notification & web push broadcast exclusively to role `OIC`.
+  - Administrators can review past Sunday briefs and manually trigger / regenerate debriefs via the **"Executive Debrief"** modal on `/admin/services`.
+- **Architecture**:
+  - Database Migrations: `supabase/migrations/20261020205000_create_service_weekly_briefs.sql` & `supabase/migrations/20261020205100_schedule_weekly_sunday_debrief_cron.sql`.
+  - Edge Function: `supabase/functions/cron-weekly-sunday-debrief/` with Deno unit tests.
+  - API Client: Strongly typed `triggerWeeklySundayDebrief`, `fetchServiceWeeklyBriefs`, and `fetchServiceWeeklyBriefByDate` in `src/lib/domain/services/api.ts`.
+  - Frontend Hooks: `useServiceWeeklyBriefByDateQuery`, `useServiceWeeklyBriefsQuery`, and `useTriggerWeeklyDebriefMutation` in `src/hooks/domain/services/`.
+  - UI Component: `WeeklyDebriefModal` integrated into `AdminServicesPage` in `src/pages/admin/services/`.
 
 ---
 

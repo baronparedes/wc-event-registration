@@ -156,6 +156,10 @@ import_map = "./functions/deno.json"
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.cron-weekly-sunday-debrief]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.delete-attendance-saved-view]
 verify_jwt = true
 import_map = "./functions/deno.json"
@@ -197,6 +201,10 @@ verify_jwt = true
 import_map = "./functions/deno.json"
 
 [functions.export-unregistered-members-csv]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.generate-broadcast-draft]
 verify_jwt = true
 import_map = "./functions/deno.json"
 

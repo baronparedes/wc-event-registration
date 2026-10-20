@@ -174,6 +174,10 @@ export const RATE_LIMIT_PRESETS = {
       windowMs: 60_000,
       maxHits: 10,
     },
+    weeklySundayDebrief: {
+      windowMs: 60_000,
+      maxHits: 10,
+    },
   },
 } as const;
 

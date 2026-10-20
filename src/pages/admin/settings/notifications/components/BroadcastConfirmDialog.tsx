@@ -46,7 +46,7 @@ export function BroadcastConfirmDialog({
   const isEmail = channels.includes('email');
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="md">
+    <Dialog isOpen={isOpen} onClose={onClose} size="xl">
       <Dialog.Header showCloseButton onClose={onClose}>
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">

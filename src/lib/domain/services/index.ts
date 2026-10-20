@@ -41,4 +41,7 @@ export {
   submitServiceExcuse,
   cancelServiceExcuse,
   fetchMemberServiceExcuses,
+  triggerWeeklySundayDebrief,
+  fetchServiceWeeklyBriefs,
+  fetchServiceWeeklyBriefByDate,
 } from './api';
