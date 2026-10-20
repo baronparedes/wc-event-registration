@@ -28,6 +28,8 @@ vi.mock('@/hooks/domain/members', () => ({
   useSoftDeleteMemberMutation: () => mockUseSoftDeleteMemberMutation(),
   useRestoreMemberMutation: () => mockUseRestoreMemberMutation(),
   useUploadMemberAvatarMutation: () => mockUseUploadMemberAvatarMutation(),
+  useAddMemberNoteMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteMemberNoteMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMemberAvatarQuery: () => ({ data: null }),
 }));
 

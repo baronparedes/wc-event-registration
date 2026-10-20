@@ -116,6 +116,8 @@ describe('useCurrentProfileQuery', () => {
     });
 
     expect(result.current.data).toEqual({
+      notes: [],
+      has_account: undefined,
       ...member,
       last_activity: '2026-09-01T10:00:00Z',
       extra_metadata: { club: 'North' },

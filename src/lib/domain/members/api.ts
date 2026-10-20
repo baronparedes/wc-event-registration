@@ -1,6 +1,8 @@
 import { DEFAULT_MEMBER_TURNUP_RATE } from '@/lib/domain/hub-calendar/constants';
 import { supabase } from '@/lib/infrastructure';
 
+import type { MemberNote } from './types';
+
 export type MemberUserRow = {
   id: string;
   member_id: string;
@@ -19,6 +21,7 @@ export type MemberUserRow = {
   created_at: string;
   updated_at: string;
   has_account?: boolean;
+  notes: MemberNote[];
 };
 
 export type MemberUserListRow = MemberUserRow & {
@@ -65,7 +68,7 @@ export type MemberAttributeFilter =
   | 'with_email';
 
 const MEMBER_USER_SELECT =
-  'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, has_account';
+  'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, notes, created_at, updated_at, has_account';
 
 function escapeOrFilterValue(value: string): string {
   return value.replace(/[,%_]/g, (char) => `\\${char}`);
@@ -90,7 +93,7 @@ export async function fetchAdminMembersPage(params: {
   let query = supabase
     .from('users')
     .select(
-      'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, created_at, updated_at, last_activity, has_account',
+      'id, member_id, avatar_object_key, is_active, full_name, first_name, last_name, nickname, email, phone, date_of_birth, role, category, metadata, notes, created_at, updated_at, last_activity, has_account',
       { count: 'exact' },
     );
 
@@ -366,4 +369,29 @@ export async function fetchMembersAttendanceScores(
   }
 
   return statsMap;
+}
+
+export async function addMemberNote(
+  memberId: string,
+  text: string,
+  authorId: string,
+  authorName: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('add_member_note', {
+    p_user_id: memberId,
+    p_text: text,
+    p_author_id: authorId,
+    p_author_name: authorName,
+  });
+
+  if (error) throw error;
+}
+
+export async function deleteMemberNote(memberId: string, noteId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_member_note', {
+    p_user_id: memberId,
+    p_note_id: noteId,
+  });
+
+  if (error) throw error;
 }
