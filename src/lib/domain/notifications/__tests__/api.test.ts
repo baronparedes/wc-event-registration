@@ -5,6 +5,7 @@ import { supabase } from '@/lib/infrastructure';
 import {
   dispatchSundayReminders,
   fetchUserNotifications,
+  generateBroadcastDraft,
   getBroadcastAudienceStats,
   getSundaySchedulePreview,
   managePushSubscription,
@@ -15,17 +16,20 @@ import {
 
 const {
   mockSendCaller,
+  mockDraftCaller,
   mockPushCaller,
   mockCronEmailCaller,
   mockCronPushCaller,
   mockCreateEdgeFunctionCaller,
 } = vi.hoisted(() => {
   const sendCaller = vi.fn();
+  const draftCaller = vi.fn();
   const pushCaller = vi.fn();
   const cronEmailCaller = vi.fn();
   const cronPushCaller = vi.fn();
   const createCaller = vi.fn((fnName: string) => {
     if (fnName === 'send-app-notification') return sendCaller;
+    if (fnName === 'generate-broadcast-draft') return draftCaller;
     if (fnName === 'manage-push-subscription') return pushCaller;
     if (fnName === 'cron-process-email-queue') return cronEmailCaller;
     if (fnName === 'cron-process-push-reminders') return cronPushCaller;
@@ -33,6 +37,7 @@ const {
   });
   return {
     mockSendCaller: sendCaller,
+    mockDraftCaller: draftCaller,
     mockPushCaller: pushCaller,
     mockCronEmailCaller: cronEmailCaller,
     mockCronPushCaller: cronPushCaller,
@@ -511,6 +516,45 @@ describe('Notifications Domain API', () => {
           channels: ['email'],
         }),
       ).rejects.toThrow('Failed to dispatch Sunday schedule reminders: Dispatch failed');
+    });
+  });
+
+  describe('generateBroadcastDraft', () => {
+    it('successfully invokes generate-broadcast-draft edge function', async () => {
+      const mockResponse = {
+        success: true,
+        draft: {
+          title: 'Sunday Service Reminder',
+          message: 'Doors open at 9 AM for fellowship.',
+        },
+      };
+
+      mockDraftCaller.mockResolvedValueOnce(mockResponse);
+
+      const result = await generateBroadcastDraft({
+        mode: 'new',
+        notes: 'Service tomorrow at 9 AM',
+        tone: 'pastoral',
+      });
+
+      expect(mockDraftCaller).toHaveBeenCalledWith({
+        mode: 'new',
+        notes: 'Service tomorrow at 9 AM',
+        tone: 'pastoral',
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('throws when edge function returns unsuccessful or null response', async () => {
+      mockDraftCaller.mockResolvedValueOnce({ success: false });
+
+      await expect(
+        generateBroadcastDraft({
+          mode: 'polish',
+          notes: 'Raw text',
+          tone: 'urgent',
+        }),
+      ).rejects.toThrow('Failed to generate broadcast draft');
     });
   });
 });

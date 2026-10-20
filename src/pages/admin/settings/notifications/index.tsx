@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
+  BrandIcon,
   Button,
   FormInputField,
   FormSelectField,
@@ -30,6 +31,7 @@ import {
 import { BroadcastAudienceStatsCard } from './components/BroadcastAudienceStatsCard';
 import { BroadcastChannelSelect } from './components/BroadcastChannelSelect';
 import { BroadcastConfirmDialog } from './components/BroadcastConfirmDialog';
+import { BroadcastDraftAiModal } from './components/BroadcastDraftAiModal';
 import { BroadcastEventPicker } from './components/BroadcastEventPicker';
 import { BroadcastRoleMultiSelect } from './components/BroadcastRoleMultiSelect';
 import { BroadcastUserPicker } from './components/BroadcastUserPicker';
@@ -91,6 +93,7 @@ type BroadcastFormValues = z.infer<typeof broadcastSchema>;
 
 export function AdminNotificationsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isDraftAiModalOpen, setIsDraftAiModalOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<BroadcastFormValues | null>(null);
   const [selectedUser, setSelectedUser] = useState<AuthUserItem | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null);
@@ -114,6 +117,13 @@ export function AdminNotificationsPage() {
   const targetRoles = useWatch({ control: form.control, name: 'targetRoles' });
   const targetUserId = useWatch({ control: form.control, name: 'targetUserId' });
   const targetEventId = useWatch({ control: form.control, name: 'targetEventId' });
+  const currentTitle = useWatch({ control: form.control, name: 'title' }) ?? '';
+  const currentMessage = useWatch({ control: form.control, name: 'message' }) ?? '';
+
+  const handleApplyDraft = (draft: { title: string; message: string }) => {
+    form.setValue('title', draft.title, { shouldValidate: true, shouldDirty: true });
+    form.setValue('message', draft.message, { shouldValidate: true, shouldDirty: true });
+  };
 
   const { data: audienceStats } = useBroadcastAudienceStatsQuery({
     targetType,
@@ -218,6 +228,19 @@ export function AdminNotificationsPage() {
           <SectionCard
             title="Notification Broadcast"
             subtitle="Compose and send an announcement to application users."
+            headerAction={
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="gap-1.5 w-full sm:w-auto"
+                onClick={() => setIsDraftAiModalOpen(true)}
+              >
+                <span>Draft with</span>
+                <BrandIcon className="h-4 w-4" />
+                <span>AI</span>
+              </Button>
+            }
           >
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
               <Controller
@@ -243,7 +266,7 @@ export function AdminNotificationsPage() {
                     label="Title / Subject"
                     placeholder="e.g. Sunday Service Reminder"
                     maxLength={100}
-                    helperText={`${(field.value ?? '').length}/100 characters (max 100 for push notifications)`}
+                    helperText={`${(field.value ?? '').length}/100 characters`}
                     error={form.formState.errors.title?.message}
                     {...field}
                     value={field.value ?? ''}
@@ -261,7 +284,7 @@ export function AdminNotificationsPage() {
                     rows={3}
                     placeholder="Enter announcement or reminder details..."
                     maxLength={500}
-                    helperText={`${(field.value ?? '').length}/500 characters (max 500 for push notifications)`}
+                    helperText={`${(field.value ?? '').length}/500 characters`}
                     error={form.formState.errors.message?.message}
                     {...field}
                     value={field.value ?? ''}
@@ -388,6 +411,16 @@ export function AdminNotificationsPage() {
           targetUser={selectedUser}
           targetEvent={selectedEvent}
           audienceStats={audienceStats}
+        />
+
+        <BroadcastDraftAiModal
+          isOpen={isDraftAiModalOpen}
+          onClose={() => setIsDraftAiModalOpen(false)}
+          onApply={handleApplyDraft}
+          currentTitle={currentTitle}
+          currentMessage={currentMessage}
+          targetType={targetType}
+          targetRoles={targetRoles}
         />
       </AdminPageShell.Content>
     </AdminPageShell>

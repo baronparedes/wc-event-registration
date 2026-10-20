@@ -23,7 +23,7 @@ export function AdminChatPage() {
   return (
     <AdminPageShell>
       <AdminPageShell.Header
-        title="AI Assistant"
+        title="Hub AI"
         badge={
           <Badge
             variant="outline"
@@ -48,7 +48,7 @@ export function AdminChatPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-xs font-medium text-text">AI Assistant</span>
+              <span className="text-xs font-medium text-text">Hub AI</span>
               <span className="text-[11px] text-muted">
                 {messages.length > 0
                   ? `${messages.length} message${messages.length === 1 ? '' : 's'}`

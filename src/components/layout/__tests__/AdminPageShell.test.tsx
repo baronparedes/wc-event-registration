@@ -50,7 +50,7 @@ describe('AdminPageShell', () => {
       render(
         <MemoryRouter>
           <AdminPageShell.Header
-            title="AI Assistant"
+            title="Chat with Hub AI"
             badge={<span>Beta Badge</span>}
             actions={<button type="button">New Action</button>}
           />

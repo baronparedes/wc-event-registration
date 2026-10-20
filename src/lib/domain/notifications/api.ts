@@ -5,6 +5,8 @@ import type {
   BroadcastAudienceStats,
   DispatchSundayRemindersPayload,
   DispatchSundayRemindersResponse,
+  GenerateBroadcastDraftPayload,
+  GenerateBroadcastDraftResponse,
   ManagePushSubscriptionPayload,
   SendAppNotificationPayload,
   SendAppNotificationResponse,
@@ -15,6 +17,11 @@ const callSendAppNotification = createEdgeFunctionCaller<
   SendAppNotificationPayload,
   SendAppNotificationResponse
 >('send-app-notification');
+
+const callGenerateBroadcastDraft = createEdgeFunctionCaller<
+  GenerateBroadcastDraftPayload,
+  GenerateBroadcastDraftResponse
+>('generate-broadcast-draft');
 
 const callManagePushSubscription = createEdgeFunctionCaller<
   ManagePushSubscriptionPayload,
@@ -204,4 +211,16 @@ export async function dispatchSundayReminders(
   }
 
   return data as unknown as DispatchSundayRemindersResponse;
+}
+
+export async function generateBroadcastDraft(
+  payload: GenerateBroadcastDraftPayload,
+): Promise<GenerateBroadcastDraftResponse> {
+  const data = await callGenerateBroadcastDraft(payload);
+
+  if (!data || !data.success) {
+    throw new Error('Failed to generate broadcast draft');
+  }
+
+  return data;
 }

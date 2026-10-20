@@ -108,3 +108,29 @@ export type DispatchSundayRemindersResponse = {
   push_enqueued: number;
   email_enqueued: number;
 };
+
+export type BroadcastTone = 'pastoral' | 'urgent' | 'informative' | 'fun';
+export type BroadcastDraftMode = 'new' | 'polish';
+
+export type GenerateBroadcastDraftPayload = {
+  mode: BroadcastDraftMode;
+  notes: string;
+  tone: BroadcastTone;
+  targetType?: 'all' | 'role' | 'user' | 'event';
+  targetRoles?: string[];
+};
+
+export type BroadcastDraftVariant = {
+  title: string;
+  body: string;
+};
+
+export type GenerateBroadcastDraftResponse = {
+  success: boolean;
+  draft: {
+    title: string;
+    message: string;
+    push?: BroadcastDraftVariant;
+    email?: BroadcastDraftVariant;
+  };
+};

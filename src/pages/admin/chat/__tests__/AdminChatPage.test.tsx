@@ -58,11 +58,11 @@ describe('AdminChatPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
+    expect(screen.getByText('Hi! Chat with Hub AI.')).toBeInTheDocument();
     expect(
       screen.getByText('Ask me questions about volunteers, schedules, and events.'),
     ).toBeInTheDocument();
-    expect(screen.getByAltText('AI Assistant')).toBeInTheDocument();
+    expect(screen.getByAltText('Chat with Hub AI')).toBeInTheDocument();
     expect(screen.getAllByText('Beta').length).toBeGreaterThanOrEqual(1);
 
     expect(
@@ -145,7 +145,7 @@ describe('AdminChatPage', () => {
     // Verify user avatar is rendered with user initials / name title
     expect(screen.getByTitle('Test Admin')).toBeInTheDocument();
     // Verify bot brand avatar is rendered
-    expect(screen.getAllByAltText('AI Assistant').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByAltText('Chat with Hub AI').length).toBeGreaterThanOrEqual(1);
 
     await waitFor(() => {
       expect(mockStreamRequest).toHaveBeenCalledTimes(1);
@@ -314,7 +314,7 @@ describe('AdminChatPage', () => {
     fireEvent.click(clearButton);
 
     expect(screen.queryByText('Hello')).not.toBeInTheDocument();
-    expect(screen.getByText("Hi! I'm your AI assistant.")).toBeInTheDocument();
+    expect(screen.getByText('Hi! Chat with Hub AI.')).toBeInTheDocument();
     expect(window.sessionStorage.getItem('wc_admin_chat_messages')).toBeNull();
   });
 

@@ -7,11 +7,11 @@ describe('BrandAvatar', () => {
   it('renders default brand avatar with default alt and md size', () => {
     render(<BrandAvatar />);
 
-    const img = screen.getByRole('img', { name: 'AI Assistant' });
+    const img = screen.getByRole('img', { name: 'Chat with Hub AI' });
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('alt', 'AI Assistant');
+    expect(img).toHaveAttribute('alt', 'Chat with Hub AI');
 
-    const container = screen.getByTitle('AI Assistant');
+    const container = screen.getByTitle('Chat with Hub AI');
     expect(container).toHaveClass('h-14', 'w-14', 'rounded-full');
   });
 
