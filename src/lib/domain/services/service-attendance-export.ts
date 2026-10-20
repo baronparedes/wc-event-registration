@@ -189,11 +189,14 @@ export function buildMissedServiceCommitmentsCsvExport(
   const { records, startDate, endDate } = params;
 
   const sortedRecords = [...records].sort((a, b) => {
+    // ⚡ Bolt: Performance Improvement
+    // Use native string comparison for ISO-8601 dates and standard time slots instead of localeCompare
+    // to avoid significant overhead in the sorting loop.
     if (a.service_date !== b.service_date) {
-      return a.service_date.localeCompare(b.service_date);
+      return a.service_date < b.service_date ? -1 : a.service_date > b.service_date ? 1 : 0;
     }
     if (a.time_slot !== b.time_slot) {
-      return a.time_slot.localeCompare(b.time_slot);
+      return a.time_slot < b.time_slot ? -1 : a.time_slot > b.time_slot ? 1 : 0;
     }
     return a.full_name.localeCompare(b.full_name);
   });
