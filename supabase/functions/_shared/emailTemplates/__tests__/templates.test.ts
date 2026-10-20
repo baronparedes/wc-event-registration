@@ -22,7 +22,8 @@ Deno.test('renderBaseEmailLayout renders title, body, and CTA button', () => {
   assertEquals(html.includes('Attention Required'), true);
   assertEquals(html.includes('Important content here'), true);
   assertEquals(html.includes('View Action'), true);
-  assertEquals(html.includes('https://welcomehub.app/test'), true);
+  const ctaHrefMatch = html.match(/href="([^"]+)"/);
+  assertEquals(ctaHrefMatch?.[1], 'https://welcomehub.app/test');
   assertEquals(html.includes('Test Footer'), true);
 });
 
@@ -42,15 +43,11 @@ Deno.test('buildApprovalReviewEmail formats subject, details, and review link', 
   assertEquals(result.html.includes('Volunteer Approval Required'), true);
   assertEquals(result.html.includes('Test Person'), true);
   assertEquals(result.html.includes('2026-11-01 to 2026-11-29'), true);
-  assertEquals(
-    result.html.includes('https://welcomehub.app/approvals/review/test-token-123'),
-    true,
-  );
+  const reviewHrefMatch = result.html.match(/href="([^"]+)"/);
+  assertEquals(reviewHrefMatch?.[1], 'https://welcomehub.app/approvals/review/test-token-123');
   assertEquals(result.text.includes('Volunteer: Test Person'), true);
-  assertEquals(
-    result.text.includes('https://welcomehub.app/approvals/review/test-token-123'),
-    true,
-  );
+  const reviewUrlInText = result.text.match(/https:\/\/[^\s]+/)?.[0];
+  assertEquals(reviewUrlInText, 'https://welcomehub.app/approvals/review/test-token-123');
 });
 
 Deno.test('buildApprovalOutcomeEmail formats approved decision with green theme', () => {
