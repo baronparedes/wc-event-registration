@@ -1,47 +1,38 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { format, parseISO } from 'date-fns';
 import { Bell, Check, Clock, Copy, FileText, RefreshCw, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-  AiBrandIcon,
-  Badge,
-  Button,
-  Dialog,
-  EmptyState,
-  FormSelectField,
-  LoadingState,
-} from '@/components/ui';
+import { AiBrandIcon, Badge, Button, Dialog, EmptyState, LoadingState } from '@/components/ui';
 import {
   useServiceWeeklyBriefByDateQuery,
-  useServiceWeeklyBriefsQuery,
   useTriggerWeeklyDebriefMutation,
 } from '@/hooks/domain/services';
 
 export interface WeeklyDebriefModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultSunday: string;
+  selectedSunday: string;
 }
 
-export function WeeklyDebriefModal({ isOpen, onClose, defaultSunday }: WeeklyDebriefModalProps) {
-  const [selectedSunday, setSelectedSunday] = useState<string>(defaultSunday);
+export function WeeklyDebriefModal({ isOpen, onClose, selectedSunday }: WeeklyDebriefModalProps) {
   const [copied, setCopied] = useState(false);
   const [notifyOic, setNotifyOic] = useState(true);
 
-  // Sync state when defaultSunday changes
-  const [prevDefaultSunday, setPrevDefaultSunday] = useState(defaultSunday);
-  if (prevDefaultSunday !== defaultSunday) {
-    setPrevDefaultSunday(defaultSunday);
-    setSelectedSunday(defaultSunday);
-  }
-
-  const { data: pastBriefs } = useServiceWeeklyBriefsQuery(15);
   const { data: brief, isLoading: isBriefLoading } =
     useServiceWeeklyBriefByDateQuery(selectedSunday);
   const { mutateAsync: triggerDebrief, isPending: isGenerating } =
     useTriggerWeeklyDebriefMutation();
+
+  const formattedSunday = useMemo(() => {
+    if (!selectedSunday) return '';
+    try {
+      return format(parseISO(selectedSunday), 'EEEE, MMMM d, yyyy');
+    } catch {
+      return selectedSunday;
+    }
+  }, [selectedSunday]);
 
   const handleCopy = async () => {
     if (!brief) return;
@@ -82,39 +73,23 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
     }
   };
 
-  // Compile available Sunday choices from past briefs combined with current selectedSunday
-  const availableDates = Array.from(
-    new Set([selectedSunday, ...(pastBriefs?.map((b) => b.sunday_date) ?? [])]),
-  ).sort((a, b) => b.localeCompare(a));
-
   const paragraphs = brief?.summary ? brief.summary.split(/\n\s*\n/).filter(Boolean) : [];
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="3xl">
       <Dialog.Header>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full pr-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between w-full pr-6">
           <div className="flex items-center gap-2">
             <div>
               <h2 className="text-lg font-semibold text-text">Sunday Executive Debrief</h2>
               <p className="text-xs text-muted">Executive briefing powered by Hub AI</p>
             </div>
           </div>
-          <div className="w-full sm:w-48">
-            <FormSelectField
-              ariaLabel="Select Sunday Date"
-              value={selectedSunday}
-              onChange={(val) => setSelectedSunday(val)}
-              options={availableDates.map((dateStr) => {
-                let label = dateStr;
-                try {
-                  label = format(parseISO(dateStr), 'MMM d, yyyy');
-                } catch {
-                  // Fallback to raw string
-                }
-                return { value: dateStr, label };
-              })}
-            />
-          </div>
+          {formattedSunday && (
+            <Badge variant="outline" className="text-xs font-medium self-start sm:self-auto">
+              {formattedSunday}
+            </Badge>
+          )}
         </div>
       </Dialog.Header>
 
@@ -259,7 +234,7 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
             <EmptyState
               icon={<AiBrandIcon className="h-8 w-8 text-primary" />}
               title="No Debrief Generated"
-              description={`An executive debrief has not been created yet for Sunday, ${selectedSunday}. You can synthesize service statistics now using Hub AI.`}
+              description={`An executive debrief has not been created yet for ${formattedSunday || 'the selected Sunday'}. You can synthesize service statistics now using Hub AI.`}
               action={
                 <Button
                   onClick={handleGenerate}

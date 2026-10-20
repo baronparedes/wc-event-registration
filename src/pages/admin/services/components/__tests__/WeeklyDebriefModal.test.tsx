@@ -15,12 +15,10 @@ vi.mock('sonner', () => ({
 }));
 
 const mockUseServiceWeeklyBriefByDateQuery = vi.fn();
-const mockUseServiceWeeklyBriefsQuery = vi.fn();
 const mockTriggerDebriefMutateAsync = vi.fn();
 
 vi.mock('@/hooks/domain/services', () => ({
   useServiceWeeklyBriefByDateQuery: (date?: string) => mockUseServiceWeeklyBriefByDateQuery(date),
-  useServiceWeeklyBriefsQuery: (limit?: number) => mockUseServiceWeeklyBriefsQuery(limit),
   useTriggerWeeklyDebriefMutation: () => ({
     mutateAsync: mockTriggerDebriefMutateAsync,
     isPending: false,
@@ -60,10 +58,6 @@ const sampleBrief: ServiceWeeklyBrief = {
 describe('WeeklyDebriefModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseServiceWeeklyBriefsQuery.mockReturnValue({
-      data: [sampleBrief],
-      isLoading: false,
-    });
   });
 
   it('renders empty state when no brief exists for the date', () => {
@@ -72,9 +66,10 @@ describe('WeeklyDebriefModal', () => {
       isLoading: false,
     });
 
-    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} defaultSunday="2026-10-18" />);
+    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} selectedSunday="2026-10-18" />);
 
     expect(screen.getByText('Sunday Executive Debrief')).toBeInTheDocument();
+    expect(screen.getByText('Sunday, October 18, 2026')).toBeInTheDocument();
     expect(screen.getByText('No Debrief Generated')).toBeInTheDocument();
     expect(screen.getByText('Generate with Hub AI')).toBeInTheDocument();
   });
@@ -86,7 +81,7 @@ describe('WeeklyDebriefModal', () => {
     });
     mockTriggerDebriefMutateAsync.mockResolvedValue({ success: true });
 
-    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} defaultSunday="2026-10-18" />);
+    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} selectedSunday="2026-10-18" />);
 
     const generateBtn = screen.getByText('Generate with Hub AI');
     fireEvent.click(generateBtn);
@@ -109,8 +104,9 @@ describe('WeeklyDebriefModal', () => {
       isLoading: false,
     });
 
-    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} defaultSunday="2026-10-18" />);
+    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} selectedSunday="2026-10-18" />);
 
+    expect(screen.getAllByText('Sunday, October 18, 2026')[0]).toBeInTheDocument();
     expect(screen.getByText('91.5%')).toBeInTheDocument();
     expect(screen.getByText('9AM')).toBeInTheDocument();
     expect(screen.getByText('+6')).toBeInTheDocument();
@@ -138,7 +134,7 @@ describe('WeeklyDebriefModal', () => {
       writable: true,
     });
 
-    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} defaultSunday="2026-10-18" />);
+    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} selectedSunday="2026-10-18" />);
 
     const copyBtn = screen.getByText('Copy Brief');
     fireEvent.click(copyBtn);
@@ -156,7 +152,7 @@ describe('WeeklyDebriefModal', () => {
     });
     mockTriggerDebriefMutateAsync.mockResolvedValue({ success: true });
 
-    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} defaultSunday="2026-10-18" />);
+    renderModal(<WeeklyDebriefModal isOpen={true} onClose={vi.fn()} selectedSunday="2026-10-18" />);
 
     const regenBtn = screen.getByText('Regenerate Debrief');
     fireEvent.click(regenBtn);
@@ -179,7 +175,7 @@ describe('WeeklyDebriefModal', () => {
     const handleClose = vi.fn();
 
     renderModal(
-      <WeeklyDebriefModal isOpen={true} onClose={handleClose} defaultSunday="2026-10-18" />,
+      <WeeklyDebriefModal isOpen={true} onClose={handleClose} selectedSunday="2026-10-18" />,
     );
 
     const closeBtn = screen.getByRole('button', { name: 'Close' });

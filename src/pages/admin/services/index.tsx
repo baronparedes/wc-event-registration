@@ -179,7 +179,7 @@ export function AdminServicesPage() {
           <WeeklyDebriefModal
             isOpen={isDebriefModalOpen}
             onClose={() => setIsDebriefModalOpen(false)}
-            defaultSunday={selectedSunday}
+            selectedSunday={selectedSunday}
           />
         )}
       </AdminPageShell.Content>
