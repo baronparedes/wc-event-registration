@@ -15,3 +15,9 @@
 **Discovery:** Found that the new excuse request form page logic and components were undocumented.
 **Learning:** This is a newly added feature which requires appropriate Gherkin scenario representation because it uses a step wizard process (similar to registration but for a different domain).
 **Standard:** Documented under a new `14-excuse-request` category within `docs/features/`.
+
+## 2026-10-20 - Unified Approval Workflow
+
+**Discovery:** Found that the unified approval workflow module at `src/pages/approvals` and `src/lib/domain/approvals` had no feature documentation.
+**Learning:** This is an important system for allowing unauthenticated users to submit approval decisions via secure tokens.
+**Standard:** Documented under a new `15-approvals` category within `docs/features/`.
