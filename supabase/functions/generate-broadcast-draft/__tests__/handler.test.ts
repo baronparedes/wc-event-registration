@@ -323,8 +323,8 @@ Deno.test('generate-broadcast-draft handles upstream AI error gracefully', async
           return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
         }
         if (
-          url.hostname.includes('googleapis.com') ||
-          url.hostname.includes('generativelanguage')
+          isHostnameAllowed(url.hostname, 'googleapis.com') ||
+          isHostnameAllowed(url.hostname, 'generativelanguage.googleapis.com')
         ) {
           return Promise.resolve(
             new Response(JSON.stringify({ error: { message: 'Invalid model request' } }), {
