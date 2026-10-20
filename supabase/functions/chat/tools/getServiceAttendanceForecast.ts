@@ -62,29 +62,17 @@ type ExcusedMemberRecord = {
 
 export function createGetServiceAttendanceForecastTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural-language timeframes (e.g. "next Sunday", "August") to a concrete date before calling this tool. Defaults to next Sunday.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes to a concrete date before calling this tool.',
-      ),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
     targetsOverride: z
       .record(z.string(), z.record(z.string(), z.number()))
       .optional()
-      .describe(
-        'Optional override for volunteer target numbers. Format should be { "9AM": { "Usher": 12, "IMT Support": 2 }, "12NN": { ... } }.',
-      ),
+      .describe('Optional target overrides per slot'),
   });
 
   return tool({
     description:
-      'Forecast volunteer attendance for Sunday services, specifically to answer questions like "Do I have enough volunteers next Sunday?". Returns expected turnup, committed counts, excused counts, needed volunteers (deficits), and surplus per service slot based on historical attendance rates and targets. Uses standard volunteer role targets ("Usher", "Backroom Support", "Prayer Coach", "IMT Support", "VMT Support").',
+      'Forecast Sunday volunteer attendance turnup, deficits, and surplus vs role targets.',
     inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate, targetsOverride }) => {
       const now = getPhNow();

@@ -37,42 +37,19 @@ export function createGetInactiveVolunteersTool({ client, requestId }: ToolConte
       .max(100)
       .optional()
       .default(50)
-      .describe('Maximum number of inactive volunteers to return. Defaults to 50.'),
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Optional role filter, such as "usher" or "greeter". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
-      ),
-    category: z
-      .string()
-      .trim()
-      .optional()
-      .describe('Optional volunteer category filter (e.g., "regular", "probationary").'),
+      .describe('Max records (default 50)'),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
+    category: z.string().trim().optional().describe('Category filter'),
     userTokens: z
       .union([z.string().trim(), z.array(z.string().trim())])
       .optional()
-      .describe(
-        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
-      ),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural-language timeframes (e.g., "this quarter", "last quarter", "Q1", "this year", "2026") into concrete dates before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes into concrete dates.',
-      ),
+      .describe('Array or single user token'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
-    description:
-      'Retrieve inactive volunteers who have scheduled Sunday service commitments in the specified timeframe (e.g. this quarter, last quarter, this year, or custom dates) but recorded ZERO total attendances (both scheduled check-ins and walk-ins = 0). Returns tokenized volunteer identities with committed slots, unexcused absences, excused absences, and attendance scores. Secondary roles (after "/") are ignored; only primary roles are evaluated. NEVER returns PII like real names or emails.',
+    description: 'Retrieve inactive volunteers (committed > 0, total attendance = 0).',
     inputSchema: schema,
     execute: async ({ limit = 50, role, category, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();

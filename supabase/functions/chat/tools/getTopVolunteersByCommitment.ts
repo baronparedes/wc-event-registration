@@ -34,9 +34,7 @@ export function createGetTopVolunteersByCommitmentTool({ client, requestId }: To
       .enum(['attendance_score', 'attended'])
       .optional()
       .default('attendance_score')
-      .describe(
-        'Metric to rank volunteers by: "attendance_score" (weighted reliability score rewarding attendance and walk-ins while penalizing unexcused no-shows) or "attended" (total number of scheduled check-in attendances). Defaults to "attendance_score".',
-      ),
+      .describe('Sort metric'),
     limit: z
       .number()
       .int()
@@ -44,36 +42,16 @@ export function createGetTopVolunteersByCommitmentTool({ client, requestId }: To
       .max(50)
       .optional()
       .default(10)
-      .describe('Number of top volunteers to return. Defaults to 10 (max 50).'),
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Optional role filter, such as "usher" or "greeter". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
-      ),
-    category: z
-      .string()
-      .trim()
-      .optional()
-      .describe('Optional volunteer category filter (e.g., "regular", "probationary").'),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural-language timeframes (e.g., "Q1 2026", "this quarter", "last quarter", "this year", "2026") into concrete dates before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes into concrete dates.',
-      ),
+      .describe('Max top volunteers (default 10)'),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
+    category: z.string().trim().optional().describe('Category filter'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
     description:
-      'Retrieve top volunteer rankings and leaderboard by commitment attendance fidelity and attendance scores for a quarter, year, or custom date range. Calculates committed slots, attended services, unexcused absences, excused absences, walk-in support (9AM/3PM, 12NN, 5th Sunday), and net attendance scores. NEVER returns PII like real names or emails; it uses user tokens instead. Secondary roles (after "/") are ignored; only primary roles are evaluated.',
+      'Retrieve top volunteer rankings and leaderboard by fidelity and attendance scores.',
     inputSchema: schema,
     execute: async ({
       sortBy = 'attendance_score',

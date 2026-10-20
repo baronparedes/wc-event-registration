@@ -41,35 +41,14 @@ const PAGE_SIZE = 500;
 
 export function createGetCommitmentSummaryStatsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Optional role filter, such as "usher" or "greeter". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
-      ),
-    category: z
-      .string()
-      .trim()
-      .optional()
-      .describe('Optional volunteer category filter (e.g., "regular", "probationary").'),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural-language timeframes (e.g., "this quarter", "last quarter", "Q1", "this year", "2026") into concrete dates before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes into concrete dates.',
-      ),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
+    category: z.string().trim().optional().describe('Category filter'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
-    description:
-      'Retrieve high-level aggregate volunteer commitment metrics, overall fidelity, total scheduled commitments vs attended services, excused vs unexcused absences, walk-in support, and primary role distribution for a quarter, year, or custom date range. Defaults to the current month when no dates are specified. Does NOT return individual volunteer identities or PII. Use this tool whenever users ask about commitment dashboard summaries, overall volunteer attendance fidelity, total missed commitments, or ministry-wide score averages.',
+    description: 'Retrieve aggregate commitment metrics, overall fidelity, and absences.',
     inputSchema: schema,
     execute: async ({ role, category, targetStartDate, targetEndDate }) => {
       const now = getPhNow();

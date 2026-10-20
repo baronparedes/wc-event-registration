@@ -6,12 +6,11 @@ import type { ToolContext } from './types.ts';
 
 export function createAnalyzeEventAttendeesTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    eventId: z.string().describe('The UUID of the event to analyze'),
+    eventId: z.string().describe('Event UUID'),
   });
 
   return tool({
-    description:
-      'Analyze the attendees of a specific event. Returns demographics (age, gender, role, category) and registration status counts (confirmed/cancelled) and check-in counts for member registrations.',
+    description: 'Analyze event attendees (demographics, registration counts, and check-ins).',
     inputSchema: schema,
     execute: async ({ eventId }) => {
       console.log('[chat:tool:analyzeEventAttendees] Executing', {

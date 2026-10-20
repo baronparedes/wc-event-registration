@@ -59,10 +59,8 @@ function mapPublicRegistrationAccess(access: 'members' | 'members_and_public' | 
 const eventFieldSchema = z.object({
   field_key: z
     .string()
-    .describe(
-      'Unique identifier for this field in this event (e.g. "tshirt_size", "dietary_needs"). Lowercase alphanumeric and underscores only.',
-    ),
-  label: z.string().describe('Human-readable question or label displayed to registrants.'),
+    .describe('Field key e.g. "tshirt_size" (lowercase alphanumeric & underscores).'),
+  label: z.string().describe('Question label displayed to registrants.'),
   field_type: z
     .enum([
       'text',
@@ -80,17 +78,11 @@ const eventFieldSchema = z.object({
       'color_picker',
       'rating',
     ])
-    .default('text')
-    .describe('Type of input field.'),
-  is_required: z.boolean().default(false).describe('Whether answering this field is mandatory.'),
-  applicability: z
-    .enum(['members', 'guests', 'both'])
-    .default('both')
-    .describe(
-      'Audience scope: "members" (members only), "guests" (public non-members only), or "both".',
-    ),
-  placeholder: z.string().optional().describe('Placeholder text for input fields.'),
-  help_text: z.string().optional().describe('Help or guidance text shown below the field.'),
+    .default('text'),
+  is_required: z.boolean().default(false),
+  applicability: z.enum(['members', 'guests', 'both']).default('both'),
+  placeholder: z.string().optional(),
+  help_text: z.string().optional(),
   options: z
     .array(
       z.object({
@@ -98,78 +90,37 @@ const eventFieldSchema = z.object({
         value: z.string(),
       }),
     )
-    .optional()
-    .describe(
-      'List of selectable options for choice types (select, radio, checkbox, multi_select).',
-    ),
-  validation_rules: z
-    .record(z.string(), z.unknown())
-    .optional()
-    .describe(
-      'Optional validation rules, e.g. visibility_rule: { depends_on_field_key, equals_value }, min_length, max_length, max_slots.',
-    ),
+    .optional(),
+  validation_rules: z.record(z.string(), z.unknown()).optional(),
 });
 
 export function createCreateEventTool({ client, requestId, userId }: ToolContext) {
   const schema = z.object({
     title: z.string().min(1).max(200).describe('Title of the event (1-200 characters).'),
-    slug: z
-      .string()
-      .optional()
-      .describe(
-        'URL-safe slug for the event (e.g. "leadership-summit-2026"). If omitted, it will be automatically generated from the title.',
-      ),
-    description: z.string().optional().describe('Detailed description of the event.'),
-    location: z.string().optional().describe('Venue, hall, room, or location of the event.'),
+    slug: z.string().optional().describe('URL-safe slug. Auto-generated from title if omitted.'),
+    description: z.string().optional(),
+    location: z.string().optional(),
     startsAt: z
       .string()
       .optional()
-      .describe(
-        'Start date and time of the event in Philippine Standard Time (PST, UTC+8). Accepts ISO string or YYYY-MM-DDTHH:mm:ss format.',
-      ),
-    endsAt: z
-      .string()
-      .optional()
-      .describe('End date and time of the event in PST (UTC+8). Must be after startsAt.'),
-    registrationOpensAt: z.string().optional().describe('When registration opens in PST (UTC+8).'),
-    registrationClosesAt: z
-      .string()
-      .optional()
-      .describe('When registration closes in PST (UTC+8). Must be after registrationOpensAt.'),
+      .describe('Start date/time in PST UTC+8 (ISO or YYYY-MM-DDTHH:mm).'),
+    endsAt: z.string().optional().describe('End date/time in PST UTC+8 (after startsAt).'),
+    registrationOpensAt: z.string().optional(),
+    registrationClosesAt: z.string().optional(),
     publicRegistrationAccess: z
       .enum(['members', 'members_and_public', 'public'])
-      .default('members')
-      .describe(
-        'Access audience: "members" (members only), "members_and_public" (both), or "public" (public open). Defaults to "members".',
-      ),
+      .default('members'),
     duplicatePolicy: z
       .enum(['block', 'allow_update', 'allow_multiple', 'allow_multiple_update'])
-      .default('block')
-      .describe(
-        'How duplicate registrations from the same person are handled. Defaults to "block".',
-      ),
-    registrationMode: z
-      .enum(['open', 'closed'])
-      .default('open')
-      .describe('Registration mode. Defaults to "open".'),
-    allowNameLookup: z
-      .boolean()
-      .default(false)
-      .describe('Whether member search by name is enabled in registration lookup.'),
-    sendEmailAfterCompletion: z
-      .boolean()
-      .default(false)
-      .describe('Whether a confirmation email is dispatched upon successful registration.'),
-    fields: z
-      .array(eventFieldSchema)
-      .optional()
-      .describe('Optional dynamic registration questions/fields to create for this event.'),
+      .default('block'),
+    registrationMode: z.enum(['open', 'closed']).default('open'),
+    allowNameLookup: z.boolean().default(false),
+    sendEmailAfterCompletion: z.boolean().default(false),
+    fields: z.array(eventFieldSchema).optional().describe('Optional registration fields.'),
     force: z
       .boolean()
       .default(false)
-      .describe(
-        'Force creation even if an active event with the same title already exists in the database.',
-      ),
+      .describe('Force creation even if active event with same title exists.'),
   });
 
   return tool({

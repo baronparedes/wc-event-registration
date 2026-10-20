@@ -39,17 +39,11 @@ const formFieldSchema = z.object({
       'color_picker',
       'rating',
     ])
-    .default('text')
-    .describe('Type of input field.'),
-  is_required: z.boolean().default(false).describe('Whether answering this field is mandatory.'),
-  field_applicability: z
-    .enum(['all', 'member_only', 'public_only'])
-    .default('all')
-    .describe(
-      'Audience scope: "all" (both members and public), "member_only" (signed-in members only), or "public_only" (anonymous public only).',
-    ),
-  placeholder: z.string().optional().describe('Placeholder text for input fields.'),
-  help_text: z.string().optional().describe('Help or guidance text shown below the field.'),
+    .default('text'),
+  is_required: z.boolean().default(false),
+  field_applicability: z.enum(['all', 'member_only', 'public_only']).default('all'),
+  placeholder: z.string().optional(),
+  help_text: z.string().optional(),
   options: z
     .array(
       z.object({
@@ -57,57 +51,25 @@ const formFieldSchema = z.object({
         value: z.string(),
       }),
     )
-    .optional()
-    .describe(
-      'List of selectable options for choice types (select, radio, checkbox, multi_select).',
-    ),
-  validation_rules: z
-    .record(z.string(), z.unknown())
-    .optional()
-    .describe(
-      'Optional validation rules, e.g. visibility_rule: { depends_on_field_key, equals_value }, min_length, max_length.',
-    ),
+    .optional(),
+  validation_rules: z.record(z.string(), z.unknown()).optional(),
 });
 
 export function createCreateFormTool({ client, requestId, userId }: ToolContext) {
   const schema = z.object({
     title: z.string().min(1).max(200).describe('Title of the form (1-200 characters).'),
-    slug: z
-      .string()
-      .optional()
-      .describe(
-        'URL-safe slug for the form (e.g. "volunteer-survey-2026"). If omitted, it will be automatically generated from the title.',
-      ),
-    description: z
-      .string()
-      .optional()
-      .describe('Detailed description or instructions displayed on the form.'),
-    audience: z
-      .enum(['members', 'public', 'members_and_public'])
-      .default('members')
-      .describe(
-        'Allowed respondent audience: "members" (members only), "public" (open to public), or "members_and_public" (both). Defaults to "members".',
-      ),
+    slug: z.string().optional().describe('URL-safe slug. Auto-generated from title if omitted.'),
+    description: z.string().optional(),
+    audience: z.enum(['members', 'public', 'members_and_public']).default('members'),
     duplicatePolicy: z
       .enum(['block', 'allow_update', 'allow_multiple', 'allow_multiple_update'])
-      .default('block')
-      .describe(
-        'How duplicate submissions from the same respondent are handled. Defaults to "block".',
-      ),
-    sendEmailAfterCompletion: z
-      .boolean()
-      .default(false)
-      .describe('Whether a confirmation email is dispatched upon successful form submission.'),
-    fields: z
-      .array(formFieldSchema)
-      .optional()
-      .describe('Optional dynamic form questions/fields to create for this form.'),
+      .default('block'),
+    sendEmailAfterCompletion: z.boolean().default(false),
+    fields: z.array(formFieldSchema).optional().describe('Optional dynamic form questions.'),
     force: z
       .boolean()
       .default(false)
-      .describe(
-        'Force creation even if an active form with the same title already exists in the database.',
-      ),
+      .describe('Force creation even if active form with same title exists.'),
   });
 
   return tool({

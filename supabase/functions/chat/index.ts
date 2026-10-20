@@ -5,8 +5,10 @@ import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
 
+import { handleChatDebugLogging, isLocalChatDebugEnabled } from './debug.ts';
+import { compactMessageHistory } from './history.ts';
 import { getSystemPrompt } from './prompt.ts';
-import { createChatTools } from './tools/index.ts';
+import { createChatTools, detectCreationIntent, resolveToolDomains } from './tools/index.ts';
 
 const chatMessageSchema = z.object({
   id: z.string().optional(),
@@ -85,12 +87,17 @@ Deno.serve(async (req) => {
 
     const google = createGoogleGenerativeAI({ apiKey });
 
-    const tools = createChatTools({ client, requestId, userId });
+    const effectiveMessages = compactMessageHistory(messages, 6);
+    const includeCreationTools = detectCreationIntent(messages);
+    const domains = resolveToolDomains(messages);
+    const tools = createChatTools({ client, requestId, userId }, { includeCreationTools, domains });
+    const systemPrompt = getSystemPrompt();
+    const isDebugEnabled = isLocalChatDebugEnabled(req);
 
     const result = streamText({
       model: google(model),
-      system: getSystemPrompt(),
-      messages,
+      system: systemPrompt,
+      messages: effectiveMessages,
       tools,
       stopWhen: stepCountIs(5),
       onStepFinish: (step) => {
@@ -101,7 +108,7 @@ Deno.serve(async (req) => {
           textLength: step.text?.length ?? 0,
         });
       },
-      onFinish: ({ text, finishReason, usage, steps }) => {
+      onFinish: async ({ text, finishReason, usage, steps }) => {
         const durationMs = Math.round(performance.now() - startTime);
         const toolsExecuted = steps.flatMap((s) => (s.toolCalls ?? []).map((tc) => tc.toolName));
         console.log('[chat] Generation stream finished', {
@@ -114,6 +121,21 @@ Deno.serve(async (req) => {
           outputTokens: usage?.outputTokens,
           totalTokens: usage?.totalTokens,
         });
+
+        if (isDebugEnabled) {
+          await handleChatDebugLogging({
+            requestId,
+            model,
+            durationMs,
+            systemPrompt,
+            messages: effectiveMessages,
+            tools,
+            text,
+            finishReason,
+            usage,
+            steps,
+          });
+        }
       },
       onError: ({ error }) => {
         console.error('[chat] Stream error occurred during generation', {

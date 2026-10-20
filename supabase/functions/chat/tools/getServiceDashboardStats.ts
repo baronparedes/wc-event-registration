@@ -19,23 +19,12 @@ type ServiceDashboardStatsRpcResult = {
 
 export function createGetServiceDashboardStatsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural-language timeframes (e.g., "last Sunday", "August 2026", "this month", "2025") into concrete dates before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural-language timeframes into concrete dates.',
-      ),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
-    description:
-      'Retrieve high-level aggregate Sunday service attendance metrics, volunteer turn-up percentages, scheduled commitments vs actual check-ins, supervisor late/tardy overrides, walk-ins, and primary role distribution across service time slots (9AM, 12NN, 3PM) for a specific Sunday, month, year, or date range. Defaults to the previous Sunday when no dates are specified. Does NOT return individual volunteer identities or PII. Use this tool whenever users ask about service turn-up rates, attendance statistics, slot counts, walk-in totals, or role distributions across services.',
+    description: 'Retrieve aggregate Sunday attendance metrics, turn-up %, and slot breakdown.',
     inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate }) => {
       const now = getPhNow();
