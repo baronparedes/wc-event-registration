@@ -428,7 +428,7 @@ describe('AdminApprovalsPage', () => {
     expect(screen.getByText(/Decided by admin@example.com/i)).toBeInTheDocument();
     expect(screen.getByText(/Approved by admin/i)).toBeInTheDocument();
 
-    const closeBtn = screen.getByRole('button', { name: /Close/i });
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
     fireEvent.click(closeBtn);
   });
 
