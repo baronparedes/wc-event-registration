@@ -57,3 +57,9 @@
 **Deviation:** Dialog component was using generic `<div onClick={...}>` to handle background clicks and `e.stopPropagation()` on inner divs.
 **Learning:** This is poor semantics and accessibility, and also leads to bugs with scrollbar clicking.
 **Standard:** Extract interactive background elements into dedicated, absolute-positioned `<button type="button">` sibling layers with `tabIndex={-1}` rather than binding `onClick` on layout divs.
+
+## 2026-10-18 - Purist: Align useForm with Style Guide in AddMemberDialog
+
+**Deviation:** `useForm` initialization and reset in `src/pages/admin/members/components/AddMemberDialog.tsx` used a `useEffect` block watching the `isOpen` state.
+**Learning:** This architectural deviation leads to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events.
+**Standard:** Remove the `useEffect` block entirely and reset the form state directly in the interaction handlers, such as `handleClose`, rather than reacting to local state changes.
