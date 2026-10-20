@@ -4,6 +4,10 @@ import { getSystemPrompt, getUserPrompt, parseDraftResponse } from '../prompt.ts
 
 const ORIGIN = 'https://app.example.com';
 
+function isHostnameAllowed(hostname: string, domain: string): boolean {
+  return hostname === domain || hostname.endsWith(`.${domain}`);
+}
+
 async function withEnv(
   options: { apiKey?: string; role?: string; adminId?: string } = {},
   run: (handle: (req: Request) => Promise<Response>) => Promise<void>,
@@ -34,7 +38,10 @@ async function withEnv(
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.role ?? 'admin' }));
     }
     // Mock Google Generative AI API endpoint
-    if (url.hostname.includes('googleapis.com') || url.hostname.includes('generativelanguage')) {
+    if (
+      isHostnameAllowed(url.hostname, 'googleapis.com') ||
+      isHostnameAllowed(url.hostname, 'generativelanguage.googleapis.com')
+    ) {
       const mockResponseBody = {
         candidates: [
           {
