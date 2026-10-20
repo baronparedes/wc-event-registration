@@ -63,3 +63,9 @@ expect(result.current).toBe(false);
 **Challenge:** Testing the dynamic generation and download of CSV files via `URL.createObjectURL` and a dummy anchor tag in a JSDOM environment is tricky, as it relies heavily on native DOM functions that don't map cleanly or consistently during test execution.
 **Learning:** The component manually creates an `<a>` tag, appends it to the body, calls `click()`, and cleans it up. Simulating this exact native browser behavior is brittle.
 **Pattern:** Mock `URL.createObjectURL` and `URL.revokeObjectURL` before each test. Spy on `HTMLAnchorElement.prototype.click` rather than intercepting `document.createElement`. This safely and reliably asserts that the anchor tag was created and clicked without mutating global DOM constructors.
+
+## $(date +%Y-%m-%d) - Unit testing React Query mutations
+
+**Challenge:** Testing React Query mutations like `useCancelExcuseMutation` requires asserting both the execution of the API call and the subsequent cache invalidations triggered in `onSuccess`.
+**Learning:** `renderHook` needs to be wrapped with a `QueryClientProvider` to access the `queryClient` instance. Simply mocking `invalidateQueries` is the best way to verify the cache updates without needing complex mock data or integration setups.
+**Pattern:** Use a utility like `renderHookWithClient` to inject a test `QueryClient`. Spy on `queryClient.invalidateQueries` and verify it's called with the correct `queryKey` objects after executing `result.current.mutateAsync`. Also, explicitly test failure scenarios to ensure `invalidateQueries` is _not_ called when the API request throws an error.
