@@ -69,40 +69,19 @@ function getCommittedSlots(metadata: unknown, sundayKey: string): ServiceSlot[] 
 
 export function createGetUnexcusedVolunteersTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". Secondary roles (after "/") are ignored.',
-      ),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
     userTokens: z
       .union([z.string().trim(), z.array(z.string().trim())])
       .optional()
-      .describe(
-        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
-      ),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve natural language timeframes (e.g., "today", "this Sunday", "Sep 20") into concrete dates before calling this.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve natural language timeframes into concrete dates.',
-      ),
-    service_slot: z
-      .enum(['9AM', '12NN', '3PM'])
-      .optional()
-      .describe('Optional filter for a specific Sunday service time slot (9AM, 12NN, or 3PM).'),
+      .describe('Array or single user token'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
+    service_slot: z.enum(['9AM', '12NN', '3PM']).optional().describe('Service slot filter'),
   });
 
   return tool({
     description:
-      'Identify unexcused absent volunteers for a given Sunday or date range, optionally filtered by role or user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by getExcusedMembers) and Unexcused (committed volunteers who did NOT check in and have NO approved excuse request, handled by this tool). Any volunteer with a recorded service_attendance check-in is NOT unexcused. Secondary roles (after "/") are ignored. NEVER returns PII like names or emails; it uses user tokens instead.',
+      'Identify unexcused absent volunteers (committed without check-in or approved excuse).',
     inputSchema: schema,
     execute: async ({ role, userTokens, targetStartDate, targetEndDate, service_slot }) => {
       const now = getPhNow();

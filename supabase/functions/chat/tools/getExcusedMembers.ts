@@ -29,36 +29,17 @@ function parseServiceSlots(servicesText: string) {
 
 export function createGetExcusedMembersTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Filter by user role, such as "usher" or "prayer coach". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
-      ),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
     userTokens: z
       .union([z.string().trim(), z.array(z.string().trim())])
       .optional()
-      .describe(
-        'Optional array of volunteer user tokens (e.g. ["USR_000001", "USR_000002"]) or single token string to filter results to specific members/volunteers.',
-      ),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe (e.g. "this Sunday", "next month") to a concrete date before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe to a concrete date before calling this tool.',
-      ),
+      .describe('Array or single user token'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
-    description:
-      'Retrieve approved volunteer excuses by Sunday, role, and service with volunteer user tokens, optionally filtered by user tokens. In CCF Welcome Center administration, absences are divided into 2 kinds: Excused (volunteers who submitted an approved excuse request, handled by this tool) and Unexcused (committed volunteers who did not check in and have no approved excuse request, handled by getUnexcusedVolunteers). Defaults to the coming Sunday when no dates are provided. Secondary roles (after "/") are ignored for role filtering and role breakdown; only the primary role (before "/") is evaluated. Use this for questions about which volunteers are excused or unavailable. This tool NEVER returns PII like names or emails.',
+    description: 'Retrieve approved volunteer excuses by Sunday, role, and service.',
     inputSchema: schema,
     execute: async ({ role, userTokens, targetStartDate, targetEndDate }) => {
       const now = getPhNow();

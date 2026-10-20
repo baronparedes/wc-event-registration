@@ -6,46 +6,16 @@ import type { ToolContext } from './types.ts';
 
 export function createGetEventsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    status: z
-      .enum(['open', 'closed', 'all'])
-      .default('all')
-      .describe('Filter events by registration mode (open, closed, or all)'),
-    timeframe: z
-      .enum(['upcoming', 'past', 'all'])
-      .default('all')
-      .describe(
-        'Directional filter: "upcoming" for future/ongoing events; "past" for completed events; "all" for no directional filter. Ignored when targetStartDate or targetEndDate are provided.',
-      ),
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Precise start of the date range in YYYY-MM-DD format. When provided, overrides the timeframe enum and filters events whose starts_at is on or after this date.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'Precise end of the date range in YYYY-MM-DD format. When provided, overrides the timeframe enum and filters events whose starts_at is on or before this date.',
-      ),
-    search: z
-      .string()
-      .optional()
-      .describe(
-        'Optional search keyword to filter events by specific title topic (e.g. "Baptism", "Retreat"). Do NOT pass generic words like "upcoming", "past", or "events" here.',
-      ),
-    limit: z
-      .number()
-      .int()
-      .min(1)
-      .max(25)
-      .default(10)
-      .describe('Maximum number of events to return'),
+    status: z.enum(['open', 'closed', 'all']).default('all').describe('Filter by mode'),
+    timeframe: z.enum(['upcoming', 'past', 'all']).default('all').describe('Directional filter'),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
+    search: z.string().optional().describe('Search keyword in title'),
+    limit: z.number().int().min(1).max(25).default(10).describe('Max events'),
   });
 
   return tool({
-    description:
-      'Retrieve events from the database with their schedule, location, registration status, registration counts (member_registrations, public_registrations, total_registrations), and app URLs (admin_url, public_url). Provide targetStartDate and targetEndDate for precise date-range filtering, or use timeframe for a directional filter.',
+    description: 'Retrieve events with schedule, registration counts, and admin URLs.',
     inputSchema: schema,
     execute: async ({
       status,

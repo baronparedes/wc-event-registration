@@ -24,47 +24,21 @@ function calculateAge(dateOfBirth: unknown, now: Date): number | null {
 
 export function createGetUserDemographicsTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    role: z
-      .string()
-      .trim()
-      .optional()
-      .describe(
-        'Optional role filter, such as "usher" or "prayer coach". Avoid generic words like "volunteer". If a member has multiple roles separated by a slash (e.g., "Primary / Secondary"), only the primary role before the "/" is evaluated; the secondary role is ignored.',
-      ),
-    minAge: z
-      .number()
-      .int()
-      .min(0)
-      .optional()
-      .describe(
-        'Optional minimum age (inclusive) to filter volunteers. For "above 20" or "over 20", pass 21. For "20 and above", pass 20.',
-      ),
-    maxAge: z
-      .number()
-      .int()
-      .min(0)
-      .optional()
-      .describe(
-        'Optional maximum age (inclusive) to filter volunteers. For "under 20" or "below 20", pass 19. For "20 and below", pass 20.',
-      ),
-    gender: z
-      .enum(['men', 'ladies'])
-      .optional()
-      .describe('Optional gender filter to target men or ladies specifically.'),
+    role: z.string().trim().optional().describe('Filter by primary role (e.g. "usher")'),
+    minAge: z.number().int().min(0).optional().describe('Min age (inclusive)'),
+    maxAge: z.number().int().min(0).optional().describe('Max age (inclusive)'),
+    gender: z.enum(['men', 'ladies']).optional().describe('Gender filter: "men" or "ladies"'),
     limit: z
       .number()
       .int()
       .min(1)
       .max(200)
       .optional()
-      .describe(
-        'Max matching volunteers to return when filtering by age or gender. Defaults to 50.',
-      ),
+      .describe('Max matching volunteers (default 50)'),
   });
 
   return tool({
-    description:
-      'Retrieve volunteer demographics including role breakdowns, gender breakdowns (men or ladies), and age distribution. Optionally filter by minAge, maxAge, gender, and role to retrieve matching individual volunteer tokens (e.g. for questions like "who are my volunteers below 20 years old?"). If no age or gender filters are provided, returns pure aggregate metrics without individual volunteer tokens to conserve tokens.',
+    description: 'Retrieve volunteer demographics or specific age/gender cohorts.',
     inputSchema: schema,
     execute: async ({ role, minAge, maxAge, gender, limit = 50 }) => {
       console.log('[chat:tool:getUserDemographics] Executing', {

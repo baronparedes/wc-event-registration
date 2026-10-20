@@ -8,23 +8,12 @@ type Milestone = 'birthday' | 'wedding_anniversary';
 
 export function createGetUpcomingMilestonesTool({ client, requestId }: ToolContext) {
   const schema = z.object({
-    targetStartDate: z
-      .string()
-      .optional()
-      .describe(
-        'Start of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe (e.g. "this week", "next month") to a concrete date before calling this tool.',
-      ),
-    targetEndDate: z
-      .string()
-      .optional()
-      .describe(
-        'End of the date range in YYYY-MM-DD format. Resolve any natural-language timeframe to a concrete date before calling this tool.',
-      ),
+    targetStartDate: z.string().optional().describe('Start date (YYYY-MM-DD)'),
+    targetEndDate: z.string().optional().describe('End date (YYYY-MM-DD)'),
   });
 
   return tool({
-    description:
-      'Retrieve birthdays and wedding anniversaries as separate counts with user tokens within the specified date range. Defaults to the current month when no dates are provided. This tool NEVER returns PII like names or emails.',
+    description: 'Retrieve upcoming birthdays and wedding anniversaries by date range.',
     inputSchema: schema,
     execute: async ({ targetStartDate, targetEndDate }) => {
       const now = getPhNow();
