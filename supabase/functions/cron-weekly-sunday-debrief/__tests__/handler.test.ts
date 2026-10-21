@@ -1,12 +1,9 @@
 import { assertEquals, assertMatch } from '@std/assert';
 
+import { formatKeyHighlightsHtml, formatSundayDebriefEmailText } from '@/shared/emailTemplate.ts';
+
 import { getSystemPrompt, getUserPrompt, parseDebriefResponse } from '../prompt.ts';
-import {
-  computeSundayMetrics,
-  generateDebriefEmailHtml,
-  generateDebriefEmailText,
-  resolvePreviousSunday,
-} from '../utils.ts';
+import { computeSundayMetrics, resolvePreviousSunday } from '../utils.ts';
 
 const ORIGIN = 'https://app.example.com';
 
@@ -304,36 +301,40 @@ Deno.test('parseDebriefResponse handles JSON string and code fence wrappers', ()
   assertEquals(parsed2.keyHighlights[0], 'Highlight 1');
 });
 
-Deno.test('generateDebriefEmailText and generateDebriefEmailHtml produce valid templates', () => {
-  const emailParams = {
-    sundayDate: '2026-10-18',
-    turnupRate: 90.0,
-    peakSlot: '9AM',
-    totalCommitted: 70,
-    totalPresent: 63,
-    totalWalkIns: 7,
-    summary: 'Executive brief paragraph 1.\n\nExecutive brief paragraph 2.',
-    keyHighlights: ['Turn-up at 90%', 'Peak slot 9AM'],
-    actionUrl: 'https://welcomehub.app/admin/services',
-  };
+Deno.test(
+  'formatSundayDebriefEmailText and formatKeyHighlightsHtml produce valid templates',
+  () => {
+    const emailParams = {
+      sundayDate: '2026-10-18',
+      turnupRate: 90.0,
+      peakSlot: '9AM',
+      totalCommitted: 70,
+      totalPresent: 63,
+      totalWalkIns: 7,
+      summary: 'Executive brief paragraph 1.\n\nExecutive brief paragraph 2.',
+      keyHighlights: ['Turn-up at 90%', 'Peak slot 9AM'],
+      actionUrl: 'https://welcomehub.app/admin/services',
+    };
 
-  const text = generateDebriefEmailText(emailParams);
-  assertMatch(text, /CCF Welcome Center — Sunday Executive Debrief \(2026-10-18\)/);
-  assertMatch(text, /Turn-up Rate: 90% \| Peak: 9AM/);
-  assertMatch(text, /Executive brief paragraph 1/);
-  assertMatch(text, /• Turn-up at 90%/);
-  assertMatch(text, /https:\/\/welcomehub\.app\/admin\/services/);
+    const text = formatSundayDebriefEmailText(emailParams);
+    assertMatch(text, /CCF Welcome Center — Sunday Executive Debrief \(2026-10-18\)/);
+    assertMatch(text, /Turn-up Rate: 90% \| Peak: 9AM/);
+    assertMatch(text, /Executive brief paragraph 1/);
+    assertMatch(text, /• Turn-up at 90%/);
+    assertMatch(text, /https:\/\/welcomehub\.app\/admin\/services/);
 
-  const html = generateDebriefEmailHtml(emailParams);
-  assertMatch(html, /Sunday Executive Debrief/);
-  assertMatch(html, /90%/);
-  assertMatch(html, /9AM/);
-  assertMatch(html, /63 <span.*?>\/ 70<\/span>/);
-  assertMatch(html, /\+7/);
-  assertMatch(html, /Turn-up at 90%/);
-  assertMatch(html, /Executive brief paragraph 1/);
-  assertMatch(html, /href="https:\/\/welcomehub\.app\/admin\/services"/);
-});
+    const highlightsHtml = formatKeyHighlightsHtml(emailParams.keyHighlights);
+    assertMatch(highlightsHtml, /<ul/);
+    assertMatch(
+      highlightsHtml,
+      /<li style="margin-bottom: 6px; color: #334155;">Turn-up at 90%<\/li>/,
+    );
+    assertMatch(
+      highlightsHtml,
+      /<li style="margin-bottom: 6px; color: #334155;">Peak slot 9AM<\/li>/,
+    );
+  },
+);
 
 // 2. HTTP & Edge Function Handler Tests
 Deno.test(

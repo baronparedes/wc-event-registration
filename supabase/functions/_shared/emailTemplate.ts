@@ -367,3 +367,46 @@ export async function fetchResendTemplate(
     return null;
   }
 }
+
+/**
+ * Formats an array of key highlights into an HTML list (<ul><li>...</li></ul>)
+ * for passing as a parameter to Resend email templates.
+ */
+export function formatKeyHighlightsHtml(highlights: string[]): string {
+  if (!highlights || highlights.length === 0) return '';
+  const items = highlights
+    .map((h) => `<li style="margin-bottom: 6px; color: #334155;">${escapeHtml(h)}</li>`)
+    .join('');
+  return `<ul style="margin: 0; padding-left: 20px; line-height: 1.5;">${items}</ul>`;
+}
+
+export interface SundayDebriefEmailTextParams {
+  sundayDate: string;
+  turnupRate: number;
+  peakSlot: string;
+  totalCommitted: number;
+  totalPresent: number;
+  totalWalkIns: number;
+  summary: string;
+  keyHighlights: string[];
+  actionUrl: string;
+}
+
+/**
+ * Formats plain text version of Sunday Executive Debrief for email fallback.
+ */
+export function formatSundayDebriefEmailText(params: SundayDebriefEmailTextParams): string {
+  const highlightsList = params.keyHighlights.map((h) => `• ${h}`).join('\n');
+  return `CCF Welcome Center — Sunday Executive Debrief (${params.sundayDate})
+Turn-up Rate: ${params.turnupRate}% | Peak: ${params.peakSlot}
+Present: ${params.totalPresent} / ${params.totalCommitted} | Walk-ins: +${params.totalWalkIns}
+
+${params.summary}
+
+Executive Highlights:
+${highlightsList}
+
+View the full debrief in the Services Dashboard:
+${params.actionUrl}
+`;
+}

@@ -10,7 +10,11 @@ import {
   enqueueEmailNotificationsBatch,
   triggerEmailProcessor,
 } from '@/shared/emailQueue.ts';
-import { toAbsoluteUrl } from '@/shared/emailTemplate.ts';
+import {
+  formatKeyHighlightsHtml,
+  formatSundayDebriefEmailText,
+  toAbsoluteUrl,
+} from '@/shared/emailTemplate.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 import { sendWebPushNotification } from '@/shared/push.ts';
 import { resolveRoleEmails } from '@/shared/roleEmails.ts';
@@ -21,12 +25,7 @@ import {
   type ServiceDashboardRpcResponse,
   cronWeeklySundayDebriefPayloadSchema,
 } from './types.ts';
-import {
-  computeSundayMetrics,
-  generateDebriefEmailHtml,
-  generateDebriefEmailText,
-  resolvePreviousSunday,
-} from './utils.ts';
+import { computeSundayMetrics, resolvePreviousSunday } from './utils.ts';
 
 export async function handleCronWeeklySundayDebrief(req: Request): Promise<Response> {
   const startTime = performance.now();
@@ -241,7 +240,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
         if (oicEmails.length > 0) {
           const emailSubject = title;
           const absoluteUrl = toAbsoluteUrl(targetUrl);
-          const emailText = generateDebriefEmailText({
+          const emailText = formatSundayDebriefEmailText({
             sundayDate: metrics.sundayDate,
             turnupRate: metrics.turnupRate,
             peakSlot: metrics.peakSlot,
@@ -253,38 +252,35 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
             actionUrl: absoluteUrl,
           });
 
-          const emailHtml = generateDebriefEmailHtml({
-            sundayDate: metrics.sundayDate,
-            turnupRate: metrics.turnupRate,
-            peakSlot: metrics.peakSlot,
-            totalCommitted: metrics.totalCommitted,
-            totalPresent: metrics.totalPresent,
-            totalWalkIns: metrics.totalWalkIns,
-            summary: parsed.summary,
-            keyHighlights: parsed.keyHighlights,
-            actionUrl: absoluteUrl,
-          });
+          const keyHighlightsHtml = formatKeyHighlightsHtml(parsed.keyHighlights);
 
           const queueInputs: EnqueueEmailInput[] = oicEmails.map((email) => ({
             recipient: email,
             category: 'broadcast',
             event_type: 'email_notification',
-            template_slug: 'broadcast',
+            template_slug: 'sunday-executive-debrief',
             subject: emailSubject,
             text: emailText,
-            html: emailHtml,
             metadata: {
               broadcast_title: emailSubject,
               title: emailSubject,
               broadcast_message: emailText,
               message: emailText,
-              broadcast_message_html: emailHtml,
-              message_html: emailHtml,
               url: absoluteUrl,
               action_url: absoluteUrl,
               action_text: 'View in Services Dashboard',
               target_type: 'role',
               sunday_date: metrics.sundayDate,
+              turnup_rate: `${metrics.turnupRate}%`,
+              turnup_rate_num: metrics.turnupRate,
+              peak_slot: metrics.peakSlot,
+              total_committed: metrics.totalCommitted,
+              total_present: metrics.totalPresent,
+              total_walk_ins: metrics.totalWalkIns,
+              summary: parsed.summary,
+              key_highlights: parsed.keyHighlights,
+              key_highlights_html: keyHighlightsHtml,
+              highlights_html: keyHighlightsHtml,
             },
           }));
 
