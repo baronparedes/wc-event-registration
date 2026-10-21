@@ -27,7 +27,9 @@ export function useAdminMemberQuery(
     queryKey: memberId
       ? adminMemberQueryKey(memberId, includeInactive)
       : ['admin-member', 'missing'],
-    enabled: Boolean(memberId),
+    enabled: Boolean(
+      memberId && memberId !== 'missing' && memberId !== 'dashboard' && memberId !== 'import',
+    ),
     queryFn: async (): Promise<AdminMember> => {
       if (!memberId) {
         throw new Error('Member ID is required');

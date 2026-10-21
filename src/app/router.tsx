@@ -82,6 +82,11 @@ const AdminUserRolesPage = lazy(() =>
 const AdminMembersPage = lazy(() =>
   import('../pages/admin/members').then((module) => ({ default: module.AdminMembersPage })),
 );
+const AdminMembersDashboardPage = lazy(() =>
+  import('../pages/admin/members/dashboard').then((module) => ({
+    default: module.AdminMembersDashboardPage,
+  })),
+);
 const AdminMembersImportPage = lazy(() =>
   import('../pages/admin/members/import/index').then((module) => ({
     default: module.AdminMembersImportPage,
@@ -322,6 +327,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   excuseRequest: ExcuseRequestPage,
   adminUserRoles: AdminUserRolesPage,
   adminMembers: AdminMembersPage,
+  adminMembersDashboard: AdminMembersDashboardPage,
   adminMembersImport: AdminMembersImportPage,
   adminMemberDetail: AdminMemberDetailPage,
   adminMemberServiceAttendance: AdminMemberServiceAttendancePage,

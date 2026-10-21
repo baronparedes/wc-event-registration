@@ -55,3 +55,22 @@ export {
   addMemberNote,
   deleteMemberNote,
 } from './api';
+export type {
+  MemberRoleStat,
+  MemberAgeBracketStat,
+  MemberAgeDemographics,
+  MemberSundayCommitmentMember,
+  MemberSundayCommitmentSlot,
+  MemberSundayCommitmentHeatmap,
+  MemberDGroupRow,
+  MemberDGroupStatusStat,
+  MemberDGroupAnalytics,
+  MemberDashboardData,
+} from './dashboard';
+export {
+  calculateAge,
+  parseSundayTimeSlots,
+  computeMemberDashboardData,
+  getMetadataStringValue,
+  extractPrimaryRole,
+} from './dashboard';

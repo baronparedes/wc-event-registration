@@ -1,6 +1,12 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-export type StatCardVariant = 'default' | 'primary' | 'secondary' | 'danger' | 'accent';
+export type StatCardVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'tertiary'
+  | 'danger'
+  | 'accent';
 
 export interface StatCardProps extends ComponentPropsWithoutRef<'div'> {
   title: string;
@@ -15,6 +21,7 @@ const variantIconStyles: Record<StatCardVariant, string> = {
   default: 'bg-muted/10 text-muted',
   primary: 'bg-primary/10 text-primary',
   secondary: 'bg-secondary/15 text-secondary',
+  tertiary: 'bg-tertiary/15 text-tertiary',
   danger: 'bg-danger/10 text-danger',
   accent: 'bg-accent/20 text-text',
 };

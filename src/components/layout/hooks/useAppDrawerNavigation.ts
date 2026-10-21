@@ -67,6 +67,8 @@ export function getFormIdFromPath(pathname: string): string | null {
 
 export function getMemberIdFromPath(pathname: string): string | null {
   if (
+    pathname === ROUTE_PATHS.adminMembersDashboard ||
+    pathname.startsWith(`${ROUTE_PATHS.adminMembersDashboard}/`) ||
     pathname === ROUTE_PATHS.adminMembersImport ||
     pathname.startsWith(`${ROUTE_PATHS.adminMembersImport}/`)
   ) {
@@ -74,7 +76,11 @@ export function getMemberIdFromPath(pathname: string): string | null {
   }
 
   const memberRouteMatch = pathname.match(/^\/admin\/members\/([^/]+)/);
-  return memberRouteMatch?.[1] ?? null;
+  const candidate = memberRouteMatch?.[1] ?? null;
+  if (!candidate || candidate === 'dashboard' || candidate === 'import') {
+    return null;
+  }
+  return candidate;
 }
 
 export function useAppDrawerNavigation({
