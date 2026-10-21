@@ -41,8 +41,8 @@ export async function sendEmailNotifications({
 
   const absoluteUrl = payload.url ? toAbsoluteUrl(payload.url) : undefined;
   const emailText = absoluteUrl ? `${payload.message}\n\n${absoluteUrl}` : payload.message;
-  const actionUrl = absoluteUrl || payload.url;
-  const actionText = actionUrl ? resolveActionText(actionUrl) : undefined;
+  const actionUrl = (absoluteUrl || payload.url) ?? 'https://welcomehub.app';
+  const actionText = resolveActionText(actionUrl);
   const escapedMessage = escapeHtml(payload.message || '');
   const messageHtml = linkifyEscapedText(escapedMessage).replace(/\r?\n/g, '<br />');
   let successfulEnqueues = 0;
