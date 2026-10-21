@@ -82,7 +82,9 @@ describe('getMemberIdFromPath', () => {
     expect(getMemberIdFromPath('/admin/members/member-123/event-history')).toBe('member-123');
   });
 
-  it('returns null for import routes or non-member routes', () => {
+  it('returns null for dashboard, import routes or non-member routes', () => {
+    expect(getMemberIdFromPath(ROUTE_PATHS.adminMembersDashboard)).toBeNull();
+    expect(getMemberIdFromPath(`${ROUTE_PATHS.adminMembersDashboard}/sub`)).toBeNull();
     expect(getMemberIdFromPath(ROUTE_PATHS.adminMembersImport)).toBeNull();
     expect(getMemberIdFromPath(`${ROUTE_PATHS.adminMembersImport}/sub`)).toBeNull();
     expect(getMemberIdFromPath(ROUTE_PATHS.home)).toBeNull();

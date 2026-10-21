@@ -1,6 +1,7 @@
 // Queries
 export { useMemberLookupQuery } from './queries/useMemberLookupQuery';
 export { useAdminMembersQuery } from './queries/useAdminMembersQuery';
+export { useAdminMembersDashboardQuery } from './queries/useAdminMembersDashboardQuery';
 export { useAdminMembersMilestonesQuery } from './queries/useAdminMembersMilestonesQuery';
 export { useAdminMembersSchedulesQuery } from './queries/useAdminMembersSchedulesQuery';
 export type {

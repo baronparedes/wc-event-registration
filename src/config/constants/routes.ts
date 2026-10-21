@@ -20,6 +20,7 @@ export const ROUTE_PATHS = {
   adminHubCalendar: '/admin/hub-calendar',
   adminUserRoles: '/admin/settings/roles',
   adminMembers: '/admin/members',
+  adminMembersDashboard: '/admin/members/dashboard',
   adminMembersImport: '/admin/members/import',
   adminMemberDetailPattern: '/admin/members/:id',
   adminMemberServiceAttendancePattern: '/admin/members/:id/service-attendance',
@@ -78,6 +79,7 @@ export type AppRouteKey =
   | 'excuseRequest'
   | 'adminUserRoles'
   | 'adminMembers'
+  | 'adminMembersDashboard'
   | 'adminMembersImport'
   | 'adminMemberDetail'
   | 'adminMemberServiceAttendance'
@@ -171,6 +173,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminMembers',
     path: ROUTE_PATHS.adminMembers,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminMemberData',
+  },
+  {
+    key: 'adminMembersDashboard',
+    path: ROUTE_PATHS.adminMembersDashboard,
     layout: 'shell',
     requiredPermission: 'canReadAdminMemberData',
   },

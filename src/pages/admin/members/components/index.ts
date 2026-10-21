@@ -5,3 +5,4 @@ export * from './UpdateMemberIdDialog';
 export * from './MemberStatusBadge';
 export * from './MobileMemberCard';
 export * from './MobileMemberHeader';
+export * from './MembersNavigationTabs';

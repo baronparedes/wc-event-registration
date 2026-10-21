@@ -36,6 +36,7 @@ import { formatDateOnly } from '@/lib/infrastructure';
 import {
   AddMemberDialog,
   MemberStatusBadge,
+  MembersNavigationTabs,
   MobileMemberCard,
   UpdateMemberIdDialog,
 } from './components';
@@ -220,6 +221,7 @@ export function AdminMembersPage() {
       />
 
       <AdminBaseNavigation />
+      <MembersNavigationTabs />
 
       <AdminPageShell.Filters>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
