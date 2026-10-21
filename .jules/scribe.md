@@ -21,3 +21,9 @@
 **Discovery:** Found that the unified approval workflow module at `src/pages/approvals` and `src/lib/domain/approvals` had no feature documentation.
 **Learning:** This is an important system for allowing unauthenticated users to submit approval decisions via secure tokens.
 **Standard:** Documented under a new `15-approvals` category within `docs/features/`.
+
+## 2026-10-21 - Document Sunday Attendance Forecast Feature
+
+**Discovery:** The Sunday Attendance Forecast feature (located at `src/pages/admin/services/attendance/forecast`) was completely undocumented in the feature specs.
+**Learning:** This is a major admin tool for tracking expected volunteer turnup, viewing monthly trends, configuring staffing targets, and sharing forecast cards. It belongs under the `10-admin-services` epic since it is a core administrative dashboard.
+**Standard:** Documented under `docs/features/10-admin-services/10.2-attendance-forecast.feature` following standard Gherkin syntax. Included scenarios for viewing monthly summaries, filtering by role group, toggling chart/table views, configuring targets, and sharing forecasts.
