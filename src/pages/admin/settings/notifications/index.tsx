@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
-  BrandIcon,
+  AiBrandIcon,
   Button,
   FormInputField,
   FormSelectField,
@@ -237,7 +237,7 @@ export function AdminNotificationsPage() {
                 onClick={() => setIsDraftAiModalOpen(true)}
               >
                 <span>Draft with</span>
-                <BrandIcon className="h-4 w-4" />
+                <AiBrandIcon className="h-4 w-4" />
                 <span>AI</span>
               </Button>
             }

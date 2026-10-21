@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
-import { BrandIcon } from '@/components/ui';
+import { AiBrandIcon } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminFormQuery } from '@/hooks/domain/forms';
@@ -195,7 +195,7 @@ export function useAppDrawerNavigation({
       items.push({
         to: ROUTE_PATHS.adminChat,
         label: 'Chat with Hub AI',
-        icon: BrandIcon,
+        icon: AiBrandIcon,
       });
     }
 

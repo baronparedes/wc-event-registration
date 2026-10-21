@@ -3,11 +3,11 @@ import { createRef } from 'react';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { BrandIcon } from '../BrandIcon';
+import { AiBrandIcon } from '../AiBrandIcon';
 
-describe('BrandIcon', () => {
+describe('AiBrandIcon', () => {
   it('renders with default props (trimmed glyph variant, 24px size, fill="currentColor")', () => {
-    const { container } = render(<BrandIcon data-testid="brand-icon" />);
+    const { container } = render(<AiBrandIcon data-testid="brand-icon" />);
     const svg = container.querySelector('svg');
 
     expect(svg).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe('BrandIcon', () => {
   });
 
   it('renders badge variant with outer square container path and full square viewBox', () => {
-    const { container } = render(<BrandIcon variant="badge" />);
+    const { container } = render(<AiBrandIcon variant="badge" />);
     const svg = container.querySelector('svg');
     const path = svg?.querySelector('path');
 
@@ -39,7 +39,7 @@ describe('BrandIcon', () => {
   });
 
   it('allows overriding viewBox via prop', () => {
-    const { container } = render(<BrandIcon viewBox="0 0 100 100" />);
+    const { container } = render(<AiBrandIcon viewBox="0 0 100 100" />);
     const svg = container.querySelector('svg');
 
     expect(svg).toHaveAttribute('viewBox', '0 0 100 100');
@@ -47,7 +47,7 @@ describe('BrandIcon', () => {
 
   it('supports custom size, className, and color prop', () => {
     const { container } = render(
-      <BrandIcon size={32} color="#009688" className="h-8 w-8 text-primary" />,
+      <AiBrandIcon size={32} color="#009688" className="h-8 w-8 text-primary" />,
     );
     const svg = container.querySelector('svg');
 
@@ -58,14 +58,14 @@ describe('BrandIcon', () => {
   });
 
   it('supports explicit fill prop override', () => {
-    const { container } = render(<BrandIcon fill="white" />);
+    const { container } = render(<AiBrandIcon fill="white" />);
     const svg = container.querySelector('svg');
 
     expect(svg).toHaveAttribute('fill', 'white');
   });
 
   it('removes aria-hidden when aria-label is provided for accessibility', () => {
-    const { container } = render(<BrandIcon aria-label="Welcome Hub logo" />);
+    const { container } = render(<AiBrandIcon aria-label="Welcome Hub logo" />);
     const svg = container.querySelector('svg');
 
     expect(svg).toHaveAttribute('aria-label', 'Welcome Hub logo');
@@ -74,7 +74,7 @@ describe('BrandIcon', () => {
 
   it('forwards ref to the underlying SVG element', () => {
     const ref = createRef<SVGSVGElement>();
-    render(<BrandIcon ref={ref} />);
+    render(<AiBrandIcon ref={ref} />);
 
     expect(ref.current).toBeInstanceOf(SVGSVGElement);
   });

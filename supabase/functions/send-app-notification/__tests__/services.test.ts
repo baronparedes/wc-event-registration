@@ -220,9 +220,9 @@ Deno.test(
         message: 'New info',
         broadcast_message_html: 'New info',
         message_html: 'New info',
-        url: undefined,
-        action_url: undefined,
-        action_text: undefined,
+        url: 'https://welcomehub.app',
+        action_url: 'https://welcomehub.app',
+        action_text: 'Open Welcome Hub',
         target_type: 'event',
       });
 

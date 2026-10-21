@@ -28,6 +28,9 @@ vi.mock('@/hooks/domain/services', () => ({
   useServiceDashboardQuery: (...args: unknown[]) => mockUseServiceDashboardQuery(...args),
   useMissedServiceCommitmentsQuery: (...args: unknown[]) =>
     mockUseMissedServiceCommitmentsQuery(...args),
+  useServiceWeeklyBriefByDateQuery: () => ({ data: null, isLoading: false }),
+  useServiceWeeklyBriefsQuery: () => ({ data: [], isLoading: false }),
+  useTriggerWeeklyDebriefMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 const queryClient = new QueryClient();
@@ -117,9 +120,10 @@ describe('AdminServicesPage', () => {
     fireEvent.click(forecastButton);
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceForecast);
 
-    const ctaButton = screen.getByRole('button', { name: 'Upload CSV' });
-    fireEvent.click(ctaButton);
-    expect(mockedNavigate).toHaveBeenCalledWith(ROUTE_PATHS.adminServiceAttendanceMigration);
+    const debriefButton = screen.getByRole('button', { name: /Executive Debrief/i });
+    expect(debriefButton).toBeInTheDocument();
+    fireEvent.click(debriefButton);
+    expect(screen.getByText('Sunday Executive Debrief')).toBeInTheDocument();
   });
 
   it('does not render Upload CSV for slod users', () => {

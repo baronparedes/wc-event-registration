@@ -17,6 +17,9 @@ import type {
   ServiceExcuseRequest,
   ServiceLayout,
   ServiceSeat,
+  ServiceWeeklyBrief,
+  TriggerWeeklyDebriefParams,
+  TriggerWeeklyDebriefResponse,
   UserCommitmentSnapshot,
 } from './types';
 
@@ -549,4 +552,45 @@ export async function fetchMemberServiceExcuses(
   }
 
   return (data ?? []) as unknown as ServiceExcuseRequest[];
+}
+
+const callWeeklySundayDebrief = createEdgeFunctionCaller<
+  TriggerWeeklyDebriefParams,
+  TriggerWeeklyDebriefResponse
+>('cron-weekly-sunday-debrief');
+
+export async function triggerWeeklySundayDebrief(
+  params: TriggerWeeklyDebriefParams = {},
+): Promise<TriggerWeeklyDebriefResponse> {
+  return await callWeeklySundayDebrief(params);
+}
+
+export async function fetchServiceWeeklyBriefs(limit = 20): Promise<ServiceWeeklyBrief[]> {
+  const { data, error } = await supabase
+    .from('service_weekly_briefs')
+    .select('*')
+    .order('sunday_date', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to fetch weekly briefs: ${error.message}`);
+  }
+
+  return (data ?? []) as unknown as ServiceWeeklyBrief[];
+}
+
+export async function fetchServiceWeeklyBriefByDate(
+  sundayDate: string,
+): Promise<ServiceWeeklyBrief | null> {
+  const { data, error } = await supabase
+    .from('service_weekly_briefs')
+    .select('*')
+    .eq('sunday_date', sundayDate)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch weekly brief for ${sundayDate}: ${error.message}`);
+  }
+
+  return (data as unknown as ServiceWeeklyBrief) ?? null;
 }

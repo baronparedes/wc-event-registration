@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 
 import type { LucideProps } from 'lucide-react';
 
-export interface BrandIconProps extends LucideProps {
+export interface AiBrandIconProps extends LucideProps {
   /**
    * Rendering style:
    * - 'glyph' (default): The trimmed brand logo glyph (speech bubble + "HUB" lettering) on transparent background.
@@ -21,11 +21,11 @@ const GLYPH_VIEWBOX = '412 520 3815 3065';
 const BADGE_VIEWBOX = '0 0 4500 4500';
 
 /**
- * Lucide-compatible BrandIcon component for the Welcome Hub brand logo.
+ * Lucide-compatible AiBrandIcon component for the Welcome Hub brand logo.
  * Supports standard Lucide props (`size`, `color`, `className`, etc.) and CSS styling (`text-primary`, `h-4 w-4`).
  * Trimmed to eliminate dead space around the logo so it renders at standard visual weight.
  */
-export const BrandIcon = forwardRef<SVGSVGElement, BrandIconProps>(function BrandIcon(
+export const AiBrandIcon = forwardRef<SVGSVGElement, AiBrandIconProps>(function AiBrandIcon(
   {
     size = 24,
     color,
@@ -60,6 +60,6 @@ export const BrandIcon = forwardRef<SVGSVGElement, BrandIconProps>(function Bran
   );
 });
 
-BrandIcon.displayName = 'BrandIcon';
+AiBrandIcon.displayName = 'AiBrandIcon';
 
-export default BrandIcon;
+export default AiBrandIcon;

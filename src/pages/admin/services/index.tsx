@@ -5,7 +5,7 @@ import { ChartArea, SearchX, Table, TrendingUp, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { Button, EmptyState, LoadingState } from '@/components/ui';
+import { AiBrandIcon, Button, EmptyState, LoadingState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
@@ -16,6 +16,7 @@ import {
   ServiceDashboardMetrics,
   ServiceDashboardRoleBreakdown,
   ServiceNavigationLinks,
+  WeeklyDebriefModal,
 } from './components';
 import {
   type FilterMode,
@@ -30,6 +31,7 @@ export function AdminServicesPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>('sunday');
 
   const [isMissedModalOpen, setIsMissedModalOpen] = useState(false);
+  const [isDebriefModalOpen, setIsDebriefModalOpen] = useState(false);
   const [missedModalSlot, setMissedModalSlot] = useState<ServiceTimeSlot | 'All'>('All');
 
   const handleOpenMissedModal = (slot: ServiceTimeSlot | 'All' = 'All') => {
@@ -96,25 +98,32 @@ export function AdminServicesPage() {
               </Button>
             )}
             <Button
-              className="w-full sm:w-auto sm:inline-flex"
+              className="w-full md:hidden"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceForecast)}
             >
               <TrendingUp className="mr-2 h-4 w-4" />
               Attendance Forecast
             </Button>
             <Button
-              className="w-full sm:w-auto sm:inline-flex"
+              className="w-full md:hidden"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceCommitment)}
             >
               <ChartArea className="mr-2 h-4 w-4" />
               Commitment Dashboard
             </Button>
             <Button
-              className="w-full sm:w-auto sm:inline-flex"
+              className="w-full md:hidden"
               onClick={() => navigate(ROUTE_PATHS.adminServiceAttendanceData)}
             >
               <Table className="mr-2 h-4 w-4" />
               Attendance Data
+            </Button>
+            <Button
+              className="w-full sm:w-auto sm:inline-flex"
+              onClick={() => setIsDebriefModalOpen(true)}
+            >
+              <AiBrandIcon className="h-6 w-6" />
+              Executive Debrief
             </Button>
           </>
         }
@@ -163,6 +172,14 @@ export function AdminServicesPage() {
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
             initialTimeSlot={missedModalSlot}
+          />
+        )}
+
+        {isDebriefModalOpen && (
+          <WeeklyDebriefModal
+            isOpen={isDebriefModalOpen}
+            onClose={() => setIsDebriefModalOpen(false)}
+            selectedSunday={selectedSunday}
           />
         )}
       </AdminPageShell.Content>

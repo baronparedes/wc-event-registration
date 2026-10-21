@@ -1386,6 +1386,54 @@ export type Database = {
           },
         ];
       };
+      service_weekly_briefs: {
+        Row: {
+          created_at: string;
+          generated_by: string | null;
+          id: string;
+          key_highlights: Json;
+          metrics_snapshot: Json;
+          peak_slot: string;
+          summary: string;
+          sunday_date: string;
+          total_committed: number;
+          total_present: number;
+          total_walk_ins: number;
+          turnup_rate: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          generated_by?: string | null;
+          id?: string;
+          key_highlights?: Json;
+          metrics_snapshot?: Json;
+          peak_slot: string;
+          summary: string;
+          sunday_date: string;
+          total_committed?: number;
+          total_present?: number;
+          total_walk_ins?: number;
+          turnup_rate: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          generated_by?: string | null;
+          id?: string;
+          key_highlights?: Json;
+          metrics_snapshot?: Json;
+          peak_slot?: string;
+          summary?: string;
+          sunday_date?: string;
+          total_committed?: number;
+          total_present?: number;
+          total_walk_ins?: number;
+          turnup_rate?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       user_commitment_history: {
         Row: {
           created_at: string;
