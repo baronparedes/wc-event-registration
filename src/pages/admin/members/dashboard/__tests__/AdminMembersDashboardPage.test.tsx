@@ -364,4 +364,62 @@ describe('AdminMembersDashboardPage', () => {
 
     expect(screen.queryByText(/1st Sunday — 9:00 AM/i)).not.toBeInTheDocument();
   });
+
+  it('renders default error description when error has no message', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error(''),
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByText('An unexpected error occurred while loading member dashboard data.'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders refreshing state on header button when isRefetching is true', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: true,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    const refreshBtn = screen.getByRole('button', { name: /Refreshing.../i });
+    expect(refreshBtn).toBeInTheDocument();
+    expect(refreshBtn).toBeDisabled();
+  });
+
+  it('renders empty state when data is null', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('No active members found')).toBeInTheDocument();
+  });
 });

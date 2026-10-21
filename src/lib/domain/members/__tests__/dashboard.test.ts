@@ -5,6 +5,8 @@ import {
   calculateAge,
   computeMemberDashboardData,
   extractPrimaryRole,
+  getMetadataStringValue,
+  normalizeDGroupStatus,
   parseSundayTimeSlots,
 } from '../dashboard';
 
@@ -37,7 +39,17 @@ describe('calculateAge', () => {
   it('returns null for missing, empty, or invalid date strings', () => {
     expect(calculateAge(null, asOf)).toBeNull();
     expect(calculateAge('', asOf)).toBeNull();
+    expect(calculateAge('   ', asOf)).toBeNull();
+    expect(calculateAge('1990-05', asOf)).toBeNull();
     expect(calculateAge('invalid-date', asOf)).toBeNull();
+    expect(calculateAge('abc-def-ghi', asOf)).toBeNull();
+    expect(calculateAge('2030-01-01', asOf)).toBeNull(); // Future date
+    expect(calculateAge('1800-01-01', asOf)).toBeNull(); // Too old (> 125)
+  });
+
+  it('calculates exact birthday edge conditions', () => {
+    expect(calculateAge('1990-10-21', asOf)).toBe(36); // Exactly on birthday
+    expect(calculateAge('1990-10-22', asOf)).toBe(35); // Birthday tomorrow
   });
 });
 
@@ -359,5 +371,121 @@ describe('computeMemberDashboardData', () => {
     const refRow = data.dgroupAnalytics.members.find((m) => m.id === 'm-member-ref');
     expect(refRow?.isDGroupLeader).toBe(false);
     expect(refRow?.dgroupStatus).toBe('Member');
+  });
+
+  it('handles empty members array with safe zero defaults', () => {
+    const data = computeMemberDashboardData([], asOf);
+    expect(data.totalActiveMembers).toBe(0);
+    expect(data.roleDistributions).toEqual([]);
+    expect(data.ageDemographics.averageAge).toBeNull();
+    expect(data.ageDemographics.medianAge).toBeNull();
+    expect(data.ageDemographics.coveragePercentage).toBe(0);
+    expect(data.commitmentHeatmap.totalCommittedMembers).toBe(0);
+    expect(data.dgroupAnalytics.coveragePercentage).toBe(0);
+    expect(data.dgroupAnalytics.inDGroupCount).toBe(0);
+    expect(data.dgroupAnalytics.missingDGroupCount).toBe(0);
+  });
+
+  it('computes median age accurately when even number of members have DOB', () => {
+    const member1 = createMember({ id: 'm-age-1', date_of_birth: '1996-10-21' }); // 30
+    const member2 = createMember({ id: 'm-age-2', date_of_birth: '1986-10-21' }); // 40
+
+    const data = computeMemberDashboardData([member1, member2], asOf);
+    expect(data.ageDemographics.totalWithDob).toBe(2);
+    expect(data.ageDemographics.medianAge).toBe(35);
+  });
+
+  it('correctly categorizes members across under 18, 45-54, and 55-64 age brackets', () => {
+    const memberUnder18 = createMember({ id: 'm-u18', date_of_birth: '2012-05-15' }); // 14
+    const member45to54 = createMember({ id: 'm-45', date_of_birth: '1976-05-15' }); // 50
+    const member55to64 = createMember({ id: 'm-55', date_of_birth: '1966-05-15' }); // 60
+
+    const data = computeMemberDashboardData([memberUnder18, member45to54, member55to64], asOf);
+    const u18Bracket = data.ageDemographics.brackets.find((b) => b.bracket === '< 18');
+    const midBracket = data.ageDemographics.brackets.find((b) => b.bracket === '45–54');
+    const seniorBracket = data.ageDemographics.brackets.find((b) => b.bracket === '55–64');
+
+    expect(u18Bracket?.count).toBe(1);
+    expect(midBracket?.count).toBe(1);
+    expect(seniorBracket?.count).toBe(1);
+  });
+
+  it('detects DGroup leaders via alternative statuses, flags, and sorts status breakdown by frequency', () => {
+    const leaderByHead = createMember({
+      id: 'm-head',
+      metadata: { dgroup_status: 'head' },
+    });
+    const leaderByCoLeader = createMember({
+      id: 'm-co-leader',
+      metadata: { dgroup_status: 'co-leader' },
+    });
+    const leaderByFlagTrue = createMember({
+      id: 'm-flag-true',
+      metadata: { is_dgroup_leader: 'true', dgroup_status: 'active' },
+    });
+    const leaderByFlagOne = createMember({
+      id: 'm-flag-1',
+      metadata: { is_dgroup_leader: '1', dgroup_status: 'active' },
+    });
+    const memberWithNonStringRole = createMember({
+      id: 'm-null-role',
+      role: null as unknown as string,
+      full_name: null as unknown as string,
+      metadata: { dgroup_status: 'active' },
+    });
+
+    const data = computeMemberDashboardData(
+      [leaderByHead, leaderByCoLeader, leaderByFlagTrue, leaderByFlagOne, memberWithNonStringRole],
+      asOf,
+    );
+
+    expect(data.dgroupAnalytics.dgroupLeaderCount).toBe(4);
+    // Active status has 3, Head has 1, Co-leader has 1 -> statusBreakdown sorted descending
+    expect(data.dgroupAnalytics.statusBreakdown[0].status).toBe('Active');
+    expect(data.dgroupAnalytics.statusBreakdown[0].count).toBe(3);
+  });
+});
+
+describe('getMetadataStringValue', () => {
+  it('returns undefined for null or undefined metadata', () => {
+    expect(getMetadataStringValue(null, ['status'])).toBeUndefined();
+    expect(getMetadataStringValue(undefined, ['status'])).toBeUndefined();
+  });
+
+  it('returns value matching direct candidate key', () => {
+    expect(getMetadataStringValue({ dgroup_status: 'Leader' }, ['dgroup_status'])).toBe('Leader');
+  });
+
+  it('returns value matching normalized key with spaces or underscores', () => {
+    expect(getMetadataStringValue({ 'd group status': 'Active' }, ['dgroup_status'])).toBe(
+      'Active',
+    );
+  });
+
+  it('ignores empty strings and whitespace', () => {
+    expect(getMetadataStringValue({ status: '   ' }, ['status'])).toBeUndefined();
+  });
+});
+
+describe('normalizeDGroupStatus', () => {
+  it('normalizes common DGroup status phrases', () => {
+    expect(normalizeDGroupStatus(null)).toBeNull();
+    expect(normalizeDGroupStatus('')).toBeNull();
+    expect(normalizeDGroupStatus('  ')).toBeNull();
+    expect(normalizeDGroupStatus('dgroup leader')).toBe('Leader');
+    expect(normalizeDGroupStatus('leader')).toBe('Leader');
+    expect(normalizeDGroupStatus('dgroup member')).toBe('Member');
+    expect(normalizeDGroupStatus('member')).toBe('Member');
+    expect(normalizeDGroupStatus('active')).toBe('Active');
+    expect(normalizeDGroupStatus('inactive')).toBe('Inactive');
+    expect(normalizeDGroupStatus('in-training')).toBe('In-training');
+  });
+});
+
+describe('parseSundayTimeSlots variants', () => {
+  it('handles various timestamp representations', () => {
+    expect(parseSundayTimeSlots('9:00AM, 12:00NN, 3:00PM')).toEqual(['9AM', '12NN', '3PM']);
+    expect(parseSundayTimeSlots('12:00PM')).toEqual(['12NN']);
+    expect(parseSundayTimeSlots('12NN / 9AM')).toEqual(['12NN', '9AM']);
   });
 });
