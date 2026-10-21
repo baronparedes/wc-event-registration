@@ -8,6 +8,7 @@ export type {
   MemberEventHistoryAttendanceAnswer,
   MemberEventHistoryRegistrationAnswer,
   MemberEventHistorySlotRecord,
+  MemberNote,
 } from './types';
 export {
   updateMemberSchema,
@@ -51,4 +52,6 @@ export {
   setMemberActiveStatus,
   fetchMembersAttendanceScores,
   type FetchMembersAttendanceScoresOptions,
+  addMemberNote,
+  deleteMemberNote,
 } from './api';

@@ -32,6 +32,7 @@ import { RequestLongLeaveModal } from '@/pages/profile/components/service-attend
 
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
+import { MemberNotes } from './components/MemberNotes';
 import { MetadataEntriesEditor } from './components/MetadataEntriesEditor';
 import { SundayAvailabilityEditor } from './components/SundayAvailabilityEditor';
 
@@ -359,6 +360,14 @@ export function AdminMemberDetailPage() {
                 disabled={!canWrite || isDeletedMember}
               />
             </SectionCard>
+          )}
+
+          {(canWrite || canRead) && (
+            <MemberNotes
+              memberId={member.id}
+              notes={member.notes}
+              disabled={!canWrite || isDeletedMember}
+            />
           )}
 
           {(canWrite || canRead) && (

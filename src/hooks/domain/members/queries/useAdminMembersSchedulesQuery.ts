@@ -63,6 +63,7 @@ export function useAdminMembersSchedulesQuery() {
           extra_metadata,
           created_at: member.created_at,
           updated_at: member.updated_at,
+          notes: member.notes ?? [],
         };
 
         for (const key of SUNDAY_KEYS) {

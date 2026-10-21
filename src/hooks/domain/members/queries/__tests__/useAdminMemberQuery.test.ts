@@ -87,7 +87,12 @@ describe('useAdminMemberQuery', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual({ ...member, last_activity: '2026-09-01T10:00:00Z' });
+    expect(result.current.data).toEqual({
+      ...member,
+      last_activity: '2026-09-01T10:00:00Z',
+      notes: [],
+      has_account: undefined,
+    });
   });
 
   it('returns error state when member is not found', async () => {

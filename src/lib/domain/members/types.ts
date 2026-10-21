@@ -67,6 +67,14 @@ export type MemberEventHistoryItem = {
   slot_records: MemberEventHistorySlotRecord[];
 };
 
+export type MemberNote = {
+  id: string;
+  text: string;
+  author_id: string;
+  author_name: string;
+  created_at: string;
+};
+
 export type AdminMember = {
   id: string;
   member_id: string;
@@ -86,4 +94,5 @@ export type AdminMember = {
   updated_at: string;
   last_activity?: string;
   has_account?: boolean;
+  notes: MemberNote[];
 };

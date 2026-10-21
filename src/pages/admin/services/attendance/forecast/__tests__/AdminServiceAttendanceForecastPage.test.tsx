@@ -64,6 +64,7 @@ describe('AdminServiceAttendanceForecastPage', () => {
     role: 'Usher',
     extra_metadata: {},
     created_at: '2026-01-01T00:00:00Z',
+    notes: [],
     updated_at: '2026-01-01T00:00:00Z',
   };
 

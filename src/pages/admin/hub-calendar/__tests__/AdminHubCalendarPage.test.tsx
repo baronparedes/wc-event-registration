@@ -60,6 +60,7 @@ const sampleMember: AdminMember = {
   category: 'adult',
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
+  notes: [],
   extra_metadata: {
     wedding_anniversary_date: `2015-${currentMonthStr}-20`,
   },

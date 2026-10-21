@@ -71,6 +71,7 @@ export function useAdminMemberQuery(
         updated_at: member.updated_at,
         last_activity,
         has_account: member.has_account,
+        notes: member.notes ?? [],
       } satisfies AdminMember;
     },
     staleTime: QUERY_STALE_TIME_MS.detail,

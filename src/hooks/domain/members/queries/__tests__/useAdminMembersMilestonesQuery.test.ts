@@ -90,6 +90,7 @@ describe('useAdminMembersMilestonesQuery', () => {
         role: '',
         category: '',
         extra_metadata: { tag: 'vip', wedanniv_date: '2001-06-10' },
+        notes: [],
         created_at: '2026-01-01T00:00:00.000Z',
         updated_at: '2026-01-01T00:00:00.000Z',
       },
