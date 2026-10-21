@@ -88,10 +88,17 @@ export function useFormSubmissionPageState() {
   const formFieldsQuery = usePublicFormFieldsQuery(form?.id, audienceFilter);
   const fields = useMemo(() => formFieldsQuery.data ?? [], [formFieldsQuery.data]);
 
+  // Compute form values during render instead of using useEffect to sync
+  const formValues = useMemo(() => {
+    const defaults = createDynamicFieldDefaultValues(fields);
+    const prefill = prefillResponses ?? {};
+    return { ...defaults, ...prefill };
+  }, [fields, prefillResponses]);
+
   // Dynamic field responses form
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     mode: 'onBlur',
-    defaultValues: {},
+    values: formValues,
   });
 
   // Submission mutation & state
@@ -103,14 +110,6 @@ export function useFormSubmissionPageState() {
     submission_id: string;
     status: 'submitted' | 'updated';
   } | null>(null);
-
-  // Reset form fields when fields change or prefill arrives
-  useEffect(() => {
-    const defaults = createDynamicFieldDefaultValues(fields);
-    const prefill = prefillResponses ?? {};
-    dynamicForm.reset({ ...defaults, ...prefill });
-    dynamicForm.clearErrors();
-  }, [fields, prefillResponses, dynamicForm]);
 
   // Handle member lookup submit
   const handleLookupSubmit = useCallback(

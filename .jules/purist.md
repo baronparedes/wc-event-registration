@@ -63,3 +63,9 @@
 **Deviation:** `useForm` initialization and reset in `src/pages/admin/members/components/AddMemberDialog.tsx` used a `useEffect` block watching the `isOpen` state.
 **Learning:** This architectural deviation leads to unnecessary renders and derived state syncing anti-patterns rather than reacting directly to user events.
 **Standard:** Remove the `useEffect` block entirely and reset the form state directly in the interaction handlers, such as `handleClose`, rather than reacting to local state changes.
+
+## 2026-10-21 - Removed `useEffect` syncing for Form Submit Values
+
+**Deviation:** `useFormSubmissionPageState.ts` used `useEffect` to call `dynamicForm.reset()` to sync external upstream data (`fields` and `prefillResponses`) to the internal React Hook Form state.
+**Learning:** This architectural deviation leads to unnecessary renders, race conditions, and derived state syncing anti-patterns rather than reacting directly to user events and computing values during render.
+**Standard:** Compute the initial default structure during render (e.g. with `useMemo`) and feed it directly into the `values` prop of `useForm()`. React Hook Form natively supports reacting to changes passed into `values` via deep comparison, entirely replacing the imperative `useEffect` sync pattern.
