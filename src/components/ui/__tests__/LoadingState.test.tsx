@@ -10,8 +10,8 @@ describe('LoadingState component', () => {
 
       const statusContainer = screen.getByRole('status');
       // vertical layout includes 'flex-col' and 'justify-center'
-      expect(statusContainer.className).toContain('flex-col');
-      expect(statusContainer.className).toContain('justify-center');
+      expect(statusContainer).toHaveClass('flex-col');
+      expect(statusContainer).toHaveClass('justify-center');
 
       expect(screen.getByText('Loading vertical...')).toBeInTheDocument();
     });
@@ -21,8 +21,8 @@ describe('LoadingState component', () => {
 
       const statusContainer = screen.getByRole('status');
       // horizontal layout uses 'inline-flex' and doesn't use 'flex-col'
-      expect(statusContainer.className).toContain('inline-flex');
-      expect(statusContainer.className).not.toContain('flex-col');
+      expect(statusContainer).toHaveClass('inline-flex');
+      expect(statusContainer).not.toHaveClass('flex-col');
 
       expect(screen.getByText('Loading horizontal...')).toBeInTheDocument();
     });
@@ -39,14 +39,14 @@ describe('LoadingState component', () => {
       render(<LoadingState layout="vertical" />);
       const fallback = screen.getByText('Loading...');
       expect(fallback).toBeInTheDocument();
-      expect(fallback.className).toContain('sr-only');
+      expect(fallback).toHaveClass('sr-only');
     });
 
     it('renders a visually hidden fallback text when no message is provided (horizontal)', () => {
       render(<LoadingState layout="horizontal" />);
       const fallback = screen.getByText('Loading...');
       expect(fallback).toBeInTheDocument();
-      expect(fallback.className).toContain('sr-only');
+      expect(fallback).toHaveClass('sr-only');
     });
 
     it('does not render screen reader text if a message is provided', () => {
@@ -60,24 +60,22 @@ describe('LoadingState component', () => {
     it('applies custom className to the main container', () => {
       render(<LoadingState className="custom-container-class" />);
       const container = screen.getByRole('status');
-      expect(container.className).toContain('custom-container-class');
+      expect(container).toHaveClass('custom-container-class');
     });
 
     it('applies custom spinnerClassName to the spinner element', () => {
-      // We pass a message so we know what text the spinner is next to
-      render(<LoadingState message="Testing Spinner" spinnerClassName="custom-spinner-class" />);
-      // We know the container is role=status, and the spinner is an SVG with aria-hidden="true"
-      // Since it's a presentational prop test, we have to look inside the status container
-      const container = screen.getByRole('status');
-      // The spinner is the first child in this implementation
-      const spinnerEl = container.firstChild as HTMLElement;
-      expect(spinnerEl?.className).toContain('custom-spinner-class');
+      render(<LoadingState spinnerClassName="custom-spinner-class" />);
+      // We look for the aria-hidden attribute that the Spinner component applies.
+      // This is a known, deliberate accessibility attribute instead of arbitrary hierarchy traversal.
+      const spinner = screen.getByRole('status').querySelector('[aria-hidden="true"]');
+      expect(spinner).toBeInTheDocument();
+      expect(spinner).toHaveClass('custom-spinner-class');
     });
 
     it('applies custom messageClassName to the message element', () => {
       render(<LoadingState message="Custom msg" messageClassName="custom-msg-class" />);
       const msg = screen.getByText('Custom msg');
-      expect(msg.className).toContain('custom-msg-class');
+      expect(msg).toHaveClass('custom-msg-class');
     });
 
     it('passes down other HTML attributes to the main container', () => {
