@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { EmptyState } from '../EmptyState';
+
 import { Button } from '../Button';
+import { EmptyState } from '../EmptyState';
 
 describe('EmptyState', () => {
   it('renders the icon, title, and description correctly', () => {
@@ -10,7 +11,7 @@ describe('EmptyState', () => {
         icon={<svg data-testid="mock-icon" />}
         title="No data found"
         description="There is no data to display at this time."
-      />
+      />,
     );
 
     expect(screen.getByTestId('mock-icon')).toBeInTheDocument();
@@ -25,7 +26,7 @@ describe('EmptyState', () => {
         title="No data found"
         description="There is no data to display at this time."
         action={<Button>Create Item</Button>}
-      />
+      />,
     );
 
     const button = screen.getByRole('button', { name: /create item/i });
@@ -38,7 +39,7 @@ describe('EmptyState', () => {
         icon={<span />}
         title="No data found"
         description="There is no data to display at this time."
-      />
+      />,
     );
 
     // Assert that the container for action is not rendered
@@ -54,7 +55,7 @@ describe('EmptyState', () => {
         title="No data found"
         description="There is no data to display at this time."
         className="custom-empty-class"
-      />
+      />,
     );
 
     // Look for the main text container and assert that its parent has the class
