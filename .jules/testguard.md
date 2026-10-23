@@ -69,3 +69,7 @@ expect(result.current).toBe(false);
 **Challenge:** Testing React Query mutations like `useCancelExcuseMutation` requires asserting both the execution of the API call and the subsequent cache invalidations triggered in `onSuccess`.
 **Learning:** `renderHook` needs to be wrapped with a `QueryClientProvider` to access the `queryClient` instance. Simply mocking `invalidateQueries` is the best way to verify the cache updates without needing complex mock data or integration setups.
 **Pattern:** Use a utility like `renderHookWithClient` to inject a test `QueryClient`. Spy on `queryClient.invalidateQueries` and verify it's called with the correct `queryKey` objects after executing `result.current.mutateAsync`. Also, explicitly test failure scenarios to ensure `invalidateQueries` is _not_ called when the API request throws an error.
+## 2025-02-23 - EmptyState testing
+**Challenge:** Adding user-centric tests without resorting to DOM traversal on container elements for pure UI presentational components.
+**Learning:** Checking container classNames can lead to `.parentElement` usage if the component doesn't have a specific ARIA role or `data-testid` on the root.
+**Pattern:** For pure UI components where adding `data-testid` to the root is undesirable, `element.parentElement` is an acceptable minor deviation for checking container `className` application, though querying by role and text should still be the primary assertion strategy.
