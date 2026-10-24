@@ -21,11 +21,14 @@ export type {
   MemberCsvPreparedRowInput,
   MemberCsvPreviewRow,
   MemberCsvPreviewSummary,
+  MemberCsvFieldChange,
+  MemberCsvNewDetail,
 } from './csv-import';
 export {
   parseMemberCsvText,
   buildMemberCsvPreparedRows,
   buildMemberCsvImportPreview,
+  formatMemberFieldLabel,
 } from './csv-import';
 export { MEMBER_EXTRA_METADATA_KEYS } from './constants';
 export type {

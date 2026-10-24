@@ -10,6 +10,12 @@ export interface AdminMembersImportSnapshotMember {
   last_name: string;
   nickname: string;
   is_active: boolean;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  role: string | null;
+  category: string | null;
+  metadata: Record<string, unknown>;
 }
 
 export const ADMIN_MEMBERS_IMPORT_SNAPSHOT_QUERY_KEY = () =>
@@ -29,6 +35,12 @@ export function useAdminMembersImportSnapshotQuery() {
         last_name: member.last_name ?? '',
         nickname: member.nickname ?? '',
         is_active: member.is_active,
+        email: member.email ?? null,
+        phone: member.phone ?? null,
+        date_of_birth: member.date_of_birth ?? null,
+        role: member.role ?? null,
+        category: member.category ?? null,
+        metadata: (member.metadata as Record<string, unknown> | null) ?? {},
       }));
     },
     staleTime: QUERY_STALE_TIME_MS.adminList,

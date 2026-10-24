@@ -39,6 +39,12 @@ export type MemberImportSnapshotRow = {
   last_name: string | null;
   nickname: string | null;
   is_active: boolean;
+  email?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  role?: string | null;
+  category?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export type MemberMetadataRow = {
@@ -193,7 +199,9 @@ export async function fetchActiveMembers(): Promise<MemberUserRow[]> {
 export async function fetchMembersImportSnapshot(): Promise<MemberImportSnapshotRow[]> {
   const { data, error } = await supabase
     .from('users')
-    .select('id, member_id, first_name, last_name, nickname, is_active')
+    .select(
+      'id, member_id, first_name, last_name, nickname, is_active, email, phone, date_of_birth, role, category, metadata',
+    )
     .order('created_at', { ascending: true });
 
   if (error) {
