@@ -11,9 +11,9 @@ import { useLongLeaveRequestPageState } from '../hooks/useLongLeaveRequestPageSt
 import { LongLeaveRequestPage } from '../index';
 
 vi.mock('@/hooks/domain/members', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('@/hooks/domain/members')>();
   return {
-    ...(actual as object),
+    ...actual,
     useCurrentProfileQuery: vi.fn(),
   };
 });
@@ -34,7 +34,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('react-hook-form', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('react-hook-form')>();
   return {
     ...actual,
     useWatch: vi.fn(),
