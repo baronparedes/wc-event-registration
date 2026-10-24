@@ -69,6 +69,11 @@ const ProfilePage = lazy(() =>
 const ExcuseRequestPage = lazy(() =>
   import('../pages/excuse-request').then((module) => ({ default: module.ExcuseRequestPage })),
 );
+const LongLeaveRequestPage = lazy(() =>
+  import('../pages/long-leave-request').then((module) => ({
+    default: module.LongLeaveRequestPage,
+  })),
+);
 const AdminHubCalendarPage = lazy(() =>
   import('../pages/admin/hub-calendar').then((module) => ({
     default: module.AdminHubCalendarPage,
@@ -325,6 +330,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   login: LoginPage,
   profile: ProfilePage,
   excuseRequest: ExcuseRequestPage,
+  longLeaveRequest: LongLeaveRequestPage,
   adminUserRoles: AdminUserRolesPage,
   adminMembers: AdminMembersPage,
   adminMembersDashboard: AdminMembersDashboardPage,

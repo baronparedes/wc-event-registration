@@ -104,7 +104,7 @@ export function RequestLongLeaveModal({
 }: RequestLongLeaveModalProps) {
   const submitMutation = useSubmitExcuseMutation();
   const { data: slodUsers = [], isLoading: isLoadingSlod } = useSlodUsersQuery({
-    enabled: isAdminView,
+    enabled: isAdminView && isOpen,
   });
 
   const initialStartDate = getNextSundayDate();

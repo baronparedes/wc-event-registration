@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
+import { useCurrentProfileQuery } from '@/hooks/domain/members';
 import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/components';
 import { CommunityWelcome } from '@/pages/home/components/CommunityWelcome';
 import type { HubItem } from '@/pages/home/components/HubSection';
@@ -17,7 +18,18 @@ const PERMANENT_EXCUSE_ITEM: HubItem = {
   status: 'published',
 };
 
+const PERMANENT_LONG_LEAVE_ITEM: HubItem = {
+  type: 'long-leave',
+  id: 'permanent-volunteer-long-leave-request',
+  title: 'Long Leave Request',
+  description:
+    'Going on a multi-week leave? Use this form to request a long leave (4+ weeks) from your Sunday commitments.',
+  status: 'published',
+};
+
 export function HomePage() {
+  const { data: currentProfile } = useCurrentProfileQuery();
+  const isVerifiedMember = Boolean(currentProfile?.member_id);
   const {
     data: events,
     isLoading: eventsLoading,
@@ -44,6 +56,7 @@ export function HomePage() {
   // Mix permanent excuse request, open events, and forms
   const availableItems: HubItem[] = [
     PERMANENT_EXCUSE_ITEM,
+    ...(isVerifiedMember ? [PERMANENT_LONG_LEAVE_ITEM] : []),
     ...filteredOpenEvents.map((e) => ({ ...e, type: 'event' as const })),
     ...openForms.map((f) => ({ ...f, type: 'form' as const })),
   ];

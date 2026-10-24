@@ -152,6 +152,14 @@ export function useAppDrawerNavigation({
       });
     }
 
+    if (canRead) {
+      items.push({
+        to: ROUTE_PATHS.adminApprovals,
+        label: 'Approvals',
+        icon: CheckSquare,
+      });
+    }
+
     if (canRead || canAccessCheckIn) {
       items.push({
         to: ROUTE_PATHS.adminEvents,
@@ -165,11 +173,6 @@ export function useAppDrawerNavigation({
         to: ROUTE_PATHS.adminForms,
         label: 'Manage Forms',
         icon: ClipboardList,
-      });
-      items.push({
-        to: ROUTE_PATHS.adminApprovals,
-        label: 'Approvals',
-        icon: CheckSquare,
       });
     }
 

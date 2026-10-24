@@ -53,23 +53,31 @@ async function resolveBatchEmailContent(
         };
       }
 
-      if (!payload.text) {
+      if (!payload.text && !payload.html) {
         return { error: 'Failed to fetch Resend template' };
       }
       console.warn(
         `[cron-process-email-queue] Resend template '${templateId}' returned no HTML; falling back to wrapped plain text for msg ${messageId}`,
       );
     } else {
-      if (!payload.text) {
+      if (!payload.text && !payload.html) {
         return { error: 'template not found' };
       }
       console.warn(
-        `[cron-process-email-queue] Template not configured for slug ${payload.template_slug}; falling back to plain text email`,
+        `[cron-process-email-queue] Template not configured for slug ${payload.template_slug}; falling back to HTML/plain text email`,
       );
     }
   }
 
-  // 2. Fall back to plain text wrapped in responsive HTML layout
+  // 2. If message payload already provides pre-rendered HTML (e.g. approvals), use it
+  if (payload.html) {
+    return {
+      bodyHtml: payload.html,
+      subject: payload.subject || 'Notification',
+    };
+  }
+
+  // 3. Fall back to plain text wrapped in responsive HTML layout
   if (payload.text) {
     const defaultSubject = payload.template_slug ? 'Service Reminder' : 'Notification';
     return {
@@ -80,7 +88,7 @@ async function resolveBatchEmailContent(
     };
   }
 
-  // 3. Neither a valid template nor email text was provided
+  // 4. Neither a valid template nor email text was provided
   return { error: 'no email body' };
 }
 
@@ -223,7 +231,7 @@ export async function processMessagesWithOutlookBatch(
     groups[resolved.category].messages.push(msg);
   }
 
-  for (const category of ['sunday_reminder', 'broadcast'] as const) {
+  for (const category of ['sunday_reminder', 'broadcast', 'approval'] as const) {
     const { items, messages: validMessages } = groups[category];
     if (items.length > 0) {
       await dispatchSingleOutlookBatch(
