@@ -1,4 +1,4 @@
-export type ProfileTab = 'member_info' | 'events' | 'service_attendance';
+export type ProfileTab = 'member_info' | 'events' | 'forms' | 'service_attendance';
 
 export function resolveProfileTab(tabParam: string | null): ProfileTab {
   if (!tabParam) return 'member_info';
@@ -20,6 +20,15 @@ export function resolveProfileTab(tabParam: string | null): ProfileTab {
     normalized === 'event-history'
   ) {
     return 'events';
+  }
+  if (
+    normalized === 'forms' ||
+    normalized === 'form' ||
+    normalized === 'submissions' ||
+    normalized === 'form_submissions' ||
+    normalized === 'form-submissions'
+  ) {
+    return 'forms';
   }
   return 'member_info';
 }

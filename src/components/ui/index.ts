@@ -173,3 +173,4 @@ export {
 } from './ContactButtons';
 export { StatCard, type StatCardProps, type StatCardVariant } from './StatCard';
 export { SundayCalendarPicker, type SundayCalendarPickerProps } from './SundayCalendarPicker';
+export { ApproverSelectField, type ApproverSelectFieldProps } from './ApproverSelectField';

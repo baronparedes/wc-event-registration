@@ -425,4 +425,55 @@ describe('SubmissionDetailDialog', () => {
 
     expect(writeTextMock).toHaveBeenCalled();
   });
+
+  it('renders required_approval field with designated reviewer information and status badge', () => {
+    const approvalSubmission: FormSubmission = {
+      id: 'sub-app-1',
+      form_id: 'form-123',
+      source: 'member',
+      status: 'pending_approval',
+      idempotency_key: null,
+      user_id: 'user-1',
+      public_registrant_info: null,
+      submitted_at: '2026-01-20T10:00:00Z',
+      created_at: '2026-01-20T10:00:00Z',
+      updated_at: '2026-01-20T10:00:00Z',
+      users: {
+        member_id: 'WC-002',
+        full_name: 'Test Member',
+        email: 'test.member@example.com',
+      },
+      form_submission_answers: [
+        {
+          id: 'ans-app-1',
+          submission_id: 'sub-app-1',
+          form_field_id: 'field-app-1',
+          answer_text: 'pending_approval',
+          answer_number: null,
+          answer_boolean: null,
+          answer_date: null,
+          answer_json: null,
+          created_at: '2026-01-20T10:00:00Z',
+          updated_at: '2026-01-20T10:00:00Z',
+          form_fields: {
+            field_key: 'lead_approval',
+            label: 'Ministry Lead Approval',
+            field_type: 'required_approval',
+            validation_rules: {
+              approver_name: 'Test Pastor',
+              approver_email: 'pastor.john@example.com',
+            },
+          },
+        },
+      ],
+    };
+
+    render(
+      <SubmissionDetailDialog submission={approvalSubmission} isOpen={true} onClose={onClose} />,
+    );
+
+    expect(screen.getByText('Ministry Lead Approval')).toBeInTheDocument();
+    expect(screen.getByText('Designated Reviewer:')).toBeInTheDocument();
+    expect(screen.getByText('Test Pastor (pastor.john@example.com)')).toBeInTheDocument();
+  });
 });

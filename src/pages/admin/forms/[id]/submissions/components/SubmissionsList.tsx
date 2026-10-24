@@ -1,6 +1,7 @@
 import { ClipboardList, Eye } from 'lucide-react';
 
 import { Button, EmptyState, LoadingState } from '@/components/ui';
+import { Badge } from '@/components/ui/Badge';
 import {
   ListTable,
   ListTableBody,
@@ -28,6 +29,21 @@ function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function renderSubmissionStatusBadge(status: string) {
+  switch (status) {
+    case 'pending_approval':
+      return <Badge variant="secondary">Pending Approval</Badge>;
+    case 'approved':
+      return <Badge variant="default">Approved</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive">Rejected</Badge>;
+    case 'cancelled':
+      return <Badge variant="outline">Cancelled</Badge>;
+    default:
+      return <Badge variant="default">Submitted</Badge>;
+  }
 }
 
 export function SubmissionsList({
@@ -66,6 +82,7 @@ export function SubmissionsList({
               <ListTableHeaderCell className="px-6">Respondent</ListTableHeaderCell>
               <ListTableHeaderCell>Identifier / Contact</ListTableHeaderCell>
               <ListTableHeaderCell>Source</ListTableHeaderCell>
+              <ListTableHeaderCell>Status</ListTableHeaderCell>
               <ListTableHeaderCell>Answers</ListTableHeaderCell>
               <ListTableHeaderCell>Submitted</ListTableHeaderCell>
               <ListTableHeaderCell className="text-right pr-6">Actions</ListTableHeaderCell>
@@ -113,6 +130,8 @@ export function SubmissionsList({
                       {sub.source}
                     </span>
                   </ListTableCell>
+
+                  <ListTableCell>{renderSubmissionStatusBadge(sub.status)}</ListTableCell>
 
                   <ListTableCell>
                     <span className="text-xs text-muted">
@@ -171,13 +190,16 @@ export function SubmissionsList({
                   <p className="font-semibold text-text">{respondentName}</p>
                   <p className="text-xs text-muted">{identifier}</p>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                    isMember ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                  }`}
-                >
-                  {sub.source}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                      isMember ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                    }`}
+                  >
+                    {sub.source}
+                  </span>
+                  {renderSubmissionStatusBadge(sub.status)}
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-1 text-xs text-muted">

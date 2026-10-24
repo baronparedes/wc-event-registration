@@ -619,21 +619,37 @@ export function AdminApprovalsPage() {
           )}
 
           {/* Metadata overview */}
-          {inspectingRequest?.metadata && (
-            <div className="rounded-xl border border-border bg-background p-4 text-xs">
-              <div className="font-heading font-semibold text-text mb-2">Request Details</div>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                {Object.entries(inspectingRequest.metadata).map(([key, val]) => (
-                  <div key={key}>
-                    <dt className="text-muted capitalize">{key.replace(/_/g, ' ')}</dt>
-                    <dd className="font-medium text-text mt-0.5">
-                      {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
+          {inspectingRequest?.metadata &&
+            (() => {
+              const displayEntries = Object.entries(inspectingRequest.metadata).filter(
+                ([key, val]) =>
+                  ![
+                    'form_field_id',
+                    'field_key',
+                    'access_token',
+                    'token_expires_at',
+                    'token',
+                  ].includes(key) &&
+                  val != null &&
+                  val !== '',
+              );
+              if (displayEntries.length === 0) return null;
+              return (
+                <div className="rounded-xl border border-border bg-background p-4 text-xs">
+                  <div className="font-heading font-semibold text-text mb-2">Request Details</div>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                    {displayEntries.map(([key, val]) => (
+                      <div key={key}>
+                        <dt className="text-muted capitalize">{key.replace(/_/g, ' ')}</dt>
+                        <dd className="font-medium text-text mt-0.5">
+                          {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              );
+            })()}
 
           {/* Decision Record */}
           {inspectingRequest?.status !== 'pending' && (

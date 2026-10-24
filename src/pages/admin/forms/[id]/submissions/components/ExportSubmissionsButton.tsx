@@ -70,6 +70,7 @@ function buildSubmissionsCsv(
   const fieldIds = Array.from(fieldMap.keys());
   const baseHeaders = [
     'Submission ID',
+    'Status',
     'Respondent Name',
     'Source',
     'Member ID',
@@ -102,6 +103,7 @@ function buildSubmissionsCsv(
 
     return [
       sub.id,
+      sub.status,
       respondentName,
       sub.source,
       memberId,

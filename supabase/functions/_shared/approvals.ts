@@ -119,10 +119,24 @@ export async function enqueueApprovalReviewEmail(
     reviewUrl,
   });
 
+  const detailsMap: Record<string, string> = {};
+  for (const item of details) {
+    const key = item.label.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    detailsMap[key] = item.value;
+  }
+
+  const detailsHtml = details
+    .map(
+      (item) =>
+        `<div style="margin: 0 0 6px 0;"><span style="color: #71717a; font-weight: 600;">${item.label}:</span><strong style="color: #0f172a; margin-left: 6px;">${item.value}</strong></div>`,
+    )
+    .join('');
+
   const { messageId, error } = await enqueueEmailNotification(supabase, {
     recipient: assignedToEmail,
     category: 'approval',
-    event_type: 'approval_review_request',
+    event_type: 'email_notification',
+    template_slug: 'approval-review-request',
     subject: template.subject,
     html: template.html,
     text: template.text,
@@ -130,6 +144,14 @@ export async function enqueueApprovalReviewEmail(
       target_type: 'approval-request',
       approval_id: approvalId,
       access_token: accessToken,
+      subject_title: subjectTitle,
+      heading: heading || 'Approval Required',
+      description: description || 'A request requires your review and approval:',
+      review_url: reviewUrl,
+      action_url: reviewUrl,
+      action_text: 'Review & Take Action',
+      details_html: detailsHtml,
+      ...detailsMap,
     },
   });
 
@@ -173,10 +195,14 @@ export async function enqueueApprovalOutcomeEmail(
     notes,
   });
 
+  const isApproved = decision === 'approved';
+  const statusLabel = isApproved ? 'Approved' : 'Declined';
+
   const { messageId, error } = await enqueueEmailNotification(supabase, {
     recipient: recipientEmail,
     category: 'approval',
-    event_type: 'approval_outcome_notification',
+    event_type: 'email_notification',
+    template_slug: 'approval-outcome-notification',
     subject: template.subject,
     html: template.html,
     text: template.text,
@@ -184,6 +210,10 @@ export async function enqueueApprovalOutcomeEmail(
       target_type: 'approval-outcome',
       approval_id: approvalId,
       decision,
+      decision_label: statusLabel,
+      title,
+      requester_name: requesterName,
+      notes: notes || '',
     },
   });
 

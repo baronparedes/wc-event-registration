@@ -116,4 +116,55 @@ describe('forms schemas', () => {
       );
     }
   });
+
+  it('validates required_approval in formFieldInputSchema', () => {
+    const validApprovalField = {
+      field_key: 'manager_approval',
+      label: 'Manager Approval',
+      field_type: 'required_approval',
+      is_required: false,
+      is_active: true,
+      options: [],
+      validation_rules: {
+        approver_email: 'manager@example.com',
+        approver_name: 'Manager Bob',
+      },
+      field_applicability: 'all',
+      display_order: 0,
+    };
+
+    const result = formFieldInputSchema.safeParse(validApprovalField);
+    expect(result.success).toBe(true);
+  });
+
+  it('validates approver requirements in formFieldFormSchema for required_approval', () => {
+    const invalidForm = formFieldFormSchema.safeParse({
+      field_key: 'manager_approval',
+      label: 'Manager Approval',
+      field_type: 'required_approval',
+      is_required: false,
+      is_active: true,
+      options: [],
+      field_applicability: 'all',
+      val_approver_email: '',
+    });
+    expect(invalidForm.success).toBe(false);
+    if (!invalidForm.success) {
+      expect(invalidForm.error.issues[0]?.message).toBe('Please select an approver.');
+    }
+
+    const validForm = formFieldFormSchema.safeParse({
+      field_key: 'manager_approval',
+      label: 'Manager Approval',
+      field_type: 'required_approval',
+      is_required: false,
+      is_active: true,
+      options: [],
+      field_applicability: 'all',
+      val_approver_email: 'leader@example.com',
+      val_approver_name: 'Leader Jane',
+      val_approver_user_id: 'user-123',
+    });
+    expect(validForm.success).toBe(true);
+  });
 });

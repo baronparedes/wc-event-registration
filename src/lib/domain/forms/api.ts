@@ -1,7 +1,7 @@
 import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type { AdminFormInput, FormFieldInput } from './schemas';
-import type { AdminForm, FormField, FormSubmission } from './types';
+import type { AdminForm, FormField, FormSubmission, MemberFormSubmissionItem } from './types';
 
 export type DuplicateFormInput = {
   source_form_id: string;
@@ -35,7 +35,7 @@ export type SubmitFormSubmissionPayload = {
 export type SubmitFormSubmissionResponse = {
   success: boolean;
   submission_id: string;
-  status: 'submitted' | 'updated';
+  status: 'submitted' | 'updated' | 'pending_approval';
   message: string;
   error?: string;
   error_code?: string;
@@ -134,7 +134,8 @@ export async function fetchFormSubmissions(formId: string): Promise<FormSubmissi
             form_fields (
               field_key,
               label,
-              field_type
+              field_type,
+              validation_rules
             )
           )
         `,
@@ -222,4 +223,15 @@ export async function submitFormSubmission(
   }
 
   return response;
+}
+
+export async function fetchMemberFormSubmissions(
+  userId: string,
+): Promise<MemberFormSubmissionItem[]> {
+  const { data, error } = await supabase.rpc('get_member_form_submissions', {
+    p_user_id: userId,
+  });
+
+  if (error) throw error;
+  return (data ?? []) as MemberFormSubmissionItem[];
 }

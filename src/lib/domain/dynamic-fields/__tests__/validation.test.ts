@@ -214,6 +214,20 @@ describe('dynamic-fields validation', () => {
       expect(optSchema.safeParse(false).success).toBe(true);
       expect(optSchema.safeParse(undefined).success).toBe(true);
     });
+
+    it('validates required_approval fields defaulting to pending_approval', () => {
+      const field: DynamicFieldLike = {
+        field_key: 'approval',
+        label: 'Required Approval',
+        field_type: 'required_approval',
+        is_required: false,
+      };
+
+      const schema = buildSchemaForField(field);
+      expect(schema.safeParse('pending_approval').success).toBe(true);
+      const parsedUndefined = schema.parse(undefined);
+      expect(parsedUndefined).toBe('pending_approval');
+    });
   });
 
   describe('buildDynamicFieldResponseSchema', () => {

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -8,6 +10,7 @@ import {
   useCreateEventFieldMutation,
   useUpdateEventFieldMutation,
 } from '@/hooks/domain/event-fields';
+import type { ApproverUserItem } from '@/lib/domain/auth';
 import {
   DEFAULT_FIELD_FORM_VALUES,
   eventFieldFormSchema,
@@ -63,6 +66,18 @@ export function EventFieldEditPanel({
   const { data: allFields = [] } = useAdminEventFieldsQuery(eventId);
   const availableParentFields = allFields.filter((f) => f.field_key !== (field?.field_key ?? ''));
 
+  const disabledApproverEmails = useMemo(() => {
+    return allFields
+      .filter((f) => f.id !== field?.id && f.field_type === 'required_approval')
+      .map((f) => {
+        const rules = (f.validation_rules ?? {}) as Record<string, unknown>;
+        return typeof rules.approver_email === 'string'
+          ? rules.approver_email.trim().toLowerCase()
+          : '';
+      })
+      .filter(Boolean);
+  }, [allFields, field?.id]);
+
   const createMutation = useCreateEventFieldMutation();
   const updateMutation = useUpdateEventFieldMutation();
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -94,7 +109,18 @@ export function EventFieldEditPanel({
   const showRatingValidation = fieldTypeHasRatingValidation(selectedFieldType);
   const showMultiSelectValidation = fieldTypeHasMultiSelectValidation(selectedFieldType);
   const showDateValidation = fieldTypeHasDateValidation(selectedFieldType);
-  const showValidationSection = fieldTypeHasValidation(selectedFieldType);
+  const showApprovalValidation = selectedFieldType === 'required_approval';
+  const showValidationSection = fieldTypeHasValidation(selectedFieldType) || showApprovalValidation;
+  const approverEmail = useWatch({ control, name: 'val_approver_email' });
+
+  function handleApproverChange(approver: ApproverUserItem | null) {
+    setValue('val_approver_email', approver?.email ?? '', {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('val_approver_name', approver?.name ?? '', { shouldDirty: true });
+    setValue('val_approver_user_id', approver?.auth_user_id ?? '', { shouldDirty: true });
+  }
 
   function handleTypeSelect(type: EventFieldTypeEnum) {
     setValue('field_type', type, { shouldDirty: true, shouldValidate: true });
@@ -111,9 +137,26 @@ export function EventFieldEditPanel({
     setValue('val_max_date', '');
     setValue('val_max_past_days', '');
     setValue('val_allowed_weekdays', []);
+    setValue('val_approver_email', '');
+    setValue('val_approver_name', '');
+    setValue('val_approver_user_id', '');
+
+    if (type === 'required_approval') {
+      setValue('is_required', true, { shouldDirty: true, shouldValidate: true });
+      setValue('label', 'Required Approval', { shouldDirty: true, shouldValidate: true });
+    }
   }
 
   async function onSubmit(values: EventFieldFormValues) {
+    if (
+      values.field_type === 'required_approval' &&
+      values.val_approver_email &&
+      disabledApproverEmails.includes(values.val_approver_email.trim().toLowerCase())
+    ) {
+      toast.error('This approver is already assigned to another field on this event.');
+      return;
+    }
+
     const validationRules = toValidationRules(values);
     const normalizedOptions = showOptions
       ? values.options.map((option) => ({
@@ -275,6 +318,11 @@ export function EventFieldEditPanel({
               showRatingValidation={showRatingValidation}
               showMultiSelectValidation={showMultiSelectValidation}
               showDateValidation={showDateValidation}
+              showApprovalValidation={showApprovalValidation}
+              approverEmail={approverEmail}
+              onApproverChange={handleApproverChange}
+              disabledApproverEmails={disabledApproverEmails}
+              approverError={errors.val_approver_email?.message}
               register={register}
               uniqueKeyComponentError={errors.val_unique_key_component?.message}
             />

@@ -21,6 +21,7 @@ export const DYNAMIC_FIELD_TYPES: readonly DynamicFieldType[] = [
   'boolean',
   'color_picker',
   'rating',
+  'required_approval',
 ] as const;
 
 export const FIELD_TYPE_REGISTRY: Record<DynamicFieldType, DynamicFieldTypeDefinition> = {
@@ -225,6 +226,23 @@ export const FIELD_TYPE_REGISTRY: Record<DynamicFieldType, DynamicFieldTypeDefin
       if (value == null || value === '') return '';
       const max = typeof context?.rules?.max === 'number' ? context.rules.max : 5;
       return `${value} / ${max} ★`;
+    },
+  },
+  required_approval: {
+    type: 'required_approval',
+    label: 'Required Approval',
+    description: 'Designate an administrator or reviewer who must approve submissions.',
+    category: 'special',
+    colorClass: 'bg-amber-100 text-amber-800',
+    domains: ['forms'],
+    hasOptions: false,
+    hasValidation: true,
+    validationKind: 'none',
+    formatValue: (value: unknown) => {
+      if (value === 'pending_approval' || value == null || value === '') return 'Pending Approval';
+      if (value === 'approved') return 'Approved';
+      if (value === 'rejected' || value === 'declined') return 'Rejected';
+      return String(value);
     },
   },
 };

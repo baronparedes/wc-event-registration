@@ -103,6 +103,10 @@ function mockFetch(
       return Promise.resolve(Response.json({ id: SUBMISSION_ID }));
     if (url.pathname === '/rest/v1/approval_requests' && method === 'POST')
       return Promise.resolve(Response.json({ id: 'approval-1', access_token: 'token-abc' }));
+    if (url.pathname === '/rest/v1/approval_requests' && method === 'PATCH')
+      return Promise.resolve(Response.json({}));
+    if (url.pathname === '/rest/v1/form_submission_answers' && method === 'DELETE')
+      return Promise.resolve(new Response(null, { status: 200 }));
     if (url.pathname === '/rest/v1/form_submission_answers' && method === 'POST')
       return Promise.resolve(new Response(null, { status: 201 }));
     return Promise.resolve(new Response('Unexpected request', { status: 500 }));
@@ -301,6 +305,273 @@ Deno.test(
         assertEquals(
           (approvalInsert?.body as Record<string, unknown>)?.requester_name,
           'John Smith',
+        );
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'submit-form-submission creates approval request when form contains required_approval field',
+  async () => {
+    await withEnv(async () => {
+      const approvalFieldId = '44444444-4444-4444-4444-444444444444';
+      const fetchMock = mockFetch({
+        form: {
+          id: FORM_ID,
+          title: 'Permit Application',
+          duplicate_policy: 'allow_multiple',
+          audience: 'public',
+          status: 'published',
+          metadata: {},
+        },
+        fields: [
+          FIELD,
+          {
+            id: approvalFieldId,
+            field_key: 'field_approval',
+            label: 'Approval Requirement',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: {
+              approver_email: 'reviewer@example.com',
+            },
+          },
+        ],
+      });
+      try {
+        const response = await handleSubmitFormSubmission(
+          request({
+            ...payload({ note: 'Permit please', field_approval: 'pending_approval' }),
+            public_registrant_info: {
+              first_name: 'Jane',
+              last_name: 'Doe',
+              email: 'jane@example.com',
+            },
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.status, 'pending_approval');
+        assertEquals(data.message, 'Form submitted successfully and is pending approval');
+
+        // Verify initial submission status is pending_approval
+        const subInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/form_submissions' && call.method === 'POST',
+        );
+        assertEquals((subInsert?.body as Record<string, unknown>)?.status, 'pending_approval');
+
+        // Verify approval_requests insertion with field-configured approver
+        const approvalInsert = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(Boolean(approvalInsert), true);
+        assertEquals(
+          (approvalInsert?.body as Record<string, unknown>)?.assigned_to_email,
+          'reviewer@example.com',
+        );
+        assertEquals((approvalInsert?.body as Record<string, unknown>)?.requester_name, 'Jane Doe');
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'submit-form-submission deduplicates approval requests when multiple fields have identical approver',
+  async () => {
+    await withEnv(async () => {
+      const approvalField1 = '44444444-4444-4444-4444-444444444444';
+      const approvalField2 = '55555555-5555-5555-5555-555555555555';
+      const fetchMock = mockFetch({
+        form: {
+          id: FORM_ID,
+          title: 'Multi-Approval Form',
+          duplicate_policy: 'allow_multiple',
+          audience: 'public',
+          status: 'published',
+          metadata: {},
+        },
+        fields: [
+          FIELD,
+          {
+            id: approvalField1,
+            field_key: 'field_approval_1',
+            label: 'Approval 1',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: { approver_email: 'sam@example.com' },
+          },
+          {
+            id: approvalField2,
+            field_key: 'field_approval_2',
+            label: 'Approval 2',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: { approver_email: 'sam@example.com' },
+          },
+        ],
+      });
+      try {
+        const response = await handleSubmitFormSubmission(
+          request({
+            ...payload({ note: 'Multi test' }),
+            public_registrant_info: { email: 'applicant@example.com' },
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.status, 'pending_approval');
+
+        // Verify only 1 approval request is created despite 2 fields having same approver
+        const approvalInserts = fetchMock.calls.filter(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(approvalInserts.length, 1);
+        assertEquals(
+          (approvalInserts[0]?.body as Record<string, unknown>)?.assigned_to_email,
+          'sam@example.com',
+        );
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'submit-form-submission creates distinct approval requests for each unique approver',
+  async () => {
+    await withEnv(async () => {
+      const approvalField1 = '44444444-4444-4444-4444-444444444444';
+      const approvalField2 = '55555555-5555-5555-5555-555555555555';
+      const fetchMock = mockFetch({
+        form: {
+          id: FORM_ID,
+          title: 'Two-Tier Approval Form',
+          duplicate_policy: 'allow_multiple',
+          audience: 'public',
+          status: 'published',
+          metadata: {},
+        },
+        fields: [
+          FIELD,
+          {
+            id: approvalField1,
+            field_key: 'field_approval_dept',
+            label: 'Department Approval',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: { approver_email: 'dept@example.com' },
+          },
+          {
+            id: approvalField2,
+            field_key: 'field_approval_finance',
+            label: 'Finance Approval',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: { approver_email: 'finance@example.com' },
+          },
+        ],
+      });
+      try {
+        const response = await handleSubmitFormSubmission(
+          request({
+            ...payload({ note: 'Two tier test' }),
+            public_registrant_info: { email: 'applicant@example.com' },
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.status, 'pending_approval');
+
+        // Verify 2 approval requests are created (one for dept, one for finance)
+        const approvalInserts = fetchMock.calls.filter(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(approvalInserts.length, 2);
+        const emails = approvalInserts.map(
+          (c) => (c.body as Record<string, unknown>)?.assigned_to_email,
+        );
+        assertEquals(emails.includes('dept@example.com'), true);
+        assertEquals(emails.includes('finance@example.com'), true);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'submit-form-submission updates existing submission with required approval and cancels old requests',
+  async () => {
+    await withEnv(async () => {
+      const fetchMock = mockFetch({
+        form: {
+          id: FORM_ID,
+          duplicate_policy: 'allow_update',
+          audience: 'members',
+          status: 'published',
+        },
+        existing: { id: SUBMISSION_ID },
+        fields: [
+          FIELD,
+          {
+            id: 'approval-field-id',
+            field_key: 'manager_approval',
+            label: 'Manager Approval',
+            field_type: 'required_approval',
+            field_applicability: 'all',
+            is_required: false,
+            options: [],
+            validation_rules: { approver_email: 'manager@example.com' },
+          },
+        ],
+      });
+      try {
+        const response = await handleSubmitFormSubmission(
+          request({
+            ...payload({ note: 'Updated answers' }),
+            member_id: 'MEM-001',
+          }),
+        );
+        assertEquals(response.status, 200);
+        const data = await response.json();
+        assertEquals(data.success, true);
+        assertEquals(data.status, 'pending_approval');
+        assertEquals(data.is_new, false);
+
+        // Verify old approval requests were cancelled
+        const patchApprovalCall = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'PATCH',
+        );
+        assertEquals(Boolean(patchApprovalCall), true);
+        assertEquals((patchApprovalCall?.body as Record<string, unknown>)?.status, 'cancelled');
+
+        // Verify fresh approval request was created
+        const postApprovalCall = fetchMock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        assertEquals(Boolean(postApprovalCall), true);
+        assertEquals(
+          (postApprovalCall?.body as Record<string, unknown>)?.assigned_to_email,
+          'manager@example.com',
         );
       } finally {
         fetchMock.restore();

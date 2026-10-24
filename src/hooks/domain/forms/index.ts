@@ -6,6 +6,7 @@ export * from './queries/useFormBySlugQuery';
 export * from './queries/useFormFieldsQuery';
 export * from './queries/usePublicFormFieldsQuery';
 export * from './queries/useFormSubmissionsQuery';
+export * from './queries/useMemberFormSubmissionsQuery';
 
 // Mutations
 export * from './mutations/useDuplicateFormMutation';

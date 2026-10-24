@@ -18,6 +18,7 @@ export const FIELD_TYPES = [
   'boolean',
   'color_picker',
   'rating',
+  'required_approval',
 ] as const;
 
 export const FIELD_APPLICABILITY = ['members', 'guests', 'both'] as const;
@@ -141,8 +142,21 @@ export const eventFieldFormSchema = z
     val_unique_key_component: z.boolean().default(false),
     val_visibility_depends_on_field_key: z.string().optional(),
     val_visibility_equals_value: z.string().optional(),
+    val_approver_email: z.string().optional(),
+    val_approver_name: z.string().optional(),
+    val_approver_user_id: z.string().optional(),
   })
   .superRefine((values, context) => {
+    if (values.field_type === 'required_approval') {
+      if (!values.val_approver_email || values.val_approver_email.trim() === '') {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select an approver.',
+          path: ['val_approver_email'],
+        });
+      }
+    }
+
     if (
       (values.field_type === 'date' || values.field_type === 'datetime') &&
       values.val_max_past_days !== ''

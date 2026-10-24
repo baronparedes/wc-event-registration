@@ -90,6 +90,8 @@ Deno.test('enqueueApprovalReviewEmail enqueues notification and triggers worker'
   const queuePayload = (enqueueCall?.args as { payload: Record<string, unknown> })?.payload;
   assertEquals(queuePayload?.recipient, 'approver@example.com');
   assertEquals(queuePayload?.category, 'approval');
+  assertEquals(queuePayload?.event_type, 'email_notification');
+  assertEquals(queuePayload?.template_slug, 'approval-review-request');
   assertEquals(queuePayload?.subject, '[Approval Required] Test Leave - Test Member');
   assertEquals(typeof queuePayload?.html, 'string');
   assertEquals((queuePayload?.html as string).includes('Test Member'), true);
@@ -127,6 +129,8 @@ Deno.test('enqueueApprovalOutcomeEmail enqueues decision notification to request
   const queuePayload = (enqueueCall?.args as { payload: Record<string, unknown> })?.payload;
   assertEquals(queuePayload?.recipient, 'requester@example.com');
   assertEquals(queuePayload?.category, 'approval');
+  assertEquals(queuePayload?.event_type, 'email_notification');
+  assertEquals(queuePayload?.template_slug, 'approval-outcome-notification');
   assertEquals(queuePayload?.subject, 'Your request for "Medical Leave" has been Approved');
   assertEquals(typeof queuePayload?.html, 'string');
   assertEquals((queuePayload?.html as string).includes('Rest well'), true);

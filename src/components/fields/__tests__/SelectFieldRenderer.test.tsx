@@ -246,5 +246,94 @@ describe('SelectFieldRenderer and variants', () => {
       const mainCheckbox = screen.getByRole('checkbox', { name: /Workshop 1/i });
       expect(mainCheckbox).toBeChecked();
     });
+
+    it('renders compact role breakdown and custom toggle label', () => {
+      const detailedField: DynamicFieldLike = {
+        id: 'field-toggle-detailed',
+        field_key: 'detailed_workshops',
+        label: 'Workshops',
+        field_type: 'multi_select_toggle',
+        is_required: false,
+        validation_rules: {
+          max_slots_role_allotments: {
+            ws_lead: [
+              { role: 'usher', alloted_slots: 5 },
+              { role: 'greeter', alloted_slots: 0 },
+            ],
+          },
+        },
+        options: [
+          {
+            value: 'ws_lead',
+            label: 'Leadership Track, Hall A',
+            toggle_label: 'Meal Voucher?',
+            toggle_default: true,
+          },
+        ],
+      };
+
+      render(
+        <TestHarness
+          field={detailedField}
+          Component={MultiSelectToggleFieldRenderer}
+          defaultValue={{ ws_lead: true }}
+          memberRole="Usher / Greeter"
+          remainingSlotsByOption={{ ws_lead: 0 }}
+          remainingSlotsByRoleByOption={{
+            ws_lead: { usher: 2, greeter: 0 },
+          }}
+        />,
+      );
+
+      expect(screen.getByText('Leadership Track')).toBeInTheDocument();
+      expect(screen.getByText('Hall A')).toBeInTheDocument();
+      expect(screen.getByText('Meal Voucher?')).toBeInTheDocument();
+      expect(screen.getByText('0 slots left')).toBeInTheDocument();
+      expect(screen.getByText('usher:')).toBeInTheDocument();
+      expect(screen.getByText('greeter:')).toBeInTheDocument();
+    });
+
+    it('does not disable currently selected option even if slots are 0', () => {
+      render(
+        <TestHarness
+          field={choiceField}
+          Component={SelectFieldRenderer}
+          defaultValue="morning"
+          remainingSlotsByOption={{ morning: 0, afternoon: 0 }}
+        />,
+      );
+
+      const trigger = screen.getByRole('button', { name: /Morning Session/i });
+      fireEvent.click(trigger);
+
+      const morningOption = screen.getByRole('option', {
+        name: /Morning Session \(0 slots left\)/i,
+      });
+      expect(morningOption).toHaveAttribute('aria-disabled', 'false');
+    });
+
+    it('handles member role with no allotments or undefined memberRole', () => {
+      const allottedField: DynamicFieldLike = {
+        ...choiceField,
+        validation_rules: {
+          max_slots_role_allotments: {
+            morning: [{ role: 'usher', alloted_slots: 4 }],
+          },
+        },
+      };
+
+      // Member without role
+      render(
+        <TestHarness
+          field={allottedField}
+          Component={RadioFieldRenderer}
+          defaultValue=""
+          memberRole=""
+        />,
+      );
+
+      const radios = screen.getAllByRole('radio');
+      expect(radios[0]).not.toBeDisabled();
+    });
   });
 });

@@ -25,28 +25,53 @@ export function buildApprovalOutcomeEmail(
 
   const noteBlock = notes
     ? `
-      <div style="margin-top: 20px; padding: 14px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid ${themeColor};">
-        <strong style="color: #334155; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Reviewer Note:</strong>
-        <p style="margin: 6px 0 0 0; color: #475569; font-size: 14px;">${escapeHtml(notes)}</p>
-      </div>
+      <table width="100%" border="0" cellPadding="0" cellSpacing="0" role="presentation" style="margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0;padding-top:0;padding-right:24px;padding-bottom:0;padding-left:24px;box-sizing:border-box">
+        <tbody>
+          <tr style="margin:0;padding:0">
+            <td data-id="__react-email-column" style="margin:0;padding:16px 20px;background-color:#f4f4f5;border-radius:6px;border-left:4px solid ${themeColor}">
+              <div style="margin:0;padding:0;font-size:0.85em;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;margin-bottom:8px">
+                <p style="margin:0;padding:0">Reviewer Note</p>
+              </div>
+              <p style="margin:0;padding:0;font-size:0.95em;line-height:160%;color:#18181b">${escapeHtml(notes)}</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     `
     : '';
 
   const bodyHtml = `
-    <p style="font-size: 15px; color: #1e293b; margin-top: 0;">Hello ${escapeHtml(requesterName)},</p>
-    <p style="font-size: 15px; color: #334155;">
-      Your request for <strong>${escapeHtml(title)}</strong> has been
-      <strong style="color: ${themeColor};">${statusLower}</strong>.
-    </p>
+    <table width="100%" border="0" cellPadding="0" cellSpacing="0" role="presentation" style="margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0;padding-top:0;padding-right:24px;padding-bottom:0;padding-left:24px;box-sizing:border-box">
+      <tbody>
+        <tr style="margin:0;padding:0">
+          <td data-id="__react-email-column" style="margin:0;padding:16px 20px;background-color:#f4f4f5;border-radius:6px">
+            <div style="margin:0;padding:0;font-size:0.85em;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;margin-bottom:8px">
+              <p style="margin:0;padding:0">Decision Status</p>
+            </div>
+            <p style="margin:0;padding:0;font-size:0.95em;line-height:160%;color:#18181b">
+              Hello ${escapeHtml(requesterName)},<br /><br />
+              Your request for <strong>${escapeHtml(title)}</strong> has been
+              <strong style="color: ${themeColor}; font-weight: 700;">${statusLower}</strong>.
+            </p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     ${noteBlock}
   `;
 
   const html = renderBaseEmailLayout({
     title: subject,
+    preheader: `Your request for ${title} has been ${statusLabel}`,
     heading: `Request ${statusLabel}`,
+    subtitle: title,
     headingColor: themeColor,
     bodyHtml,
-    footerNotice: 'Automated notification from the Welcome Hub approval system',
+    ctaButton: {
+      label: 'View in Welcome Hub',
+      url: 'https://welcomehub.app/profile',
+    },
+    footerNotice: "You're receiving this message from the Welcome Center team.",
   });
 
   const text = `Hello ${requesterName},\n\nYour request for "${title}" has been ${statusLower}.\n${notes ? `\nReviewer Note: ${notes}\n` : ''}\n---\nWelcome Hub Approvals`;

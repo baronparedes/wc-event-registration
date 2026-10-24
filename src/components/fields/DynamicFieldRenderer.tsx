@@ -6,6 +6,7 @@ import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 import { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
 import { DateFieldRenderer, DatetimeFieldRenderer } from './DateFieldRenderer';
 import { RatingFieldRenderer } from './RatingFieldRenderer';
+import { RequiredApprovalFieldRenderer } from './RequiredApprovalFieldRenderer';
 import {
   MultiSelectFieldRenderer,
   MultiSelectToggleFieldRenderer,
@@ -102,6 +103,8 @@ export function DynamicFieldRenderer({
       return <CheckboxFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'color_picker':
       return <ColorPickerFieldRenderer field={field} dynamicForm={dynamicForm} />;
+    case 'required_approval':
+      return <RequiredApprovalFieldRenderer field={field} dynamicForm={dynamicForm} />;
     default:
       return <TextFieldRenderer field={field} dynamicForm={dynamicForm} />;
   }

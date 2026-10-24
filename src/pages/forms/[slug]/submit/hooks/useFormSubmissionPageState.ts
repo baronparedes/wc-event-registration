@@ -108,7 +108,7 @@ export function useFormSubmissionPageState() {
   const [isSubmissionConfirmed, setIsSubmissionConfirmed] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
     submission_id: string;
-    status: 'submitted' | 'updated';
+    status: 'submitted' | 'updated' | 'pending_approval';
   } | null>(null);
 
   // Handle member lookup submit

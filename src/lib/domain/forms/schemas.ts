@@ -53,6 +53,7 @@ export const formFieldInputSchema = z.object({
     'datetime',
     'boolean',
     'rating',
+    'required_approval',
   ]),
   is_required: z.boolean().default(false),
   is_active: z.boolean().default(true),
@@ -94,6 +95,7 @@ export const formFieldFormSchema = z
       'datetime',
       'boolean',
       'rating',
+      'required_approval',
     ]),
     is_required: z.boolean().catch(false),
     is_active: z.boolean().catch(true),
@@ -110,8 +112,21 @@ export const formFieldFormSchema = z
     val_max_selections: z.string().optional().catch(''),
     val_min_date: z.string().optional().catch(''),
     val_max_date: z.string().optional().catch(''),
+    val_approver_email: z.string().optional().catch(''),
+    val_approver_name: z.string().optional().catch(''),
+    val_approver_user_id: z.string().optional().catch(''),
   })
   .superRefine((values, context) => {
+    if (values.field_type === 'required_approval') {
+      if (!values.val_approver_email || values.val_approver_email.trim() === '') {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select an approver.',
+          path: ['val_approver_email'],
+        });
+      }
+    }
+
     if (values.field_type === 'rating' && values.val_max && values.val_max.trim() !== '') {
       const parsedMax = Number(values.val_max.trim());
       if (!Number.isInteger(parsedMax) || parsedMax < 1 || parsedMax > 10) {
@@ -145,4 +160,7 @@ export const DEFAULT_FORM_FIELD_VALUES: FormFieldFormValues = {
   val_max_selections: '',
   val_min_date: '',
   val_max_date: '',
+  val_approver_email: '',
+  val_approver_name: '',
+  val_approver_user_id: '',
 };

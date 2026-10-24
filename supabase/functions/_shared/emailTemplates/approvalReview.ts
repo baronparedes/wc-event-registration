@@ -34,31 +34,55 @@ export function buildApprovalReviewEmail(
   const detailsHtml = details
     .map(
       (item) => `
-      <p style="margin: 0 0 8px 0; font-size: 14px;">
-        <strong style="color: #475569;">${escapeHtml(item.label)}:</strong>
-        <span style="color: #0f172a;">${escapeHtml(item.value)}</span>
-      </p>
+      <div style="margin: 0 0 8px 0; font-size: 0.95em;">
+        <span style="color: #71717a; font-weight: 600;">${escapeHtml(item.label)}:</span>
+        <strong style="color: #0f172a; margin-left: 6px;">${escapeHtml(item.value)}</strong>
+      </div>
     `,
     )
     .join('');
 
   const bodyHtml = `
-    <p style="font-size: 15px; color: #334155; margin-top: 0;">${escapeHtml(description)}</p>
-    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      ${detailsHtml}
-    </div>
+    <table width="100%" border="0" cellPadding="0" cellSpacing="0" role="presentation" style="margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0;padding-top:0;padding-right:24px;padding-bottom:0;padding-left:24px;box-sizing:border-box">
+      <tbody>
+        <tr style="margin:0;padding:0">
+          <td data-id="__react-email-column" style="margin:0;padding:16px 20px;background-color:#f4f4f5;border-radius:6px">
+            <div style="margin:0;padding:0;font-size:0.85em;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;margin-bottom:8px">
+              <p style="margin:0;padding:0">Review Notice</p>
+            </div>
+            <p style="margin:0;padding:0;font-size:0.95em;line-height:160%;color:#18181b">${escapeHtml(description)}</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table width="100%" border="0" cellPadding="0" cellSpacing="0" role="presentation" style="margin-top:0;margin-right:0;margin-bottom:12px;margin-left:0;padding-top:0;padding-right:24px;padding-bottom:0;padding-left:24px;box-sizing:border-box">
+      <tbody>
+        <tr style="margin:0;padding:0">
+          <td data-id="__react-email-column" style="margin:0;padding:16px 20px;background-color:#f4f4f5;border-radius:6px">
+            <div style="margin:0;padding:0;font-size:0.85em;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;margin-bottom:8px">
+              <p style="margin:0;padding:0">Request Information</p>
+            </div>
+            <div style="margin:0;padding:0;line-height:160%;">
+              ${detailsHtml}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   `;
 
   const html = renderBaseEmailLayout({
     title: subject,
+    preheader: `Approval required for ${subjectTitle}`,
     heading,
-    headingColor: '#1e293b',
+    subtitle: subjectTitle,
+    headingColor: '#0f172a',
     bodyHtml,
     ctaButton: {
       label: 'Review & Take Action',
       url: reviewUrl,
     },
-    footerNotice: 'Automated notification from Welcome Hub Approvals',
+    footerNotice: "You're receiving this message from the Welcome Center team.",
   });
 
   const detailsText = details.map((d) => `${d.label}: ${d.value}`).join('\n');

@@ -159,10 +159,13 @@ describe('api/og Serverless Function & SEO Helpers', () => {
   });
 
   describe('buildAbsoluteImageUrl', () => {
-    it('preserves absolute URLs', () => {
+    it('preserves http and https absolute URLs', () => {
       expect(
         buildAbsoluteImageUrl('https://cdn.example.com/photo.jpg', 'https://welcomehub.com'),
       ).toBe('https://cdn.example.com/photo.jpg');
+      expect(
+        buildAbsoluteImageUrl('http://cdn.example.com/photo.jpg', 'https://welcomehub.com'),
+      ).toBe('http://cdn.example.com/photo.jpg');
     });
 
     it('builds absolute URL for relative paths', () => {
@@ -171,18 +174,37 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       );
     });
 
-    it('builds Supabase storage public URL for cover image keys', () => {
+    it('builds Supabase storage public URL for cover image keys and strips trailing slashes from supabaseUrl', () => {
       expect(
         buildAbsoluteImageUrl(
           'covers/pic.jpg',
           'https://welcomehub.com',
-          'https://xyz.supabase.co',
+          'https://xyz.supabase.co///',
         ),
       ).toBe('https://xyz.supabase.co/storage/v1/object/public/event_covers/covers/pic.jpg');
     });
 
-    it('returns default fallback image if key is null', () => {
+    it('falls back to origin url if supabase url is empty', () => {
+      const origVite = process.env.VITE_SUPABASE_URL;
+      const origNext = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.VITE_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+      try {
+        expect(buildAbsoluteImageUrl('covers/pic.jpg', 'https://welcomehub.com', '')).toBe(
+          'https://welcomehub.com/covers/pic.jpg',
+        );
+      } finally {
+        if (origVite) process.env.VITE_SUPABASE_URL = origVite;
+        if (origNext) process.env.NEXT_PUBLIC_SUPABASE_URL = origNext;
+      }
+    });
+
+    it('returns default fallback image if key is null or undefined', () => {
       expect(buildAbsoluteImageUrl(null, 'https://welcomehub.com')).toBe(
+        `https://welcomehub.com${DEFAULT_OG_METADATA.fallbackImageRelativePath}`,
+      );
+      expect(buildAbsoluteImageUrl(undefined, 'https://welcomehub.com')).toBe(
         `https://welcomehub.com${DEFAULT_OG_METADATA.fallbackImageRelativePath}`,
       );
     });
@@ -210,11 +232,32 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       expect(meta.twitterCard).toBe('summary_large_image');
     });
 
-    it('falls back to site defaults when event is null', () => {
+    it('handles event record with null description and default options', () => {
+      const meta = buildEventOgMetadata(
+        {
+          title: 'Sunday Worship',
+          description: null,
+          cover_image_key: null,
+        },
+        'https://welcomehub.com/events/sunday-worship/register',
+      );
+
+      expect(meta.title).toBe('Sunday Worship | Welcome Hub');
+      expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
+      expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-512x512.png');
+    });
+
+    it('falls back to site defaults when event is null or undefined', () => {
       const meta = buildEventOgMetadata(null, 'https://welcomehub.com/events/unknown/register');
       expect(meta.title).toBe(DEFAULT_OG_METADATA.title);
       expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
       expect(meta.imageUrl).toBe('https://welcomehub.com/android-chrome-512x512.png');
+
+      const metaUndef = buildEventOgMetadata(
+        undefined,
+        'https://welcomehub.com/events/unknown/register',
+      );
+      expect(metaUndef.title).toBe(DEFAULT_OG_METADATA.title);
     });
   });
 
@@ -236,10 +279,31 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       expect(meta.twitterCard).toBe('summary_large_image');
     });
 
-    it('falls back to site defaults when form is null', () => {
+    it('handles form record with null description and custom app name', () => {
+      const meta = buildFormOgMetadata(
+        {
+          title: 'Feedback Form',
+          description: null,
+        },
+        'https://welcomehub.com/forms/feedback-form/submit',
+        { appName: 'Custom Hub' },
+      );
+
+      expect(meta.title).toBe('Feedback Form | Custom Hub');
+      expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
+      expect(meta.siteName).toBe('Custom Hub');
+    });
+
+    it('falls back to site defaults when form is null or undefined', () => {
       const meta = buildFormOgMetadata(null, 'https://welcomehub.com/forms/missing/submit');
       expect(meta.title).toBe(DEFAULT_OG_METADATA.title);
       expect(meta.description).toBe(DEFAULT_OG_METADATA.description);
+
+      const metaUndef = buildFormOgMetadata(
+        undefined,
+        'https://welcomehub.com/forms/missing/submit',
+      );
+      expect(metaUndef.title).toBe(DEFAULT_OG_METADATA.title);
     });
   });
 
@@ -260,7 +324,40 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       expect(tags).toContain(
         '<meta property="og:image" content="https://example.com/image.png" />',
       );
+      expect(tags).toContain(
+        '<meta property="og:image:secure_url" content="https://example.com/image.png" />',
+      );
+      expect(tags).toContain('<meta property="og:image:type" content="image/png" />');
       expect(tags).toContain('<meta name="twitter:card" content="summary_large_image" />');
+    });
+
+    it('handles optional fields fallbacks and non-secure or empty imageUrl', () => {
+      const tagsWithoutImage = generateOgMetaTagString({
+        title: 'Minimal Event',
+        description: 'Minimal Description',
+        imageUrl: '',
+        url: 'https://example.com/event',
+      });
+
+      expect(tagsWithoutImage).toContain('<meta property="og:type" content="website" />');
+      expect(tagsWithoutImage).toContain('<meta property="og:site_name" content="Welcome Hub" />');
+      expect(tagsWithoutImage).toContain(
+        '<meta name="twitter:card" content="summary_large_image" />',
+      );
+      expect(tagsWithoutImage).not.toContain('og:image');
+
+      const tagsWithHttpJpg = generateOgMetaTagString({
+        title: 'Jpeg Event',
+        description: 'Jpeg Description',
+        imageUrl: 'http://example.com/banner.jpg',
+        url: 'http://example.com/event',
+      });
+
+      expect(tagsWithHttpJpg).toContain(
+        '<meta property="og:image" content="http://example.com/banner.jpg" />',
+      );
+      expect(tagsWithHttpJpg).not.toContain('og:image:secure_url');
+      expect(tagsWithHttpJpg).toContain('<meta property="og:image:type" content="image/jpeg" />');
     });
   });
 
@@ -302,6 +399,31 @@ describe('api/og Serverless Function & SEO Helpers', () => {
       );
       expect(result).toContain('<meta name="twitter:card" content="summary_large_image" />');
       expect(result).toContain('</head>');
+    });
+
+    it('injects into head when title tag is missing', () => {
+      const templateHtml = `<!doctype html><html><head><meta charset="UTF-8" /></head><body></body></html>`;
+      const meta = {
+        title: 'No Title Event',
+        description: 'Description',
+        imageUrl: 'https://example.com/img.png',
+        url: 'https://example.com',
+      };
+      const result = injectMetaTags(templateHtml, meta);
+      expect(result).toContain('<head>\n    <title>No Title Event</title>');
+    });
+
+    it('appends to html when both title and head are missing', () => {
+      const templateHtml = `<div>Just raw body</div>`;
+      const meta = {
+        title: 'Raw Event',
+        description: 'Description',
+        imageUrl: '',
+        url: 'https://example.com',
+      };
+      const result = injectMetaTags(templateHtml, meta);
+      expect(result).toContain('<div>Just raw body</div>\n');
+      expect(result).toContain('<meta property="og:title" content="Raw Event" />');
     });
   });
 
@@ -567,6 +689,202 @@ describe('api/og Serverless Function & SEO Helpers', () => {
             Origin: 'https://www.welcomehub.app',
           }),
         }),
+      );
+    });
+
+    it('handles fetchEventMetadataForOg edge cases (missing slug, empty supabaseUrl, non-ok response, error)', async () => {
+      expect(await fetchEventMetadataForOg('')).toBeNull();
+
+      const origUrl = process.env.VITE_SUPABASE_URL;
+      delete process.env.VITE_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_URL;
+
+      try {
+        expect(await fetchEventMetadataForOg('test-event')).toBeNull();
+      } finally {
+        if (origUrl) process.env.VITE_SUPABASE_URL = origUrl;
+      }
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      });
+      expect(await fetchEventMetadataForOg('missing-event')).toBeNull();
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: false }),
+      });
+      expect(await fetchEventMetadataForOg('failed-event')).toBeNull();
+
+      global.fetch = vi.fn().mockRejectedValue(new Error('Fetch timeout'));
+      expect(await fetchEventMetadataForOg('timeout-event')).toBeNull();
+    });
+
+    it('handles fetchFormMetadataForOg edge cases (missing slug, empty supabaseUrl, non-ok response, error)', async () => {
+      expect(await fetchFormMetadataForOg('')).toBeNull();
+
+      const origUrl = process.env.VITE_SUPABASE_URL;
+      delete process.env.VITE_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_URL;
+
+      try {
+        expect(await fetchFormMetadataForOg('test-form')).toBeNull();
+      } finally {
+        if (origUrl) process.env.VITE_SUPABASE_URL = origUrl;
+      }
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
+      expect(await fetchFormMetadataForOg('server-error-form')).toBeNull();
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: false }),
+      });
+      expect(await fetchFormMetadataForOg('failed-form')).toBeNull();
+
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+      expect(await fetchFormMetadataForOg('network-error-form')).toBeNull();
+    });
+
+    it('aborts fetch on timeout in fetchEventMetadataForOg and fetchFormMetadataForOg', async () => {
+      vi.useFakeTimers();
+      try {
+        global.fetch = vi.fn().mockImplementation((_url, options) => {
+          return new Promise((_resolve, reject) => {
+            options?.signal?.addEventListener('abort', () => {
+              reject(new Error('AbortError'));
+            });
+          });
+        });
+
+        const eventPromise = fetchEventMetadataForOg('timeout-event');
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(await eventPromise).toBeNull();
+
+        const formPromise = fetchFormMetadataForOg('timeout-form');
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(await formPromise).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('handleOgRequest uses route param, pathname fallback, and outContext for forms', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-form')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              form: { title: 'Signup Form', description: null },
+            }),
+          };
+        }
+        if (urlStr.includes('/index.html')) {
+          return { ok: false };
+        }
+        return { ok: true, json: async () => ({}) };
+      });
+
+      const outContext = { isFound: false };
+      const html = await handleOgRequest(
+        'https://www.welcomehub.app/forms/signup-form/submit',
+        undefined,
+        outContext,
+      );
+
+      expect(outContext.isFound).toBe(true);
+      expect(html).toContain('<title>Signup Form | Welcome Hub</title>');
+    });
+
+    it('handler supports array headers, array query, missing headers, and error handling for Node responses', async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes('/get-public-event')) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              event: { title: 'Array Event', description: 'Desc', cover_image_key: null },
+            }),
+          };
+        }
+        return { ok: true, text: async () => '<html><head></head><body></body></html>' };
+      });
+
+      let status = 0;
+      let body = '';
+      const headersMap: Record<string, string> = {};
+      const fakeRes = {
+        status(code: number) {
+          status = code;
+          return this;
+        },
+        setHeader(k: string, v: string) {
+          headersMap[k] = v;
+          return this;
+        },
+        send(b: string) {
+          body = b;
+        },
+      };
+
+      const arrayReq = {
+        query: { route: ['/events/array-event/register'] },
+        headers: {
+          'x-forwarded-host': ['custom-array-host.com'],
+          'x-forwarded-proto': ['https'],
+        },
+      };
+
+      await handler(arrayReq, fakeRes);
+      expect(status).toBe(200);
+      expect(body).toContain('<title>Array Event | Welcome Hub</title>');
+
+      // Test default headers fallback when nodeReq has no headers/url
+      const minimalReq = { query: {} };
+      const minimalRes = {
+        status(code: number) {
+          status = code;
+          return this;
+        },
+        setHeader(k: string, v: string) {
+          headersMap[k] = v;
+          return this;
+        },
+        send(b: string) {
+          body = b;
+        },
+      };
+      await handler(minimalReq, minimalRes);
+      expect(status).toBe(200);
+
+      // Test error handling branch for Node response
+      const throwingReq = {
+        query: { route: 'http://:80' },
+        headers: { host: 'www.welcomehub.app' },
+        url: '/api/og',
+      };
+      await handler(throwingReq, fakeRes);
+      expect(status).toBe(200);
+      expect(headersMap['Cache-Control']).toBe('no-cache, no-store, max-age=0, must-revalidate');
+      expect(body).toContain('<title>Welcome Hub</title>');
+
+      // Test error handling branch for Standard Request
+      const throwingStandardReq = new Request(
+        'https://www.welcomehub.app/api/og?route=http%3A%2F%2F%3A80',
+      );
+      const errorResp = (await handler(throwingStandardReq)) as Response;
+      expect(errorResp.status).toBe(200);
+      expect(errorResp.headers.get('Cache-Control')).toBe(
+        'no-cache, no-store, max-age=0, must-revalidate',
       );
     });
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog } from '@/components/ui/Dialog';
 import { useDeleteFormFieldMutation, useSaveFormFieldMutation } from '@/hooks/domain/forms';
+import type { ApproverUserItem } from '@/lib/domain/auth';
 import {
   fieldTypeHasDateValidation,
   fieldTypeHasMultiSelectValidation,
@@ -37,6 +38,7 @@ type FormFieldEditPanelProps = {
   formStatus: FormStatus;
   field: FormField | null;
   onClose: () => void;
+  existingFields?: FormField[];
 };
 
 function fieldToFormValues(field: FormField): FormFieldFormValues {
@@ -62,11 +64,19 @@ function fieldToFormValues(field: FormField): FormFieldFormValues {
     val_max_selections: rules.max_selections != null ? String(rules.max_selections) : '',
     val_min_date: typeof rules.min_date === 'string' ? rules.min_date : '',
     val_max_date: typeof rules.max_date === 'string' ? rules.max_date : '',
+    val_approver_email: typeof rules.approver_email === 'string' ? rules.approver_email : '',
+    val_approver_name: typeof rules.approver_name === 'string' ? rules.approver_name : '',
+    val_approver_user_id: typeof rules.approver_user_id === 'string' ? rules.approver_user_id : '',
   };
 }
 
 function toFormValidationRules(values: FormFieldFormValues): Record<string, unknown> {
   const rules: Record<string, unknown> = {};
+  if (values.field_type === 'required_approval') {
+    if (values.val_approver_email) rules.approver_email = values.val_approver_email;
+    if (values.val_approver_name) rules.approver_name = values.val_approver_name;
+    if (values.val_approver_user_id) rules.approver_user_id = values.val_approver_user_id;
+  }
   if (values.val_min_length) rules.min_length = parseInt(values.val_min_length, 10);
   if (values.val_max_length) rules.max_length = parseInt(values.val_max_length, 10);
   if (values.val_pattern) rules.pattern = values.val_pattern;
@@ -94,9 +104,22 @@ export function FormFieldEditPanel({
   formStatus,
   field,
   onClose,
+  existingFields,
 }: FormFieldEditPanelProps) {
   const isEditing = field !== null;
   const isDraft = formStatus === 'draft';
+
+  const disabledApproverEmails = useMemo(() => {
+    return (existingFields ?? [])
+      .filter((f) => f.id !== field?.id && f.field_type === 'required_approval')
+      .map((f) => {
+        const rules = (f.validation_rules ?? {}) as Record<string, unknown>;
+        return typeof rules.approver_email === 'string'
+          ? rules.approver_email.trim().toLowerCase()
+          : '';
+      })
+      .filter(Boolean);
+  }, [existingFields, field?.id]);
 
   const saveFieldMutation = useSaveFormFieldMutation(formId);
   const deleteFieldMutation = useDeleteFormFieldMutation(formId);
@@ -138,7 +161,19 @@ export function FormFieldEditPanel({
     selectedFieldType as EventFieldTypeEnum,
   );
   const showDateValidation = fieldTypeHasDateValidation(selectedFieldType as EventFieldTypeEnum);
-  const showValidationSection = fieldTypeHasValidation(selectedFieldType as EventFieldTypeEnum);
+  const showApprovalValidation = selectedFieldType === 'required_approval';
+  const showValidationSection =
+    fieldTypeHasValidation(selectedFieldType as EventFieldTypeEnum) || showApprovalValidation;
+  const approverEmail = useWatch({ control, name: 'val_approver_email' });
+
+  function handleApproverChange(approver: ApproverUserItem | null) {
+    setValue('val_approver_email', approver?.email ?? '', {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('val_approver_name', approver?.name ?? '', { shouldDirty: true });
+    setValue('val_approver_user_id', approver?.auth_user_id ?? '', { shouldDirty: true });
+  }
 
   function handleTypeSelect(type: EventFieldTypeEnum) {
     setValue('field_type', type as FormFieldFormValues['field_type'], {
@@ -156,9 +191,26 @@ export function FormFieldEditPanel({
     setValue('val_max_selections', '');
     setValue('val_min_date', '');
     setValue('val_max_date', '');
+    setValue('val_approver_email', '');
+    setValue('val_approver_name', '');
+    setValue('val_approver_user_id', '');
+
+    if (type === 'required_approval') {
+      setValue('is_required', true, { shouldDirty: true, shouldValidate: true });
+      setValue('label', 'Required Approval', { shouldDirty: true, shouldValidate: true });
+    }
   }
 
   async function onSubmit(values: FormFieldFormValues) {
+    if (
+      values.field_type === 'required_approval' &&
+      values.val_approver_email &&
+      disabledApproverEmails.includes(values.val_approver_email.trim().toLowerCase())
+    ) {
+      toast.error('This approver is already assigned to another field on this form.');
+      return;
+    }
+
     const normalizedOptions = showOptions
       ? values.options.map((o) => ({ label: o.label, value: o.value }))
       : [];
@@ -295,6 +347,12 @@ export function FormFieldEditPanel({
                 showRatingValidation={showRatingValidation}
                 showMultiSelectValidation={showMultiSelectValidation}
                 showDateValidation={showDateValidation}
+                showApprovalValidation={showApprovalValidation}
+                approverEmail={approverEmail}
+                onApproverChange={handleApproverChange}
+                disabledApproverEmails={disabledApproverEmails}
+                approverError={errors.val_approver_email?.message}
+                disabled={!isDraft}
                 register={register}
               />
             )}

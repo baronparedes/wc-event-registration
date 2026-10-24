@@ -4,6 +4,7 @@ import { Check, ClipboardCopy } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button, Dialog } from '@/components/ui';
+import { Badge } from '@/components/ui/Badge';
 import type { FormSubmission, FormSubmissionAnswer } from '@/lib/domain/forms';
 
 interface SubmissionDetailDialogProps {
@@ -23,7 +24,33 @@ function formatDate(dateString: string): string {
   });
 }
 
+function renderSubmissionStatusBadge(status: string) {
+  switch (status) {
+    case 'pending_approval':
+      return <Badge variant="secondary">Pending Approval</Badge>;
+    case 'approved':
+      return <Badge variant="default">Approved</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive">Rejected</Badge>;
+    case 'cancelled':
+      return <Badge variant="outline">Cancelled</Badge>;
+    default:
+      return <Badge variant="default">Submitted</Badge>;
+  }
+}
+
 function formatAnswerValue(ans: FormSubmissionAnswer): string {
+  if (ans.form_fields?.field_type === 'required_approval') {
+    const rules = (ans.form_fields.validation_rules ?? {}) as Record<string, unknown>;
+    const name = typeof rules.approver_name === 'string' ? rules.approver_name : null;
+    const email = typeof rules.approver_email === 'string' ? rules.approver_email : null;
+    const reviewer = [name, email && name ? `(${email})` : email].filter(Boolean).join(' ');
+
+    let status = 'Pending Approval';
+    if (ans.answer_text === 'approved') status = 'Approved';
+    if (ans.answer_text === 'rejected' || ans.answer_text === 'declined') status = 'Rejected';
+    return reviewer ? `${status} (Reviewer: ${reviewer})` : status;
+  }
   if (
     ans.form_fields?.field_type === 'rating' &&
     ans.answer_number !== null &&
@@ -122,6 +149,7 @@ export function SubmissionDetailDialog({
             >
               {submission.source}
             </span>
+            {renderSubmissionStatusBadge(submission.status)}
             <span>
               {respondentName} • Submitted on {formatDate(submission.submitted_at)}
             </span>
@@ -138,6 +166,10 @@ export function SubmissionDetailDialog({
               Respondent Information
             </h3>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted">Status</dt>
+                <dd className="mt-0.5">{renderSubmissionStatusBadge(submission.status)}</dd>
+              </div>
               <div>
                 <dt className="text-xs text-muted">Name</dt>
                 <dd className="mt-0.5 text-sm font-medium text-text">{respondentName}</dd>
@@ -197,6 +229,21 @@ export function SubmissionDetailDialog({
                   const label = ans.form_fields?.label || ans.form_fields?.field_key || 'Question';
                   const fieldType = ans.form_fields?.field_type?.replace(/_/g, ' ') || 'text';
                   const formattedVal = formatAnswerValue(ans);
+                  const isApproval = ans.form_fields?.field_type === 'required_approval';
+                  const rules = (ans.form_fields?.validation_rules ?? {}) as Record<
+                    string,
+                    unknown
+                  >;
+                  const approverName =
+                    typeof rules.approver_name === 'string' ? rules.approver_name : null;
+                  const approverEmail =
+                    typeof rules.approver_email === 'string' ? rules.approver_email : null;
+                  const reviewerLabel = [
+                    approverName,
+                    approverEmail && approverName ? `(${approverEmail})` : approverEmail,
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
 
                   return (
                     <div
@@ -209,9 +256,27 @@ export function SubmissionDetailDialog({
                           {fieldType}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm whitespace-pre-wrap text-text/90">
-                        {formattedVal}
-                      </p>
+                      {isApproval ? (
+                        <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+                          {ans.answer_text === 'approved' ? (
+                            <Badge variant="default">Approved</Badge>
+                          ) : ans.answer_text === 'rejected' || ans.answer_text === 'declined' ? (
+                            <Badge variant="destructive">Rejected</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending Approval</Badge>
+                          )}
+                          {reviewerLabel && (
+                            <span className="text-xs text-muted">
+                              Designated Reviewer:{' '}
+                              <span className="font-medium text-text">{reviewerLabel}</span>
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm whitespace-pre-wrap text-text/90">
+                          {formattedVal}
+                        </p>
+                      )}
                     </div>
                   );
                 })}

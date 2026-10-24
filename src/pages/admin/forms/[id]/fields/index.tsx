@@ -104,6 +104,7 @@ export function AdminFormFieldsPage() {
                 formId={id}
                 formStatus={form.status}
                 field={panelField}
+                existingFields={fields ?? []}
                 onClose={closePanel}
               />
             )}

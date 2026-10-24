@@ -3,7 +3,13 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
-import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
+import {
+  AdminInfiniteScrollFooter,
+  AlertBanner,
+  Button,
+  FormSelectField,
+  SearchInputField,
+} from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormSubmissionsQuery } from '@/hooks/domain/forms';
 import { useDebounceSearch } from '@/hooks/utils';
@@ -13,6 +19,7 @@ import { FormNavigationLinks } from '@/pages/admin/forms/components';
 import { ExportSubmissionsButton, SubmissionDetailDialog, SubmissionsList } from './components';
 
 type SourceFilter = 'all' | 'member' | 'guest';
+type SubmissionStatusFilter = 'all' | 'pending_approval' | 'approved' | 'rejected' | 'submitted';
 
 export function AdminFormSubmissionsPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +35,7 @@ export function AdminFormSubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
   const { searchTerm, setSearchTerm, debouncedSearchTerm, clearSearch } = useDebounceSearch();
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<SubmissionStatusFilter>('all');
 
   const normalizedSearchTerm = debouncedSearchTerm.trim().toLowerCase();
 
@@ -36,6 +44,10 @@ export function AdminFormSubmissionsPage() {
 
     return rawSubmissions.filter((sub) => {
       if (sourceFilter !== 'all' && sub.source !== sourceFilter) {
+        return false;
+      }
+
+      if (statusFilter !== 'all' && sub.status !== statusFilter) {
         return false;
       }
 
@@ -61,7 +73,7 @@ export function AdminFormSubmissionsPage() {
         phone.includes(normalizedSearchTerm)
       );
     });
-  }, [rawSubmissions, normalizedSearchTerm, sourceFilter]);
+  }, [rawSubmissions, normalizedSearchTerm, sourceFilter, statusFilter]);
 
   const isLoading = formLoading || submissionsLoading;
   const error = formError || submissionsError;
@@ -84,7 +96,8 @@ export function AdminFormSubmissionsPage() {
   const isFormArchived = form?.status === 'archived';
   const totalCount = rawSubmissions?.length ?? 0;
   const filteredCount = filteredSubmissions.length;
-  const hasFilterActive = normalizedSearchTerm.length > 0 || sourceFilter !== 'all';
+  const hasFilterActive =
+    normalizedSearchTerm.length > 0 || sourceFilter !== 'all' || statusFilter !== 'all';
 
   const navLinks = form ? (
     <FormNavigationLinks formId={form.id} currentSection="submissions" />
@@ -150,13 +163,31 @@ export function AdminFormSubmissionsPage() {
       )}
 
       <AdminPageShell.Filters>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_auto_auto] sm:items-end">
-          <SearchInputField
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onClear={clearSearch}
-            placeholder="Search by respondent, member ID, or email"
-          />
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex-1">
+            <SearchInputField
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClear={clearSearch}
+              placeholder="Search by respondent, member ID, or email"
+            />
+          </div>
+
+          <div className="w-full sm:w-48">
+            <FormSelectField
+              id="submission-status-filter"
+              ariaLabel="Filter by status"
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val as SubmissionStatusFilter)}
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'pending_approval', label: 'Pending Approval' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'submitted', label: 'Submitted' },
+              ]}
+            />
+          </div>
 
           {/* Source Tabs */}
           <div className="flex items-center rounded-xl border border-border bg-background p-1">
@@ -201,6 +232,7 @@ export function AdminFormSubmissionsPage() {
             onClick={() => {
               clearSearch();
               setSourceFilter('all');
+              setStatusFilter('all');
             }}
             disabled={!hasFilterActive}
           >

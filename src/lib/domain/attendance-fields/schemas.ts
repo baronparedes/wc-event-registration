@@ -1,17 +1,29 @@
 import { z } from 'zod';
 
 import { VALIDATION_PATTERNS } from '@/config/constants';
-import {
-  FIELD_TYPES,
-  type PublicEventField,
-  buildDynamicFieldResponseSchema,
-} from '@/lib/domain/event-fields';
+import { type PublicEventField, buildDynamicFieldResponseSchema } from '@/lib/domain/event-fields';
 
-import type { AttendanceField } from './types';
+import type { AttendanceField, AttendanceFieldType } from './types';
 
-export const ATTENDANCE_FIELD_TYPES = FIELD_TYPES;
+export const ATTENDANCE_FIELD_TYPES: [AttendanceFieldType, ...AttendanceFieldType[]] = [
+  'text',
+  'textarea',
+  'number',
+  'email',
+  'phone',
+  'select',
+  'radio',
+  'checkbox',
+  'multi_select',
+  'multi_select_toggle',
+  'date',
+  'datetime',
+  'boolean',
+  'color_picker',
+  'rating',
+];
 
-export type AttendanceFieldTypeEnum = (typeof ATTENDANCE_FIELD_TYPES)[number];
+export type AttendanceFieldTypeEnum = AttendanceFieldType;
 
 const attendanceFieldOptionSchema = z.object({
   label: z.string().min(1, 'Option label is required'),

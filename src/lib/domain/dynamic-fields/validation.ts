@@ -440,6 +440,8 @@ export function buildSchemaForField(field: DynamicFieldLike): z.ZodType<unknown>
     case 'checkbox':
     case 'boolean':
       return buildBooleanSchema(field);
+    case 'required_approval':
+      return z.preprocess(coerceOptionalString, z.string().optional().default('pending_approval'));
     case 'textarea':
     case 'text':
     case 'color_picker':

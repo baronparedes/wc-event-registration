@@ -22,4 +22,5 @@ export {
   reorderFormFields,
   duplicateForm,
   submitFormSubmission,
+  fetchMemberFormSubmissions,
 } from './api';
