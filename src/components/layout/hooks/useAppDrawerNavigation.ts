@@ -144,6 +144,14 @@ export function useAppDrawerNavigation({
 
     const items: DrawerNavItem[] = [];
 
+    if (canRead) {
+      items.push({
+        to: ROUTE_PATHS.adminApprovals,
+        label: 'Approvals',
+        icon: CheckSquare,
+      });
+    }
+
     if (canReadDashboard) {
       items.push({
         to: ROUTE_PATHS.adminHubCalendar,
@@ -165,11 +173,6 @@ export function useAppDrawerNavigation({
         to: ROUTE_PATHS.adminForms,
         label: 'Manage Forms',
         icon: ClipboardList,
-      });
-      items.push({
-        to: ROUTE_PATHS.adminApprovals,
-        label: 'Approvals',
-        icon: CheckSquare,
       });
     }
 

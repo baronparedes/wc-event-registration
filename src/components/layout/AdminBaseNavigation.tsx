@@ -13,11 +13,11 @@ export function AdminBaseNavigation() {
 
   return (
     <AdminPageShell.SubNav>
-      <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
-      <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
       {canReadAdminData && (
         <AdminSubNavLink to={ROUTE_PATHS.adminApprovals}>Approvals</AdminSubNavLink>
       )}
+      <AdminSubNavLink to={ROUTE_PATHS.adminEvents}>Events</AdminSubNavLink>
+      <AdminSubNavLink to={ROUTE_PATHS.adminForms}>Forms</AdminSubNavLink>
       {canReadAdminMemberData && (
         <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
       )}
