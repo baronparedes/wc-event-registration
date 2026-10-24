@@ -74,3 +74,15 @@ export {
   getMetadataStringValue,
   extractPrimaryRole,
 } from './dashboard';
+export {
+  DGROUP_METADATA_KEYS,
+  DGROUP_CANDIDATE_KEYS,
+  isDGroupKey,
+  formatDGroupMemberSince,
+  detectDGroupStatus,
+  extractDGroupValues,
+  updateMetadataWithDGroupField,
+  type DGroupMetadataKeyType,
+  type DGroupStatusOption,
+  type DGroupValues,
+} from './dgroup';

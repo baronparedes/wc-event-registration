@@ -59,14 +59,14 @@ describe('MemberInfoTab', () => {
     expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
   });
 
-  it('promotes Civil Status, DGroup Leader, DGroup Status, and DGroup Member Since to Personal Details', () => {
+  it('promotes Civil Status to Personal Details and displays DGroup details in its own section', () => {
     const leaderName = faker.person.fullName();
     const member = makeAdminMember({
       extra_metadata: {
         civil_status: 'Married',
         dgroup_leader: leaderName,
-        dgroup_status: 'Active',
-        dgroup_member_since: '2020',
+        dgroup_status: 'leader',
+        dgroup_member_since: '2020-05-01',
       },
     });
 
@@ -76,14 +76,16 @@ describe('MemberInfoTab', () => {
     expect(screen.getByText('Civil Status')).toBeInTheDocument();
     expect(screen.getByText('Married')).toBeInTheDocument();
 
+    // First class DGroup section
+    expect(screen.getByText('Discipleship Group (DGroup)')).toBeInTheDocument();
     expect(screen.getByText('DGroup Leader')).toBeInTheDocument();
     expect(screen.getByText(leaderName)).toBeInTheDocument();
 
     expect(screen.getByText('DGroup Status')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Leader')).toBeInTheDocument();
 
-    expect(screen.getByText('DGroup Member Since')).toBeInTheDocument();
-    expect(screen.getByText('2020')).toBeInTheDocument();
+    expect(screen.getByText('Member Since')).toBeInTheDocument();
+    expect(screen.getByText('May-20')).toBeInTheDocument();
   });
 
   it('handles subscribing to push notifications successfully', async () => {

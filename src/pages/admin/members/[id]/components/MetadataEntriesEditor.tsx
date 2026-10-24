@@ -8,7 +8,7 @@ import type {
 } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
-import type { UpdateMemberInput } from '@/lib/domain/members';
+import { type UpdateMemberInput, isDGroupKey } from '@/lib/domain/members';
 
 type MetadataEntry = { key: string; value: string };
 
@@ -44,7 +44,7 @@ export function MetadataEntriesEditor({
 
   const sortedFields = [...fields]
     .map((field, index) => ({ field, index }))
-    .filter((f) => !SUNDAY_KEYS.includes(f.field.key))
+    .filter((f) => !SUNDAY_KEYS.includes(f.field.key) && !isDGroupKey(f.field.key))
     .sort((a, b) => a.field.key.localeCompare(b.field.key));
 
   return (

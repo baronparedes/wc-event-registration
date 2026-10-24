@@ -7,27 +7,11 @@ import { usePushSubscription } from '@/hooks/domain/notifications';
 import type { AdminMember } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
+import { DGroupDisplay } from './DGroupDisplay';
 import { SundayAvailabilityDisplay } from './SundayAvailabilityDisplay';
 
 const PROMOTED_METADATA_FIELDS = [
   { label: 'Civil Status', keys: ['civil_status', 'civilstatus', 'Civil Status'] },
-  {
-    label: 'DGroup Leader',
-    keys: ['dgroup_leader', 'dgroupleader', 'd_group_leader', 'DGroup Leader'],
-  },
-  {
-    label: 'DGroup Status',
-    keys: ['dgroup_status', 'dgroupstatus', 'd_group_status', 'DGroup Status'],
-  },
-  {
-    label: 'DGroup Member Since',
-    keys: [
-      'dgroup_member_since',
-      'dgroupmember since',
-      'd_group_member_since',
-      'DGroup Member Since',
-    ],
-  },
 ] as const;
 
 function getMetadataValue(
@@ -104,6 +88,13 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
               ),
           )}
         </dl>
+      </SectionCard>
+
+      <SectionCard
+        title="Discipleship Group (DGroup)"
+        subtitle="Discipleship group membership, leader contact details, and multiplication schedule."
+      >
+        <DGroupDisplay metadata={metadata} />
       </SectionCard>
 
       <SectionCard title="Sunday Availability">
