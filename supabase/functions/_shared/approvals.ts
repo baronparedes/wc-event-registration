@@ -125,6 +125,13 @@ export async function enqueueApprovalReviewEmail(
     detailsMap[key] = item.value;
   }
 
+  const detailsHtml = details
+    .map(
+      (item) =>
+        `<div style="margin: 0 0 6px 0;"><span style="color: #71717a; font-weight: 600;">${item.label}:</span><strong style="color: #0f172a; margin-left: 6px;">${item.value}</strong></div>`,
+    )
+    .join('');
+
   const { messageId, error } = await enqueueEmailNotification(supabase, {
     recipient: assignedToEmail,
     category: 'approval',
@@ -143,6 +150,7 @@ export async function enqueueApprovalReviewEmail(
       review_url: reviewUrl,
       action_url: reviewUrl,
       action_text: 'Review & Take Action',
+      details_html: detailsHtml,
       ...detailsMap,
     },
   });

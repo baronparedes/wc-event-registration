@@ -417,25 +417,16 @@
                                                   >{{{applicant_email}}}</strong
                                                 >
                                               </div>
-                                              {{/applicant_email}} {{#member}}
+                                              {{/applicant_email}} {{#submitted_at}}
                                               <div style="margin: 0 0 6px 0">
                                                 <span style="color: #71717a; font-weight: 600"
-                                                  >Volunteer:</span
+                                                  >Submitted:</span
                                                 >
                                                 <strong style="color: #0f172a; margin-left: 6px"
-                                                  >{{{member}}}</strong
+                                                  >{{{submitted_at}}}</strong
                                                 >
                                               </div>
-                                              {{/member}} {{#dates}}
-                                              <div style="margin: 0 0 6px 0">
-                                                <span style="color: #71717a; font-weight: 600"
-                                                  >Leave Period:</span
-                                                >
-                                                <strong style="color: #0f172a; margin-left: 6px"
-                                                  >{{{dates}}}</strong
-                                                >
-                                              </div>
-                                              {{/dates}}
+                                              {{/submitted_at}} {{{details_html}}}
                                             </div>
                                           </td>
                                         </tr>
