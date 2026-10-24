@@ -1,5 +1,5 @@
 import { FileText, Share } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Badge, Button, MarkdownRenderer } from '@/components/ui';
@@ -17,29 +17,9 @@ type FormCardProps = {
  * Used in the hub page to show available forms.
  */
 export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCardProps) {
-  const navigate = useNavigate();
   const submitPath = submissionPath ?? toRoute('formSubmit', { slug: form.slug });
   const shareUrl = new URL(submitPath, window.location.origin).toString();
   const isOpen = form.status === 'published';
-
-  const handleCardClick = () => {
-    if (!isOpen) {
-      return;
-    }
-
-    navigate(submitPath);
-  };
-
-  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!isOpen || e.target !== e.currentTarget) {
-      return;
-    }
-
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      navigate(submitPath);
-    }
-  };
 
   const handleShareClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -73,13 +53,7 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
   };
 
   return (
-    <div
-      className={`group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${isOpen ? 'cursor-pointer' : ''}`}
-      onClick={handleCardClick}
-      onKeyDown={handleCardKeyDown}
-      role={isOpen ? 'link' : undefined}
-      tabIndex={isOpen ? 0 : undefined}
-    >
+    <article className="group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md [container-type:inline-size]">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-6 -bottom-6 -z-10 text-primary opacity-[0.04] dark:opacity-[0.06] select-none"
@@ -95,10 +69,19 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
           </div>
         </div>
         <h3 className="break-words font-heading text-xl font-bold leading-tight text-text [overflow-wrap:anywhere]">
-          {form.title}
+          {isOpen ? (
+            <Link
+              to={submitPath}
+              className="focus:outline-none before:absolute before:inset-0 before:z-0 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {form.title}
+            </Link>
+          ) : (
+            form.title
+          )}
         </h3>
         {form.description && (
-          <div className="cursor-default" onClick={(clickEvent) => clickEvent.stopPropagation()}>
+          <div className="relative z-20">
             <MarkdownRenderer
               content={form.description}
               className="text-sm prose-p:text-muted prose-p:leading-relaxed"
@@ -106,7 +89,7 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
           </div>
         )}
         {isOpen && (
-          <div className="mt-auto flex items-center gap-2">
+          <div className="relative z-20 mt-auto flex items-center gap-2">
             <Button
               asChild
               className="flex-1 inline-flex min-h-[44px] items-center justify-center font-semibold shadow-xs"
@@ -127,6 +110,6 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }

@@ -102,39 +102,6 @@ describe('FormCard', () => {
     expect(screen.queryByRole('button', { name: /Share Test Form/i })).not.toBeInTheDocument();
   });
 
-  it('navigates when an open card is clicked or activated with the keyboard', () => {
-    render(<FormCard form={mockForm} />);
-
-    const card = screen.getAllByRole('link')[0];
-    fireEvent.click(card);
-    fireEvent.keyDown(card, { key: 'Enter' });
-    fireEvent.keyDown(card, { key: ' ' });
-
-    expect(mockNavigate).toHaveBeenCalledTimes(3);
-    expect(mockNavigate).toHaveBeenCalledWith('/forms/test-form/submit');
-  });
-
-  it('does not navigate on unhandled key press when open', () => {
-    render(<FormCard form={mockForm} />);
-
-    const card = screen.getAllByRole('link')[0];
-    fireEvent.keyDown(card, { key: 'Escape' });
-
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it('does not navigate when a closed/draft card is clicked or keydown activated', () => {
-    const draftForm = { ...mockForm, status: 'draft' as const };
-    const { container } = render(<FormCard form={draftForm} />);
-    const card = container.firstElementChild as HTMLElement;
-
-    fireEvent.click(card);
-    fireEvent.keyDown(card, { key: 'Enter' });
-    fireEvent.keyDown(card, { key: ' ' });
-
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
   it('copies the form link and does not navigate when share is clicked (no native share)', async () => {
     mockClipboardWriteText.mockResolvedValueOnce(undefined);
 

@@ -79,7 +79,7 @@ jobs:
           --error
           --metrics=off
           --jobs 1
-          --max-memory 2000
+          --max-memory 5000
           --max-target-bytes 1000000
           --exclude "node_modules"
           --exclude "dist"
