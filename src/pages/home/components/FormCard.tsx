@@ -53,9 +53,7 @@ export function FormCard({ form, submissionPath, statusLabel = 'Open' }: FormCar
   };
 
   return (
-    <article
-      className="group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md [container-type:inline-size]"
-    >
+    <article className="group relative isolate flex self-start flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-shadow hover:shadow-md [container-type:inline-size]">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-6 -bottom-6 -z-10 text-primary opacity-[0.04] dark:opacity-[0.06] select-none"

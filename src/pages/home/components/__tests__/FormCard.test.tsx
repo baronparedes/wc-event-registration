@@ -102,7 +102,6 @@ describe('FormCard', () => {
     expect(screen.queryByRole('button', { name: /Share Test Form/i })).not.toBeInTheDocument();
   });
 
-
   it('copies the form link and does not navigate when share is clicked (no native share)', async () => {
     mockClipboardWriteText.mockResolvedValueOnce(undefined);
 
