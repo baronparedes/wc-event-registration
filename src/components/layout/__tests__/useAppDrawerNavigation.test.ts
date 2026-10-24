@@ -139,10 +139,10 @@ describe('useAppDrawerNavigation', () => {
 
     expect(result.current.mainNavItems.map((i) => i.label)).toEqual(['Hub', 'My Profile']);
     expect(result.current.adminNavItems.map((i) => i.label)).toEqual([
+      'Approvals',
       'Hub Calendar',
       'Manage Events',
       'Manage Forms',
-      'Approvals',
       'Manage Members',
       'Manage Services',
       'Settings',
@@ -209,10 +209,10 @@ describe('useAppDrawerNavigation', () => {
     );
 
     expect(result.current.adminNavItems.map((i) => i.label)).toEqual([
+      'Approvals',
       'Hub Calendar',
       'Manage Events',
       'Manage Forms',
-      'Approvals',
       'Manage Members',
       'Manage Services',
       'Chat with Hub AI',
