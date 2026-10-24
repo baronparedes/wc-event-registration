@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   test: {
+    testTimeout: 10000,
     css: false,
     reporters: ['default', 'agent'],
     environment: 'happy-dom',

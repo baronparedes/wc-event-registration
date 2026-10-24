@@ -4,10 +4,32 @@ import { supabase } from '@/lib/infrastructure';
 
 import {
   cancelServiceExcuse,
+  createServiceLayout,
+  createServiceSeat,
+  deleteServiceAttendance,
+  deleteServiceSeat,
+  fetchActiveServiceLayout,
   fetchAllCommitmentDashboardStatsForExport,
+  fetchCommitmentDashboardStatsPage,
   fetchMemberServiceExcuses,
+  fetchMissedServiceCommitments,
   fetchServiceAttendancePage,
+  fetchServiceDashboardStats,
+  fetchServiceExceptionDates,
+  fetchServiceLayouts,
+  fetchServiceSeats,
+  fetchServiceUsersByNameFilter,
+  fetchServiceUsersByRfids,
+  fetchServiceWeeklyBriefByDate,
+  fetchServiceWeeklyBriefs,
+  fetchUserCommitmentHistory,
+  fetchVolunteerAttendanceLog,
+  recordServiceAttendance,
   submitServiceExcuse,
+  triggerWeeklySundayDebrief,
+  updateServiceAttendance,
+  updateServiceLayout,
+  updateServiceSeat,
 } from '../api';
 
 const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
@@ -230,6 +252,498 @@ describe('service API', () => {
         'request_date.lte.2026-10-31,start_date.lte.2026-10-31',
       );
       expect(result).toEqual(mockList);
+    });
+  });
+
+  describe('service layouts', () => {
+    it('fetches service layouts and handles empty list and database errors', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [{ id: 'layout-1' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await fetchServiceLayouts();
+      expect(result).toEqual([{ id: 'layout-1' }]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceLayouts()).toEqual([]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: { message: 'db error' } });
+      await expect(fetchServiceLayouts()).rejects.toThrow(
+        'Failed to fetch service layouts: db error',
+      );
+    });
+
+    it('fetches active service layout or returns null, and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'active-layout' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchActiveServiceLayout()).toEqual({ id: 'active-layout' });
+
+      query.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchActiveServiceLayout()).toBeNull();
+
+      query.maybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'layout query failed' },
+      });
+      await expect(fetchActiveServiceLayout()).rejects.toThrow(
+        'Failed to fetch active service layout: layout query failed',
+      );
+    });
+
+    it('creates service layout with default values and throws on error', async () => {
+      const query = {
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'new-layout' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await createServiceLayout({ description: 'Main Hall' });
+      expect(result).toEqual({ id: 'new-layout' });
+      expect(query.insert).toHaveBeenCalledWith({
+        description: 'Main Hall',
+        is_active: true,
+        metadata: {},
+      });
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'insert error' } });
+      await expect(createServiceLayout({ description: 'Main Hall' })).rejects.toThrow(
+        'Failed to create service layout: insert error',
+      );
+    });
+
+    it('updates service layout and throws on error', async () => {
+      const query = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: { id: 'layout-1', is_active: false }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await updateServiceLayout('layout-1', { is_active: false });
+      expect(result).toEqual({ id: 'layout-1', is_active: false });
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'update error' } });
+      await expect(updateServiceLayout('layout-1', { is_active: false })).rejects.toThrow(
+        'Failed to update service layout: update error',
+      );
+    });
+  });
+
+  describe('service seats', () => {
+    it('fetches service seats for layout and handles empty and error cases', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [{ id: 'seat-1' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceSeats('layout-1')).toEqual([{ id: 'seat-1' }]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceSeats('layout-1')).toEqual([]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: { message: 'seats error' } });
+      await expect(fetchServiceSeats('layout-1')).rejects.toThrow(
+        'Failed to fetch service seats: seats error',
+      );
+    });
+
+    it('creates service seat with default values and throws on error', async () => {
+      const query = {
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'seat-1' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await createServiceSeat({ layout_id: 'layout-1', table_number: 'Table 1' });
+      expect(result).toEqual({ id: 'seat-1' });
+      expect(query.insert).toHaveBeenCalledWith({
+        layout_id: 'layout-1',
+        table_number: 'Table 1',
+        area: null,
+        seat_number: null,
+        metadata: {},
+      });
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'seat error' } });
+      await expect(
+        createServiceSeat({ layout_id: 'layout-1', table_number: 'Table 1' }),
+      ).rejects.toThrow('Failed to create service seat: seat error');
+    });
+
+    it('updates service seat and throws on error', async () => {
+      const query = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'seat-1' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await updateServiceSeat('seat-1', { table_number: 'Table 2' })).toEqual({
+        id: 'seat-1',
+      });
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'update failed' } });
+      await expect(updateServiceSeat('seat-1', { table_number: 'Table 2' })).rejects.toThrow(
+        'Failed to update service seat: update failed',
+      );
+    });
+
+    it('deletes service seat and throws on error', async () => {
+      const query = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      await expect(deleteServiceSeat('seat-1')).resolves.toBeUndefined();
+
+      query.eq.mockResolvedValueOnce({ error: { message: 'delete failed' } });
+      await expect(deleteServiceSeat('seat-1')).rejects.toThrow(
+        'Failed to delete service seat: delete failed',
+      );
+    });
+  });
+
+  describe('service attendance records', () => {
+    it('records service attendance with defaults and throws on error', async () => {
+      const query = {
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'att-1' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await recordServiceAttendance({
+        user_id: 'user-1',
+        service_date: '2026-10-18',
+        time_slot: '9AM',
+      });
+      expect(result).toEqual({ id: 'att-1' });
+      expect(query.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 'user-1',
+          rfid: null,
+          service_date: '2026-10-18',
+          time_slot: '9AM',
+          is_walk_in: false,
+          is_override: false,
+          is_manual_entry: false,
+          service_seat_id: null,
+          metadata: {},
+        }),
+      );
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'record failed' } });
+      await expect(
+        recordServiceAttendance({ user_id: 'u', service_date: '2026-10-18', time_slot: '9AM' }),
+      ).rejects.toThrow('Failed to record service attendance: record failed');
+    });
+
+    it('updates service attendance and throws on error', async () => {
+      const query = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'att-1' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await updateServiceAttendance('att-1', { is_override: true })).toEqual({
+        id: 'att-1',
+      });
+
+      query.single.mockResolvedValueOnce({ data: null, error: { message: 'update failed' } });
+      await expect(updateServiceAttendance('att-1', { is_override: true })).rejects.toThrow(
+        'Failed to update service attendance: update failed',
+      );
+    });
+
+    it('deletes service attendance and throws on error', async () => {
+      const query = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      await expect(deleteServiceAttendance('att-1')).resolves.toBeUndefined();
+
+      query.eq.mockResolvedValueOnce({ error: { message: 'delete failed' } });
+      await expect(deleteServiceAttendance('att-1')).rejects.toThrow(
+        'Failed to delete service attendance record: delete failed',
+      );
+    });
+  });
+
+  describe('service users lookups & commitment history', () => {
+    it('fetches service users by RFIDs and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({
+          data: [{ id: 'u-1', member_id: 'RFID-1', full_name: 'Test Member' }],
+          error: null,
+        }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceUsersByRfids(['RFID-1'])).toEqual([
+        { id: 'u-1', member_id: 'RFID-1', full_name: 'Test Member' },
+      ]);
+
+      query.in.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceUsersByRfids(['RFID-1'])).toEqual([]);
+
+      query.in.mockResolvedValueOnce({ data: null, error: new Error('rfid query error') });
+      await expect(fetchServiceUsersByRfids(['RFID-1'])).rejects.toThrow('rfid query error');
+    });
+
+    it('fetches service users by name filter and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        or: vi.fn().mockResolvedValue({ data: [{ id: 'u-1' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceUsersByNameFilter('full_name.ilike.%Test%')).toEqual([
+        { id: 'u-1' },
+      ]);
+
+      query.or.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceUsersByNameFilter('full_name.ilike.%Test%')).toEqual([]);
+
+      query.or.mockResolvedValueOnce({ data: null, error: new Error('name query error') });
+      await expect(fetchServiceUsersByNameFilter('full_name.ilike.%Test%')).rejects.toThrow(
+        'name query error',
+      );
+    });
+
+    it('fetches user commitment history and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        then: (resolve: (v: unknown) => void) => resolve({ data: [{ id: 'c-1' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchUserCommitmentHistory('user-1')).toEqual([{ id: 'c-1' }]);
+
+      const errQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        then: (resolve: (v: unknown) => void) =>
+          resolve({ data: null, error: new Error('history failed') }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(errQuery as never);
+      await expect(fetchUserCommitmentHistory('user-1')).rejects.toThrow('history failed');
+    });
+
+    it('fetches service exception dates and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [{ exception_date: '2026-12-25' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceExceptionDates()).toEqual([{ exception_date: '2026-12-25' }]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceExceptionDates()).toEqual([]);
+
+      query.order.mockResolvedValueOnce({ data: null, error: new Error('exception dates failed') });
+      await expect(fetchServiceExceptionDates()).rejects.toThrow('exception dates failed');
+    });
+  });
+
+  describe('dashboard stats & RPCs', () => {
+    it('fetches service dashboard stats and throws on error', async () => {
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: { total: 100 }, error: null } as never);
+      expect(await fetchServiceDashboardStats({ p_year: 2026 })).toEqual({ total: 100 });
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'stats failed' },
+      } as never);
+      await expect(fetchServiceDashboardStats({ p_year: 2026 })).rejects.toThrow(
+        'Failed to fetch service dashboard stats: stats failed',
+      );
+    });
+
+    it('fetches missed service commitments and throws on error', async () => {
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: [{ user_id: 'u-1' }],
+        error: null,
+      } as never);
+      expect(await fetchMissedServiceCommitments({ p_year: 2026 })).toEqual([{ user_id: 'u-1' }]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } as never);
+      expect(await fetchMissedServiceCommitments({ p_year: 2026 })).toEqual([]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'missed failed' },
+      } as never);
+      await expect(fetchMissedServiceCommitments({ p_year: 2026 })).rejects.toThrow(
+        'Failed to fetch missed service commitments: missed failed',
+      );
+    });
+
+    it('fetches commitment dashboard stats page with filters and throws on error', async () => {
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: [{ id: 'stat-1' }],
+        error: null,
+      } as never);
+      const res = await fetchCommitmentDashboardStatsPage(
+        {
+          start_date: '2026-03-01',
+          end_date: '2026-03-31',
+          search_query: 'Test User',
+          role: 'Usher',
+          category: 'Member',
+        },
+        1,
+        10,
+      );
+      expect(res).toEqual([{ id: 'stat-1' }]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } as never);
+      expect(
+        await fetchCommitmentDashboardStatsPage(
+          { start_date: '2026-03-01', end_date: '2026-03-31' },
+          1,
+          10,
+        ),
+      ).toEqual([]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'page failed' },
+      } as never);
+      await expect(
+        fetchCommitmentDashboardStatsPage(
+          { start_date: '2026-03-01', end_date: '2026-03-31' },
+          1,
+          10,
+        ),
+      ).rejects.toThrow('Failed to fetch commitment dashboard stats: page failed');
+    });
+
+    it('handles empty first page in fetchAllCommitmentDashboardStatsForExport', async () => {
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } as never);
+      expect(
+        await fetchAllCommitmentDashboardStatsForExport(
+          { start_date: '2026-03-01', end_date: '2026-03-31' },
+          10,
+        ),
+      ).toEqual([]);
+    });
+
+    it('fetches volunteer attendance log and throws on error', async () => {
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [{ log: 1 }], error: null } as never);
+      expect(
+        await fetchVolunteerAttendanceLog({
+          user_id: 'u-1',
+          start_date: '2026-01-01',
+          end_date: '2026-01-31',
+        }),
+      ).toEqual([{ log: 1 }]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } as never);
+      expect(
+        await fetchVolunteerAttendanceLog({
+          user_id: 'u-1',
+          start_date: '2026-01-01',
+          end_date: '2026-01-31',
+        }),
+      ).toEqual([]);
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'log failed' },
+      } as never);
+      await expect(
+        fetchVolunteerAttendanceLog({
+          user_id: 'u-1',
+          start_date: '2026-01-01',
+          end_date: '2026-01-31',
+        }),
+      ).rejects.toThrow('Failed to fetch volunteer attendance log: log failed');
+    });
+  });
+
+  describe('weekly brief & debrief', () => {
+    it('triggers weekly sunday debrief with default and custom params', async () => {
+      mockCaller.mockResolvedValueOnce({ success: true, count: 5 });
+      expect(await triggerWeeklySundayDebrief()).toEqual({ success: true, count: 5 });
+      expect(mockCaller).toHaveBeenCalledWith({});
+
+      mockCaller.mockResolvedValueOnce({ success: true, count: 2 });
+      expect(await triggerWeeklySundayDebrief({ sunday_date: '2026-10-18' })).toEqual({
+        success: true,
+        count: 2,
+      });
+      expect(mockCaller).toHaveBeenCalledWith({ sunday_date: '2026-10-18' });
+    });
+
+    it('fetches service weekly briefs and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: [{ sunday_date: '2026-10-18' }], error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceWeeklyBriefs()).toEqual([{ sunday_date: '2026-10-18' }]);
+      expect(query.limit).toHaveBeenCalledWith(20);
+
+      query.limit.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceWeeklyBriefs(5)).toEqual([]);
+      expect(query.limit).toHaveBeenCalledWith(5);
+
+      query.limit.mockResolvedValueOnce({ data: null, error: { message: 'briefs failed' } });
+      await expect(fetchServiceWeeklyBriefs()).rejects.toThrow(
+        'Failed to fetch weekly briefs: briefs failed',
+      );
+    });
+
+    it('fetches service weekly brief by date or returns null, and throws on error', async () => {
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi
+          .fn()
+          .mockResolvedValue({ data: { sunday_date: '2026-10-18' }, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      expect(await fetchServiceWeeklyBriefByDate('2026-10-18')).toEqual({
+        sunday_date: '2026-10-18',
+      });
+
+      query.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      expect(await fetchServiceWeeklyBriefByDate('2026-10-18')).toBeNull();
+
+      query.maybeSingle.mockResolvedValueOnce({ data: null, error: { message: 'single failed' } });
+      await expect(fetchServiceWeeklyBriefByDate('2026-10-18')).rejects.toThrow(
+        'Failed to fetch weekly brief for 2026-10-18: single failed',
+      );
     });
   });
 });
