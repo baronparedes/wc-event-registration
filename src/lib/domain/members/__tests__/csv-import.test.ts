@@ -720,4 +720,101 @@ describe('buildMemberCsvImportPreview', () => {
     expect(preview.rows[1].operation).toBe('error');
     expect(preview.rows[1].errors.join(' ')).toContain('already targets this same member');
   });
+
+  it('computes field_changes accurately for updates and new_member_details for inserts', () => {
+    const existing = [
+      makeExistingMember({
+        id: 'member-1',
+        member_id: 'RFID-1',
+        first_name: 'Test John',
+        last_name: 'Test Doe',
+        nickname: 'Test JD',
+        email: 'old@example.com',
+        phone: '123',
+        date_of_birth: '1990-01-01',
+        role: 'Member',
+        category: 'Adults',
+        metadata: { first_sunday: '9AM', is_oic: false },
+      }),
+    ];
+
+    const rows = [
+      makePreparedRow({
+        row_number: 2,
+        member_id: 'RFID-1',
+        first_name: 'Test John',
+        last_name: 'Test Doe',
+        nickname: 'Test JD',
+        email: 'new@example.com',
+        phone: '999',
+        date_of_birth: '1990-01-01', // unchanged
+        role: 'Prayer Coach', // changed
+        category: 'Adults', // unchanged
+        metadata: { first_sunday: '12NN', is_oic: true },
+      }),
+      makePreparedRow({
+        row_number: 3,
+        member_id: 'RFID-99',
+        first_name: 'Test Alice',
+        last_name: 'Test Wonder',
+        nickname: 'Test Ali',
+        email: 'alice@example.com',
+        phone: '555',
+        date_of_birth: '2000-02-02',
+        role: 'Usher',
+        category: 'Youth',
+        metadata: { second_sunday: '3PM' },
+      }),
+    ];
+
+    const preview = buildMemberCsvImportPreview(rows, existing);
+
+    expect(preview.rows[0].operation).toBe('update');
+    expect(preview.rows[0].field_changes).toEqual([
+      {
+        field: 'role',
+        label: 'Role',
+        old_value: 'Member',
+        new_value: 'Prayer Coach',
+      },
+      {
+        field: 'email',
+        label: 'Email',
+        old_value: 'old@example.com',
+        new_value: 'new@example.com',
+      },
+      {
+        field: 'phone',
+        label: 'Phone',
+        old_value: '123',
+        new_value: '999',
+      },
+      {
+        field: 'first_sunday',
+        label: '1st Sunday Schedule',
+        old_value: '9AM',
+        new_value: '12NN',
+      },
+      {
+        field: 'is_oic',
+        label: 'Officer In Charge (OIC)',
+        old_value: 'false',
+        new_value: 'true',
+      },
+    ]);
+
+    expect(preview.rows[1].operation).toBe('insert');
+    expect(preview.rows[1].new_member_details).toEqual([
+      { field: 'member_id', label: 'RFID / Member ID', value: 'RFID-99' },
+      { field: 'first_name', label: 'First Name', value: 'Test Alice' },
+      { field: 'last_name', label: 'Last Name', value: 'Test Wonder' },
+      { field: 'nickname', label: 'Nickname', value: 'Test Ali' },
+      { field: 'role', label: 'Role', value: 'Usher' },
+      { field: 'category', label: 'Category', value: 'Youth' },
+      { field: 'email', label: 'Email', value: 'alice@example.com' },
+      { field: 'phone', label: 'Phone', value: '555' },
+      { field: 'date_of_birth', label: 'Date of Birth', value: '2000-02-02' },
+      { field: 'second_sunday', label: '2nd Sunday Schedule', value: '3PM' },
+    ]);
+  });
 });
