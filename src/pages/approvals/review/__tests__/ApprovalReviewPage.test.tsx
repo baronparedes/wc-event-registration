@@ -429,4 +429,44 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Decline Request/i })).toBeDisabled();
   });
+
+  it('renders required_approval field answers with status badge', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        entity_details: {
+          id: 'sub-1',
+          form_submission_answers: [
+            {
+              id: 'ans-1',
+              answer_text: 'pending_approval',
+              form_fields: {
+                label: 'Ministry Approval',
+                field_type: 'required_approval',
+              },
+            },
+            {
+              id: 'ans-2',
+              answer_text: 'approved',
+              form_fields: {
+                label: 'Finance Approval',
+                field_type: 'required_approval',
+              },
+            },
+          ],
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(screen.getByText('Ministry Approval')).toBeInTheDocument();
+    expect(screen.getByText('Pending Review')).toBeInTheDocument();
+    expect(screen.getByText('Finance Approval')).toBeInTheDocument();
+    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
+    expect(screen.queryByText('pending_approval')).not.toBeInTheDocument();
+  });
 });

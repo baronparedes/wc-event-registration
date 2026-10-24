@@ -61,6 +61,7 @@ export function FormSubmissionPage() {
     handleSubmitForm,
     isSubmitting,
     submitErrorMessage,
+    submitSuccessMessage,
     isSubmissionConfirmed,
     submissionResult,
     resetForm,
@@ -124,6 +125,7 @@ export function FormSubmissionPage() {
         <FormConfirmationStepCard
           submissionId={submissionResult.submission_id}
           status={submissionResult.status}
+          message={submitSuccessMessage}
           onReset={resetForm}
           onGoHome={goHome}
         />

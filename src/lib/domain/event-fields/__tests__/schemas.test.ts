@@ -968,4 +968,59 @@ describe('event-fields schemas', () => {
       );
     }
   });
+
+  it('validates required_approval in eventFieldFormSchema requiring an approver', () => {
+    const invalidForm = eventFieldFormSchema.safeParse({
+      field_key: 'head_approval',
+      label: 'Head Approval',
+      field_type: 'required_approval',
+      applicability: 'both',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '',
+      val_approver_email: '',
+    });
+    expect(invalidForm.success).toBe(false);
+    if (!invalidForm.success) {
+      expect(invalidForm.error.issues[0]?.message).toBe('Please select an approver.');
+    }
+
+    const validForm = eventFieldFormSchema.safeParse({
+      field_key: 'head_approval',
+      label: 'Head Approval',
+      field_type: 'required_approval',
+      applicability: 'both',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '',
+      val_approver_email: 'head@example.com',
+      val_approver_name: 'Department Head',
+      val_approver_user_id: 'head-uuid-123',
+    });
+    expect(validForm.success).toBe(true);
+  });
 });

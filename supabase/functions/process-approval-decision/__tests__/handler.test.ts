@@ -128,6 +128,7 @@ function mockFetch(
             success: true,
             approval_id: APPROVAL_ID,
             status: 'approved',
+            final_decision: 'approved',
           },
         ),
       );
@@ -287,10 +288,56 @@ Deno.test('process-approval-decision submit_decision rejects expired tokens with
 });
 
 Deno.test(
-  'process-approval-decision submit_decision successfully approves and triggers notification',
+  'process-approval-decision submit_decision does not trigger outcome email if submission decision is still pending',
   async () => {
     await withEnv(async () => {
-      const mock = mockFetch();
+      const mock = mockFetch({
+        rpcResult: {
+          success: true,
+          approval_id: APPROVAL_ID,
+          status: 'approved',
+          final_decision: null,
+        },
+      });
+      try {
+        const res = await handleProcessApprovalDecision(
+          createRequest({
+            action: 'submit_decision',
+            token: VALID_TOKEN,
+            decision: 'approved',
+            notes: 'Field approved, but awaiting other approvers.',
+            reviewer_email: 'leader@example.com',
+          }),
+        );
+        assertEquals(res.status, 200);
+        const body = await res.json();
+        assertEquals(body.success, true);
+        assertEquals(body.status, 'approved');
+
+        // Outcome email should NOT be queued when other approvers are still pending
+        const emailCall = mock.calls.find(
+          (c) => c.path === '/rest/v1/rpc/enqueue_email_notification',
+        );
+        assertEquals(Boolean(emailCall), false);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'process-approval-decision submit_decision successfully approves and triggers notification when final decision reached',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        rpcResult: {
+          success: true,
+          approval_id: APPROVAL_ID,
+          status: 'approved',
+          final_decision: 'approved',
+        },
+      });
       try {
         const res = await handleProcessApprovalDecision(
           createRequest({
@@ -309,6 +356,12 @@ Deno.test(
         // Verify RPC was called
         const rpcCall = mock.calls.find((c) => c.path === '/rest/v1/rpc/apply_approval_decision');
         assertEquals(Boolean(rpcCall), true);
+
+        // Verify outcome email was enqueued
+        const emailCall = mock.calls.find(
+          (c) => c.path === '/rest/v1/rpc/enqueue_email_notification',
+        );
+        assertEquals(Boolean(emailCall), true);
       } finally {
         mock.restore();
       }
@@ -317,10 +370,17 @@ Deno.test(
 );
 
 Deno.test(
-  'process-approval-decision submit_decision successfully rejects request with notes',
+  'process-approval-decision submit_decision successfully rejects request with notes and notifies requester',
   async () => {
     await withEnv(async () => {
-      const mock = mockFetch();
+      const mock = mockFetch({
+        rpcResult: {
+          success: true,
+          approval_id: APPROVAL_ID,
+          status: 'rejected',
+          final_decision: 'rejected',
+        },
+      });
       try {
         const res = await handleProcessApprovalDecision(
           createRequest({
@@ -335,6 +395,12 @@ Deno.test(
         const body = await res.json();
         assertEquals(body.success, true);
         assertEquals(body.status, 'rejected');
+
+        // Verify outcome email was enqueued on rejection
+        const emailCall = mock.calls.find(
+          (c) => c.path === '/rest/v1/rpc/enqueue_email_notification',
+        );
+        assertEquals(Boolean(emailCall), true);
       } finally {
         mock.restore();
       }

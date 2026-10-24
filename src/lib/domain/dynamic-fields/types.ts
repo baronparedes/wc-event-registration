@@ -13,7 +13,8 @@ export type DynamicFieldType =
   | 'datetime'
   | 'boolean'
   | 'color_picker'
-  | 'rating';
+  | 'rating'
+  | 'required_approval';
 
 export type DynamicFieldDomain = 'events' | 'forms' | 'attendance';
 
@@ -75,6 +76,9 @@ export interface DynamicFieldValidationRules {
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
   visibility_rule?: unknown;
+  approver_email?: string;
+  approver_name?: string;
+  approver_user_id?: string;
   [key: string]: unknown;
 }
 

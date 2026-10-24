@@ -609,6 +609,62 @@ describe('event-fields transforms', () => {
     });
   });
 
+  it('transforms approver fields between form values and validation rules', () => {
+    const values: EventFieldFormValues = {
+      field_key: 'supervisor_approval',
+      label: 'Supervisor Approval',
+      field_type: 'required_approval',
+      applicability: 'both',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      val_min_length: '',
+      val_max_length: '',
+      val_pattern: '',
+      val_min: '',
+      val_max: '',
+      val_min_selections: '',
+      val_max_selections: '',
+      val_min_date: '',
+      val_max_date: '',
+      val_max_past_days: '',
+      val_approver_email: 'supervisor@example.com',
+      val_approver_name: 'Super Visor',
+      val_approver_user_id: 'user-sup-1',
+    };
+
+    const rules = toValidationRules(values);
+    expect(rules).toEqual({
+      approver_email: 'supervisor@example.com',
+      approver_name: 'Super Visor',
+      approver_user_id: 'user-sup-1',
+    });
+
+    const formValues = fieldToFormValues({
+      id: 'field-appr',
+      field_key: 'supervisor_approval',
+      label: 'Supervisor Approval',
+      field_type: 'required_approval',
+      applicability: 'both',
+      is_required: false,
+      is_active: true,
+      placeholder: null,
+      help_text: null,
+      options: [],
+      validation_rules: rules,
+      display_order: 1,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+      event_id: 'event-1',
+    });
+
+    expect(formValues.val_approver_email).toBe('supervisor@example.com');
+    expect(formValues.val_approver_name).toBe('Super Visor');
+    expect(formValues.val_approver_user_id).toBe('user-sup-1');
+  });
+
   describe('normalizeDynamicFieldAnswersForPreview', () => {
     it('normalizes dynamic answer payloads into preview records', () => {
       const fields = [

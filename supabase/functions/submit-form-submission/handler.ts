@@ -30,7 +30,7 @@ type SubmitFormSubmissionRequest = z.infer<typeof submitFormSubmissionRequestSch
 interface SubmitFormSubmissionSuccess {
   success: true;
   submission_id: string;
-  status: 'submitted' | 'updated';
+  status: 'submitted' | 'updated' | 'pending_approval';
   is_new: boolean;
   message: string;
 }
@@ -300,12 +300,24 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
       }
     }
 
+    const approvalFields = formFields.filter((f) => f.field_type === 'required_approval');
     const formMeta = (formData.metadata ?? {}) as Record<string, unknown>;
-    const requiresApproval = Boolean(formMeta.requires_approval);
-    const assignedApproverEmail =
-      typeof formMeta.approver_email === 'string' && formMeta.approver_email.trim()
-        ? formMeta.approver_email.trim()
-        : null;
+    const requiresApproval = Boolean(formMeta.requires_approval || approvalFields.length > 0);
+
+    const approverEmailsSet = new Set<string>();
+    for (const field of approvalFields) {
+      const fieldRules = (field.validation_rules ?? {}) as Record<string, unknown>;
+      if (typeof fieldRules.approver_email === 'string' && fieldRules.approver_email.trim()) {
+        approverEmailsSet.add(fieldRules.approver_email.trim().toLowerCase());
+      }
+    }
+    if (
+      approverEmailsSet.size === 0 &&
+      typeof formMeta.approver_email === 'string' &&
+      formMeta.approver_email.trim()
+    ) {
+      approverEmailsSet.add(formMeta.approver_email.trim().toLowerCase());
+    }
     const initialSubmissionStatus = requiresApproval ? 'pending_approval' : 'submitted';
 
     if (!submissionId) {
@@ -337,16 +349,77 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
         );
       }
       submissionId = newSub.id;
+    } else {
+      // Updating existing submission
+      await supabase
+        .from('form_submissions')
+        .update({
+          submitted_at: new Date().toISOString(),
+          status: initialSubmissionStatus,
+        })
+        .eq('id', submissionId);
 
-      // Handle approval request creation if requires_approval is enabled
+      // Cancel previous pending approval requests so new ones can be issued
       if (requiresApproval) {
-        const requesterName =
-          userFullName ||
-          [public_registrant_info?.first_name, public_registrant_info?.last_name]
-            .filter(Boolean)
-            .join(' ') ||
-          'Public Registrant';
-        const requesterEmail = userEmail || public_registrant_info?.email || null;
+        await supabase
+          .from('approval_requests')
+          .update({ status: 'cancelled' })
+          .eq('entity_type', 'form_submission')
+          .eq('entity_id', submissionId)
+          .eq('status', 'pending');
+      }
+    }
+
+    // Handle approval request creation if requires_approval is enabled (new and updated submissions)
+    if (requiresApproval && submissionId) {
+      const requesterName =
+        userFullName ||
+        [public_registrant_info?.first_name, public_registrant_info?.last_name]
+          .filter(Boolean)
+          .join(' ') ||
+        'Public Registrant';
+      const requesterEmail = userEmail || public_registrant_info?.email || null;
+
+      let primaryApprovalId: string | null = null;
+      const targets: Array<{
+        approverEmail: string | null;
+        fieldKey?: string;
+        formFieldId?: string;
+        fieldLabel?: string;
+      }> = [];
+
+      if (approvalFields.length > 0) {
+        const seenEmails = new Set<string>();
+        for (const field of approvalFields) {
+          const fieldRules = (field.validation_rules ?? {}) as Record<string, unknown>;
+          const email =
+            typeof fieldRules.approver_email === 'string' && fieldRules.approver_email.trim()
+              ? fieldRules.approver_email.trim().toLowerCase()
+              : null;
+          if (email) {
+            if (seenEmails.has(email)) continue;
+            seenEmails.add(email);
+          }
+          targets.push({
+            approverEmail: email,
+            fieldKey: field.field_key,
+            formFieldId: field.id,
+            fieldLabel: field.label,
+          });
+        }
+      } else if (typeof formMeta.approver_email === 'string' && formMeta.approver_email.trim()) {
+        targets.push({ approverEmail: formMeta.approver_email.trim().toLowerCase() });
+      } else {
+        targets.push({ approverEmail: null });
+      }
+
+      for (const target of targets) {
+        const approvalTitle = target.fieldLabel
+          ? `${formData.title || 'Form'} – ${target.fieldLabel}`
+          : formData.title || 'Form Registration';
+        const approvalSummary = target.fieldLabel
+          ? `${target.fieldLabel} for ${formData.title || 'Form'} by ${requesterName}`
+          : `Registration for ${formData.title || 'Form'} by ${requesterName}`;
 
         const { data: approvalRecord, error: approvalErr } = await supabase
           .from('approval_requests')
@@ -354,35 +427,45 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
             entity_type: 'form_submission',
             entity_id: submissionId,
             status: 'pending',
-            title: formData.title || 'Form Registration',
-            summary: `Registration for ${formData.title || 'Form'} by ${requesterName}`,
+            title: approvalTitle,
+            summary: approvalSummary,
             requester_user_id: userId,
             requester_name: requesterName,
             requester_email: requesterEmail,
-            assigned_to_email: assignedApproverEmail,
-            metadata: JSON.parse(JSON.stringify({ form_slug, responses })),
+            assigned_to_email: target.approverEmail,
+            metadata: JSON.parse(
+              JSON.stringify({
+                form_slug,
+                responses,
+                form_field_id: target.formFieldId,
+                field_key: target.fieldKey,
+                field_label: target.fieldLabel,
+              }),
+            ),
           })
           .select('id, access_token')
           .single();
 
         if (!approvalErr && approvalRecord) {
-          await supabase
-            .from('form_submissions')
-            .update({ approval_request_id: approvalRecord.id })
-            .eq('id', submissionId);
+          if (!primaryApprovalId) {
+            primaryApprovalId = approvalRecord.id;
+          }
 
-          if (assignedApproverEmail) {
+          if (target.approverEmail) {
             try {
               const details = [
                 { label: 'Form', value: formData.title || 'Form' },
                 { label: 'Applicant', value: requesterName },
               ];
+              if (target.fieldLabel) {
+                details.push({ label: 'Approval Requirement', value: target.fieldLabel });
+              }
               if (requesterEmail) {
                 details.push({ label: 'Email', value: requesterEmail });
               }
 
               await enqueueApprovalReviewEmail(supabase, {
-                assignedToEmail: assignedApproverEmail,
+                assignedToEmail: target.approverEmail,
                 subjectTitle: `${formData.title || 'Form Submission'} - ${requesterName}`,
                 heading: 'Approval Required',
                 description: 'A new form registration requires your review and approval:',
@@ -395,6 +478,13 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
             }
           }
         }
+      }
+
+      if (primaryApprovalId) {
+        await supabase
+          .from('form_submissions')
+          .update({ approval_request_id: primaryApprovalId })
+          .eq('id', submissionId);
       }
     }
 
@@ -444,11 +534,15 @@ export async function handleSubmitFormSubmission(req: Request): Promise<Response
         ? 'Form submitted successfully'
         : 'Form submission updated successfully';
 
+    const finalStatus: 'submitted' | 'updated' | 'pending_approval' = requiresApproval
+      ? 'pending_approval'
+      : status;
+
     return new Response(
       JSON.stringify({
         success: true,
         submission_id: submissionId,
-        status,
+        status: finalStatus,
         is_new: isNew,
         message: successMessage,
       } as SubmitFormSubmissionSuccess),

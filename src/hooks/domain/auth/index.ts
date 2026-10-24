@@ -13,6 +13,7 @@ export { useAdminLogoutMutation } from './useAdminLogoutMutation';
 export { useGoogleLoginMutation } from './useGoogleLoginMutation';
 export { useYahooLoginMutation } from './useYahooLoginMutation';
 export { useAdminRolesQuery, ADMIN_ROLES_QUERY_KEY } from './useAdminRolesQuery';
+export { useApproverUsersQuery, APPROVER_USERS_QUERY_KEY } from './useApproverUsersQuery';
 export { useAuthUsersQuery, AUTH_USERS_QUERY_KEY } from './useAuthUsersQuery';
 export {
   useManageAdminRoleMutation,

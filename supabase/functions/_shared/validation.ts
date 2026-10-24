@@ -713,6 +713,8 @@ function buildFieldSchema(field: EventFieldWithValidation, label: string): z.Zod
         return weekday !== null && allowedWeekdays.includes(weekday);
       }, `${label} must fall on: ${allowedLabels}.`);
     }
+  } else if (type === 'required_approval') {
+    schema = z.string().optional();
   } else {
     schema = z.unknown();
   }

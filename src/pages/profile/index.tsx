@@ -12,6 +12,7 @@ import { formatDateTime } from '@/lib/infrastructure';
 import { WelcomeHelloBanner } from '@/pages/home/components';
 
 import { EventHistoryTab } from './components/EventHistoryTab';
+import { FormSubmissionsTab } from './components/FormSubmissionsTab';
 import { MemberInfoTab } from './components/MemberInfoTab';
 import { ServiceAttendanceHistoryTab } from './components/ServiceAttendanceHistoryTab';
 import { resolveProfileTab } from './utils';
@@ -98,6 +99,7 @@ export function ProfilePage() {
           <TabsList>
             <TabsTrigger value="member_info">Info</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="forms">Forms</TabsTrigger>
             <TabsTrigger value="service_attendance">Commitments</TabsTrigger>
           </TabsList>
           <TabsContent value="member_info">
@@ -106,6 +108,10 @@ export function ProfilePage() {
 
           <TabsContent value="events">
             <EventHistoryTab memberId={member.id} />
+          </TabsContent>
+
+          <TabsContent value="forms">
+            <FormSubmissionsTab memberId={member.id} />
           </TabsContent>
 
           <TabsContent value="service_attendance">

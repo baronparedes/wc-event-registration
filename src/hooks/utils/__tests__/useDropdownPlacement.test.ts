@@ -172,6 +172,58 @@ describe('useDropdownPlacement', () => {
     document.body.removeChild(container);
   });
 
+  it('calculates upward when inside a scrollable container with constrained bottom space', () => {
+    const { result } = renderHook(() =>
+      useDropdownPlacement({
+        isOpen: true,
+        optionCount: 5,
+        includesPlaceholder: true,
+      }),
+    );
+
+    const scrollContainer = document.createElement('div');
+    scrollContainer.style.overflowY = 'auto';
+    scrollContainer.getBoundingClientRect = vi.fn().mockReturnValue({
+      top: 100,
+      bottom: 500,
+      left: 0,
+      right: 400,
+      width: 400,
+      height: 400,
+    });
+
+    const container = document.createElement('div');
+    const input = document.createElement('input');
+    container.appendChild(input);
+    scrollContainer.appendChild(container);
+    document.body.appendChild(scrollContainer);
+
+    // Input near bottom of scroll container: bottom is 480 (only 20px from 500)
+    // In viewport (innerHeight 800), window below would be 320px.
+    // But within scroll container, available space below is 20px, so it opens upward.
+    input.getBoundingClientRect = vi.fn().mockReturnValue({
+      top: 440,
+      bottom: 480,
+      left: 10,
+      right: 390,
+      width: 380,
+      height: 40,
+    });
+
+    Object.defineProperty(result.current.containerRef, 'current', {
+      value: container,
+      writable: true,
+    });
+
+    act(() => {
+      result.current.prepareOpenDirection();
+    });
+
+    expect(result.current.opensUpward).toBe(true);
+
+    document.body.removeChild(scrollContainer);
+  });
+
   it('attaches and removes resize and scroll event listeners when isOpen changes', () => {
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');

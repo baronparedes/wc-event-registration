@@ -14,7 +14,7 @@ import {
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { Avatar, Button, Skeleton } from '@/components/ui';
+import { Avatar, Badge, Button, Skeleton } from '@/components/ui';
 import {
   useApprovalReviewQuery,
   useSubmitApprovalDecisionMutation,
@@ -234,16 +234,32 @@ export function ApprovalReviewPage() {
                     form_fields?: { label: string; field_type: string };
                   }>;
                 }
-              ).form_submission_answers.map((answer) => (
-                <div key={answer.id} className="py-3 first:pt-0 last:pb-0">
-                  <div className="text-xs font-medium text-muted">
-                    {answer.form_fields?.label || 'Field'}
+              ).form_submission_answers.map((answer) => {
+                const isApproval = answer.form_fields?.field_type === 'required_approval';
+                return (
+                  <div key={answer.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="text-xs font-medium text-muted">
+                      {answer.form_fields?.label || 'Field'}
+                    </div>
+                    {isApproval ? (
+                      <div className="mt-1 flex items-center gap-2">
+                        {answer.answer_text === 'approved' ? (
+                          <Badge variant="default">Approved</Badge>
+                        ) : answer.answer_text === 'rejected' ||
+                          answer.answer_text === 'declined' ? (
+                          <Badge variant="destructive">Declined</Badge>
+                        ) : (
+                          <Badge variant="secondary">Pending Review</Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-0.5 text-sm font-medium text-text">
+                        {answer.answer_text || '—'}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-0.5 text-sm font-medium text-text">
-                    {answer.answer_text || '—'}
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="py-3 text-sm text-muted italic">No field answers recorded.</p>
             )}

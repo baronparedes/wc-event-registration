@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/infrastructure';
 
-import type { AdminRoleAssignment, AuthUserItem } from './types';
+import type { AdminRoleAssignment, ApproverUserItem, AuthUserItem } from './types';
 
 export async function fetchAuthUsers(
   search: string,
@@ -23,4 +23,12 @@ export async function fetchAdminRoles(): Promise<AdminRoleAssignment[]> {
     throw error;
   }
   return (data as AdminRoleAssignment[]) ?? [];
+}
+
+export async function fetchApproverUsers(): Promise<ApproverUserItem[]> {
+  const { data, error } = await supabase.rpc('list_approver_users');
+  if (error) {
+    throw error;
+  }
+  return (data as ApproverUserItem[]) ?? [];
 }

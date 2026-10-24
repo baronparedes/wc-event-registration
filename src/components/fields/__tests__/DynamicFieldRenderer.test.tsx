@@ -27,6 +27,7 @@ describe('DynamicFieldRenderer', () => {
     'checkbox',
     'color_picker',
     'rating',
+    'required_approval',
   ];
 
   allFieldTypes.forEach((type) => {

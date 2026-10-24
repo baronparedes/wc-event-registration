@@ -290,4 +290,23 @@ describe('FormSubmissionPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Go Home' }));
     expect(mockGoHome).toHaveBeenCalledTimes(1);
   });
+
+  it('renders pending approval message when status is pending_approval', () => {
+    mockUseFormSubmissionPageState.mockReturnValue({
+      ...baseState,
+      isSubmissionConfirmed: true,
+      submitSuccessMessage: 'Form submitted successfully and is pending approval',
+      submissionResult: {
+        submission_id: 'sub-pending-123',
+        status: 'pending_approval',
+      },
+      resetForm: vi.fn(),
+      goHome: vi.fn(),
+    });
+
+    render(<FormSubmissionPage />);
+    expect(screen.getByText('Submission Received – Pending Approval')).toBeInTheDocument();
+    expect(screen.getByText('Status: Pending Review')).toBeInTheDocument();
+    expect(screen.getByText(/sub-pending-123/)).toBeInTheDocument();
+  });
 });

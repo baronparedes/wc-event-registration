@@ -42,7 +42,12 @@ export type FormField = {
   updated_at: string;
 };
 
-export type FormSubmissionStatus = 'submitted' | 'cancelled';
+export type FormSubmissionStatus =
+  | 'submitted'
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled';
 
 export type FormSubmissionAnswer = {
   id: string;
@@ -59,6 +64,7 @@ export type FormSubmissionAnswer = {
     field_key: string;
     label: string;
     field_type: DynamicFieldType;
+    validation_rules?: Record<string, unknown> | null;
   };
 };
 
@@ -84,4 +90,40 @@ export type FormSubmission = {
     email: string | null;
   } | null;
   form_submission_answers?: FormSubmissionAnswer[];
+};
+
+export type MemberFormSubmissionApprovalItem = {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  title?: string | null;
+  summary?: string | null;
+  assigned_to_email: string | null;
+  decided_by_email: string | null;
+  decided_at: string | null;
+  decision_notes: string | null;
+  field_label: string | null;
+  field_key: string | null;
+};
+
+export type MemberFormSubmissionAnswerItem = {
+  id: string;
+  form_field_id: string;
+  field_key: string;
+  label: string;
+  field_type: string;
+  answer_text: string | null;
+  answer_number: number | null;
+};
+
+export type MemberFormSubmissionItem = {
+  submission_id: string;
+  form_id: string;
+  form_title: string;
+  form_slug: string;
+  form_description: string | null;
+  status: FormSubmissionStatus;
+  submitted_at: string;
+  updated_at: string;
+  answers: MemberFormSubmissionAnswerItem[];
+  approval_requests: MemberFormSubmissionApprovalItem[];
 };

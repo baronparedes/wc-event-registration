@@ -52,6 +52,15 @@ vi.mock('@/hooks/domain/approvals', () => ({
   useSlodUsersQuery: () => ({ data: [], isLoading: false, isError: false }),
 }));
 
+vi.mock('@/hooks/domain/forms', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/hooks/domain/forms')>('@/hooks/domain/forms');
+  return {
+    ...actual,
+    useMemberFormSubmissionsQuery: () => ({ data: [], isLoading: false, isError: false }),
+  };
+});
+
 vi.mock('@/hooks/domain/members', async () => {
   const actual =
     await vi.importActual<typeof import('@/hooks/domain/members')>('@/hooks/domain/members');
@@ -164,6 +173,7 @@ describe('ProfilePage', () => {
     expect(screen.getByText(email)).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Info' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Events' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Forms' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Commitments' })).toBeInTheDocument();
     expect(screen.getByLabelText('Verified account')).toBeInTheDocument();
   });
@@ -243,6 +253,12 @@ describe('ProfilePage', () => {
       expect(screen.getByRole('heading', { name: /Event History/i })).toBeInTheDocument();
     });
 
+    it('automatically selects the Forms tab when URL has ?tab=forms', () => {
+      renderPage(`${ROUTE_PATHS.profile}?tab=forms`);
+      expect(screen.getByRole('tab', { name: 'Forms' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('heading', { name: /Form Submissions/i })).toBeInTheDocument();
+    });
+
     it('defaults to Info tab when ?tab is absent or invalid', () => {
       renderPage(`${ROUTE_PATHS.profile}?tab=invalid_tab_name`);
       expect(screen.getByRole('tab', { name: 'Info' })).toHaveAttribute('aria-selected', 'true');
@@ -266,10 +282,25 @@ describe('ProfilePage', () => {
       expect(screen.getByRole('tab', { name: 'Events' })).toHaveAttribute('aria-selected', 'true');
       expect(screen.getByTestId('location-search')).toHaveTextContent('?tab=events');
 
+      // Click Forms tab
+      fireEvent.click(screen.getByRole('tab', { name: 'Forms' }));
+      expect(screen.getByRole('tab', { name: 'Forms' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByTestId('location-search')).toHaveTextContent('?tab=forms');
+
       // Click Info tab (removes tab parameter)
       fireEvent.click(screen.getByRole('tab', { name: 'Info' }));
       expect(screen.getByRole('tab', { name: 'Info' })).toHaveAttribute('aria-selected', 'true');
       expect(screen.getByTestId('location-search')).toHaveTextContent('');
+    });
+  });
+
+  describe('resolveProfileTab', () => {
+    it('resolves forms tab variants', () => {
+      expect(resolveProfileTab('forms')).toBe('forms');
+      expect(resolveProfileTab('form')).toBe('forms');
+      expect(resolveProfileTab('submissions')).toBe('forms');
+      expect(resolveProfileTab('form_submissions')).toBe('forms');
+      expect(resolveProfileTab('form-submissions')).toBe('forms');
     });
   });
 });

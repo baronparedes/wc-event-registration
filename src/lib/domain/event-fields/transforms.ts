@@ -151,6 +151,9 @@ export const DEFAULT_FIELD_FORM_VALUES: EventFieldFormValues = {
   val_unique_key_component: false,
   val_visibility_depends_on_field_key: '',
   val_visibility_equals_value: '',
+  val_approver_email: '',
+  val_approver_name: '',
+  val_approver_user_id: '',
 };
 
 function toWeekdayString(value: number): WeekdayString | null {
@@ -217,12 +220,20 @@ export function fieldToFormValues(field: AdminEventField): EventFieldFormValues 
       typeof rules.visibility_rule?.equals_value === 'string'
         ? rules.visibility_rule.equals_value
         : '',
+    val_approver_email: typeof rules.approver_email === 'string' ? rules.approver_email : '',
+    val_approver_name: typeof rules.approver_name === 'string' ? rules.approver_name : '',
+    val_approver_user_id: typeof rules.approver_user_id === 'string' ? rules.approver_user_id : '',
   };
 }
 
 /** Convert flat form values to a typed validation_rules object. */
 export function toValidationRules(values: EventFieldFormValues): Record<string, unknown> {
   const rules: Record<string, unknown> = {};
+  if (values.field_type === 'required_approval') {
+    if (values.val_approver_email) rules.approver_email = values.val_approver_email;
+    if (values.val_approver_name) rules.approver_name = values.val_approver_name;
+    if (values.val_approver_user_id) rules.approver_user_id = values.val_approver_user_id;
+  }
   if (values.val_min_length !== '') rules.min_length = parseInt(values.val_min_length, 10);
   if (values.val_max_length !== '') rules.max_length = parseInt(values.val_max_length, 10);
   if (values.val_pattern !== '') rules.pattern = values.val_pattern;

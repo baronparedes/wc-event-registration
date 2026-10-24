@@ -1,11 +1,31 @@
 import { render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   DynamicFieldValidationRulesSection,
   type DynamicFieldValidationRulesSectionProps,
 } from '@/components/ui/DynamicFieldValidationRulesSection';
+
+vi.mock('@/hooks/domain/auth', () => ({
+  useApproverUsersQuery: () => ({
+    data: [
+      {
+        auth_user_id: 'user-1',
+        email: 'approver@example.com',
+        name: 'Approver One',
+        role: 'admin',
+        avatar_object_key: null,
+      },
+    ],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+vi.mock('@/hooks/domain/members/queries/useMemberAvatarQuery', () => ({
+  useMemberAvatarQuery: () => ({ data: null }),
+}));
 
 type TestFormValues = {
   val_min_length?: number;
@@ -90,5 +110,35 @@ describe('DynamicFieldValidationRulesSection', () => {
     expect(
       screen.getByText('Validation rules are locked on published and archived records.'),
     ).toBeInTheDocument();
+  });
+
+  it('renders approval validation fields with approver selector and error message', () => {
+    const handleApproverChange = vi.fn();
+    render(
+      <Harness
+        showApprovalValidation
+        approverEmail="approver@example.com"
+        onApproverChange={handleApproverChange}
+        approverError="An approver must be selected for Required Approval fields."
+      />,
+    );
+
+    expect(screen.getByLabelText(/Designated Approver/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('An approver must be selected for Required Approval fields.'),
+    ).toBeInTheDocument();
+  });
+
+  it('forwards disabledApproverEmails to ApproverSelectField', () => {
+    render(
+      <Harness
+        showApprovalValidation
+        onApproverChange={vi.fn()}
+        disabledApproverEmails={['approver@example.com']}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('Search approver by name or email...');
+    expect(input).toBeInTheDocument();
   });
 });

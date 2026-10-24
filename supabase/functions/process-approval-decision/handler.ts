@@ -259,14 +259,23 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
         );
       }
 
-      // Dispatch outcome notification email to requester if requester_email is known
-      if (approval.requester_email) {
+      // Dispatch outcome notification email to requester if requester_email is known.
+      // For form submissions, only dispatch outcome email once the final decision is reached
+      // (all approved, or at least one rejected). For other entity types, dispatch immediately.
+      const rpcData = (rpcResult as Record<string, unknown>) ?? {};
+      const finalDecision = (rpcData.final_decision as 'approved' | 'rejected' | null) ?? null;
+      const shouldDispatchOutcomeEmail =
+        Boolean(approval.requester_email) &&
+        (approval.entity_type !== 'form_submission' || Boolean(finalDecision));
+
+      if (shouldDispatchOutcomeEmail && approval.requester_email) {
         try {
+          const outcomeDecision = (finalDecision || decision) as 'approved' | 'rejected';
           await enqueueApprovalOutcomeEmail(supabase, {
             recipientEmail: approval.requester_email,
             requesterName: approval.requester_name,
             title: approval.title,
-            decision: decision!,
+            decision: outcomeDecision,
             notes,
             approvalId: approval.id,
           });

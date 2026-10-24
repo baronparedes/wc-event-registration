@@ -1,6 +1,8 @@
 import type { FieldValues, Path, UseFormRegister, UseFormRegisterReturn } from 'react-hook-form';
 
+import { ApproverSelectField } from '@/components/ui/ApproverSelectField';
 import { SectionCard } from '@/components/ui/SectionCard';
+import type { ApproverUserItem } from '@/lib/domain/auth';
 
 type RuleInputProps = {
   id: string;
@@ -66,6 +68,11 @@ export interface DynamicFieldValidationRulesSectionProps<TFieldValues extends Fi
   showRatingValidation?: boolean;
   showMultiSelectValidation?: boolean;
   showDateValidation?: boolean;
+  showApprovalValidation?: boolean;
+  approverEmail?: string;
+  onApproverChange?: (approver: ApproverUserItem | null) => void;
+  disabledApproverEmails?: string[];
+  approverError?: string;
   disabled?: boolean;
   register: UseFormRegister<TFieldValues>;
   allowUniqueMatching?: boolean;
@@ -82,6 +89,11 @@ export function DynamicFieldValidationRulesSection<TFieldValues extends FieldVal
   showRatingValidation,
   showMultiSelectValidation,
   showDateValidation,
+  showApprovalValidation,
+  approverEmail,
+  onApproverChange,
+  disabledApproverEmails,
+  approverError,
   disabled = false,
   register,
   allowUniqueMatching = false,
@@ -94,6 +106,7 @@ export function DynamicFieldValidationRulesSection<TFieldValues extends FieldVal
     showRatingValidation ||
     showMultiSelectValidation ||
     showDateValidation ||
+    showApprovalValidation ||
     allowUniqueMatching;
 
   if (!hasAnyValidation) {
@@ -110,6 +123,18 @@ export function DynamicFieldValidationRulesSection<TFieldValues extends FieldVal
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {showApprovalValidation && onApproverChange && (
+          <div className="sm:col-span-2">
+            <ApproverSelectField
+              value={approverEmail}
+              onChange={onApproverChange}
+              disabled={disabled}
+              disabledEmails={disabledApproverEmails}
+              error={approverError}
+            />
+          </div>
+        )}
+
         {allowUniqueMatching && (
           <div className="sm:col-span-2">
             <label className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5">

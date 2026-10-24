@@ -1,9 +1,9 @@
 import type { DynamicFieldDomain, DynamicFieldType } from '@/lib/domain/dynamic-fields';
 import { DYNAMIC_FIELD_TYPE_LABELS, getFieldTypesForDomain } from '@/lib/domain/dynamic-fields';
 
-export interface DynamicFieldTypeSelectorProps {
-  value: DynamicFieldType;
-  onChange: (type: DynamicFieldType) => void;
+export interface DynamicFieldTypeSelectorProps<T extends DynamicFieldType = DynamicFieldType> {
+  value: T;
+  onChange: (type: T) => void;
   domain?: DynamicFieldDomain;
   disabled?: boolean;
   error?: string | null;
@@ -12,13 +12,13 @@ export interface DynamicFieldTypeSelectorProps {
 /**
  * Reusable dynamic field type selector grid powered by the centralized field registry.
  */
-export function DynamicFieldTypeSelector({
+export function DynamicFieldTypeSelector<T extends DynamicFieldType = DynamicFieldType>({
   value,
   onChange,
   domain,
   disabled,
   error,
-}: DynamicFieldTypeSelectorProps) {
+}: DynamicFieldTypeSelectorProps<T>) {
   const fieldTypes = domain ? getFieldTypesForDomain(domain) : getFieldTypesForDomain('events');
 
   return (
@@ -29,7 +29,7 @@ export function DynamicFieldTypeSelector({
             key={type}
             type="button"
             disabled={disabled}
-            onClick={() => onChange(type)}
+            onClick={() => onChange(type as T)}
             className={`rounded-lg border p-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
               value === type
                 ? 'border-primary bg-primary/10 font-medium text-primary'

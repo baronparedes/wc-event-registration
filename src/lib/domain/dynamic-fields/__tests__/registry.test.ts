@@ -17,8 +17,9 @@ import {
 } from '../index';
 
 describe('dynamic-fields registry', () => {
-  it('contains complete definitions for all 15 dynamic field types', () => {
-    expect(DYNAMIC_FIELD_TYPES.length).toBe(15);
+  it('contains complete definitions for all 16 dynamic field types', () => {
+    expect(DYNAMIC_FIELD_TYPES.length).toBe(16);
+    expect(DYNAMIC_FIELD_TYPES).toContain('required_approval');
     for (const type of DYNAMIC_FIELD_TYPES) {
       const def = getFieldDefinition(type);
       expect(def).toBeDefined();
@@ -45,6 +46,10 @@ describe('dynamic-fields registry', () => {
 
     expect(eventTypes).toContain('multi_select_toggle');
     expect(attendanceTypes).toContain('color_picker');
+
+    expect(formTypes).toContain('required_approval');
+    expect(eventTypes).not.toContain('required_approval');
+    expect(attendanceTypes).not.toContain('required_approval');
   });
 
   it('correctly maps option and validation flags', () => {
@@ -177,6 +182,15 @@ describe('dynamic-fields registry', () => {
     expect(FIELD_TYPE_REGISTRY.rating.formatValue(3)).toBe('3 / 5 ★');
     expect(FIELD_TYPE_REGISTRY.rating.formatValue('')).toBe('');
     expect(FIELD_TYPE_REGISTRY.rating.formatValue(null)).toBe('');
+
+    // Required approval
+    expect(FIELD_TYPE_REGISTRY.required_approval.formatValue('pending_approval')).toBe(
+      'Pending Approval',
+    );
+    expect(FIELD_TYPE_REGISTRY.required_approval.formatValue(null)).toBe('Pending Approval');
+    expect(FIELD_TYPE_REGISTRY.required_approval.formatValue('approved')).toBe('Approved');
+    expect(FIELD_TYPE_REGISTRY.required_approval.formatValue('rejected')).toBe('Rejected');
+    expect(FIELD_TYPE_REGISTRY.required_approval.formatValue('declined')).toBe('Rejected');
   });
 
   it('provides consistent badge colors and labels lookup', () => {

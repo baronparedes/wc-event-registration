@@ -15,7 +15,8 @@ export type EventFieldType =
   | 'datetime'
   | 'boolean'
   | 'color_picker'
-  | 'rating';
+  | 'rating'
+  | 'required_approval';
 
 export type EventFieldApplicability = 'members' | 'guests' | 'both';
 
@@ -57,6 +58,9 @@ export type PublicEventFieldValidationRules = {
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
   visibility_rule?: FieldVisibilityRule;
+  approver_email?: string;
+  approver_name?: string;
+  approver_user_id?: string;
 };
 
 export type AdminEventFieldValidationRules = {
@@ -81,6 +85,9 @@ export type AdminEventFieldValidationRules = {
   allowed_weekdays?: number[];
   unique_key_component?: boolean;
   visibility_rule?: FieldVisibilityRule;
+  approver_email?: string;
+  approver_name?: string;
+  approver_user_id?: string;
 };
 
 export type PublicEventField = {

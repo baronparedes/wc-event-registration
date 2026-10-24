@@ -32,3 +32,11 @@ export type AuthUserItem = {
   created_at: string;
   last_sign_in_at: string | null;
 };
+
+export type ApproverUserItem = {
+  auth_user_id: string;
+  email: string;
+  name: string;
+  role: string;
+  avatar_object_key: string | null;
+};

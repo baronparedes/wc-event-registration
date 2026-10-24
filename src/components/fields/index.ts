@@ -17,3 +17,4 @@ export {
   MultiSelectToggleFieldRenderer,
 } from './SelectFieldRenderer';
 export { CheckboxFieldRenderer } from './CheckboxFieldRenderer';
+export { RequiredApprovalFieldRenderer } from './RequiredApprovalFieldRenderer';
