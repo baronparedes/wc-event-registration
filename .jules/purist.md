@@ -68,4 +68,7 @@
 
 **Deviation:** `useFormSubmissionPageState.ts` used `useEffect` to call `dynamicForm.reset()` to sync external upstream data (`fields` and `prefillResponses`) to the internal React Hook Form state.
 **Learning:** This architectural deviation leads to unnecessary renders, race conditions, and derived state syncing anti-patterns rather than reacting directly to user events and computing values during render.
-**Standard:** Compute the initial default structure during render (e.g. with `useMemo`) and feed it directly into the `values` prop of `useForm()`. React Hook Form natively supports reacting to changes passed into `values` via deep comparison, entirely replacing the imperative `useEffect` sync pattern.
+## 2025-02-16 - FormCard Accessibility
+**Deviation:** FormCard used a non-semantic div with onClick and onKeyDown handlers to act as a link
+**Learning:** This is inaccessible and requires manually handling keydown events
+**Standard:** Use native semantic HTML elements (like `<article>`) for interactive UI components rather than attaching `role="link"`, `tabIndex={0}`, and `onKeyDown` handlers to generic `<div>` elements. Native elements inherently handle 'Enter' and 'Space' keyboard events and focus accessibility.
