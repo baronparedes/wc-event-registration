@@ -27,7 +27,11 @@ export function MobileEmailTemplateCard({ template, onEdit }: MobileEmailTemplat
             <h2 className="line-clamp-2 text-base font-semibold leading-snug text-text">
               {template.name}
             </h2>
-            <p className="mt-1 font-mono text-xs text-muted break-all">{template.slug}</p>
+            <div className="mt-1.5">
+              <code className="inline-block whitespace-nowrap rounded bg-surface px-2 py-1 text-xs font-mono text-text border border-border">
+                {template.slug}
+              </code>
+            </div>
           </div>
         </MobileCardHeader>
 

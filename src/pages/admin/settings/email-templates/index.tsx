@@ -162,7 +162,7 @@ export function EmailTemplatesPage() {
                         <span className="font-semibold text-text">{template.name}</span>
                       </ListTableCell>
                       <ListTableCell>
-                        <code className="rounded bg-surface px-2 py-1 text-xs font-mono text-text border border-border">
+                        <code className="inline-block whitespace-nowrap rounded bg-surface px-2 py-1 text-xs font-mono text-text border border-border">
                           {template.slug}
                         </code>
                       </ListTableCell>
