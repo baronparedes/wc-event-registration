@@ -37,6 +37,7 @@ vi.mock('@/hooks/domain/attendance', async () => {
     useAttendeesLocalCacheQuery: () => mockUseAttendeesLocalCacheQuery(),
     useOfflineAttendanceDataSnapshot: () => mockUseOfflineAttendanceDataSnapshot(),
     useAttendanceSavedViewQuery: () => ({ data: null }),
+    useAttendanceSavedViewsQuery: () => ({ data: [] }),
   };
 });
 

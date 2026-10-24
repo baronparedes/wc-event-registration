@@ -41,7 +41,9 @@ export function SavedViewsModal({
   const [newViewName, setNewViewName] = useState('');
   const [viewFilter, setViewFilter] = useState('');
 
-  const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId);
+  const { data: savedViews = [] } = useAttendanceSavedViewsQuery(eventId, {
+    enabled: isOpen,
+  });
   const upsertMutation = useUpsertAttendanceSavedViewMutation();
   const deleteMutation = useDeleteAttendanceSavedViewMutation();
   const filteredSavedViews = useMemo(() => {

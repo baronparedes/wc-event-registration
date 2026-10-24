@@ -38,6 +38,10 @@ vi.mock('@/hooks/domain/auth', () => ({
   canAdminPerform: () => true,
 }));
 
+vi.mock('@/hooks/domain/approvals', () => ({
+  useSlodUsersQuery: () => ({ data: [], isLoading: false, isError: false }),
+}));
+
 function renderPage(path = '/admin/members/m1') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

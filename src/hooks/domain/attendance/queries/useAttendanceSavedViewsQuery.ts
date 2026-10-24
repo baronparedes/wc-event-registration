@@ -8,7 +8,10 @@ import type { AttendanceSavedView } from '@/lib/domain/attendance-views';
 /**
  * Fetches all saved views for a specific event.
  */
-export function useAttendanceSavedViewsQuery(eventId: string | undefined) {
+export function useAttendanceSavedViewsQuery(
+  eventId: string | undefined,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: QUERY_KEYS.adminAttendanceSavedViews(eventId),
     queryFn: async (): Promise<AttendanceSavedView[]> => {
@@ -16,7 +19,7 @@ export function useAttendanceSavedViewsQuery(eventId: string | undefined) {
 
       return fetchAttendanceSavedViews(eventId);
     },
-    enabled: !!eventId,
+    enabled: !!eventId && (options?.enabled ?? true),
     staleTime: QUERY_STALE_TIME_MS.short,
   });
 }
