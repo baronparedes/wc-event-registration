@@ -30,6 +30,7 @@ import { formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 import { RequestLongLeaveModal } from '@/pages/profile/components/service-attendance';
 
+import { DGroupEditor } from './components/DGroupEditor';
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
 import { MemberNotes } from './components/MemberNotes';
@@ -348,6 +349,19 @@ export function AdminMemberDetailPage() {
               />
             </div>
           </SectionCard>
+
+          {(canWrite || canRead) && (
+            <SectionCard
+              title="Discipleship Group (DGroup)"
+              subtitle="Manage discipleship group status, leader information, and multiplication slots."
+            >
+              <DGroupEditor
+                control={control}
+                setValue={setValue}
+                disabled={!canWrite || isDeletedMember}
+              />
+            </SectionCard>
+          )}
 
           {(canWrite || canRead) && (
             <SectionCard

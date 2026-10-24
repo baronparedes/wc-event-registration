@@ -9,7 +9,9 @@ type FormInputFieldBaseProps = {
   error?: string | null;
   required?: boolean;
   placeholder?: string;
-  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local';
+  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local' | 'tel' | 'number';
+  min?: number | string;
+  max?: number | string;
   autoComplete?: string;
   readOnly?: boolean;
   disabled?: boolean;
@@ -51,6 +53,8 @@ export function FormInputField(props: FormInputFieldProps) {
     required,
     placeholder,
     type = 'text',
+    min,
+    max,
     autoComplete,
     readOnly,
     disabled,
@@ -74,12 +78,16 @@ export function FormInputField(props: FormInputFieldProps) {
 
   return (
     <div className={`space-y-1.5 ${className ?? ''}`}>
-      {label && (
-        <label className="flex items-center gap-1.5 text-sm font-semibold text-text" htmlFor={id}>
-          {label}
-          {required && <span className="text-red-500"> *</span>}
+      {(label || labelAdornment) && (
+        <div className="flex items-center gap-1.5">
+          {label && (
+            <label className="text-sm font-semibold text-text" htmlFor={id}>
+              {label}
+              {required && <span className="text-red-500"> *</span>}
+            </label>
+          )}
           {labelAdornment}
-        </label>
+        </div>
       )}
       <div className="relative w-full">
         {backdrop}
@@ -101,6 +109,8 @@ export function FormInputField(props: FormInputFieldProps) {
           placeholder={placeholder}
           readOnly={readOnly}
           type={type}
+          min={min}
+          max={max}
           onKeyDown={onKeyDown}
           onScroll={onScroll}
         />

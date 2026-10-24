@@ -109,6 +109,8 @@ describe('AdminMemberDetailPage', () => {
 
     expect(screen.getByText('Edit Member')).toBeInTheDocument();
     expect(screen.getByDisplayValue('MEM-001')).toBeInTheDocument();
+    expect(screen.getByText('Discipleship Group (DGroup)')).toBeInTheDocument();
+    expect(screen.getByLabelText('DGroup Leader')).toBeInTheDocument();
 
     const firstNameInput = screen.getByLabelText(/First Name/i);
     fireEvent.change(firstNameInput, { target: { value: faker.person.firstName() } });

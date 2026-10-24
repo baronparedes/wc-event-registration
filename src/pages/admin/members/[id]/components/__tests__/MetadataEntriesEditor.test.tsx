@@ -66,12 +66,13 @@ describe('MetadataEntriesEditor', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders existing entries as editable key and value inputs and ignores sunday keys', () => {
+  it('renders existing entries as editable key and value inputs and ignores sunday and dgroup keys', () => {
     render(
       <TestWrapper
         initialEntries={[
           { key: 'is_oic', value: 'true' },
           { key: 'first_sunday', value: 'yes' },
+          { key: 'dgroup_leader', value: 'Pastor Dave' },
         ]}
       />,
     );
@@ -80,6 +81,8 @@ describe('MetadataEntriesEditor', () => {
     expect(screen.getByDisplayValue('true')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('first_sunday')).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('yes')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('dgroup_leader')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Pastor Dave')).not.toBeInTheDocument();
   });
 
   it('appends a new empty entry when Add field is clicked', () => {
