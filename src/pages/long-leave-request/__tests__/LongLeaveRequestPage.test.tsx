@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -14,7 +13,7 @@ import { LongLeaveRequestPage } from '../index';
 vi.mock('@/hooks/domain/members', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...(actual as any),
+    ...(actual as object),
     useCurrentProfileQuery: vi.fn(),
   };
 });
@@ -45,12 +44,17 @@ describe('LongLeaveRequestPage Wizard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryClient = createTestQueryClient();
-    mockUseCurrentProfileQuery.mockReturnValue({ data: null, isLoading: false } as any);
-    mockUseSlodUsersQuery.mockReturnValue({ data: [], isLoading: false } as any);
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: null,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useCurrentProfileQuery>);
+    mockUseSlodUsersQuery.mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<
+      typeof useSlodUsersQuery
+    >);
     mockUseSubmitExcuseMutation.mockReturnValue({
       mutateAsync: mockMutateSubmit,
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useSubmitExcuseMutation>);
   });
 
   const renderPage = () => {
