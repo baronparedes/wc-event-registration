@@ -55,16 +55,21 @@ export function AdminApprovalsPage() {
   const [delegatedEmail, setDelegatedEmail] = useState('');
 
   const {
-    data: requests = [],
+    data: allRequests = [],
     isLoading,
     isError,
     error,
     refetch,
   } = useApprovalRequestsQuery({
-    status: selectedStatus,
+    status: 'all',
     entity_type: selectedEntity,
     search: searchQuery,
   });
+
+  const requests = useMemo(() => {
+    if (selectedStatus === 'all') return allRequests;
+    return allRequests.filter((r) => r.status === selectedStatus);
+  }, [allRequests, selectedStatus]);
 
   const { data: slodUsers = [], isLoading: isLoadingSlod } = useSlodUsersQuery();
   const { mutate: delegateApproval, isPending: isDelegating } = useDelegateApprovalMutation();
@@ -84,19 +89,19 @@ export function AdminApprovalsPage() {
 
   // Metrics calculation across requests
   const metrics = useMemo(() => {
-    const total = requests.length;
+    const total = allRequests.length;
     let pending = 0;
     let approved = 0;
     let rejected = 0;
 
-    requests.forEach((r) => {
+    allRequests.forEach((r) => {
       if (r.status === 'pending') pending++;
       else if (r.status === 'approved') approved++;
       else if (r.status === 'rejected') rejected++;
     });
 
     return { total, pending, approved, rejected };
-  }, [requests]);
+  }, [allRequests]);
 
   const handleDelegate = () => {
     if (!inspectingRequest || !delegatedEmail) return;
