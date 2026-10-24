@@ -237,6 +237,9 @@ describe('AdminApprovalsPage', () => {
   it('renders approval requests list and metric cards with all statuses', () => {
     renderWithClient(<AdminApprovalsPage />);
 
+    const allBtn = screen.getByRole('button', { name: /^All$/i });
+    fireEvent.click(allBtn);
+
     expect(screen.getByText('Camp Registration Submission')).toBeInTheDocument();
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Long Leave Request')).toBeInTheDocument();
@@ -421,6 +424,9 @@ describe('AdminApprovalsPage', () => {
   it('inspects an already approved request to view decision details', () => {
     renderWithClient(<AdminApprovalsPage />);
 
+    const allBtn = screen.getByRole('button', { name: /^All$/i });
+    fireEvent.click(allBtn);
+
     const detailsButtons = screen.getAllByRole('button', { name: /^Details$/i });
     fireEvent.click(detailsButtons[0]); // approved request req-2
 
@@ -434,6 +440,9 @@ describe('AdminApprovalsPage', () => {
 
   it('inspects a rejected request to view rejected details and fallback Decided by Administrator', () => {
     renderWithClient(<AdminApprovalsPage />);
+
+    const allBtn = screen.getByRole('button', { name: /^All$/i });
+    fireEvent.click(allBtn);
 
     const detailsButtons = screen.getAllByRole('button', { name: /^Details$/i });
     fireEvent.click(detailsButtons[1]); // rejected request req-3
