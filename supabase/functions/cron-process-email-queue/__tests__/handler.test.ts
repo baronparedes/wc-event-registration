@@ -12,6 +12,7 @@ type QueueMessage = {
     template_slug?: string;
     subject?: string;
     text?: string;
+    html?: string;
     metadata?: Record<string, unknown>;
   };
 };
@@ -94,9 +95,10 @@ function mockFetch(options: {
     }
     if (requestUrl.pathname === '/rest/v1/email_templates') {
       const slug = requestUrl.searchParams.get('slug')?.replace(/^eq\./, '');
+      const isApproval = slug?.startsWith('approval');
       return Promise.resolve(
         Response.json({
-          resend_template_id: `tmpl_${slug || 'default'}`,
+          resend_template_id: isApproval ? `tmpl_${slug}_placeholder` : `tmpl_${slug || 'default'}`,
         }),
       );
     }
@@ -526,6 +528,65 @@ Deno.test(
 
         // Both messages archived
         assertEquals(fetchMock.archivedIds, [501, 502]);
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-process-email-queue dispatches and archives approval notifications when OUTLOOK_DISPATCH_EMAIL is configured',
+  async () => {
+    await withFunctionEnv(async () => {
+      Deno.env.set('OUTLOOK_DISPATCH_EMAIL', 'broadcasts@welcome.org.ph');
+      const messages: QueueMessage[] = [
+        {
+          msg_id: 601,
+          read_ct: 1,
+          message: {
+            event_type: 'email_notification',
+            category: 'approval',
+            recipient: 'reviewer@example.com',
+            template_slug: 'approval-review-request',
+            subject: 'Action Required: Review Leave Request',
+            html: '<p>A request requires your review and approval</p>',
+            text: 'A request requires your review and approval',
+            metadata: {
+              target_type: 'approval-request',
+              approval_id: 'app-123',
+            },
+          },
+        },
+      ];
+
+      const fetchMock = mockFetch({ messages });
+
+      try {
+        const response = await handleCronProcessEmailQueue(buildRequest());
+        assertEquals(await response.json(), { success: true, processed: 1 });
+
+        assertEquals(fetchMock.sentEmails.length, 1);
+        const sent = fetchMock.sentEmails[0];
+        assertEquals(sent.to, 'broadcasts@welcome.org.ph');
+        assertEquals(String(sent.subject).includes('[WC-BROADCAST-DISPATCH]'), true);
+        assertEquals(String(sent.subject).includes('[APPROVAL]'), true);
+        assertEquals(String(sent.subject).includes('(1 emails)'), true);
+
+        const attachments = sent.attachments as Array<{ filename: string; content: string }>;
+        assertEquals(attachments.length, 1);
+        const batchPayload = JSON.parse(atob(attachments[0].content));
+
+        assertEquals(batchPayload.batch_type, 'approval');
+        assertEquals(batchPayload.count, 1);
+        assertEquals(batchPayload.items[0].to, 'reviewer@example.com');
+        assertEquals(batchPayload.items[0].subject, 'Action Required: Review Leave Request');
+        assertEquals(
+          batchPayload.items[0].body_html,
+          '<p>A request requires your review and approval</p>',
+        );
+
+        assertEquals(fetchMock.archivedIds, [601]);
       } finally {
         fetchMock.restore();
       }
