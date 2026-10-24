@@ -14,6 +14,13 @@ export type HubItem =
       title: string;
       description: string;
       status?: 'published';
+    }
+  | {
+      type: 'long-leave';
+      id: string;
+      title: string;
+      description: string;
+      status?: 'published';
     };
 
 type HubSectionProps = {
@@ -52,6 +59,21 @@ export function HubSection({ title, items }: HubSectionProps) {
                   status: 'published',
                 }}
                 submissionPath={ROUTE_PATHS.excuseRequest}
+                statusLabel="Open"
+              />
+            );
+          }
+          if (item.type === 'long-leave') {
+            return (
+              <FormCard
+                key={`long-leave-${item.id}`}
+                form={{
+                  title: item.title,
+                  slug: 'long-leave-request',
+                  description: item.description,
+                  status: 'published',
+                }}
+                submissionPath={ROUTE_PATHS.longLeaveRequest}
                 statusLabel="Open"
               />
             );
