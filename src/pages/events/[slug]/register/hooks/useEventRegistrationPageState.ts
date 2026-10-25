@@ -146,6 +146,7 @@ export function useEventRegistrationPageState() {
   const [autoLookupStatus, setAutoLookupStatus] = useState<'idle' | 'executing' | 'completed'>(
     'idle',
   );
+  const autoLookupAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (slug === 'excuse-request-2026') {
@@ -288,6 +289,8 @@ export function useEventRegistrationPageState() {
     clearLookupError();
     setWizardStep(1);
     focusMemberIdInput();
+    autoLookupAttemptedRef.current = false;
+    setAutoLookupStatus('idle');
   }, [clearMember, lookupForm, clearLookupError, focusMemberIdInput]);
 
   const handleLookupSuccess = useCallback(
@@ -328,17 +331,19 @@ export function useEventRegistrationPageState() {
       !currentProfile?.member_id ||
       memberLookup.matchedMember ||
       memberLookup.isLookupPending ||
-      autoLookupStatus !== 'idle'
+      autoLookupAttemptedRef.current
     ) {
       return;
     }
+
+    autoLookupAttemptedRef.current = true;
+    setAutoLookupStatus('executing');
 
     let isMounted = true;
 
     void Promise.resolve().then(async () => {
       if (!isMounted) return;
 
-      setAutoLookupStatus('executing');
       setSubmitErrorMessage(null);
       setSubmitSuccessMessage(null);
       setIsRegistrationConfirmed(false);
@@ -372,7 +377,6 @@ export function useEventRegistrationPageState() {
     currentProfile?.member_id,
     memberLookup.matchedMember,
     memberLookup.isLookupPending,
-    autoLookupStatus,
     runMemberLookupSubmit,
     clearLookupError,
     handleLookupFailure,
@@ -727,6 +731,8 @@ export function useEventRegistrationPageState() {
     setIsWizardBlockedResult(false);
     setWizardStep(1);
     scrollToTitleAnchor();
+    autoLookupAttemptedRef.current = false;
+    setAutoLookupStatus('idle');
   }, [
     isSignedIn,
     navigate,

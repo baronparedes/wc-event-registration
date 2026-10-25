@@ -209,12 +209,12 @@ export function EventRegistrationPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   className="w-full"
-                  onClick={isSignedIn ? handleCancelUpdate : resetToStepOne}
+                  onClick={resetToStepOne}
                   size="lg"
                   type="button"
                   variant="accent"
                 >
-                  {isSignedIn ? 'Back to Events' : 'Scan Another Member'}
+                  Scan Another Member
                 </Button>
               </div>
             </div>
@@ -257,9 +257,7 @@ export function EventRegistrationPage() {
                   submitSuccessMessage={submitSuccessMessage}
                   isRegistrationConfirmed={isRegistrationConfirmed}
                   onConfirmAcknowledged={handleConfirmAcknowledged}
-                  confirmAcknowledgedLabel={
-                    isSignedIn ? 'Back to Events' : 'Ready for Next Attendee'
-                  }
+                  confirmAcknowledgedLabel={'Ready for Next Attendee'}
                   countdownMs={isSignedIn ? undefined : TIMING.registrationWizardConfirmedResetMs}
                   onCountdownTimeout={isSignedIn ? undefined : resetToStepOne}
                   inactivityTimeoutMs={isSignedIn ? undefined : TIMING.kioskInactivityResetMs}

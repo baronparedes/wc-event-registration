@@ -209,8 +209,11 @@ export function useFormSubmissionPageState() {
 
   // Back navigation
   const handleBackToStepOne = useCallback(() => {
+    resetMemberLookup();
     setActiveWizardStep(1);
-  }, []);
+    autoLookupAttemptedRef.current = false;
+    setAutoLookupStatus('idle');
+  }, [resetMemberLookup]);
 
   const handleBackToStepTwo = useCallback(() => {
     setActiveWizardStep(2);

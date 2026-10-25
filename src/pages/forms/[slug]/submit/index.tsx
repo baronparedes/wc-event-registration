@@ -205,12 +205,12 @@ export function FormSubmissionPage() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     className="w-full"
-                    onClick={isSignedIn ? goHome : handleBackToStepOne}
+                    onClick={handleBackToStepOne}
                     size="lg"
                     type="button"
                     variant="accent"
                   >
-                    {isSignedIn ? 'Back to Home' : 'Scan Another Member'}
+                    Scan Another Member
                   </Button>
                 </div>
               </div>
