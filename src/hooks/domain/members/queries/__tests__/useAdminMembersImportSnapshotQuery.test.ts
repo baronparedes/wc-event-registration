@@ -67,6 +67,12 @@ describe('useAdminMembersImportSnapshotQuery', () => {
         last_name: lastName,
         nickname: '',
         is_active: true,
+        email: null,
+        phone: null,
+        date_of_birth: null,
+        role: null,
+        category: null,
+        metadata: {},
       },
     ]);
   });

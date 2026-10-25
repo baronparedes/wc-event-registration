@@ -30,9 +30,28 @@ export interface ExistingMemberImportSnapshot {
   last_name: string;
   nickname: string;
   is_active: boolean;
+  email?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  role?: string | null;
+  category?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export type MemberCsvPreviewOperation = 'insert' | 'update' | 'update_member_id' | 'error';
+
+export interface MemberCsvFieldChange {
+  field: string;
+  label: string;
+  old_value: string | null;
+  new_value: string | null;
+}
+
+export interface MemberCsvNewDetail {
+  field: string;
+  label: string;
+  value: string;
+}
 
 export interface MemberCsvPreviewRow {
   row_number: number;
@@ -40,10 +59,14 @@ export interface MemberCsvPreviewRow {
   first_name: string;
   last_name: string;
   nickname: string;
+  role: string;
+  category: string;
   operation: MemberCsvPreviewOperation;
   target_user_id?: string;
   target_member_id?: string;
   errors: string[];
+  field_changes: MemberCsvFieldChange[];
+  new_member_details: MemberCsvNewDetail[];
 }
 
 export interface MemberCsvPreviewSummary {
@@ -123,6 +146,35 @@ function canonicalizeMetadataHeaderKey(value: string): string {
     default:
       return value;
   }
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  member_id: 'RFID / Member ID',
+  first_name: 'First Name',
+  last_name: 'Last Name',
+  nickname: 'Nickname',
+  role: 'Role',
+  category: 'Category',
+  email: 'Email',
+  phone: 'Phone',
+  date_of_birth: 'Date of Birth',
+  is_oic: 'Officer In Charge (OIC)',
+  start_date: 'Start Date',
+  first_sunday: '1st Sunday Schedule',
+  second_sunday: '2nd Sunday Schedule',
+  third_sunday: '3rd Sunday Schedule',
+  fourth_sunday: '4th Sunday Schedule',
+  fifth_sunday: '5th Sunday Schedule',
+};
+
+export function formatMemberFieldLabel(key: string): string {
+  if (FIELD_LABELS[key]) {
+    return FIELD_LABELS[key];
+  }
+  return key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function normalizeText(value: string | null | undefined): string {
@@ -510,16 +562,192 @@ export function buildMemberCsvImportPreview(
       targetedMemberIds.add(targetUserId);
     }
 
+    const fieldChanges: MemberCsvFieldChange[] = [];
+    const newMemberDetails: MemberCsvNewDetail[] = [];
+
+    const matchedMember = memberIdMatch ?? (tripletMatches.length === 1 ? tripletMatches[0] : null);
+
+    if (operation === 'update' || operation === 'update_member_id') {
+      if (matchedMember) {
+        if (matchedMember.member_id !== row.member_id) {
+          fieldChanges.push({
+            field: 'member_id',
+            label: formatMemberFieldLabel('member_id'),
+            old_value: matchedMember.member_id || null,
+            new_value: row.member_id,
+          });
+        }
+        if (matchedMember.first_name.trim() !== row.first_name.trim()) {
+          fieldChanges.push({
+            field: 'first_name',
+            label: formatMemberFieldLabel('first_name'),
+            old_value: matchedMember.first_name || null,
+            new_value: row.first_name,
+          });
+        }
+        if (matchedMember.last_name.trim() !== row.last_name.trim()) {
+          fieldChanges.push({
+            field: 'last_name',
+            label: formatMemberFieldLabel('last_name'),
+            old_value: matchedMember.last_name || null,
+            new_value: row.last_name,
+          });
+        }
+        if (matchedMember.nickname.trim() !== row.nickname.trim()) {
+          fieldChanges.push({
+            field: 'nickname',
+            label: formatMemberFieldLabel('nickname'),
+            old_value: matchedMember.nickname || null,
+            new_value: row.nickname,
+          });
+        }
+        if ((matchedMember.role ?? '').trim() !== row.role.trim()) {
+          fieldChanges.push({
+            field: 'role',
+            label: formatMemberFieldLabel('role'),
+            old_value: matchedMember.role || null,
+            new_value: row.role,
+          });
+        }
+        if ((matchedMember.category ?? '').trim() !== row.category.trim()) {
+          fieldChanges.push({
+            field: 'category',
+            label: formatMemberFieldLabel('category'),
+            old_value: matchedMember.category || null,
+            new_value: row.category,
+          });
+        }
+        if (row.email !== null) {
+          const oldEmail = (matchedMember.email ?? '').trim().toLowerCase();
+          const newEmail = row.email.trim().toLowerCase();
+          if (oldEmail !== newEmail) {
+            fieldChanges.push({
+              field: 'email',
+              label: formatMemberFieldLabel('email'),
+              old_value: matchedMember.email || null,
+              new_value: row.email,
+            });
+          }
+        }
+        if (row.phone !== null) {
+          const oldPhone = (matchedMember.phone ?? '').trim();
+          const newPhone = row.phone.trim();
+          if (oldPhone !== newPhone) {
+            fieldChanges.push({
+              field: 'phone',
+              label: formatMemberFieldLabel('phone'),
+              old_value: matchedMember.phone || null,
+              new_value: row.phone,
+            });
+          }
+        }
+        if (row.date_of_birth !== null) {
+          const oldDob = (matchedMember.date_of_birth ?? '').trim();
+          const newDob = row.date_of_birth.trim();
+          if (oldDob !== newDob) {
+            fieldChanges.push({
+              field: 'date_of_birth',
+              label: formatMemberFieldLabel('date_of_birth'),
+              old_value: matchedMember.date_of_birth || null,
+              new_value: row.date_of_birth,
+            });
+          }
+        }
+
+        const existingMeta = (matchedMember.metadata ?? {}) as Record<string, unknown>;
+        for (const [key, rawNewVal] of Object.entries(row.metadata)) {
+          const rawOldVal = existingMeta[key];
+          const oldStr =
+            rawOldVal !== undefined && rawOldVal !== null ? String(rawOldVal).trim() : null;
+          const newStr =
+            rawNewVal !== undefined && rawNewVal !== null ? String(rawNewVal).trim() : null;
+          if (oldStr !== newStr) {
+            fieldChanges.push({
+              field: key,
+              label: formatMemberFieldLabel(key),
+              old_value: oldStr,
+              new_value: newStr,
+            });
+          }
+        }
+      }
+    } else if (operation === 'insert') {
+      newMemberDetails.push({
+        field: 'member_id',
+        label: formatMemberFieldLabel('member_id'),
+        value: row.member_id,
+      });
+      newMemberDetails.push({
+        field: 'first_name',
+        label: formatMemberFieldLabel('first_name'),
+        value: row.first_name,
+      });
+      newMemberDetails.push({
+        field: 'last_name',
+        label: formatMemberFieldLabel('last_name'),
+        value: row.last_name,
+      });
+      newMemberDetails.push({
+        field: 'nickname',
+        label: formatMemberFieldLabel('nickname'),
+        value: row.nickname,
+      });
+      newMemberDetails.push({
+        field: 'role',
+        label: formatMemberFieldLabel('role'),
+        value: row.role,
+      });
+      newMemberDetails.push({
+        field: 'category',
+        label: formatMemberFieldLabel('category'),
+        value: row.category,
+      });
+      if (row.email) {
+        newMemberDetails.push({
+          field: 'email',
+          label: formatMemberFieldLabel('email'),
+          value: row.email,
+        });
+      }
+      if (row.phone) {
+        newMemberDetails.push({
+          field: 'phone',
+          label: formatMemberFieldLabel('phone'),
+          value: row.phone,
+        });
+      }
+      if (row.date_of_birth) {
+        newMemberDetails.push({
+          field: 'date_of_birth',
+          label: formatMemberFieldLabel('date_of_birth'),
+          value: row.date_of_birth,
+        });
+      }
+      for (const [key, value] of Object.entries(row.metadata)) {
+        if (value !== undefined && value !== null && String(value).trim().length > 0) {
+          newMemberDetails.push({
+            field: key,
+            label: formatMemberFieldLabel(key),
+            value: String(value),
+          });
+        }
+      }
+    }
+
     previewRows.push({
       row_number: row.row_number,
       member_id: row.member_id,
       first_name: row.first_name,
       last_name: row.last_name,
       nickname: row.nickname,
+      role: row.role,
+      category: row.category,
       operation,
       target_user_id: targetUserId,
       target_member_id: targetMemberId,
       errors: rowErrors,
+      field_changes: fieldChanges,
+      new_member_details: newMemberDetails,
     });
   }
 
