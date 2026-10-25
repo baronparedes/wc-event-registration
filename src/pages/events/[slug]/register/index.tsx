@@ -212,7 +212,7 @@ export function EventRegistrationPage() {
                   onClick={resetToStepOne}
                   size="lg"
                   type="button"
-                  variant="accent"
+                  variant={isEffectiveRegistrationBlocked ? 'accent' : 'primaryOutline'}
                 >
                   Scan Another Member
                 </Button>
@@ -263,6 +263,18 @@ export function EventRegistrationPage() {
                   inactivityTimeoutMs={isSignedIn ? undefined : TIMING.kioskInactivityResetMs}
                   onInactivityTimeout={isSignedIn ? undefined : resetToStepOne}
                 />
+              )}
+
+              {isRegistrationConfirmed && isSignedIn && (
+                <Button
+                  className="w-full hover:bg-surface"
+                  onClick={handleCancelUpdate}
+                  size="lg"
+                  type="button"
+                  variant="primaryOutline"
+                >
+                  Back to Events
+                </Button>
               )}
 
               {!isRegistrationConfirmed && !isSignedIn && (

@@ -208,7 +208,7 @@ export function FormSubmissionPage() {
                     onClick={handleBackToStepOne}
                     size="lg"
                     type="button"
-                    variant="accent"
+                    variant={memberLookup.isRegistrationBlocked ? 'accent' : 'primaryOutline'}
                   >
                     Scan Another Member
                   </Button>

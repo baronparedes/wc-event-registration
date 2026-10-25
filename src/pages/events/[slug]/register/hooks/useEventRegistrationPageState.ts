@@ -147,6 +147,14 @@ export function useEventRegistrationPageState() {
     'idle',
   );
   const autoLookupAttemptedRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (slug === 'excuse-request-2026') {
@@ -289,8 +297,6 @@ export function useEventRegistrationPageState() {
     clearLookupError();
     setWizardStep(1);
     focusMemberIdInput();
-    autoLookupAttemptedRef.current = false;
-    setAutoLookupStatus('idle');
   }, [clearMember, lookupForm, clearLookupError, focusMemberIdInput]);
 
   const handleLookupSuccess = useCallback(
@@ -330,7 +336,6 @@ export function useEventRegistrationPageState() {
       profileQuery.isLoading ||
       !currentProfile?.member_id ||
       memberLookup.matchedMember ||
-      memberLookup.isLookupPending ||
       autoLookupAttemptedRef.current
     ) {
       return;
@@ -339,44 +344,43 @@ export function useEventRegistrationPageState() {
     autoLookupAttemptedRef.current = true;
     setAutoLookupStatus('executing');
 
-    let isMounted = true;
-
     void Promise.resolve().then(async () => {
-      if (!isMounted) return;
+      try {
+        if (!isMountedRef.current) return;
 
-      setSubmitErrorMessage(null);
-      setSubmitSuccessMessage(null);
-      setIsRegistrationConfirmed(false);
-      clearLookupError();
+        setSubmitErrorMessage(null);
+        setSubmitSuccessMessage(null);
+        setIsRegistrationConfirmed(false);
+        clearLookupError();
 
-      const result = await runMemberLookupSubmit({ memberId: currentProfile.member_id });
-      if (!isMounted) return;
+        const result = await runMemberLookupSubmit({ memberId: currentProfile.member_id });
+        if (!isMountedRef.current) return;
 
-      setAutoLookupStatus('completed');
+        setAutoLookupStatus('completed');
 
-      if (!result || !result.success) {
-        handleLookupFailure(
-          result?.error || FORM_MESSAGES.memberLookupFailed,
-          result?.reason === 'already_registered',
-          result?.reason,
-        );
-        return;
+        if (!result || !result.success) {
+          handleLookupFailure(
+            result?.error || FORM_MESSAGES.memberLookupFailed,
+            result?.reason === 'already_registered',
+            result?.reason,
+          );
+          return;
+        }
+
+        setIsWizardBlockedResult(false);
+        enterWizardConfirmStep();
+      } catch {
+        if (!isMountedRef.current) return;
+        setAutoLookupStatus('completed');
+        handleLookupFailure(FORM_MESSAGES.memberLookupFailed, false, 'lookup_unavailable');
       }
-
-      setIsWizardBlockedResult(false);
-      enterWizardConfirmStep();
     });
-
-    return () => {
-      isMounted = false;
-    };
   }, [
     isGateReady,
     isPublicOnly,
     profileQuery.isLoading,
     currentProfile?.member_id,
     memberLookup.matchedMember,
-    memberLookup.isLookupPending,
     runMemberLookupSubmit,
     clearLookupError,
     handleLookupFailure,
@@ -388,8 +392,7 @@ export function useEventRegistrationPageState() {
     !isPublicOnly &&
     !memberLookup.matchedMember &&
     !lookupErrorMessage &&
-    (profileQuery.isLoading ||
-      (isSignedIn && (autoLookupStatus !== 'completed' || memberLookup.isLookupPending)));
+    (profileQuery.isLoading || (isSignedIn && autoLookupStatus === 'executing'));
 
   const handleScan = useCallback(
     async (scannedMemberId: string) => {
@@ -731,8 +734,6 @@ export function useEventRegistrationPageState() {
     setIsWizardBlockedResult(false);
     setWizardStep(1);
     scrollToTitleAnchor();
-    autoLookupAttemptedRef.current = false;
-    setAutoLookupStatus('idle');
   }, [
     isSignedIn,
     navigate,
@@ -744,12 +745,8 @@ export function useEventRegistrationPageState() {
   ]);
 
   const handleConfirmAcknowledged = useCallback(() => {
-    if (isSignedIn) {
-      navigate(ROUTE_PATHS.home);
-    } else {
-      resetToStepOne();
-    }
-  }, [isSignedIn, navigate, resetToStepOne]);
+    resetToStepOne();
+  }, [resetToStepOne]);
 
   return {
     slug,

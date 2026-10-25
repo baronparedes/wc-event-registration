@@ -882,7 +882,10 @@ describe('EventRegistrationPage', () => {
       expect(screen.getByText('Profile Step')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'Scan Another Member' })).toBeInTheDocument();
+    const scanAnotherButton = screen.getByRole('button', { name: 'Scan Another Member' });
+    expect(scanAnotherButton).toBeInTheDocument();
+    fireEvent.click(scanAnotherButton);
+    expect(memberLookupState.clearMember).toHaveBeenCalled();
   });
 
   it('renders public registration only banner when event public_registration_access is public and navigates to register-public on button click', () => {

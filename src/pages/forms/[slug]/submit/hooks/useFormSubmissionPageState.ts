@@ -197,8 +197,6 @@ export function useFormSubmissionPageState() {
   const switchToMemberMode = useCallback(() => {
     setGuestInfo(null);
     setUserSelectedRespondentType('member');
-    autoLookupAttemptedRef.current = false;
-    setAutoLookupStatus('idle');
     setActiveWizardStep(1);
   }, []);
 
@@ -211,8 +209,6 @@ export function useFormSubmissionPageState() {
   const handleBackToStepOne = useCallback(() => {
     resetMemberLookup();
     setActiveWizardStep(1);
-    autoLookupAttemptedRef.current = false;
-    setAutoLookupStatus('idle');
   }, [resetMemberLookup]);
 
   const handleBackToStepTwo = useCallback(() => {
@@ -358,8 +354,6 @@ export function useFormSubmissionPageState() {
     setSubmitErrorMessage(null);
     setSubmitSuccessMessage(null);
     dynamicForm.reset(createDynamicFieldDefaultValues(fields));
-    autoLookupAttemptedRef.current = false;
-    setAutoLookupStatus('idle');
     setActiveWizardStep(1);
   }, [clearLookupError, dynamicForm, fields, resetMemberLookup]);
 
