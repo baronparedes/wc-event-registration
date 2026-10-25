@@ -395,6 +395,36 @@ describe('useFormSubmissionPageState', () => {
     expect(result.current.activeWizardStep).toBe(2);
   });
 
+  it('allows signed-in member to navigate back to step 1 without re-triggering auto-lookup', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'WC-AUTO-100' },
+      isLoading: false,
+    });
+
+    mockMemberLookupSubmit.mockResolvedValueOnce({
+      success: true,
+      mode: 'new_registration',
+    });
+
+    const { result } = renderHook(() => useFormSubmissionPageState());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.activeWizardStep).toBe(3);
+    mockMemberLookupSubmit.mockClear();
+
+    act(() => {
+      result.current.handleBackToStepOne();
+    });
+
+    expect(result.current.activeWizardStep).toBe(1);
+    expect(mockResetLookup).toHaveBeenCalled();
+    expect(mockMemberLookupSubmit).not.toHaveBeenCalled();
+    expect(result.current.isVerifyingSignedInMember).toBe(false);
+  });
+
   it('prevents submission if form or slug is missing', async () => {
     mockUseParams.mockReturnValue({ slug: undefined });
     mockUseFormBySlugQuery.mockReturnValue({

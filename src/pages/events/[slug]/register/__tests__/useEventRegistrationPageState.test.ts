@@ -848,7 +848,35 @@ describe('useEventRegistrationPageState', () => {
     expect(result.current.shouldBypassDynamicFieldsStepCard).toBe(false);
   });
 
-  it('navigates to home when signed in user cancels or acknowledges confirmation', () => {
+  it('allows signed in member to reset to step 1 to register someone else without re-triggering auto-lookup', async () => {
+    mockUseCurrentProfileQuery.mockReturnValue({
+      data: { member_id: 'MEM-001', full_name: memberFullName },
+      isLoading: false,
+    });
+    memberLookupState.handleLookupSubmit.mockResolvedValueOnce({
+      success: true,
+      mode: 'new_registration',
+    });
+
+    const { result } = renderHookWithClient(() => useEventRegistrationPageState());
+
+    await waitFor(() => {
+      expect(result.current.activeWizardStep).toBe(2);
+    });
+
+    memberLookupState.handleLookupSubmit.mockClear();
+
+    act(() => {
+      result.current.resetToStepOne();
+    });
+
+    expect(result.current.activeWizardStep).toBe(1);
+    expect(memberLookupState.clearMember).toHaveBeenCalled();
+    expect(memberLookupState.handleLookupSubmit).not.toHaveBeenCalled();
+    expect(result.current.isVerifyingSignedInMember).toBe(false);
+  });
+
+  it('navigates to home when signed in user cancels and resets to step one when acknowledging confirmation', () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: { member_id: 'MEM-001', full_name: memberFullName },
       isLoading: false,
@@ -864,7 +892,7 @@ describe('useEventRegistrationPageState', () => {
     act(() => {
       result.current.handleConfirmAcknowledged();
     });
-    expect(mockNavigate).toHaveBeenCalledWith('/');
+    expect(result.current.activeWizardStep).toBe(1);
   });
 
   it('does not auto-lookup signed in member and sets isPublicOnly to true when event is public-only', () => {

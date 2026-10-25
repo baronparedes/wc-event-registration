@@ -830,7 +830,7 @@ describe('EventRegistrationPage', () => {
     expect(screen.queryByText('Back to Step 2')).toBeNull();
   });
 
-  it('shows Back to Events button on Step 2 when signed-in member is already registered and blocked', async () => {
+  it('shows Scan Another Member button on Step 2 when signed-in member is already registered and blocked', async () => {
     mockUseCurrentProfileQuery.mockReturnValue({
       data: { member_id: 'MEM-100', full_name: signedInFullName },
       isLoading: false,
@@ -882,7 +882,10 @@ describe('EventRegistrationPage', () => {
       expect(screen.getByText('Profile Step')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'Back to Events' })).toBeInTheDocument();
+    const scanAnotherButton = screen.getByRole('button', { name: 'Scan Another Member' });
+    expect(scanAnotherButton).toBeInTheDocument();
+    fireEvent.click(scanAnotherButton);
+    expect(memberLookupState.clearMember).toHaveBeenCalled();
   });
 
   it('renders public registration only banner when event public_registration_access is public and navigates to register-public on button click', () => {
