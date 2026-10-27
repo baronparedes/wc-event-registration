@@ -95,7 +95,7 @@ export function SlotAttendeesModal({ isOpen, onClose, slot }: SlotAttendeesModal
                   <Link
                     to={toRoute('adminMemberDetail', { id: member.id })}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex shrink-0 items-center gap-1 rounded-lg border border-border/80 bg-background/50 px-2.5 py-1 text-xs font-medium text-text hover:border-primary hover:text-primary hover:bg-primary/5 transition-all shadow-xs"
                   >
                     <span>Profile</span>

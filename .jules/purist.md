@@ -81,3 +81,7 @@
 **Deviation:** External link `<Link target="_blank">` missing `rel="noopener noreferrer"`.
 **Learning:** `rel="noreferrer"` was used alone, which is insufficient. React Router `<Link>` components targeting external tabs (`_blank`) must have both `noopener` and `noreferrer` for full security.
 **Standard:** Always apply `rel="noopener noreferrer"` on `<Link>` or `<a>` elements containing `target="_blank"`.
+## 2025-02-21 - Fix Reverse Tabnabbing Vulnerability in SlotAttendeesModal
+**Deviation:** External link in SlotAttendeesModal used `target="_blank"` with `rel="noreferrer"` but omitted `noopener`.
+**Learning:** React Router `<Link>` with `target="_blank"` can still introduce reverse tabnabbing vulnerabilities if `rel="noopener"` is missing, allowing the newly opened tab to potentially execute malicious JavaScript against the originating page's `window.opener` context.
+**Standard:** Always enforce `rel="noopener noreferrer"` on all `target="_blank"` anchor tags and `<Link>` components, even for internal profile routes, to strictly adhere to secure frontend boundaries.
