@@ -80,6 +80,59 @@ describe('shareFiles', () => {
       'unsupported',
     );
   });
+
+  it('returns unsupported when files array is empty', async () => {
+    setNavigator({ share: vi.fn(), canShare: vi.fn().mockReturnValue(true) });
+    await expect(shareFiles({ files: [] })).resolves.toBe('unsupported');
+  });
+
+  it('iOS multi-file fallback stops and returns shared if AbortError is thrown', async () => {
+    const share = vi.fn().mockRejectedValueOnce(new DOMException('cancelled', 'AbortError'));
+    const canShare = vi.fn((data: ShareData) => (data.files?.length ?? 0) === 1);
+    setNavigator({
+      share,
+      canShare,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      platform: 'iPhone',
+    });
+
+    const files = [makeFile('a.jpg'), makeFile('b.jpg')];
+    await expect(shareFiles({ files })).resolves.toBe('shared');
+    expect(share).toHaveBeenCalledTimes(1);
+  });
+
+  it('iOS multi-file fallback continues if non-abort error is thrown, and returns shared if any succeeded', async () => {
+    const share = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(undefined);
+    const canShare = vi.fn((data: ShareData) => (data.files?.length ?? 0) === 1);
+    setNavigator({
+      share,
+      canShare,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      platform: 'iPhone',
+    });
+
+    const files = [makeFile('a.jpg'), makeFile('b.jpg')];
+    await expect(shareFiles({ files })).resolves.toBe('shared');
+    expect(share).toHaveBeenCalledTimes(2);
+  });
+
+  it('iOS multi-file fallback returns unsupported if all files fail with non-abort errors', async () => {
+    const share = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('boom1'))
+      .mockRejectedValueOnce(new Error('boom2'));
+    const canShare = vi.fn((data: ShareData) => (data.files?.length ?? 0) === 1);
+    setNavigator({
+      share,
+      canShare,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+      platform: 'iPhone',
+    });
+
+    const files = [makeFile('a.jpg'), makeFile('b.jpg')];
+    await expect(shareFiles({ files })).resolves.toBe('unsupported');
+    expect(share).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('clipboard', () => {
