@@ -24,6 +24,11 @@ describe('RFID Utilities', () => {
       expect(result).toBe(0x69216c46);
     });
 
+    it('handles hex strings with uppercase 0X prefix', () => {
+      const result = convertHexToDecimal('0X466C2169', true);
+      expect(result).toBe(0x69216c46);
+    });
+
     it('handles hex strings with spaces', () => {
       const result = convertHexToDecimal('46 6C 21 69', true);
       expect(result).toBe(0x69216c46);
@@ -52,6 +57,14 @@ describe('RFID Utilities', () => {
 
     it('returns empty string if input is empty', () => {
       expect(convertHexToDecimal('', false)).toBe('');
+    });
+
+    it('returns original input if input is only whitespace', () => {
+      expect(convertHexToDecimal('   ', false)).toBe('   ');
+    });
+
+    it('handles formatted hex string without byte reversal', () => {
+      expect(convertHexToDecimal('46 6C 21 69', false)).toBe(0x466c2169);
     });
 
     it('handles case-insensitive hex', () => {
@@ -215,6 +228,27 @@ describe('RFID Utilities', () => {
       const results = searchAttendeesWithRfidFallback(mockAttendees, '46 6C 21 69');
       expect(results).toHaveLength(1);
       expect(results[0].full_name).toBe('Test Alpha');
+    });
+
+    it('handles attendee with null member_id and email', () => {
+      const attendees: AttendeeSearchResult[] = [
+        createMockAttendee({
+          full_name: 'Test Null Fields',
+          member_id: null,
+          email: null,
+        }),
+      ];
+      const results = searchAttendeesWithRfidFallback(attendees, 'Null');
+      expect(results).toHaveLength(1);
+      expect(results[0].full_name).toBe('Test Null Fields');
+
+      const noResults = searchAttendeesWithRfidFallback(attendees, 'NONEXISTENT');
+      expect(noResults).toHaveLength(0);
+    });
+
+    it('returns empty array if converted RFID does not match any attendee', () => {
+      const results = searchAttendeesWithRfidFallback(mockAttendees, '11223344'); // This will convert, but not match
+      expect(results).toHaveLength(0);
     });
   });
 });
