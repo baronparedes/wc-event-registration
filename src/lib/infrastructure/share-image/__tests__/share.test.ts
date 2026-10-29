@@ -172,4 +172,32 @@ describe('clipboard', () => {
     const [items] = write.mock.calls[0] as [Array<{ data: Record<string, Blob> }>];
     expect(items[0]?.data['image/png']).toBe(blob);
   });
+
+  it('copyPngToClipboard falls back to resolved blob if ClipboardItem rejects promise', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    setNavigator({ clipboard: { write } });
+
+    vi.stubGlobal(
+      'ClipboardItem',
+      class ClipboardItem {
+        data: Record<string, Blob>;
+        constructor(data: Record<string, Blob | Promise<Blob>>) {
+          const value = data['image/png'];
+          if (value instanceof Promise) {
+            throw new Error('ClipboardItem does not support Promises in this browser');
+          }
+          this.data = data as Record<string, Blob>;
+        }
+      },
+    );
+
+    const blob = new Blob(['y'], { type: 'image/png' });
+    const blobPromise = Promise.resolve(blob);
+
+    await copyPngToClipboard(blobPromise);
+
+    expect(write).toHaveBeenCalledTimes(1);
+    const [items] = write.mock.calls[0] as [Array<{ data: Record<string, Blob> }>];
+    expect(items[0]?.data['image/png']).toBe(blob);
+  });
 });
