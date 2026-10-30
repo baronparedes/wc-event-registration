@@ -403,6 +403,25 @@ describe('parseMultiSelectToggleMap', () => {
       ),
     ).toEqual({});
   });
+
+  it('returns empty object when answer_text is an array', () => {
+    expect(
+      parseMultiSelectToggleMap(
+        makeAttAnswer({
+          field_type: 'multi_select_toggle',
+          answer_text: '["array", "of", "strings"]',
+        }),
+      ),
+    ).toEqual({});
+  });
+
+  it('returns empty object when parsing fails', () => {
+    expect(
+      parseMultiSelectToggleMap(
+        makeAttAnswer({ field_type: 'multi_select_toggle', answer_text: '{ malformed }' }),
+      ),
+    ).toEqual({});
+  });
 });
 
 // ---------------------------------------------------------------------------
