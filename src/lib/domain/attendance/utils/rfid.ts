@@ -68,6 +68,7 @@ export function tryConvertRfidInput(input: string): string {
   if (/^[0-9A-Fa-f]{8}$/.test(cleaned)) {
     const reversed = convertHexToDecimal(cleaned, true);
     // If conversion succeeded and produced a number, return as string
+    /* istanbul ignore else -- defensive check, convertHexToDecimal always returns number for valid hex */
     if (typeof reversed === 'number') {
       return String(reversed);
     }
