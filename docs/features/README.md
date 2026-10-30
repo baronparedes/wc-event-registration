@@ -10,7 +10,7 @@ Each `.feature` file describes one user-facing capability of the platform in pla
 
 ## How to Navigate
 
-Features are organized into 9 epic folders:
+Features are organized into 18 epic folders:
 
 ### 1. Public Registration (6 features)
 
@@ -84,6 +84,46 @@ Features are organized into 9 epic folders:
 - **Google Sign-In**: Invited users sign in with Google using their approved email
 - **Invite Access Protection**: The system blocks uninvited, revoked, or expired accounts from entering
 - **Role-Based Account Area**: Members and stakeholders land in the correct area with role-based visibility
+
+### 10. Admin Services (2 features)
+
+- **Missed Commitments**: Admins view and manage members who missed their volunteer commitments
+- **Attendance Forecast**: Admins view attendance predictions for future dates
+
+### 11. Admin Forms (4 features)
+
+- **View Forms**: Admins see list of all dynamic forms
+- **Create/Edit Form**: Admins manage form details and settings
+- **Configure Form Fields**: Admins design dynamic fields for forms
+- **View Form Submissions**: Admins view submissions for a specific form
+
+### 12. Admin Hub Calendar (1 feature)
+
+- **View Hub Calendar**: Admins view a calendar of hub activities and events
+
+### 13. Chat (1 feature)
+
+- **Admin Chat Assistant**: Admins interact with an AI assistant for hub operations
+
+### 14. Excuse Request (1 feature)
+
+- **Submit Excuse Request**: Members submit a request for an excuse from volunteer commitments
+
+### 15. Approvals (1 feature)
+
+- **Unified Approval Workflow**: Admins manage unified approvals for various requests
+
+### 16. Long Leave Request (1 feature)
+
+- **Submit Long Leave Request**: Members submit a request for a long leave of absence
+
+### 17. Hello Carousel (1 feature)
+
+- **View Hello Carousel**: Users view the welcoming image carousel
+
+### 18. Public Forms (1 feature)
+
+- **Public Form Submission**: Users (members or guests) fill out and submit dynamic forms based on audience settings
 
 ### Future/Planned (4 features in `future/` subfolder)
 
