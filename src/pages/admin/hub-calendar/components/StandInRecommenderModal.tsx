@@ -26,6 +26,7 @@ import {
 } from '@/components/ui';
 import { useRecommendStandInQuery } from '@/hooks/domain/hub-calendar';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
+import { useDebounce } from '@/hooks/utils';
 import {
   type ExcusedMemberMap,
   type RecommendStandInPayload,
@@ -128,6 +129,7 @@ export function StandInRecommenderModal({
 
   const defaultCount = Math.max(1, Math.min(15, neededCount || (excusedMember ? 1 : 3)));
   const requestedCount = customCount ?? defaultCount;
+  const debouncedRequestedCount = useDebounce(requestedCount, 400);
 
   // 1. Evaluate candidate pool on modal open / parameter changes
   const { candidates, tokenToMemberMap } = useMemo(() => {
@@ -158,7 +160,7 @@ export function StandInRecommenderModal({
     requestedCount,
   ]);
 
-  // 2. Build stable query payload for recommendation evaluation
+  // 2. Build stable query payload for recommendation evaluation with debounced neededCount
   const queryPayload: RecommendStandInPayload | null = useMemo(() => {
     if (!isOpen || !role || !targetDate || candidates.length === 0) {
       return null;
@@ -167,11 +169,11 @@ export function StandInRecommenderModal({
       targetDate,
       timeSlot,
       role,
-      neededCount: requestedCount,
+      neededCount: debouncedRequestedCount,
       excusedMemberToken: excusedMember ? `MEM_${excusedMember.id.slice(0, 6)}` : undefined,
       candidates,
     };
-  }, [isOpen, role, targetDate, candidates, timeSlot, requestedCount, excusedMember]);
+  }, [isOpen, role, targetDate, candidates, timeSlot, debouncedRequestedCount, excusedMember]);
 
   // 3. React Query caching (10 min stale time, immediate modal reopening cache, manual refresh)
   const {
@@ -464,7 +466,7 @@ export function StandInRecommenderModal({
                 variant="ghost"
                 size="xs"
                 onClick={() => handleReevaluate(Math.max(1, requestedCount - 1))}
-                disabled={requestedCount <= 1 || isFetching}
+                disabled={requestedCount <= 1}
                 className="h-6 w-6 p-0 text-muted hover:text-text"
                 title="Decrease needed walk-ins"
                 aria-label="Decrease needed walk-ins"
@@ -479,7 +481,7 @@ export function StandInRecommenderModal({
                 variant="ghost"
                 size="xs"
                 onClick={() => handleReevaluate(Math.min(15, requestedCount + 1))}
-                disabled={requestedCount >= 15 || isFetching}
+                disabled={requestedCount >= 15}
                 className="h-6 w-6 p-0 text-muted hover:text-text"
                 title="Increase needed walk-ins"
                 aria-label="Increase needed walk-ins"
@@ -499,7 +501,13 @@ export function StandInRecommenderModal({
             title="Refresh recommendations"
             aria-label="Refresh recommendations"
           >
-            <RotateCw className={`h-3 w-3 ${isFetching ? 'animate-spin text-primary' : ''}`} />
+            <RotateCw
+              className={`h-3 w-3 ${
+                isFetching || requestedCount !== debouncedRequestedCount
+                  ? 'animate-spin text-primary'
+                  : ''
+              }`}
+            />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>

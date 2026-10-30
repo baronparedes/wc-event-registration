@@ -358,4 +358,71 @@ describe('StandInRecommenderModal', () => {
       expect(hubCalendar.recommendStandIn).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('debounces quota changes when rapidly clicking stepper buttons', async () => {
+    const candidateMember = createMockMember('1', 'Test Grace', 'Prayer Coach');
+    const allMembers = [candidateMember];
+    const scheduleEntries: MemberScheduleEntry[] = [];
+    const attendanceScoreMap = new Map<string, MemberAttendanceStats>([
+      ['1', { attendanceScore: 10, turnupRate: 95, committed: 10, attended: 9 }],
+    ]);
+
+    const mockAiResponse: hubCalendar.RecommendStandInResponse = {
+      recommendations: [
+        {
+          candidateToken: 'USR_001',
+          rank: 1,
+          reasoning: 'High reliability volunteer.',
+        },
+      ],
+      invitations: {
+        sms: 'Hi {{volunteer_name}}, can you serve?',
+        viber: 'Hi {{volunteer_name}}, can you walk in?',
+        email: { subject: 'Walk-in', body: 'Hi {{volunteer_name}}' },
+      },
+    };
+
+    vi.mocked(hubCalendar.recommendStandIn).mockResolvedValue(mockAiResponse);
+
+    render(
+      <StandInRecommenderModal
+        isOpen={true}
+        onClose={vi.fn()}
+        targetDate="2026-11-01"
+        timeSlot="9AM"
+        role="Prayer Coach"
+        neededCount={1}
+        allMembers={allMembers}
+        scheduleEntries={scheduleEntries}
+        attendanceScoreMap={attendanceScoreMap}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Test Grace Sample').length).toBeGreaterThan(0);
+    });
+    // Initial call for neededCount: 1
+    expect(hubCalendar.recommendStandIn).toHaveBeenCalledWith(
+      expect.objectContaining({ neededCount: 1 }),
+    );
+    expect(hubCalendar.recommendStandIn).toHaveBeenCalledTimes(1);
+
+    // Rapidly click Increase (+) twice: 1 -> 2 -> 3
+    const plusBtn = screen.getByRole('button', { name: /Increase needed walk-ins/i });
+    fireEvent.click(plusBtn);
+    fireEvent.click(plusBtn);
+
+    // UI immediately reflects 3 without lag
+    expect(screen.getByText('3')).toBeInTheDocument();
+
+    // After debounce settles, only the final neededCount: 3 is requested
+    await waitFor(() => {
+      expect(hubCalendar.recommendStandIn).toHaveBeenCalledWith(
+        expect.objectContaining({ neededCount: 3 }),
+      );
+    });
+    // Intermediate neededCount: 2 was debounced away
+    expect(hubCalendar.recommendStandIn).toHaveBeenCalledTimes(2);
+  });
 });
