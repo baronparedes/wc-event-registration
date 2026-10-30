@@ -25,6 +25,25 @@ const {
   mockNavigate: vi.fn(),
 }));
 
+const { mockUpcomingSunday } = vi.hoisted(() => {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + ((7 - date.getDay()) % 7));
+
+  return {
+    mockUpcomingSunday: {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+      dateOnly: [
+        date.getFullYear(),
+        `${date.getMonth() + 1}`.padStart(2, '0'),
+        `${date.getDate()}`.padStart(2, '0'),
+      ].join('-'),
+    },
+  };
+});
+
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
   return {
@@ -67,9 +86,13 @@ vi.mock('react-day-picker', () => ({
     <div data-testid="mock-day-picker">
       <button
         type="button"
-        onClick={() => onSelect?.(new Date(2026, 9, 25))} // Oct 25, 2026 is Sunday
+        onClick={() =>
+          onSelect?.(
+            new Date(mockUpcomingSunday.year, mockUpcomingSunday.month, mockUpcomingSunday.day),
+          )
+        }
       >
-        Pick Sunday Oct 25
+        Pick Upcoming Sunday
       </button>
     </div>
   ),
@@ -309,7 +332,7 @@ describe('ExcuseRequestPage Wizard', () => {
     // Select date from SundayCalendarPicker
     const datePickerButton = screen.getByLabelText(/Sunday Service Date/i);
     fireEvent.click(datePickerButton);
-    const pickDateButton = await screen.findByRole('button', { name: /Pick Sunday Oct 25/i });
+    const pickDateButton = await screen.findByRole('button', { name: /Pick Upcoming Sunday/i });
     fireEvent.click(pickDateButton);
 
     // Select 12:00 NN service slot
@@ -329,7 +352,7 @@ describe('ExcuseRequestPage Wizard', () => {
         expect.objectContaining({
           user_id: 'c81373ea-9878-43d9-95cb-64a0e98032f2',
           member_id: 'MEM-1001',
-          request_date: '2026-10-25',
+          request_date: mockUpcomingSunday.dateOnly,
           services: ['12NN'],
           reason: 'Work conference',
         }),
@@ -376,7 +399,7 @@ describe('ExcuseRequestPage Wizard', () => {
     // Select date
     const datePickerButton = screen.getByLabelText(/Sunday Service Date/i);
     fireEvent.click(datePickerButton);
-    fireEvent.click(await screen.findByRole('button', { name: /Pick Sunday Oct 25/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Pick Upcoming Sunday/i }));
 
     // Select service
     fireEvent.click(screen.getByRole('checkbox', { name: /9:00 AM/i }));
