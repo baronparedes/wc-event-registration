@@ -231,7 +231,6 @@ function normalizeData(attendees: AttendeeSearchResult[]): AttendeeSearchResult[
     }));
   const memberRegistrations = attendees.filter((a) => a.attendee_kind === 'registered');
   const normalized = [...publicRegistrations, ...memberRegistrations];
-  console.log('Normalized attendees:', normalized, 'from', attendees.length);
   return normalized;
 }
 
