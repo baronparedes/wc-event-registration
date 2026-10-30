@@ -87,6 +87,7 @@ expect(result.current).toBe(false);
 **Challenge:** Adding tests for `searchAttendeesWithRfidFallback` revealed missing coverage for both the fallback failure state (no matches on Pass 2) and edge cases handling null `member_id` and `email` properties.
 **Learning:** `searchAttendeesLocally` expects populated strings but can handle nulls via null-coalescing. The fallback flow explicitly requires handling the final return `[]` when `convertedInput` differs from `searchInput` but fails to match any attendees in the local cache.
 **Pattern:** For dual-pass search fallbacks, test cases must cover: (1) direct hit in Pass 1, (2) successful hit in Pass 2 via fallback logic, (3) failed hit in Pass 2 after a successful format conversion, and (4) local cache edge cases (e.g., null fields on objects).
+
 ## $(date +%Y-%m-%d) - Unit testing nested react-hook-form instances with mocked hooks
 
 **Challenge:** Writing tests for a component `LongLeaveRequestPage` which relies on `useWatch` inside a deeply nested child component, but we are using a mocked logic hook `useLongLeaveRequestPageState` to drive the page states in isolation, bypassing the real `useForm` initialization.
