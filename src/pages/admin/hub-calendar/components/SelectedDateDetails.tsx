@@ -489,10 +489,11 @@ export function SelectedDateDetails({
                   );
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={milestone.id}
                       onClick={() => setSelectedMemberForQuickView(milestone.member)}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer"
+                      className="flex w-full text-left items-center gap-3 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                     >
                       <MilestoneAvatar
                         size="md"
@@ -515,7 +516,7 @@ export function SelectedDateDetails({
                           {milestone.member.nickname || 'No nickname'}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
