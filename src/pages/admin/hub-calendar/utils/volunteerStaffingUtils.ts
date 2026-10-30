@@ -1,12 +1,14 @@
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
 import type { ExcusedMemberMap } from '@/lib/domain/hub-calendar';
-import { isMemberExcused } from '@/lib/domain/hub-calendar';
+import { isMemberExcused, normalizeStaffingRole } from '@/lib/domain/hub-calendar';
 import type { MemberAttendanceStats } from '@/lib/domain/members';
 
 import {
   type ConfidenceThresholds,
   DEFAULT_CONFIDENCE_THRESHOLDS,
 } from './hubCalendarForecastUtils';
+
+export { normalizeStaffingRole };
 
 export type SlotRoleTargets = Record<string, number>;
 export type VolunteerTargetsBySlot = Record<TimeSlot, SlotRoleTargets>;
@@ -39,23 +41,6 @@ export const ORDERED_STANDARD_ROLES = [
 ] as const;
 
 export const HUB_CALENDAR_STAFFING_TARGETS_STORAGE_KEY = 'wc:hub-calendar:volunteer-targets';
-
-export function normalizeStaffingRole(rawRole?: string | null): string {
-  if (!rawRole || !rawRole.trim()) {
-    return 'General Volunteer';
-  }
-  const trimmed = rawRole.trim();
-  const firstPart = trimmed.split(/\s*[/,]\s*/)[0].trim();
-
-  if (/^usher/i.test(firstPart)) return 'Usher';
-  if (/^(?:backroom|bkrm)/i.test(firstPart)) return 'Backroom Support';
-  if (/^prayer\s*coach|^pc\b/i.test(firstPart)) return 'Prayer Coach';
-  if (/^imt/i.test(firstPart)) return 'IMT Support';
-  if (/^vmt/i.test(firstPart)) return 'VMT Support';
-  if (/^oic/i.test(firstPart)) return 'OIC';
-
-  return firstPart || 'General Volunteer';
-}
 
 function sanitizeSlotTargets(
   slotData: unknown,

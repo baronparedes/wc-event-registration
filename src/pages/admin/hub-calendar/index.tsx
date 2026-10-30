@@ -182,6 +182,8 @@ export function AdminHubCalendarPage() {
           selectedRole={selectedRole}
           selectedConfidence={selectedConfidence}
           searchQuery={searchQuery}
+          allMembers={members}
+          allScheduleEntries={scheduleEntries}
           onTabChange={handleTabChange}
           onRoleChange={setSelectedRole}
           onConfidenceChange={setSelectedConfidence}

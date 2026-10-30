@@ -157,7 +157,7 @@ In the Hub Calendar's `SelectedDateDetails` view and `SlotConfidenceForecastBann
 
 ---
 
-## 5. Sunday Schedules CSV Export
+## 6. Sunday Schedules CSV Export
 
 Coordinators can export Sunday service rosters via the **Export Schedules CSV** button.
 
@@ -191,3 +191,47 @@ Time Slot,Member ID,Full Name,Nickname,Role,Category,Confidence Level,Turnup Rat
 
 > [!IMPORTANT]
 > The numerical **Attendance Score** (e.g., `8.5`, `-2.0`) is an **internal metric** used strictly for UI avatar rings and aggregate calculations. It is **never** included in exported CSV rosters shared with external teams or ministry volunteers.
+
+---
+
+## 7. Walk-in Volunteer Recommendations & Direct Outreach
+
+When the Volunteer Staffing Modeler identifies a volunteer deficit for an upcoming Sunday service slot, ministry coordinators can instantly view and recruit reliable substitute walk-in volunteers.
+
+### Single Entry Point Workflow
+
+To preserve a clean, uncluttered user interface and prevent notification fatigue:
+
+- Walk-in recommendations are accessed **exclusively** from the staffing modeler's deficit card via the **"View Recommendations"** button.
+- Individual volunteer cards display only their schedule and excuse badges (`Excused`, `On Leave`, `Pending Leave`), avoiding redundant inline trigger buttons.
+
+### Candidate Matching & Tier Fallback Pipeline
+
+The candidate discovery pipeline ([`findStandInCandidates`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/lib/domain/hub-calendar/standIn.ts)) filters active volunteers from the organization roster:
+
+1. **Role Matching**: Matches the target volunteer role (e.g., `Usher`, `Prayer Coach`).
+2. **Availability**: Excludes volunteers with existing service commitments or approved leaves on the target Sunday slot.
+3. **Fidelity-First Quota Fulfillment**: Prioritizes `Solid` tier candidates ($\ge 70\%$ historical turnup rate). If the available solid pool is smaller than the required quota, it automatically supplements with `Moderate` tier candidates ($\ge 40\%$ turnup) to provide sufficient candidates.
+
+### Privacy-Preserving AI Evaluation
+
+The Edge Function ([`recommend-stand-in`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/supabase/functions/recommend-stand-in/)):
+
+- **Zero PII**: Members are tokenized as anonymous IDs (`USR_001`, `USR_002`) with only turnup rate, attendance rating, and tier passed to Gemini 3.5 Flash-Lite.
+- **Dynamic Deficit Ranking**: Evaluates and ranks candidates up to the coordinator's requested `neededCount`.
+- **Personalized Outreach Drafts**: Generates context-aware invitation messages tailored to the service slot and role.
+
+### Client-Side Caching & Fast Reopen
+
+- **10-Minute Stale Time**: Powered by TanStack React Query ([`useRecommendStandInQuery`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/hooks/domain/hub-calendar/useRecommendStandInQuery.ts)). Reopening the modal or stepping back and forth between deficit quotas renders **instantly** from memory with zero network spinners or AI re-invocations.
+- **Manual Refresh**: A **Refresh** button in the modal header allows coordinators to explicitly bypass the cache and trigger a fresh evaluation at any time.
+
+### Multi-Candidate Selection & Multi-Channel Outreach
+
+Inside the **Walk-in Recommendations** modal:
+
+- **Interactive Quota Stepper**: Coordinators can adjust needed spots (`1` to `15`) with `[- / +]`.
+- **Selection Shortcuts**: "Select All", "Select Top N", and individual candidate checkboxes with real-time selection counts.
+- **Channel Switching**: Easily toggle between **Viber**, **SMS**, and **Email** channels using standard UI button groups.
+- **1-Click Dispatch**: Direct action buttons launch native deep links (`viber://`, `sms:`, `mailto:`) with pre-filled personalized invite templates.
+- **Bulk Operations**: One-click actions to "Copy All Messages", "Copy Numbers" / "Copy Email List", and "Copy Template".

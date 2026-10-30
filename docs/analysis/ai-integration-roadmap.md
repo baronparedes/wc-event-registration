@@ -87,17 +87,28 @@ graph TD
 
 ### Phase 2: Roster & Attendance Intelligence
 
-#### Phase 2.1: Smart Stand-In / Substitute Recommender
+#### Phase 2.1: Smart Stand-In / Substitute Recommender `[Completed]`
 
-- **Location**: Hub Calendar deficit cells and volunteer drawer ([`/admin/hub-calendar`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/hub-calendar)).
+- **Location**: Hub Calendar staffing deficit role cards ([`/admin/hub-calendar`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/hub-calendar)).
 - **User Workflow**:
-  1. When a slot exhibits a deficit or an excused absence is logged, an **"AI Suggest Stand-in"** trigger appears.
-  2. The tool queries active volunteers with:
+  1. When a role exhibits a deficit in the Volunteer Staffing Modeler, a **"View Recommendations"** action appears on the deficit card with the exact needed count (e.g. 10 missing volunteers).
+  2. Single entry point: To avoid UI clutter and maintain a unified workflow, recommendation is exclusively initiated from the staffing deficit modeler rather than cluttered across individual volunteer cards.
+  3. The client queries eligible candidate volunteers:
      - Matching primary role (ignoring secondary roles).
-     - Clean schedule (no commitment on that Sunday/slot).
-     - High Attendance Rating Score ($\ge 8.0$).
-     - No recent absence streak.
-  3. Returns ranked top 3 volunteer tokens with a pre-drafted direct message invitation.
+     - Clean schedule (no commitment on target Sunday/slot).
+     - No approved excuse for that date & time slot.
+     - Prioritizes Solid tier ($\ge 8.0$ score / $\ge 70\%$ turnup) with automatic fallback to Moderate tier ($\ge 40\%$ turnup) to fulfill the requested deficit quota.
+     - Zero PII exposure: maps candidates to anonymous tokens (`USR_001`, `USR_002`).
+  4. Edge Function evaluates candidates via Gemini 3.5 Flash-Lite (`gemini-3.5-flash-lite`).
+  5. Returns ranked recommendations up to the needed deficit count with grounded rationales and personalized invitations across **Viber**, **SMS**, and **Email**.
+  6. **Client-Side Caching**: Uses React Query with a 10-minute stale time (`useRecommendStandInQuery`). Reopening the modal or toggling between previously viewed counts renders instantly without network spinners or Gemini API re-calls. A manual **"Refresh"** button is provided to bypass the cache when desired.
+  7. Coordinators can adjust the requested count with an interactive stepper `[- / +]`, multi-select candidates via checkboxes with "Select All" / "Select Top N" shortcuts, and dispatch individually via 1-click links (`viber://`, `sms:`, `mailto:`) or in bulk via "Copy All Messages", "Copy Numbers" / "Copy Email List", and "Copy Template".
+- **Architecture**:
+  - Edge Function: `supabase/functions/recommend-stand-in/` with Deno unit tests, PII-free schema, rate limiting, and admin/slod authorization.
+  - Candidate Pipeline: `findStandInCandidates` in `src/lib/domain/hub-calendar/standIn.ts`.
+  - API Client: Strongly typed `recommendStandIn` in `src/lib/domain/hub-calendar/api.ts` via `createEdgeFunctionCaller`.
+  - Frontend Hook: `useRecommendStandInQuery` (and `useRecommendStandInMutation`) in `src/hooks/domain/hub-calendar/`.
+  - UI Component: `StandInRecommenderModal` in `src/pages/admin/hub-calendar/components/StandInRecommenderModal.tsx`.
 
 #### Phase 2.2: Leave Request Impact Summarizer
 

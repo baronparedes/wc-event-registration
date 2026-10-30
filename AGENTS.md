@@ -83,6 +83,7 @@ This file contains the core principles, architecture rules, and domain logic con
   - Displays avatar border rings mapped to Member Attendance Rating scores (`ring-emerald-500` for $\ge 8$, `ring-indigo-500` for $\ge 4$, `ring-amber-500` for $\ge 0$, `ring-rose-500` for $< 0$).
   - Calculates expected turnup statistical forecasts and segments volunteers into `Solid`, `Moderate`, `At Risk`, or `Excused` tiers with interactive filtering.
   - Sunday schedule CSV export (`service-schedules-YYYY-MM-DD.csv`) includes `Confidence Level` and `Turnup Rate` but strictly excludes internal numerical attendance scores. See [`docs/guides/hub-calendar-forecast-and-attendance-rating.md`](docs/guides/hub-calendar-forecast-and-attendance-rating.md).
+  - **Walk-in Volunteer Recommendations**: Accessible exclusively from the staffing forecast modeler's deficit card via `View Recommendations`. Evaluates candidate pools via PII-free Edge Function (`recommend-stand-in`), caches results in React Query (10-minute stale time with manual `Refresh`), and enables multi-selection with 1-click and bulk outreach across Viber, SMS, and Email.
 
 ## 6. Domain Logic: Forms Entity
 

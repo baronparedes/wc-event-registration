@@ -26,6 +26,27 @@ export function toIsoDateKey(year: number, month: number, day: number): string {
 }
 
 /**
+ * Normalizes member role strings (including compound roles and shorthand)
+ * to standard staffing role categories: 'Usher', 'Backroom Support', 'Prayer Coach', 'IMT Support', 'VMT Support', 'OIC'.
+ */
+export function normalizeStaffingRole(rawRole?: string | null): string {
+  if (!rawRole || !rawRole.trim()) {
+    return 'General Volunteer';
+  }
+  const trimmed = rawRole.trim();
+  const firstPart = trimmed.split(/\s*[/,]\s*/)[0].trim();
+
+  if (/^usher/i.test(firstPart)) return 'Usher';
+  if (/^(?:backroom|bkrm)/i.test(firstPart)) return 'Backroom Support';
+  if (/^prayer\s*coach|^pc\b/i.test(firstPart)) return 'Prayer Coach';
+  if (/^imt/i.test(firstPart)) return 'IMT Support';
+  if (/^vmt/i.test(firstPart)) return 'VMT Support';
+  if (/^oic/i.test(firstPart)) return 'OIC';
+
+  return firstPart || 'General Volunteer';
+}
+
+/**
  * Parses a services string (e.g. "9AM, 12NN", "9am", "All") into a set of TimeSlot enum values.
  * Empty text or "All" implies all service slots.
  */

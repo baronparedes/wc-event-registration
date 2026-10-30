@@ -13,6 +13,22 @@ vi.mock('@/hooks/domain/members', () => ({
   useMemberAvatarQuery: vi.fn(() => ({ data: null })),
 }));
 
+vi.mock('@/hooks/domain/hub-calendar', () => ({
+  useRecommendStandInMutation: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    data: null,
+  })),
+  useRecommendStandInQuery: vi.fn(() => ({
+    data: null,
+    isFetching: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+}));
+
 const firstName1 = faker.person.firstName();
 const lastName1 = faker.person.lastName();
 const firstName2 = faker.person.firstName();
@@ -676,5 +692,47 @@ describe('SelectedDateDetails', () => {
 
     expect(screen.getByTitle('Birthday')).toBeInTheDocument();
     expect(screen.getByTitle('Excused')).toBeInTheDocument();
+  });
+
+  it('does not render recommendation button on individual excused cards and opens StandInRecommenderModal from staffing modeler', () => {
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-09-20', new Map([['m1', new Set<TimeSlot>(['9AM'])]])],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1]}
+          entriesByTimeSlot={{ '9AM': [entry1], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          excusedMap={excusedMap}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          allMembers={[mockMember1]}
+          allScheduleEntries={[entry1]}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Should not render recommendation button on individual member cards
+    expect(screen.queryByRole('button', { name: /Find Walk-in/i })).not.toBeInTheDocument();
+
+    // Recommendation is opened in one place: the staffing modeler's View Recommendations button
+    const viewRecommendationsBtn = screen.getAllByRole('button', {
+      name: /View Recommendations/i,
+    })[0];
+    expect(viewRecommendationsBtn).toBeInTheDocument();
+
+    fireEvent.click(viewRecommendationsBtn);
+
+    expect(screen.getByRole('heading', { name: /Walk-in Recommendations/i })).toBeInTheDocument();
   });
 });

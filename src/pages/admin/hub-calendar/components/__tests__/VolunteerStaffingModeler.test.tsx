@@ -174,4 +174,30 @@ describe('VolunteerStaffingModeler', () => {
     // Expected turnup should be ~1
     expect(screen.getByText('~1')).toBeInTheDocument();
   });
+
+  it('triggers onOpenStandIn when View Recommendations button is clicked on deficit card', () => {
+    const onOpenStandInMock = vi.fn();
+    const entriesBySlot = {
+      '9AM': [],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+        onOpenStandIn={onOpenStandInMock}
+      />,
+    );
+
+    const standInButtons = screen.getAllByRole('button', { name: /View Recommendations/i });
+    expect(standInButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(standInButtons[0]);
+    expect(onOpenStandInMock).toHaveBeenCalledWith('Usher', '9AM', 25);
+  });
 });
