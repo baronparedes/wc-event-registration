@@ -1,29 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { useForm } from 'react-hook-form';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { vi } from 'vitest';
 
-import { createTestQueryClient } from '@/__tests__/unit-test-utils';
-
-// We'll fully mock the wizard hook to easily test the page's render states without testing the hook's implementation
 import { useLongLeaveRequestPageState } from '../hooks/useLongLeaveRequestPageState';
 import { LongLeaveRequestPage } from '../index';
 
-vi.mock('@/hooks/domain/members', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/domain/members')>();
-  return {
-    ...actual,
-    useCurrentProfileQuery: vi.fn(),
-  };
-});
+vi.mock('@/hooks/domain/members', () => ({
+  useCurrentProfileQuery: vi.fn(),
+  useMemberLookupState: vi.fn(),
+  useMemberAvatarQuery: vi.fn().mockReturnValue({ data: null }),
+}));
 
 vi.mock('@/hooks/domain/services', () => ({
   useSubmitExcuseMutation: vi.fn(),
-}));
-
-vi.mock('@/hooks/domain/approvals', () => ({
-  useSlodUsersQuery: vi.fn(),
 }));
 
 vi.mock('sonner', () => ({
@@ -33,109 +25,140 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('react-hook-form', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-hook-form')>();
-  return {
-    ...actual,
-    useWatch: vi.fn(),
-  };
-});
-
+// We'll wrap the component in a test wrapper to provide the real react-hook-form methods
+// but still use the mocked useLongLeaveRequestPageState to control the page level state.
 vi.mock('../hooks/useLongLeaveRequestPageState', () => ({
   useLongLeaveRequestPageState: vi.fn(),
 }));
 
-describe('LongLeaveRequestPage Wizard', () => {
-  const mockUseLongLeaveRequestPageState = vi.mocked(useLongLeaveRequestPageState);
-  const mockSubmit = vi.fn();
-  const mockGoHome = vi.fn();
-  const mockReset = vi.fn();
+// A wrapper to inject real useForm instance into the mocked state
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TestWrapper = ({ mockStateOverride }: { mockStateOverride: any }) => {
+  const lookupForm = useForm();
+  const longLeaveForm = useForm();
 
-  let queryClient: QueryClient;
+  const injectedState = {
+    ...mockStateOverride,
+    lookupForm,
+    longLeaveForm,
+  };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    queryClient = createTestQueryClient();
+  (useLongLeaveRequestPageState as ReturnType<typeof vi.fn>).mockReturnValue(injectedState);
 
-    mockUseLongLeaveRequestPageState.mockReturnValue({
-      activeWizardStep: 1,
-      isVerifyingSignedInMember: false,
-      lookupForm: {
-        control: {},
-        formState: { errors: {} },
-        register: vi.fn(() => ({ ref: vi.fn() })),
-        handleSubmit: vi.fn((fn) => fn),
-      } as any,
-      handleLookupSubmit: vi.fn(),
-      isLookupPending: false,
-      lookupErrorMessage: null,
-      clearLookupError: vi.fn(),
-      isRegistrationBlocked: false,
-      memberIdHighlight: false,
-      handleBackToStepOne: vi.fn(),
-      matchedMember: null,
-      isSignedIn: false,
-      handleConfirmProfile: vi.fn(),
-      longLeaveForm: {
-        control: {},
-        formState: { errors: {} },
-        register: vi.fn(),
-        handleSubmit: vi.fn((fn) => fn),
-        setValue: vi.fn(),
-      } as any,
-      onSubmitLongLeave: mockSubmit,
-      isSubmitting: false,
-      submitErrorMessage: null,
-      goHome: mockGoHome,
-      isSubmissionConfirmed: false,
-      submissionResult: null,
-      volunteerName: 'Test Volunteer',
-      volunteerMemberId: 'MEM-1',
-      handleResetForm: mockReset,
-    } as any);
-  });
+  return <LongLeaveRequestPage />;
+};
 
-  const renderPage = () => {
+describe('LongLeaveRequestPage', () => {
+  const queryClient = new QueryClient();
+
+  const renderWithProviders = (ui: React.ReactElement) => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <LongLeaveRequestPage />
-        </MemoryRouter>
+        <MemoryRouter>{ui}</MemoryRouter>
       </QueryClientProvider>,
     );
   };
 
-  it('renders Step 1', () => {
-    renderPage();
+  const defaultMockState = {
+    activeWizardStep: 1,
+    setActiveWizardStep: vi.fn(),
+    isVerifyingSignedInMember: false,
+    handleLookupSubmit: vi.fn(),
+    isLookupPending: false,
+    lookupErrorMessage: null,
+    clearLookupError: vi.fn(),
+    isRegistrationBlocked: false,
+    memberIdHighlight: false,
+    handleBackToStepOne: vi.fn(),
+    matchedMember: null,
+    isSignedIn: false,
+    handleConfirmProfile: vi.fn(),
+    onSubmitLongLeave: vi.fn(),
+    isSubmitting: false,
+    submitErrorMessage: null,
+    goHome: vi.fn(),
+    isSubmissionConfirmed: false,
+    submissionResult: null,
+    volunteerName: 'Volunteer',
+    volunteerMemberId: '',
+    handleResetForm: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders initial lookup step (Step 1) correctly', () => {
+    renderWithProviders(
+      <TestWrapper mockStateOverride={{ ...defaultMockState, activeWizardStep: 1 }} />,
+    );
     expect(screen.getByText('Volunteer Long Leave Request')).toBeInTheDocument();
     expect(screen.getByText('Identify')).toBeInTheDocument();
+    expect(screen.getByText('Step 1: Find Your Profile')).toBeInTheDocument();
   });
 
-  it('renders Step 2', () => {
-    mockUseLongLeaveRequestPageState.mockReturnValue({
-      ...mockUseLongLeaveRequestPageState(),
-      activeWizardStep: 2,
-      matchedMember: {
-        first_name: 'Test',
-        last_initial: 'M',
-        member_id: 'MEM-2',
-      },
-    } as any);
-    renderPage();
-    expect(screen.getByText('Confirm')).toBeInTheDocument();
+  it('renders verifying profile loading state', () => {
+    renderWithProviders(
+      <TestWrapper
+        mockStateOverride={{
+          ...defaultMockState,
+          activeWizardStep: 1,
+          isVerifyingSignedInMember: true,
+        }}
+      />,
+    );
+    expect(screen.getByText('Checking your member profile...')).toBeInTheDocument();
   });
 
-  it('renders Confirmation', () => {
-    mockUseLongLeaveRequestPageState.mockReturnValue({
-      ...mockUseLongLeaveRequestPageState(),
-      isSubmissionConfirmed: true,
-      submissionResult: {
-        start_date: '2026-10-25',
-        end_date: '2026-11-22',
-        reason: 'Vacation',
-      },
-    } as any);
-    renderPage();
+  it('renders profile confirmation step (Step 2)', () => {
+    renderWithProviders(
+      <TestWrapper
+        mockStateOverride={{
+          ...defaultMockState,
+          activeWizardStep: 2,
+          matchedMember: {
+            id: '123',
+            first_name: 'Test John',
+            last_name: 'Test Doe',
+            full_name: 'Test John Doe',
+            member_id: 'M123',
+          },
+        }}
+      />,
+    );
+    // ProfileStepCard relies on ProfileDetails, it should display full name if possible or first name based on components
+    // So let's look for "Test John" at least
+    expect(screen.getByText('Test John')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /scan another member/i })).toBeInTheDocument();
+  });
+
+  it('renders details form step (Step 3)', () => {
+    renderWithProviders(
+      <TestWrapper mockStateOverride={{ ...defaultMockState, activeWizardStep: 3 }} />,
+    );
+    expect(screen.getByText('Step 3: Long Leave Details')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit long leave request/i })).toBeInTheDocument();
+  });
+
+  it('renders confirmation step correctly', () => {
+    renderWithProviders(
+      <TestWrapper
+        mockStateOverride={{
+          ...defaultMockState,
+          isSubmissionConfirmed: true,
+          submissionResult: {
+            start_date: '2023-10-01',
+            end_date: '2023-10-29',
+            reason: 'Vacation',
+          },
+          volunteerName: 'Test John Doe',
+          volunteerMemberId: 'M123',
+        }}
+      />,
+    );
     expect(screen.getByText('Long Leave Request Submitted!')).toBeInTheDocument();
+    expect(screen.getByText('Test John Doe (M123)')).toBeInTheDocument();
+    expect(screen.getByText(/"Vacation"/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit another request/i })).toBeInTheDocument();
   });
 });
