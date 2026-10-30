@@ -230,25 +230,24 @@ describe('RFID Utilities', () => {
       expect(results[0].full_name).toBe('Test Alpha');
     });
 
-    it('handles attendee with null member_id and email', () => {
-      const attendees: AttendeeSearchResult[] = [
+    it('handles attendees with null member_id and email', () => {
+      const attendees = [
         createMockAttendee({
           full_name: 'Test Null Fields',
           member_id: null,
           email: null,
         }),
       ];
-      const results = searchAttendeesWithRfidFallback(attendees, 'Null');
+
+      const results = searchAttendeesWithRfidFallback(attendees, 'null');
       expect(results).toHaveLength(1);
       expect(results[0].full_name).toBe('Test Null Fields');
-
-      const noResults = searchAttendeesWithRfidFallback(attendees, 'NONEXISTENT');
-      expect(noResults).toHaveLength(0);
+      expect(searchAttendeesWithRfidFallback(attendees, 'NONEXISTENT')).toHaveLength(0);
     });
 
-    it('returns empty array if converted RFID does not match any attendee', () => {
-      const results = searchAttendeesWithRfidFallback(mockAttendees, '11223344'); // This will convert, but not match
-      expect(results).toHaveLength(0);
+    it('returns empty array when converted RFID does not match an attendee', () => {
+      expect(searchAttendeesWithRfidFallback(mockAttendees, '11223344')).toHaveLength(0);
+      expect(searchAttendeesWithRfidFallback(mockAttendees, '11111111')).toHaveLength(0);
     });
   });
 });

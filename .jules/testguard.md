@@ -81,3 +81,9 @@ expect(result.current).toBe(false);
 **Challenge:** Reusing components and tests from an existing page (ExcuseRequest) to a new one (LongLeaveRequest) with minor schema/label changes.
 **Learning:** Duplicated React Testing Library unit tests are extremely brittle when the components underneath change their label or DOM structure (e.g., swapping single date to start/end dates).
 **Pattern:** Rather than meticulously patching every single test interact via sed, it is often safer and more reliable to rewrite the duplicated test suite to perform simple sanity checks for the new page layout, provided the underlying isolated components have their own thorough unit tests.
+
+## 2023-10-29 - RFID Fallback Testing Coverage Gap
+
+**Challenge:** Adding tests for `searchAttendeesWithRfidFallback` revealed missing coverage for both the fallback failure state (no matches on Pass 2) and edge cases handling null `member_id` and `email` properties.
+**Learning:** `searchAttendeesLocally` expects populated strings but can handle nulls via null-coalescing. The fallback flow explicitly requires handling the final return `[]` when `convertedInput` differs from `searchInput` but fails to match any attendees in the local cache.
+**Pattern:** For dual-pass search fallbacks, test cases must cover: (1) direct hit in Pass 1, (2) successful hit in Pass 2 via fallback logic, (3) failed hit in Pass 2 after a successful format conversion, and (4) local cache edge cases (e.g., null fields on objects).
