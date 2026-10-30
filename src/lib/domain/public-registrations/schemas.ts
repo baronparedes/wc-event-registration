@@ -24,7 +24,7 @@ export const publicAttendeeInfoSchema = z.object({
   email: z.string().email('Invalid email address').min(1, 'Email is required'),
   phone: z
     .string()
-    .regex(VALIDATION_PATTERNS.phone, 'Invalid Philippine mobile number (e.g. 09XX XXX XXXX)')
+    .regex(VALIDATION_PATTERNS.phone, 'Invalid Philippine mobile number')
     .nullable()
     .optional()
     .or(z.literal('')), // Allow empty string as valid optional value
