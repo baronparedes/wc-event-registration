@@ -1,5 +1,4 @@
 export { DynamicFieldRenderer, type DynamicFieldRendererProps } from './DynamicFieldRenderer';
-export { renderFieldByType, type RenderFieldByTypeOptions } from './renderFieldByType';
 export {
   TextFieldRenderer,
   EmailFieldRenderer,

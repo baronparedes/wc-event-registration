@@ -1,8 +1,6 @@
 export {
   DynamicFieldRenderer,
   type DynamicFieldRendererProps,
-  renderFieldByType,
-  type RenderFieldByTypeOptions,
   TextFieldRenderer,
   EmailFieldRenderer,
   PhoneFieldRenderer,
