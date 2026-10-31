@@ -27,3 +27,9 @@
 **Discovery:** The Sunday Attendance Forecast feature (located at `src/pages/admin/services/attendance/forecast`) was completely undocumented in the feature specs.
 **Learning:** This is a major admin tool for tracking expected volunteer turnup, viewing monthly trends, configuring staffing targets, and sharing forecast cards. It belongs under the `10-admin-services` epic since it is a core administrative dashboard.
 **Standard:** Documented under `docs/features/10-admin-services/10.2-attendance-forecast.feature` following standard Gherkin syntax. Included scenarios for viewing monthly summaries, filtering by role group, toggling chart/table views, configuring targets, and sharing forecasts.
+
+## 2026-10-31 - Document Admin Settings Features
+
+**Discovery:** Found that the admin settings section, specifically the user roles management component located at `src/pages/admin/settings/roles/index.tsx`, lacked feature documentation in the Gherkin files.
+**Learning:** System-wide settings and role administration are core features that require their own distinct epic category to properly distinguish them from standard domain entities (like members or events).
+**Standard:** Documented under a new `19-admin-settings` epic folder in `docs/features/`. Going forward, all broad application settings, administrative configurations, and role management features should reside in this category to maintain a clear separation from operational domain features.
