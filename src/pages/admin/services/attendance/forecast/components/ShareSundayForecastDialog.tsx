@@ -14,7 +14,7 @@ export type ShareSundayForecastDialogProps = {
   roleGroupLabel?: string;
 };
 
-const EXPORT_WIDTH_PX = 920;
+const EXPORT_WIDTH_PX = 960;
 
 export function ShareSundayForecastDialog({
   isOpen,

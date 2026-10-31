@@ -107,7 +107,7 @@ describe('SundayForecastShareCard', () => {
     expect(screen.getAllByText('12 NN Session').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('3 PM Session').length).toBeGreaterThanOrEqual(1);
 
-    // Redesigned Role Cards
+    // Redesigned Role Cards with 3-column grid
     expect(screen.getByText('Individual Role Breakdown')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('Need 7')).toBeInTheDocument();
@@ -118,5 +118,9 @@ describe('SundayForecastShareCard', () => {
     expect(
       screen.getByRole('progressbar', { name: /Usher staffing fulfillment/i }),
     ).toBeInTheDocument();
+
+    // Verify 960px container width
+    const container = screen.getByText('October 4, 2026').closest('div[style*="960px"]');
+    expect(container).toBeInTheDocument();
   });
 });
