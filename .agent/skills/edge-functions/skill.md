@@ -1,3 +1,8 @@
+---
+name: edge-functions
+description: 'Supabase Edge Function standards, Deno runtime conventions, security-definer patterns, and CORS configurations.'
+---
+
 # Edge Functions & Security Considerations
 
 **Context:** This skill details how to write and secure Supabase Edge Functions in this repository.

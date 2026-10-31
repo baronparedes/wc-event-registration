@@ -14,3 +14,4 @@ export * from './VolunteerStaffingModeler';
 export * from './VolunteerStaffingTargetsModal';
 export * from '../utils';
 export * from './MemberQuickViewDialog';
+export * from './StandInRecommenderModal';

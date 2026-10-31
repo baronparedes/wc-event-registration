@@ -17,6 +17,7 @@ export {
   type UseDebounceSearchOptions,
   type UseDebounceSearchResult,
 } from './useDebounceSearch';
+export { useDebounce } from './useDebounce';
 export {
   useInfiniteScrollTrigger,
   type UseInfiniteScrollTriggerOptions,

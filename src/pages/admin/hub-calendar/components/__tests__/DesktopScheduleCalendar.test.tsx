@@ -8,9 +8,13 @@ import type { AdminMember } from '@/lib/domain/members';
 
 import { DesktopScheduleCalendar } from '../DesktopScheduleCalendar';
 
-vi.mock('@/components/ui', () => ({
-  Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
-}));
+vi.mock('@/components/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/ui')>();
+  return {
+    ...actual,
+    Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
+  };
+});
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();

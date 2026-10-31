@@ -1,10 +1,7 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 
 import { DOMPurify } from '../dompurify';
-
-/**
- * @vitest-environment jsdom
- */
 
 describe('DOMPurify configuration', () => {
   describe('afterSanitizeAttributes hook', () => {

@@ -1,3 +1,8 @@
+---
+name: background-jobs
+description: 'Asynchronous database job queues, pgmq extension, pg_cron sweeper/retry patterns, and DLQ worker logic.'
+---
+
 # Background Job Queue Architecture
 
 **Context:** This skill covers the design and constraints around asynchronous background jobs in the database.

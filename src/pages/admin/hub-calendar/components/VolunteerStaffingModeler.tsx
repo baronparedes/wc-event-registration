@@ -29,6 +29,7 @@ export type VolunteerStaffingModelerProps = {
   onSaveTargets: (newTargets: VolunteerTargetsBySlot) => void;
   thresholds?: ConfidenceThresholds;
   onSaveThresholds?: (newThresholds: ConfidenceThresholds) => void;
+  onOpenStandIn?: (role: string, targetSlot?: TimeSlot, neededCount?: number) => void;
 };
 
 export function VolunteerStaffingModeler({
@@ -41,6 +42,7 @@ export function VolunteerStaffingModeler({
   onSaveTargets,
   thresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
   onSaveThresholds,
+  onOpenStandIn,
 }: VolunteerStaffingModelerProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -65,9 +67,9 @@ export function VolunteerStaffingModeler({
         );
 
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-white dark:bg-surface shadow-xs overflow-hidden">
+    <div className="flex flex-col rounded-xl border border-border bg-surface shadow-xs overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-white dark:bg-surface">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-surface">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Users className="h-5 w-5" />
@@ -155,7 +157,7 @@ export function VolunteerStaffingModeler({
             return (
               <div
                 key={item.role}
-                className="flex flex-col justify-between rounded-xl border border-border bg-white dark:bg-surface p-3.5 transition-colors shadow-xs"
+                className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 transition-colors shadow-xs"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-semibold text-xs text-text truncate" title={item.role}>
@@ -191,6 +193,24 @@ export function VolunteerStaffingModeler({
                     {item.committed} scheduled
                     {item.excused > 0 ? ` • ${item.excused} excused` : ''}
                   </p>
+
+                  {hasDeficit && onOpenStandIn && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() =>
+                        onOpenStandIn(
+                          item.role,
+                          activeSlot === 'ALL' ? '9AM' : activeSlot,
+                          item.needed,
+                        )
+                      }
+                      className="mt-2 w-full justify-center text-[12px] h-7 px-2"
+                    >
+                      <Users className="mr-1.5 h-3.5 w-3.5" />
+                      View Recommendations
+                    </Button>
+                  )}
                 </div>
               </div>
             );

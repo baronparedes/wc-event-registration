@@ -13,6 +13,22 @@ vi.mock('@/hooks/domain/members', () => ({
   useMemberAvatarQuery: vi.fn(() => ({ data: null })),
 }));
 
+vi.mock('@/hooks/domain/hub-calendar', () => ({
+  useRecommendStandInMutation: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    data: null,
+  })),
+  useRecommendStandInQuery: vi.fn(() => ({
+    data: null,
+    isFetching: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+}));
+
 const firstName1 = faker.person.firstName();
 const lastName1 = faker.person.lastName();
 const firstName2 = faker.person.firstName();
@@ -676,5 +692,207 @@ describe('SelectedDateDetails', () => {
 
     expect(screen.getByTitle('Birthday')).toBeInTheDocument();
     expect(screen.getByTitle('Excused')).toBeInTheDocument();
+  });
+
+  it('does not render recommendation button on individual excused cards and opens StandInRecommenderModal from staffing modeler', () => {
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-09-20', new Map([['m1', new Set<TimeSlot>(['9AM'])]])],
+    ]);
+
+    render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={[entry1]}
+          entriesByTimeSlot={{ '9AM': [entry1], '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          excusedMap={excusedMap}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          allMembers={[mockMember1]}
+          allScheduleEntries={[entry1]}
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Should not render recommendation button on individual member cards
+    expect(screen.queryByRole('button', { name: /Find Walk-in/i })).not.toBeInTheDocument();
+
+    // Recommendation is opened in one place: the staffing modeler's View Recommendations button
+    const viewRecommendationsBtn = screen.getAllByRole('button', {
+      name: /View Recommendations/i,
+    })[0];
+    expect(viewRecommendationsBtn).toBeInTheDocument();
+
+    fireEvent.click(viewRecommendationsBtn);
+
+    expect(screen.getByRole('heading', { name: /Walk-in Recommendations/i })).toBeInTheDocument();
+  });
+
+  it('renders primary role chips in standard ministry order, collapses composite roles, and matches members by primary role', () => {
+    const memberPC1: AdminMember = {
+      ...mockMember1,
+      id: 'm-pc1',
+      first_name: 'Test Alice',
+      full_name: 'Test Alice Cooper',
+      role: 'Prayer Coach / Backroom',
+    };
+    const memberPC2: AdminMember = {
+      ...mockMember1,
+      id: 'm-pc2',
+      first_name: 'Test Bob',
+      full_name: 'Test Bob Marley',
+      role: 'Prayer Coach',
+    };
+    const memberUsher: AdminMember = {
+      ...mockMember1,
+      id: 'm-usher',
+      first_name: 'Test Charlie',
+      full_name: 'Test Charlie Brown',
+      role: 'Usher / PC',
+    };
+    const memberVMT: AdminMember = {
+      ...mockMember1,
+      id: 'm-vmt',
+      first_name: 'Test David',
+      full_name: 'Test David Bowie',
+      role: 'VMT Support / PC',
+    };
+    const memberBackroom: AdminMember = {
+      ...mockMember1,
+      id: 'm-bkrm',
+      first_name: 'Test Eve',
+      full_name: 'Test Eve Adams',
+      role: 'Backroom Support',
+    };
+    const memberSpecial: AdminMember = {
+      ...mockMember1,
+      id: 'm-special',
+      first_name: 'Test Frank',
+      full_name: 'Test Frank Sinatra',
+      role: 'Special Guest',
+    };
+
+    const entries: MemberScheduleEntry[] = [
+      { member: memberPC1, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+      { member: memberPC2, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+      { member: memberUsher, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+      { member: memberVMT, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+      { member: memberBackroom, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+      { member: memberSpecial, sundayKey: 'third_sunday', timeSlots: ['9AM'] },
+    ];
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={entries}
+          entriesByTimeSlot={{ '9AM': entries, '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole={null}
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    // Primary role tabs are rendered
+    expect(screen.getByRole('tab', { name: 'All Roles' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Usher' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Backroom Support' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Prayer Coach' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'VMT Support' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Special Guest' })).toBeInTheDocument();
+
+    // Composite role strings must NOT be rendered as separate tabs
+    expect(screen.queryByRole('tab', { name: 'Prayer Coach / Backroom' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Usher / PC' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'VMT Support / PC' })).not.toBeInTheDocument();
+
+    // Verify ordering: Usher, Backroom Support, Prayer Coach, VMT Support, Special Guest
+    const roleTabs = screen.getAllByRole('tab').map((t) => t.textContent?.trim());
+    const roleTabSubset = roleTabs.filter((name) =>
+      ['Usher', 'Backroom Support', 'Prayer Coach', 'VMT Support', 'Special Guest'].includes(
+        name ?? '',
+      ),
+    );
+    expect(roleTabSubset).toEqual([
+      'Usher',
+      'Backroom Support',
+      'Prayer Coach',
+      'VMT Support',
+      'Special Guest',
+    ]);
+
+    // Member cards still display composite role strings
+    expect(screen.getByText('Prayer Coach / Backroom')).toBeInTheDocument();
+    expect(screen.getByText('Usher / PC')).toBeInTheDocument();
+    expect(screen.getByText('VMT Support / PC')).toBeInTheDocument();
+
+    // Filter by Prayer Coach: should match both Alice (Prayer Coach / Backroom) and Bob (Prayer Coach), but NOT Charlie (Usher / PC)
+    rerender(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={entries}
+          entriesByTimeSlot={{ '9AM': entries, '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole="Prayer Coach"
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test Alice Cooper')).toBeInTheDocument();
+    expect(screen.getByText('Test Bob Marley')).toBeInTheDocument();
+    expect(screen.queryByText('Test Charlie Brown')).not.toBeInTheDocument();
+    expect(screen.queryByText('Test David Bowie')).not.toBeInTheDocument();
+    expect(screen.queryByText('Test Eve Adams')).not.toBeInTheDocument();
+    expect(screen.queryByText('Test Frank Sinatra')).not.toBeInTheDocument();
+
+    // Filter by Usher: should match Charlie (Usher / PC)
+    rerender(
+      <MemoryRouter>
+        <SelectedDateDetails
+          viewYear={2026}
+          viewMonthIndex={8}
+          selectedDayNumber={20}
+          selectedMilestones={[]}
+          selectedEntries={entries}
+          entriesByTimeSlot={{ '9AM': entries, '12NN': [], '3PM': [] }}
+          isCurrentSelectedSunday={true}
+          activeTab="9AM"
+          selectedRole="Usher"
+          searchQuery=""
+          onTabChange={vi.fn()}
+          onRoleChange={vi.fn()}
+          onSearchQueryChange={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Test Charlie Brown')).toBeInTheDocument();
+    expect(screen.queryByText('Test Alice Cooper')).not.toBeInTheDocument();
+    expect(screen.queryByText('Test Bob Marley')).not.toBeInTheDocument();
   });
 });

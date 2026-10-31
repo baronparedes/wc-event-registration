@@ -1,6 +1,6 @@
 ---
 name: attendance-json-filter-translator
-description: 'Translate plain-language attendance filter logic into the app\'s advanced JSON filter expression format (condition/group/not), including token mapping, boolean normalization, and validation checks.'
+description: "Translate plain-language attendance filter logic into the app's advanced JSON filter expression format (condition/group/not), including token mapping, boolean normalization, and validation checks."
 argument-hint: 'Provide the human-readable logic and (optionally) the source:field_key tokens for each field'
 ---
 

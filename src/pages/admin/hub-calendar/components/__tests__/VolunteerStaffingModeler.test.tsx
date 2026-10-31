@@ -174,4 +174,155 @@ describe('VolunteerStaffingModeler', () => {
     // Expected turnup should be ~1
     expect(screen.getByText('~1')).toBeInTheDocument();
   });
+
+  it('triggers onOpenStandIn when View Recommendations button is clicked on deficit card', () => {
+    const onOpenStandInMock = vi.fn();
+    const entriesBySlot = {
+      '9AM': [],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+        onOpenStandIn={onOpenStandInMock}
+      />,
+    );
+
+    const standInButtons = screen.getAllByRole('button', { name: /View Recommendations/i });
+    expect(standInButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(standInButtons[0]);
+    expect(onOpenStandInMock).toHaveBeenCalledWith('Usher', '9AM', 25);
+  });
+
+  it('renders Target Met badge and Filled/No Target role badges when targets are met', () => {
+    const m1 = createMockMember('1', 'Alice', 'Usher');
+    const entriesBySlot = {
+      '9AM': [createScheduleEntry(m1, ['9AM'])],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['1', { attendanceScore: 10, committed: 10, attended: 10, turnupRate: 1.0 }],
+    ]);
+
+    const zeroTargets = {
+      '9AM': {
+        Usher: 1, // Filled
+        'Backroom Support': 0, // No Target
+        'Prayer Coach': 0,
+        'IMT Support': 0,
+        'VMT Support': 0,
+      },
+      '12NN': {
+        Usher: 0,
+        'Backroom Support': 0,
+        'Prayer Coach': 0,
+        'IMT Support': 0,
+        'VMT Support': 0,
+      },
+      '3PM': {
+        Usher: 0,
+        'Backroom Support': 0,
+        'Prayer Coach': 0,
+        'IMT Support': 0,
+        'VMT Support': 0,
+      },
+    };
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={zeroTargets}
+        onSaveTargets={onSaveTargetsMock}
+        attendanceScoreMap={statsMap}
+      />,
+    );
+
+    expect(screen.getByText('Target Met')).toBeInTheDocument();
+    expect(screen.getByText('Filled')).toBeInTheDocument();
+    expect(screen.getAllByText('No Target').length).toBeGreaterThan(0);
+  });
+
+  it('displays excused counts in summary and role card when excused volunteers exist', () => {
+    const m1 = createMockMember('1', 'Alice', 'Usher');
+    const entriesBySlot = {
+      '9AM': [createScheduleEntry(m1, ['9AM'])],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    const excusedMap = new Map([['2026-10-04', new Map([['1', new Set<'9AM'>(['9AM'])]])]]);
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+        excusedMap={excusedMap}
+      />,
+    );
+
+    expect(screen.getAllByText(/1 excused/i).length).toBeGreaterThan(0);
+  });
+
+  it('passes 9AM slot fallback when View Recommendations is clicked with activeSlot ALL', () => {
+    const onOpenStandInMock = vi.fn();
+    const entriesBySlot = {
+      '9AM': [],
+      '12NN': [],
+      '3PM': [],
+    };
+
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={entriesBySlot}
+        activeSlot="ALL"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+        onOpenStandIn={onOpenStandInMock}
+      />,
+    );
+
+    const standInButtons = screen.getAllByRole('button', { name: /View Recommendations/i });
+    fireEvent.click(standInButtons[0]);
+
+    expect(onOpenStandInMock).toHaveBeenCalledWith('Usher', '9AM', expect.any(Number));
+  });
+
+  it('closes configuration modal when cancel is clicked', () => {
+    render(
+      <VolunteerStaffingModeler
+        entriesByTimeSlot={{ '9AM': [], '12NN': [], '3PM': [] }}
+        activeSlot="9AM"
+        isoDateKey="2026-10-04"
+        targets={defaultTargets}
+        onSaveTargets={onSaveTargetsMock}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Configure Targets/i }));
+    expect(
+      screen.getByRole('heading', { name: /Configure Volunteer Targets & Thresholds/i }),
+    ).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+    fireEvent.click(cancelBtn);
+
+    expect(
+      screen.queryByRole('heading', { name: /Configure Volunteer Targets & Thresholds/i }),
+    ).not.toBeInTheDocument();
+  });
 });

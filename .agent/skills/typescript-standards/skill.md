@@ -1,3 +1,8 @@
+---
+name: typescript-standards
+description: 'Strict typing, Zod schema inference, generic patterns, and zero-linter-override policies.'
+---
+
 # TypeScript Standards & Validation
 
 **Context:** This skill covers the strict typing and validation constraints required in this repository.

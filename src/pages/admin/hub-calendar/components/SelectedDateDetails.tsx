@@ -27,6 +27,7 @@ import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 import {
   type ConfidenceThresholds,
   type ConfidenceTier,
+  ORDERED_STANDARD_ROLES,
   type VolunteerTargetsBySlot,
   calculateAllSundayConfidenceForecast,
   calculateSlotConfidenceForecast,
@@ -36,6 +37,7 @@ import {
   getStoredConfidenceThresholds,
   getStoredVolunteerTargets,
   isMemberInactiveWithoutAttendance,
+  normalizeStaffingRole,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MemberQuickViewDialog } from './MemberQuickViewDialog';
@@ -44,6 +46,7 @@ import { MilestoneBadge } from './MilestoneBadge';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
 import { ShareSundayScheduleDialog } from './ShareSundayScheduleDialog';
 import { SlotConfidenceForecastBanner } from './SlotConfidenceForecastBanner';
+import { StandInRecommenderModal } from './StandInRecommenderModal';
 import { VolunteerStaffingModeler } from './VolunteerStaffingModeler';
 
 function formatSelectedDate(year: number, monthIndex: number, day: number): string {
@@ -77,6 +80,8 @@ type SelectedDateDetailsProps = {
   selectedRole: string | null;
   selectedConfidence?: ConfidenceTier | null;
   searchQuery: string;
+  allMembers?: AdminMember[];
+  allScheduleEntries?: MemberScheduleEntry[];
   onTabChange: (slot: TimeSlot | 'ALL') => void;
   onRoleChange: (role: string | null) => void;
   onConfidenceChange?: (tier: ConfidenceTier | null) => void;
@@ -97,6 +102,8 @@ export function SelectedDateDetails({
   selectedRole,
   selectedConfidence,
   searchQuery,
+  allMembers,
+  allScheduleEntries,
   onTabChange,
   onRoleChange,
   onConfidenceChange,
@@ -119,6 +126,12 @@ export function SelectedDateDetails({
   const [confidenceThresholds, setConfidenceThresholds] = useState<ConfidenceThresholds>(() =>
     getStoredConfidenceThresholds(),
   );
+  const [standInTarget, setStandInTarget] = useState<{
+    role: string;
+    slot: TimeSlot;
+    neededCount?: number;
+    excusedMember?: AdminMember | null;
+  } | null>(null);
 
   useEffect(() => {
     if (searchParams.has('date') && containerRef.current) {
@@ -146,8 +159,19 @@ export function SelectedDateDetails({
     const targetSlot = slot === 'ALL' ? undefined : slot;
 
     const uniqueRoles = Array.from(
-      new Set(entries.map((e) => e.member.role).filter(Boolean)),
-    ).sort();
+      new Set(
+        entries
+          .map((e) => (e.member.role ? normalizeStaffingRole(e.member.role) : null))
+          .filter((role): role is string => Boolean(role)),
+      ),
+    ).sort((a, b) => {
+      const idxA = ORDERED_STANDARD_ROLES.indexOf(a as (typeof ORDERED_STANDARD_ROLES)[number]);
+      const idxB = ORDERED_STANDARD_ROLES.indexOf(b as (typeof ORDERED_STANDARD_ROLES)[number]);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
 
     const filteredByConfidence =
       effectiveConfidence === null
@@ -167,7 +191,9 @@ export function SelectedDateDetails({
     const filteredByRole =
       selectedRole === null
         ? filteredByConfidence
-        : filteredByConfidence.filter((e) => e.member.role === selectedRole);
+        : filteredByConfidence.filter(
+            (e) => Boolean(e.member.role) && normalizeStaffingRole(e.member.role) === selectedRole,
+          );
 
     const query = searchQuery.trim().toLowerCase();
     const filteredEntries = query
@@ -346,7 +372,7 @@ export function SelectedDateDetails({
                     : 'No members match the selected filters.'}
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {filteredEntries.map((entry) => {
               const excusedDetails = getMemberExcusedDetails(
                 excusedMap,
@@ -368,10 +394,17 @@ export function SelectedDateDetails({
               );
 
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   key={entry.member.id}
                   onClick={() => setSelectedMemberForQuickView(entry.member)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedMemberForQuickView(entry.member);
+                    }
+                  }}
                   title={tooltip}
                   aria-label={`${entry.member.full_name} - ${tooltip}`}
                   className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 hover:bg-primary/5 hover:border-primary/30 transition text-center cursor-pointer"
@@ -440,7 +473,7 @@ export function SelectedDateDetails({
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -635,6 +668,13 @@ export function SelectedDateDetails({
                         onSaveTargets={setVolunteerTargets}
                         thresholds={confidenceThresholds}
                         onSaveThresholds={setConfidenceThresholds}
+                        onOpenStandIn={(role, slot, neededCount) => {
+                          setStandInTarget({
+                            role,
+                            slot: slot || (activeTab === 'ALL' ? '9AM' : activeTab),
+                            neededCount,
+                          });
+                        }}
                       />
 
                       {/* Filterable Member Directory */}
@@ -682,6 +722,21 @@ export function SelectedDateDetails({
               )
             : false
         }
+        thresholds={confidenceThresholds}
+      />
+
+      <StandInRecommenderModal
+        isOpen={standInTarget !== null}
+        onClose={() => setStandInTarget(null)}
+        targetDate={toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber)}
+        timeSlot={standInTarget?.slot ?? '9AM'}
+        role={standInTarget?.role ?? ''}
+        neededCount={standInTarget?.neededCount}
+        excusedMember={standInTarget?.excusedMember}
+        allMembers={allMembers ?? []}
+        scheduleEntries={allScheduleEntries ?? selectedEntries}
+        excusedMap={excusedMap}
+        attendanceScoreMap={attendanceScoreMap}
         thresholds={confidenceThresholds}
       />
     </div>

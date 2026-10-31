@@ -8,14 +8,18 @@ import type { AdminMember } from '@/lib/domain/members';
 
 import { MobileScheduleCalendar } from '../MobileScheduleCalendar';
 
-vi.mock('@/components/ui', () => ({
-  Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
-  Button: ({ children, onClick, ...props }: React.ComponentProps<'button'>) => (
-    <button onClick={onClick} {...props}>
-      {children}
-    </button>
-  ),
-}));
+vi.mock('@/components/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/ui')>();
+  return {
+    ...actual,
+    Avatar: ({ name }: { name: string }) => <div data-testid="avatar">{name}</div>,
+    Button: ({ children, onClick, ...props }: React.ComponentProps<'button'>) => (
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
+    ),
+  };
+});
 
 const firstName = faker.person.firstName();
 const lastName = faker.person.lastName();

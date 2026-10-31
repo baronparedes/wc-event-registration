@@ -1,3 +1,8 @@
+---
+name: testing-vitest
+description: 'Vitest mocking patterns, factory utilities, and React Testing Library standards.'
+---
+
 # Testing with Vitest & React Testing Library
 
 **Context:** This skill defines how tests should be written and configured.

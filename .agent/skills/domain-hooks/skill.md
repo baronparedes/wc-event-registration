@@ -1,3 +1,8 @@
+---
+name: domain-hooks
+description: 'Rules for authoring TanStack React Query hooks and direct Supabase client queries in src/hooks/domain/.'
+---
+
 # Domain Hooks & Query Architecture
 
 **Context:** This skill defines how React Query hooks and Supabase database interactions should be structured.
