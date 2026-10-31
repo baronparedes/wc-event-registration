@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   computeMatrixGrid,
+  getLastCommitmentUpdatedAt,
   getMonthSundays,
   getNonSundayAttendances,
   normalizeTimeSlot,
   parseCommittedSlots,
 } from '../service-matrix';
-import type { ServiceAttendance } from '../types';
+import type { ServiceAttendance, UserCommitmentSnapshot } from '../types';
 
 describe('service-matrix domain logic', () => {
   describe('getMonthSundays', () => {
@@ -401,6 +402,74 @@ describe('service-matrix domain logic', () => {
       const nonSunday = getNonSundayAttendances(attendances, sundays);
       expect(nonSunday).toHaveLength(1);
       expect(nonSunday[0].id).toBe('att-friday');
+    });
+  });
+
+  describe('getLastCommitmentUpdatedAt', () => {
+    it('returns null when snapshots array is null, undefined, or empty', () => {
+      expect(getLastCommitmentUpdatedAt(null)).toBeNull();
+      expect(getLastCommitmentUpdatedAt(undefined)).toBeNull();
+      expect(getLastCommitmentUpdatedAt([])).toBeNull();
+    });
+
+    it('returns null when only the baseline snapshot (effective_date = 2000-01-01) is present', () => {
+      const snapshots: UserCommitmentSnapshot[] = [
+        {
+          id: 's-baseline',
+          user_id: 'u1',
+          effective_date: '2000-01-01',
+          metadata: { first_sunday: '9AM' },
+          created_at: '2026-09-01T10:00:00Z',
+        },
+      ];
+      expect(getLastCommitmentUpdatedAt(snapshots)).toBeNull();
+    });
+
+    it('returns created_at for a single valid update snapshot', () => {
+      const snapshots: UserCommitmentSnapshot[] = [
+        {
+          id: 's-baseline',
+          user_id: 'u1',
+          effective_date: '2000-01-01',
+          metadata: {},
+          created_at: '2026-09-01T10:00:00Z',
+        },
+        {
+          id: 's-1',
+          user_id: 'u1',
+          effective_date: '2026-09-06',
+          metadata: { first_sunday: '9AM' },
+          created_at: '2026-09-01T10:00:00Z',
+        },
+      ];
+      expect(getLastCommitmentUpdatedAt(snapshots)).toBe('2026-09-01T10:00:00Z');
+    });
+
+    it('returns the latest created_at across multiple update snapshots', () => {
+      const snapshots: UserCommitmentSnapshot[] = [
+        {
+          id: 's-1',
+          user_id: 'u1',
+          effective_date: '2026-09-06',
+          metadata: { first_sunday: '9AM' },
+          created_at: '2026-09-01T10:00:00Z',
+        },
+        {
+          id: 's-2',
+          user_id: 'u1',
+          effective_date: '2026-10-18',
+          metadata: { first_sunday: '12NN' },
+          created_at: '2026-10-14T15:30:00Z',
+        },
+        {
+          id: 's-3',
+          user_id: 'u1',
+          effective_date: '2026-10-04',
+          metadata: { first_sunday: '3PM' },
+          created_at: '2026-09-28T08:00:00Z',
+        },
+      ];
+      expect(getLastCommitmentUpdatedAt(snapshots)).toBe('2026-10-14T15:30:00Z');
     });
   });
 });

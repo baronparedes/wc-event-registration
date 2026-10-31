@@ -7,6 +7,14 @@ import { usePushSubscription } from '@/hooks/domain/notifications';
 
 import { MemberInfoTab } from '../MemberInfoTab';
 
+const { mockUseUserCommitmentHistoryQuery } = vi.hoisted(() => ({
+  mockUseUserCommitmentHistoryQuery: vi.fn(),
+}));
+
+vi.mock('@/hooks/domain/services', () => ({
+  useUserCommitmentHistoryQuery: (...args: unknown[]) => mockUseUserCommitmentHistoryQuery(...args),
+}));
+
 vi.mock('@/hooks/domain/notifications', () => ({
   usePushSubscription: vi.fn(() => ({
     isSupported: true,
@@ -20,6 +28,13 @@ vi.mock('@/hooks/domain/notifications', () => ({
 }));
 
 describe('MemberInfoTab', () => {
+  beforeEach(() => {
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+  });
+
   it('renders Personal Details and Sunday Availability', () => {
     const member = makeAdminMember({
       member_id: 'MEM-001',
@@ -41,6 +56,31 @@ describe('MemberInfoTab', () => {
     expect(screen.getByText('May 15, 1990')).toBeInTheDocument();
 
     expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
+    expect(screen.getByText('Never updated')).toBeInTheDocument();
+  });
+
+  it('renders formatted Last updated date when commitment history snapshots exist', () => {
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({
+      data: [
+        {
+          id: 'snap-1',
+          user_id: 'MEM-001',
+          effective_date: '2026-10-18',
+          metadata: { first_sunday: '9AM' },
+          created_at: '2026-10-15T14:30:00Z',
+        },
+      ],
+      isLoading: false,
+    });
+
+    const member = makeAdminMember({
+      member_id: 'MEM-001',
+      extra_metadata: { first_sunday: '9AM' },
+    });
+
+    render(<MemberInfoTab member={member} />);
+
+    expect(screen.getByText(/Last updated:/i)).toBeInTheDocument();
   });
 
   it('renders Sunday Availability with slots when sunday metadata is present', () => {
@@ -57,6 +97,7 @@ describe('MemberInfoTab', () => {
     render(<MemberInfoTab member={member} />);
 
     expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
+    expect(screen.getByText('Never updated')).toBeInTheDocument();
   });
 
   it('promotes Civil Status to Personal Details and displays DGroup details in its own section', () => {

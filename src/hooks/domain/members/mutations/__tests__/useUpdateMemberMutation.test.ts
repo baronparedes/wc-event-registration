@@ -7,6 +7,7 @@ import { useUpdateMemberMutation } from '@/hooks/domain/members/mutations/useUpd
 import { ADMIN_MEMBER_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMemberQuery';
 import { ADMIN_MEMBERS_QUERY_KEY } from '@/hooks/domain/members/queries/useAdminMembersQuery';
 import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
+import { USER_COMMITMENT_HISTORY_QUERY_KEY } from '@/hooks/domain/services';
 
 const { mockSelectBuilder, mockUpdateBuilder, mockFrom } = vi.hoisted(() => {
   const selectBuilder: Record<string, ReturnType<typeof vi.fn>> = {
@@ -99,6 +100,9 @@ describe('useUpdateMemberMutation', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ADMIN_MEMBER_QUERY_KEY(userId) });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: CURRENT_PROFILE_QUERY_KEY });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: USER_COMMITMENT_HISTORY_QUERY_KEY(userId),
+      });
     });
   });
 

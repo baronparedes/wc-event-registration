@@ -160,6 +160,27 @@ export function resolveMetadataForDate(
   return currentMetadata;
 }
 
+/**
+ * Extracts the latest commitment update timestamp from user commitment history snapshots.
+ * Returns null if no snapshots exist or if only the initial baseline snapshot ('2000-01-01') is present.
+ */
+export function getLastCommitmentUpdatedAt(
+  snapshots: UserCommitmentSnapshot[] | null | undefined,
+): string | null {
+  if (!snapshots || snapshots.length === 0) return null;
+
+  // Filter out the initial baseline snapshot inserted when history tracking began
+  const updateSnapshots = snapshots.filter((s) => s.effective_date !== '2000-01-01');
+  if (updateSnapshots.length === 0) return null;
+
+  // Find the snapshot with the latest created_at timestamp
+  const latest = updateSnapshots.reduce((prev, curr) => {
+    return new Date(curr.created_at).getTime() > new Date(prev.created_at).getTime() ? curr : prev;
+  });
+
+  return latest.created_at;
+}
+
 export function computeMatrixGrid(
   sundays: MonthSunday[],
   attendances: ServiceAttendance[],

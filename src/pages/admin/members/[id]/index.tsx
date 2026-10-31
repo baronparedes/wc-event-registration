@@ -23,10 +23,12 @@ import {
   useUpdateMemberMutation,
   useUploadMemberAvatarMutation,
 } from '@/hooks/domain/members';
+import { useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
-import { formatDateTime } from '@/lib/infrastructure';
+import { getLastCommitmentUpdatedAt } from '@/lib/domain/services';
+import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 import { RequestLongLeaveModal } from '@/pages/profile/components/service-attendance';
 
@@ -74,11 +76,14 @@ export function AdminMemberDetailPage() {
   const { data: authState } = useAdminAuthQuery();
 
   const memberQuery = useAdminMemberQuery(id, { includeInactive: true });
+  const commitmentHistoryQuery = useUserCommitmentHistoryQuery(memberQuery.data?.id ?? id ?? '');
   const updateMemberMutation = useUpdateMemberMutation();
   const deleteMemberMutation = useSoftDeleteMemberMutation();
   const restoreMemberMutation = useRestoreMemberMutation();
   const uploadMemberAvatarMutation = useUploadMemberAvatarMutation();
   const [isLongLeaveModalOpen, setIsLongLeaveModalOpen] = useState(false);
+
+  const lastCommitmentUpdate = getLastCommitmentUpdatedAt(commitmentHistoryQuery.data);
 
   const {
     register,
@@ -367,6 +372,16 @@ export function AdminMemberDetailPage() {
             <SectionCard
               title="Sunday Availability"
               subtitle="Manage member availability across all five Sundays."
+              headerAction={
+                <Badge
+                  variant="outline"
+                  title={lastCommitmentUpdate ? formatDateTime(lastCommitmentUpdate) : undefined}
+                >
+                  {lastCommitmentUpdate
+                    ? `Last updated: ${formatDateOnly(lastCommitmentUpdate)}`
+                    : 'Never updated'}
+                </Badge>
+              }
             >
               <SundayAvailabilityEditor
                 control={control}

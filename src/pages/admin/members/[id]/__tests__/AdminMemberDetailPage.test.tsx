@@ -13,6 +13,7 @@ const {
   mockUseRestoreMemberMutation,
   mockUseUploadMemberAvatarMutation,
   mockUseAdminAuthQuery,
+  mockUseUserCommitmentHistoryQuery,
 } = vi.hoisted(() => ({
   mockUseAdminMemberQuery: vi.fn(),
   mockUseUpdateMemberMutation: vi.fn(),
@@ -20,7 +21,17 @@ const {
   mockUseRestoreMemberMutation: vi.fn(),
   mockUseUploadMemberAvatarMutation: vi.fn(),
   mockUseAdminAuthQuery: vi.fn(),
+  mockUseUserCommitmentHistoryQuery: vi.fn(),
 }));
+
+vi.mock('@/hooks/domain/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/domain/services')>();
+  return {
+    ...actual,
+    useUserCommitmentHistoryQuery: (...args: unknown[]) =>
+      mockUseUserCommitmentHistoryQuery(...args),
+  };
+});
 
 vi.mock('@/hooks/domain/members', () => ({
   useAdminMemberQuery: () => mockUseAdminMemberQuery(),
@@ -86,6 +97,7 @@ describe('AdminMemberDetailPage', () => {
     mockUseSoftDeleteMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseUploadMemberAvatarMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({ data: [], isLoading: false });
   });
 
   it('renders loading state', () => {
@@ -200,5 +212,45 @@ describe('AdminMemberDetailPage', () => {
       'href',
       'viber://chat?number=%2B639171234567',
     );
+  });
+
+  it('renders "Never updated" on Sunday Availability section when no commitment history exists', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: sampleMember,
+      isLoading: false,
+    });
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
+    expect(screen.getByText('Never updated')).toBeInTheDocument();
+  });
+
+  it('renders formatted "Last updated" date on Sunday Availability section when commitment snapshots exist', () => {
+    mockUseAdminMemberQuery.mockReturnValue({
+      data: sampleMember,
+      isLoading: false,
+    });
+    mockUseUserCommitmentHistoryQuery.mockReturnValue({
+      data: [
+        {
+          id: 's-1',
+          user_id: 'm1',
+          effective_date: '2026-10-25',
+          metadata: { first_sunday: '9AM' },
+          created_at: '2026-10-20T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByText('Sunday Availability')).toBeInTheDocument();
+    expect(screen.getByText(/Last updated:/i)).toBeInTheDocument();
   });
 });
