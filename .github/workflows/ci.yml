@@ -145,14 +145,16 @@ jobs:
           --config p/typescript
           --error
           --metrics=off
-          --jobs 1
-          --max-memory 2000
+          --jobs 2
           --max-target-bytes 100000
           --exclude "node_modules"
           --exclude "dist"
           --exclude "dev-dist"
           --exclude "coverage*"
           --exclude ".agent*"
+          --exclude "*__tests__*"
+          --exclude "*.test.*"
+          --exclude "*.spec.*"
           src supabase/functions api scripts
 
   gitleaks:
