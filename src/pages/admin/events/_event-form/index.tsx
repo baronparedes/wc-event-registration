@@ -5,8 +5,9 @@ import { useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { EntityBlueprintAiModal } from '@/components/domain/ai-generator';
 import { AdminPageShell } from '@/components/layout';
-import { Button } from '@/components/ui/Button';
+import { AiBrandIcon, Button } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
 import {
@@ -18,6 +19,7 @@ import {
   useUpdateEventMutation,
 } from '@/hooks/domain/events';
 import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
+import type { EntityBlueprintMetadata } from '@/lib/domain/ai-generator';
 import { createEventSchema, derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
 
@@ -79,6 +81,7 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
   const isPending = createMutation.isPending || updateMutation.isPending;
   const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
   const [isRestoreToDraftConfirmOpen, setIsRestoreToDraftConfirmOpen] = useState(false);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
 
   // Extract save confirmation logic
   const { showDialog, pendingFormData, requestConfirmation, confirmSave, cancelSave } =
@@ -237,6 +240,44 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
     <EventNavigationLinks eventId={id!} currentSection="event" />
   ) : undefined;
 
+  const handleApplyFromAi = (metadata: EntityBlueprintMetadata) => {
+    setValue('title', metadata.title, { shouldDirty: true, shouldValidate: true });
+    setValue('slug', metadata.slug, { shouldDirty: true, shouldValidate: true });
+    setValue('description', metadata.description, { shouldDirty: true });
+    if (metadata.location) {
+      setValue('location', metadata.location, { shouldDirty: true });
+    }
+    setValue('duplicate_policy', metadata.duplicate_policy, { shouldDirty: true });
+    setValue('public_registration_access', metadata.audience, { shouldDirty: true });
+    if (metadata.registration_mode) {
+      setValue('registration_mode', metadata.registration_mode, { shouldDirty: true });
+    }
+    if (metadata.starts_at) {
+      setValue('starts_at', toDatetimeLocal(metadata.starts_at), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (metadata.ends_at) {
+      setValue('ends_at', toDatetimeLocal(metadata.ends_at), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (metadata.registration_opens_at) {
+      setValue('registration_opens_at', toDatetimeLocal(metadata.registration_opens_at), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (metadata.registration_closes_at) {
+      setValue('registration_closes_at', toDatetimeLocal(metadata.registration_closes_at), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  };
+
   const headerActions =
     isEditMode && existingEvent ? (
       <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center md:w-auto md:justify-end">
@@ -318,6 +359,16 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
           />
         )}
       </div>
+    ) : !isEditMode ? (
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setIsAiGeneratorOpen(true)}
+        className="w-full sm:w-auto"
+      >
+        <AiBrandIcon className="mr-1.5 h-4 w-4 text-primary" />
+        Draft with Hub AI
+      </Button>
     ) : undefined;
 
   return (
@@ -406,6 +457,16 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
               performSave(pendingFormData);
             }}
             onCancel={cancelSave}
+          />
+        )}
+
+        {isAiGeneratorOpen && (
+          <EntityBlueprintAiModal
+            isOpen={isAiGeneratorOpen}
+            onClose={() => setIsAiGeneratorOpen(false)}
+            domain="event"
+            mode="create"
+            onApplyToForm={handleApplyFromAi}
           />
         )}
       </AdminPageShell.Content>

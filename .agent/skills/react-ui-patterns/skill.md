@@ -137,17 +137,33 @@ Whenever rendering users, volunteers, requesters, or attendees in lists, tables,
 ## 7. Dialogs & Modals
 
 - Compose dialogs using the compound component pattern:
-  - `<Dialog open={isOpen} onOpenChange={setIsOpen}>`
-  - `<Dialog.Content>`
-  - `<Dialog.Header title="..." description="..." />`
+  - `<Dialog isOpen={isOpen} onClose={handleClose} size="lg">`
+  - `<Dialog.Header showCloseButton onClose={handleClose}>`
+  - `<Dialog.Title>...</Dialog.Title>`
+  - `<Dialog.Description>...</Dialog.Description>`
   - `<Dialog.Body>`
   - `<Dialog.Footer>`
+- **Avoid Blind `overflow-y-auto` on `Dialog.Body`**:
+  - The root `Dialog` overlay container already provides smooth page-level scrolling. Do not apply `max-h-[...]` or `overflow-y-auto` to `Dialog.Body` when the dialog content naturally fits in the viewport.
+  - Adding `overflow-y-auto` to `Dialog.Body` creates jarring double-scrollbars and traps/clips floating popovers and dropdowns (`FormSelectField`).
+- **Colocate Scrolling on Inner Dynamic Lists**:
+  - When a dialog has a long, variable list (e.g., dynamic questions, attendee lists, search results), apply scrolling directly to the list container (`<div className="max-h-[50vh] space-y-2.5 overflow-y-auto pr-1">`).
+  - This ensures headers, tab bars, and action footers remain sticky and fully visible without requiring the user to hunt or scroll for submit/cancel buttons.
+- **Modal Form Hierarchy & Occlusion**:
+  - Place primary content inputs (e.g. textareas) first, and secondary dropdowns/settings below them. This prevents open dropdown menus from occluding the user's primary workspace.
+  - In modal textareas, always use `textareaClassName="resize-none"` to prevent manual textarea resizing from breaking dialog boundaries.
+- **Dialog Footer Buttons Full Width on Mobile**:
+  - Keep action buttons as direct children (or inside React fragments `<>`) of `Dialog.Footer` without unnecessary intermediate wrapping `<div>`s.
+  - `Dialog.Footer` automatically applies `flex-col-reverse sm:flex-row [&>button]:w-full sm:[&>button]:w-auto` to render full-width stacked buttons on mobile and auto-width inline buttons on desktop.
 - Avoid putting raw submission mutations inside `useEffect`; trigger actions directly from buttons in the dialog footer or event handlers.
 
 ---
 
 ## 8. General UI Conventions
 
+- **Zero Invention of Domain Terminology**: NEVER invent arbitrary labels, uppercase headers, or synthetic select options (e.g., inventing `"TARGET AUDIENCE"`, `"Church Members Only"`, or `"Open Public Only"`). Always check existing domain pages and schemas to reuse established copy, casing, and value mappings.
+- **Form Component Label Props**: Always pass `label="..."` directly to shared form primitives (`FormSelectField`, `FormInputField`, `FormTextareaField`) rather than creating detached custom `<label>` tags.
+- **Dropdown Placeholder Discipline**: When a required `FormSelectField` has a default valid selection, pass `placeholder=""` to avoid rendering an unwanted `"Select..."` choice that resets required state.
 - **Avoid External UI Libraries:** Avoid pulling in external headless UI libraries for simple components (e.g. tabs). Implement them with custom React state and standard HTML `<button>` elements styled with Tailwind CSS.
 - **Utilize Existing Primitives:** Make use of the existing shared UI primitives in `src/components/ui/` (`Button`, `Dialog`, `FormInputField`, `SearchInputField`, `ButtonGroup`, `Avatar`, `Badge`) rather than rebuilding them.
 - **Global Toast Notifications:** Use the `sonner` library for global toast notifications. The primary `<Toaster />` provider component is configured and managed in `src/App.tsx`.

@@ -2,8 +2,9 @@ import { useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
+import { EntityBlueprintAiModal } from '@/components/domain/ai-generator';
 import { AdminPageShell } from '@/components/layout';
-import { AlertBanner, Button } from '@/components/ui';
+import { AiBrandIcon, AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
@@ -22,6 +23,7 @@ export function AdminEventFieldsPage() {
   const { data: event, isLoading: eventLoading } = useAdminEventQuery(id);
   const { data: fields, isLoading: fieldsLoading } = useAdminEventFieldsQuery(id);
   const [panelState, setPanelState] = useState<PanelState>({ mode: 'closed' });
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const isLoading = eventLoading || fieldsLoading;
   const isDraft = event?.status === 'draft';
@@ -59,15 +61,27 @@ export function AdminEventFieldsPage() {
             : 'Manage registration form fields'
         }
         actions={
-          <Button
-            type="button"
-            variant="default"
-            onClick={openCreate}
-            disabled={!isDraft}
-            title={!isDraft ? 'Only draft events can add new fields.' : undefined}
-          >
-            Add Field
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAiModalOpen(true)}
+              disabled={!isDraft}
+              title={!isDraft ? 'Only draft events can add new fields.' : undefined}
+            >
+              <AiBrandIcon className="mr-1.5 h-4 w-4 text-primary" />
+              Add Questions with AI
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={openCreate}
+              disabled={!isDraft}
+              title={!isDraft ? 'Only draft events can add new fields.' : undefined}
+            >
+              Add Field
+            </Button>
+          </div>
         }
       />
 
@@ -111,6 +125,16 @@ export function AdminEventFieldsPage() {
                 eventStatus={event.status}
                 field={panelField}
                 onClose={closePanel}
+              />
+            )}
+
+            {isAiModalOpen && id && (
+              <EntityBlueprintAiModal
+                isOpen={isAiModalOpen}
+                onClose={() => setIsAiModalOpen(false)}
+                domain="event"
+                mode="append_fields"
+                existingEntityId={id}
               />
             )}
           </>
