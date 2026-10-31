@@ -36,6 +36,16 @@ This file contains the core principles, architecture rules, and domain logic con
     - Dropdowns MUST use `FormSelectField`.
   - **Status Badges**: Use `Badge` with semantic variants (`default`, `secondary`, `accent`, `destructive`, `outline`) rather than custom raw-color pill containers.
   - **User Avatars**: Whenever displaying users, requesters, volunteers, or attendees in lists, tables, cards, dialogs, or drawers, ALWAYS include the `Avatar` component with `avatarObjectKey` and `name` fallback.
+  - **Domain Text, Field Labels & Option Consistency**:
+    - **Never Invent UI Text or Labels**: NEVER invent arbitrary labels, uppercase headings, or synthetic option names (e.g. inventing `"TARGET AUDIENCE"`, `"Church Members Only"`, or `"Open Public Only"`).
+    - **Inspect & Mirror Existing Terminology**: Always inspect existing domain pages, components, and schemas to reuse established labels, casing, and select option lists (e.g. Forms `Audience` with `'Members and Public'`, `'Members Only'`, `'Public Only'`; Events `Allow Public Registrations` with `'Members + Public'`, `'Members'`, `'Public'`).
+    - **Use Component Label Props Directly**: Pass `label="..."` directly to shared form primitives (`FormSelectField`, `FormInputField`, `FormTextareaField`) instead of detaching inputs from raw uppercase `<label>` elements.
+    - **Dropdown Placeholder Discipline**: When a required dropdown has an initial valid value selected, explicitly pass `placeholder=""` so `FormSelectField` does not render a redundant `"Select..."` option that clears required state.
+  - **Dialog & Modal Scroll/Overflow Ergonomics**:
+    - **No Blind `overflow-y-auto` on `Dialog.Body`**: Never add `overflow-y-auto` or fixed max-heights to `Dialog.Body` when content naturally fits within the modal. The root `Dialog` container already handles page-level scrolling. Placing `overflow-y-auto` on `Dialog.Body` creates double scrollbars and traps/clips floating popovers and dropdowns (`FormSelectField`).
+    - **Colocate Scrolling to Inner Dynamic Lists**: When rendering long, dynamic item lists inside a modal (e.g., question/field lists, attendee lists), keep `Dialog.Body` natural and apply scroll classes (`max-h-[...] overflow-y-auto pr-1`) directly to the inner list container. This keeps modal headers, tab toolbars, and action footers sticky and visible at all times.
+    - **Form Hierarchy & Dropdown Occlusion**: In modal forms, order fields so primary content inputs (e.g. prompt textareas) come first, followed by secondary dropdowns/settings. This prevents open dropdown menus from obscuring primary inputs. Set `textareaClassName="resize-none"` on textareas within dialogs to avoid breaking modal geometry.
+    - **Dialog Footer Buttons Full Width on Mobile**: Keep action buttons as direct children (or inside React fragments `<>`) of `Dialog.Footer` without unnecessary intermediate wrapping `<div>`s. `Dialog.Footer` automatically provides `flex-col-reverse sm:flex-row [&>button]:w-full sm:[&>button]:w-auto` so buttons are 100% full-width on mobile viewports.
 
 ## 3. Architecture & Code Organization
 

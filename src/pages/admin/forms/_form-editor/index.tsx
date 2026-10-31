@@ -5,13 +5,22 @@ import { type SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { EntityBlueprintAiModal } from '@/components/domain/ai-generator';
 import { AdminPageShell } from '@/components/layout';
-import { Button, CheckboxField, FormInputField, FormSelectField, SlugField } from '@/components/ui';
+import {
+  AiBrandIcon,
+  Button,
+  CheckboxField,
+  FormInputField,
+  FormSelectField,
+  SlugField,
+} from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormMarkdownField } from '@/components/ui/FormMarkdownField';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormFieldsQuery, useSaveFormMutation } from '@/hooks/domain/forms';
 import { useSlugGeneration } from '@/hooks/utils';
+import type { EntityBlueprintMetadata } from '@/lib/domain/ai-generator';
 import { type AdminFormInput, adminFormInputSchema } from '@/lib/domain/forms';
 
 import { FormNavigationLinks, PublishFormActionButton } from '../components';
@@ -28,6 +37,7 @@ export function FormEditorPage() {
 
   const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
   const [isRestoreToDraftConfirmOpen, setIsRestoreToDraftConfirmOpen] = useState(false);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
 
   const {
     register,
@@ -102,6 +112,14 @@ export function FormEditorPage() {
       toast.error(`Failed to mark ${existingForm.title} as ${newStatus}`);
     }
   }
+
+  const handleApplyFromAi = (metadata: EntityBlueprintMetadata) => {
+    setValue('title', metadata.title, { shouldDirty: true, shouldValidate: true });
+    setValue('slug', metadata.slug, { shouldDirty: true, shouldValidate: true });
+    setValue('description', metadata.description, { shouldDirty: true });
+    setValue('duplicate_policy', metadata.duplicate_policy, { shouldDirty: true });
+    setValue('audience', metadata.audience, { shouldDirty: true });
+  };
 
   const navLinks =
     isEditing && id ? <FormNavigationLinks formId={id} currentSection="form" /> : undefined;
@@ -188,6 +206,16 @@ export function FormEditorPage() {
           />
         )}
       </div>
+    ) : !isEditing ? (
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setIsAiGeneratorOpen(true)}
+        className="w-full sm:w-auto"
+      >
+        <AiBrandIcon className="mr-1.5 h-4 w-4 text-primary" />
+        Draft with Hub AI
+      </Button>
     ) : undefined;
 
   const watchedStatus = useWatch({ control, name: 'status' });
@@ -301,17 +329,24 @@ export function FormEditorPage() {
             />
           )}
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
             <Button
               type="button"
               variant="primaryOutline"
               size="lg"
               disabled={saveFormMutation.isPending}
               onClick={() => navigate(ROUTE_PATHS.adminForms)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" variant="default" size="lg" disabled={saveFormMutation.isPending}>
+            <Button
+              type="submit"
+              variant="default"
+              size="lg"
+              disabled={saveFormMutation.isPending}
+              className="w-full sm:w-auto"
+            >
               {saveFormMutation.isPending
                 ? 'Saving...'
                 : isEditing
@@ -320,6 +355,16 @@ export function FormEditorPage() {
             </Button>
           </div>
         </form>
+
+        {isAiGeneratorOpen && (
+          <EntityBlueprintAiModal
+            isOpen={isAiGeneratorOpen}
+            onClose={() => setIsAiGeneratorOpen(false)}
+            domain="form"
+            mode="create"
+            onApplyToForm={handleApplyFromAi}
+          />
+        )}
       </AdminPageShell.Content>
     </AdminPageShell>
   );

@@ -2,8 +2,9 @@ import { useState } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 
+import { EntityBlueprintAiModal } from '@/components/domain/ai-generator';
 import { AdminPageShell } from '@/components/layout';
-import { AlertBanner, Button } from '@/components/ui';
+import { AiBrandIcon, AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminFormQuery, useFormFieldsQuery } from '@/hooks/domain/forms';
 import type { FormField } from '@/lib/domain/forms';
@@ -18,6 +19,7 @@ export function AdminFormFieldsPage() {
   const { data: form, isLoading: formLoading } = useAdminFormQuery(id);
   const { data: fields, isLoading: fieldsLoading } = useFormFieldsQuery(id, true);
   const [panelState, setPanelState] = useState<PanelState>({ mode: 'closed' });
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const isLoading = formLoading || fieldsLoading;
   const isDraft = form?.status === 'draft';
@@ -53,15 +55,27 @@ export function AdminFormFieldsPage() {
         title="Manage Form Fields"
         description={form ? `Manage the form fields for ${form.title}` : 'Manage form fields'}
         actions={
-          <Button
-            type="button"
-            variant="default"
-            onClick={openCreate}
-            disabled={!isDraft}
-            title={!isDraft ? 'Only draft forms can add new fields.' : undefined}
-          >
-            Add Field
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAiModalOpen(true)}
+              disabled={!isDraft}
+              title={!isDraft ? 'Only draft forms can add new fields.' : undefined}
+            >
+              <AiBrandIcon className="mr-1.5 h-4 w-4 text-primary" />
+              Add Questions with AI
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={openCreate}
+              disabled={!isDraft}
+              title={!isDraft ? 'Only draft forms can add new fields.' : undefined}
+            >
+              Add Field
+            </Button>
+          </div>
         }
       />
 
@@ -106,6 +120,16 @@ export function AdminFormFieldsPage() {
                 field={panelField}
                 existingFields={fields ?? []}
                 onClose={closePanel}
+              />
+            )}
+
+            {isAiModalOpen && id && (
+              <EntityBlueprintAiModal
+                isOpen={isAiModalOpen}
+                onClose={() => setIsAiModalOpen(false)}
+                domain="form"
+                mode="append_fields"
+                existingEntityId={id}
               />
             )}
           </>
