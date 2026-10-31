@@ -1,3 +1,8 @@
+---
+name: csv-timezone
+description: 'CSV parsing/export conventions, filename patterns, and timezone conversions (UTC vs Asia/Manila).'
+---
+
 # CSV Imports/Exports & Timezone Handling
 
 **Context:** This skill defines standard conventions for CSV files and date parsing relative to the application's timezone.

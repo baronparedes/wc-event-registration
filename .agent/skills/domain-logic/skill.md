@@ -1,3 +1,8 @@
+---
+name: domain-logic
+description: 'Entity business rules, Hub sectioning, Sunday commitment triggers, service attendance domain boundaries, and attendee details phone support.'
+---
+
 # Specific Domain Logic
 
 **Context:** This skill records architectural facts and business rules about core entities.

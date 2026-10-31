@@ -1,3 +1,8 @@
+---
+name: deep-planning
+description: 'Structured planning requirements, clarifying questions, and risk verification before creating plans or making code changes.'
+---
+
 # Deep Planning Mode
 
 **Context:** This skill dictates how AI agents must behave prior to executing any code changes or outlining execution plans.

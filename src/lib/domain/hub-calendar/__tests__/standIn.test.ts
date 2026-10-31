@@ -48,6 +48,10 @@ describe('getSundayKeyForDate', () => {
     expect(getSundayKeyForDate('2026-11-29')).toBe('fifth_sunday');
   });
 
+  it('supports Date instances as input', () => {
+    expect(getSundayKeyForDate(new Date('2026-11-01T12:00:00Z'))).toBe('first_sunday');
+  });
+
   it('returns null for non-Sunday dates', () => {
     expect(getSundayKeyForDate('2026-11-02')).toBeNull(); // Monday
     expect(getSundayKeyForDate('2026-11-07')).toBeNull(); // Saturday
@@ -211,6 +215,100 @@ describe('findStandInCandidates', () => {
     expect(result.candidates[3].tier).toBe('moderate');
   });
 
+  it('slices only solid candidates when solid candidates meet or exceed maxCandidates', () => {
+    const candidateMembers: AdminMember[] = [
+      createMockMember('1', 'Usher'),
+      createMockMember('2', 'Usher'),
+      createMockMember('3', 'Usher'),
+    ];
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['1', { attendanceScore: 10, turnupRate: 90, committed: 10, attended: 9 }], // solid
+      ['2', { attendanceScore: 9, turnupRate: 85, committed: 10, attended: 9 }], // solid
+      ['3', { attendanceScore: 8, turnupRate: 80, committed: 10, attended: 8 }], // solid
+    ]);
+
+    const result = findStandInCandidates({
+      targetRole: 'Usher',
+      targetDate: '2026-11-01',
+      targetSlot: '9AM',
+      allMembers: candidateMembers,
+      scheduleEntries: [],
+      attendanceScoreMap: statsMap,
+      maxCandidates: 2,
+    });
+
+    expect(result.candidates.length).toBe(2);
+    expect(result.candidates[0].token).toBe('USR_001');
+    expect(result.candidates[1].token).toBe('USR_002');
+  });
+
+  it('sorts candidates with identical turnupRate by attendanceScore descending', () => {
+    const candidateMembers: AdminMember[] = [
+      createMockMember('1', 'Usher'),
+      createMockMember('2', 'Usher'),
+    ];
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['1', { attendanceScore: 7.0, turnupRate: 80, committed: 10, attended: 8 }],
+      ['2', { attendanceScore: 9.5, turnupRate: 80, committed: 10, attended: 8 }],
+    ]);
+
+    const result = findStandInCandidates({
+      targetRole: 'Usher',
+      targetDate: '2026-11-01',
+      targetSlot: '9AM',
+      allMembers: candidateMembers,
+      scheduleEntries: [],
+      attendanceScoreMap: statsMap,
+    });
+
+    expect(result.candidates.length).toBe(2);
+    expect(result.tokenToMemberMap.get('USR_001')?.id).toBe('2'); // score 9.5 comes first
+    expect(result.tokenToMemberMap.get('USR_002')?.id).toBe('1'); // score 7.0 comes second
+  });
+
+  it('categorizes turnup between 30% and 40% as moderate tier and skips < 30%', () => {
+    const candidateMembers: AdminMember[] = [
+      createMockMember('1', 'Usher'), // 35% turnup -> moderate
+      createMockMember('2', 'Usher'), // 25% turnup -> skipped (< 30%)
+      createMockMember('3', 'Usher', { role: undefined }), // undefined role -> skipped
+    ];
+
+    const statsMap = new Map<string, MemberAttendanceStats>([
+      ['1', { attendanceScore: 2.0, turnupRate: 35, committed: 10, attended: 3 }],
+      ['2', { attendanceScore: 1.0, turnupRate: 25, committed: 10, attended: 2 }],
+    ]);
+
+    const result = findStandInCandidates({
+      targetRole: 'Usher',
+      targetDate: '2026-11-01',
+      targetSlot: '9AM',
+      allMembers: candidateMembers,
+      scheduleEntries: [],
+      attendanceScoreMap: statsMap,
+    });
+
+    expect(result.candidates.length).toBe(1);
+    expect(result.candidates[0].token).toBe('USR_001');
+    expect(result.candidates[0].tier).toBe('moderate');
+  });
+
+  it('uses default turnup rate and score when member is not in stats map', () => {
+    const candidateMembers: AdminMember[] = [createMockMember('1', 'Usher')];
+
+    const result = findStandInCandidates({
+      targetRole: 'Usher',
+      targetDate: '2026-11-01',
+      targetSlot: '9AM',
+      allMembers: candidateMembers,
+      scheduleEntries: [],
+    });
+
+    expect(result.candidates.length).toBe(1);
+    expect(result.candidates[0].attendanceScore).toBe(5);
+  });
+
   describe('formatRecommendationReasoning', () => {
     const candidate1 = createMockMember('1', 'Prayer Coach', {
       first_name: 'Test Grace',
@@ -258,6 +356,48 @@ describe('findStandInCandidates', () => {
       });
 
       expect(output).toBe('Test Grace is ready for 9AM service.');
+    });
+
+    it('falls back to "the regular volunteer" when excusedMember is not provided', () => {
+      const output = formatRecommendationReasoning({
+        reasoning: 'Ready to substitute for MEM_EXCUSED.',
+        candidateMember: candidate1,
+        tokenToMemberMap,
+        excusedMemberToken: 'MEM_EXCUSED',
+      });
+
+      expect(output).toBe('Ready to substitute for the regular volunteer.');
+    });
+
+    it('falls back to first_name or full_name when member has no nickname', () => {
+      const candidateNoNick = createMockMember('2', 'Prayer Coach', {
+        first_name: 'Test Grace',
+        nickname: null,
+      });
+      const excusedNoNick = createMockMember('98', 'Prayer Coach', {
+        first_name: null,
+        full_name: 'Test Patrick Sample',
+        nickname: null,
+      });
+
+      const output = formatRecommendationReasoning({
+        reasoning: ': Candidate USR_002 will substitute for MEM_98 with strong turnup.',
+        candidateMember: candidateNoNick,
+        tokenToMemberMap: new Map([['USR_002', candidateNoNick]]),
+        excusedMember: excusedNoNick,
+      });
+
+      expect(output).toBe('Test Grace will substitute for Test Patrick Sample with strong turnup.');
+    });
+
+    it('handles empty reasoning string without errors', () => {
+      const output = formatRecommendationReasoning({
+        reasoning: '',
+        candidateMember: candidate1,
+        tokenToMemberMap,
+      });
+
+      expect(output).toBe('');
     });
   });
 });
