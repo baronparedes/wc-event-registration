@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { USER_COMMITMENT_HISTORY_QUERY_KEY } from '@/hooks/domain/services';
 import { type UpdateMemberInput, fetchMemberMetadata, updateMember } from '@/lib/domain/members';
 
 import { ADMIN_MEMBER_QUERY_KEY } from '../queries/useAdminMemberQuery';
@@ -70,6 +71,7 @@ export function useUpdateMemberMutation() {
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBERS_QUERY_KEY() });
       queryClient.invalidateQueries({ queryKey: ADMIN_MEMBER_QUERY_KEY(id) });
       queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: USER_COMMITMENT_HISTORY_QUERY_KEY(id) });
     },
   });
 }

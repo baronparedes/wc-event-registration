@@ -1,11 +1,14 @@
 import { BadgeCheck, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { usePushSubscription } from '@/hooks/domain/notifications';
+import { useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import type { AdminMember } from '@/lib/domain/members';
-import { formatDateOnly } from '@/lib/infrastructure';
+import { getLastCommitmentUpdatedAt } from '@/lib/domain/services';
+import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 
 import { DGroupDisplay } from './DGroupDisplay';
 import { SundayAvailabilityDisplay } from './SundayAvailabilityDisplay';
@@ -40,6 +43,8 @@ interface MemberInfoTabProps {
 export function MemberInfoTab({ member }: MemberInfoTabProps) {
   const metadata = member.extra_metadata ?? {};
   const push = usePushSubscription();
+  const { data: commitmentSnapshots } = useUserCommitmentHistoryQuery(member.id);
+  const lastCommitmentUpdate = getLastCommitmentUpdatedAt(commitmentSnapshots);
 
   const promotedFields = PROMOTED_METADATA_FIELDS.map((field) => ({
     label: field.label,
@@ -97,7 +102,19 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
         <DGroupDisplay metadata={metadata} />
       </SectionCard>
 
-      <SectionCard title="Sunday Availability">
+      <SectionCard
+        title="Sunday Availability"
+        headerAction={
+          <Badge
+            variant="outline"
+            title={lastCommitmentUpdate ? formatDateTime(lastCommitmentUpdate) : undefined}
+          >
+            {lastCommitmentUpdate
+              ? `Last updated: ${formatDateOnly(lastCommitmentUpdate)}`
+              : 'Never updated'}
+          </Badge>
+        }
+      >
         <SundayAvailabilityDisplay metadata={metadata} />
       </SectionCard>
 
