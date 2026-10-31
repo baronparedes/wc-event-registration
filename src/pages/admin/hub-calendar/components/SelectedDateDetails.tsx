@@ -27,6 +27,7 @@ import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 import {
   type ConfidenceThresholds,
   type ConfidenceTier,
+  ORDERED_STANDARD_ROLES,
   type VolunteerTargetsBySlot,
   calculateAllSundayConfidenceForecast,
   calculateSlotConfidenceForecast,
@@ -36,6 +37,7 @@ import {
   getStoredConfidenceThresholds,
   getStoredVolunteerTargets,
   isMemberInactiveWithoutAttendance,
+  normalizeStaffingRole,
 } from '../utils';
 import { ExportSundaySchedulesButton } from './ExportSundaySchedulesButton';
 import { MemberQuickViewDialog } from './MemberQuickViewDialog';
@@ -157,8 +159,19 @@ export function SelectedDateDetails({
     const targetSlot = slot === 'ALL' ? undefined : slot;
 
     const uniqueRoles = Array.from(
-      new Set(entries.map((e) => e.member.role).filter(Boolean)),
-    ).sort();
+      new Set(
+        entries
+          .map((e) => (e.member.role ? normalizeStaffingRole(e.member.role) : null))
+          .filter((role): role is string => Boolean(role)),
+      ),
+    ).sort((a, b) => {
+      const idxA = ORDERED_STANDARD_ROLES.indexOf(a as (typeof ORDERED_STANDARD_ROLES)[number]);
+      const idxB = ORDERED_STANDARD_ROLES.indexOf(b as (typeof ORDERED_STANDARD_ROLES)[number]);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
 
     const filteredByConfidence =
       effectiveConfidence === null
@@ -178,7 +191,9 @@ export function SelectedDateDetails({
     const filteredByRole =
       selectedRole === null
         ? filteredByConfidence
-        : filteredByConfidence.filter((e) => e.member.role === selectedRole);
+        : filteredByConfidence.filter(
+            (e) => Boolean(e.member.role) && normalizeStaffingRole(e.member.role) === selectedRole,
+          );
 
     const query = searchQuery.trim().toLowerCase();
     const filteredEntries = query
