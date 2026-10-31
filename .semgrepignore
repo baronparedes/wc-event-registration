@@ -16,3 +16,8 @@ docs/
 **/__tests__/**
 **/*.test.*
 **/*.spec.*
+
+# Generated schema type definitions and declarations
+**/*.types.ts
+**/database.types.ts
+**/*.d.ts

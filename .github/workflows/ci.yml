@@ -133,7 +133,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
 
       - name: Install Semgrep
         run: pip install semgrep
@@ -145,7 +145,7 @@ jobs:
           --config p/typescript
           --error
           --metrics=off
-          --jobs 2
+          --jobs 1
           --max-target-bytes 100000
           --exclude "node_modules"
           --exclude "dist"
@@ -155,6 +155,8 @@ jobs:
           --exclude "*__tests__*"
           --exclude "*.test.*"
           --exclude "*.spec.*"
+          --exclude "*.types.ts"
+          --exclude "*.d.ts"
           src supabase/functions api scripts
 
   gitleaks:
