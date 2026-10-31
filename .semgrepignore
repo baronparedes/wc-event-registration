@@ -11,3 +11,13 @@ docs/
 *.min.js
 *.bundle.js
 *.map
+
+# Test files and fixtures (prevent memory spikes/crashes on large mocks)
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+
+# Generated schema type definitions and declarations
+**/*.types.ts
+**/database.types.ts
+**/*.d.ts
