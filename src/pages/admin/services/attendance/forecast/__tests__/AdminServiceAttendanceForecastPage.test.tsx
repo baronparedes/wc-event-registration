@@ -250,6 +250,21 @@ describe('AdminServiceAttendanceForecastPage', () => {
     expect(screen.queryByText(/Share Sunday Attendance Forecast/i)).not.toBeInTheDocument();
   });
 
+  it('renders Export CSV button and triggers download', () => {
+    const createObjectURLMock = vi.fn().mockReturnValue('blob:mock-url');
+    const revokeObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+    window.URL.revokeObjectURL = revokeObjectURLMock;
+
+    renderPage();
+
+    const exportButton = screen.getByRole('button', { name: /Export CSV/i });
+    expect(exportButton).toBeInTheDocument();
+    fireEvent.click(exportButton);
+
+    expect(createObjectURLMock).toHaveBeenCalled();
+  });
+
   it('renders loading state when data is loading', () => {
     mockUseAdminMembersSchedulesQuery.mockReturnValue({
       data: undefined,

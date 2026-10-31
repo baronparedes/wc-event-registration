@@ -193,15 +193,52 @@ describe('SundayForecastCard', () => {
     expect(screen.getAllByText('7 Short').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders role card with two-tier layout separating target and expected turnout', () => {
+  it('renders role card with Hub Calendar layout separating target and expected turnout', () => {
     render(<SundayForecastCard sunday={mockSunday} showRoleBreakdownOption={true} />);
 
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('Need 7')).toBeInTheDocument();
-    expect(screen.getByText(/Target:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Target: 15/i)).toBeInTheDocument();
     expect(screen.getByText('~8 expected')).toBeInTheDocument();
+    expect(screen.getByText(/10 scheduled/i)).toBeInTheDocument();
     expect(
       screen.getByRole('progressbar', { name: /Usher staffing fulfillment/i }),
     ).toBeInTheDocument();
+  });
+
+  it('renders excused count in session header strip and role card when excused > 0', () => {
+    const sundayWithExcused = {
+      ...mockSunday,
+      forecast: {
+        ...mockSunday.forecast,
+        slotBreakdowns: [
+          {
+            slot: '9AM' as const,
+            totalTarget: 15,
+            totalCommitted: 10,
+            totalExcused: 3,
+            totalExpectedTurnup: 8,
+            totalNeeded: 7,
+            overallFulfillmentPercentage: 53,
+            roleBreakdown: [
+              {
+                role: 'Usher',
+                target: 15,
+                committed: 10,
+                excused: 3,
+                expectedTurnup: 8,
+                needed: 7,
+                surplus: 0,
+                fulfillmentPercentage: 53,
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as SundayForecastData;
+
+    render(<SundayForecastCard sunday={sundayWithExcused} showRoleBreakdownOption={true} />);
+    expect(screen.getByText(/10 scheduled • 3 excused/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Excused:/i).length).toBeGreaterThanOrEqual(1);
   });
 });
