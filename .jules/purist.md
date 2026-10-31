@@ -81,3 +81,7 @@
 **Deviation:** External link `<Link target="_blank">` missing `rel="noopener noreferrer"`.
 **Learning:** `rel="noreferrer"` was used alone, which is insufficient. React Router `<Link>` components targeting external tabs (`_blank`) must have both `noopener` and `noreferrer` for full security.
 **Standard:** Always apply `rel="noopener noreferrer"` on `<Link>` or `<a>` elements containing `target="_blank"`.
+## 2024-10-31 - [SelectedDateDetails Milestone Card Accessibility]
+**Deviation:** A clickable milestone card within a mapping function in `SelectedDateDetails` used `<div onClick={...}>` as the interactive element instead of a native semantic element.
+**Learning:** Native focus outlines were missing because generic elements are not natively focusable or styled for keyboard navigation, creating an accessibility drift away from the style guide standards.
+**Standard:** Use native semantic HTML elements (`<button type="button">` or `<a>`) for interactive areas instead of attaching `onClick` handlers to a `<div>`. When overriding default styles (like converting a standard button to a card shape), ensure classes like `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50` are added for proper keyboard focus accessibility, along with `w-full text-left` to maintain standard block and text alignment behavior.
