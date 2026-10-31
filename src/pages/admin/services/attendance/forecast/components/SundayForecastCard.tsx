@@ -228,6 +228,15 @@ export function SundayForecastCard({
                             <strong className="font-semibold text-text tabular-nums">
                               ~{slotExpected}
                             </strong>
+                            {(slotGroup.totalExcused ?? 0) > 0 && (
+                              <>
+                                {' '}
+                                &bull; Excused:{' '}
+                                <strong className="font-semibold text-accent tabular-nums">
+                                  {slotGroup.totalExcused}
+                                </strong>
+                              </>
+                            )}
                           </span>
                         )}
                         {slotDeficit ? (
@@ -256,6 +265,10 @@ export function SundayForecastCard({
                       {slotGroup.roleBreakdown.map((item) => {
                         const isFilled = item.needed === 0 && item.target > 0;
                         const roleDeficit = item.needed > 0;
+                        const committedCount =
+                          item.committed ??
+                          (item as unknown as { scheduled?: number }).scheduled ??
+                          0;
                         const percent =
                           item.fulfillmentPercentage ??
                           (item.target > 0
@@ -265,12 +278,12 @@ export function SundayForecastCard({
                         return (
                           <div
                             key={item.role}
-                            className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 shadow-2xs transition-all hover:border-border-hover hover:shadow-xs"
+                            className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-border-hover hover:shadow-xs"
                           >
-                            {/* Top Row: Role Name Bold on Left, Status Badge on Right */}
-                            <div className="flex items-start justify-between gap-2 min-h-[34px]">
+                            {/* Top Row: Role Name on Left, Status Badge on Right */}
+                            <div className="flex items-start justify-between gap-2">
                               <span
-                                className="text-sm font-bold text-text leading-tight break-words"
+                                className="text-sm font-semibold text-text truncate"
                                 title={item.role}
                               >
                                 {item.role}
@@ -296,40 +309,35 @@ export function SundayForecastCard({
                               )}
                             </div>
 
-                            {/* Bottom Row: Soft Pill Container with Metrics & Mini Color-Coded Progress Bar */}
-                            <div className="mt-2.5 flex flex-col gap-1.5 rounded-lg border border-border/50 bg-surface-hover/50 p-2 text-xs">
-                              <div className="flex items-center justify-between">
-                                <span className="text-muted font-medium whitespace-nowrap">
-                                  Target:{' '}
-                                  <strong className="font-bold text-text tabular-nums">
-                                    {item.target}
-                                  </strong>
-                                </span>
-                                <span className="font-semibold text-text tabular-nums whitespace-nowrap">
+                            {/* Hub Calendar Layout: Target/Expected, Progress Bar, Scheduled • Excused */}
+                            <div className="mt-3.5 space-y-1.5 text-xs">
+                              <div className="flex items-center justify-between text-muted text-[11px]">
+                                <span>Target: {item.target}</span>
+                                <span className="font-semibold text-text">
                                   ~{item.expectedTurnup} expected
                                 </span>
                               </div>
 
-                              {/* Mini Progress Bar */}
-                              {item.target > 0 && (
-                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/60">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-300 ${
-                                      percent >= 100
-                                        ? 'bg-emerald-500'
-                                        : percent >= 70
-                                          ? 'bg-amber-500'
-                                          : 'bg-danger'
-                                    }`}
-                                    style={{ width: `${percent}%` }}
-                                    role="progressbar"
-                                    aria-valuenow={percent}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                    aria-label={`${item.role} staffing fulfillment`}
-                                  />
-                                </div>
-                              )}
+                              <div className="h-1.5 w-full rounded-full bg-border/60 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${
+                                    roleDeficit ? 'bg-accent' : isFilled ? 'bg-primary' : 'bg-muted'
+                                  }`}
+                                  style={{
+                                    width: `${Math.min(100, Math.max(0, percent))}%`,
+                                  }}
+                                  role="progressbar"
+                                  aria-valuenow={percent}
+                                  aria-valuemin={0}
+                                  aria-valuemax={100}
+                                  aria-label={`${item.role} staffing fulfillment`}
+                                />
+                              </div>
+
+                              <p className="text-[11px] text-muted truncate">
+                                {committedCount} scheduled
+                                {(item.excused ?? 0) > 0 ? ` • ${item.excused} excused` : ''}
+                              </p>
                             </div>
                           </div>
                         );

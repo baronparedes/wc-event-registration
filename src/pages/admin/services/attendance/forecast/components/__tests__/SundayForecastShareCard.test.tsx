@@ -115,6 +115,7 @@ describe('SundayForecastShareCard', () => {
       screen.getByText((_, el) => el?.textContent?.trim() === 'Target: 15'),
     ).toBeInTheDocument();
     expect(screen.getByText('~8 expected')).toBeInTheDocument();
+    expect(screen.getByText(/10 scheduled/i)).toBeInTheDocument();
     expect(
       screen.getByRole('progressbar', { name: /Usher staffing fulfillment/i }),
     ).toBeInTheDocument();
@@ -122,5 +123,41 @@ describe('SundayForecastShareCard', () => {
     // Verify 960px container width
     const container = screen.getByText('October 4, 2026').closest('div[style*="960px"]');
     expect(container).toBeInTheDocument();
+  });
+
+  it('renders highlighted excused count when role and slot have excused volunteers', () => {
+    const sundayWithExcused = {
+      ...mockSunday,
+      forecast: {
+        ...mockSunday.forecast,
+        slotBreakdowns: [
+          {
+            slot: '9AM' as const,
+            totalTarget: 15,
+            totalCommitted: 10,
+            totalExcused: 2,
+            totalExpectedTurnup: 8,
+            totalNeeded: 7,
+            overallFulfillmentPercentage: 53,
+            roleBreakdown: [
+              {
+                role: 'Usher',
+                target: 15,
+                committed: 10,
+                excused: 2,
+                expectedTurnup: 8,
+                needed: 7,
+                surplus: 0,
+                fulfillmentPercentage: 53,
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as SundayForecastData;
+
+    render(<SundayForecastShareCard sunday={sundayWithExcused} />);
+    expect(screen.getByText(/10 scheduled • 2 excused/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Excused:/i).length).toBeGreaterThanOrEqual(1);
   });
 });

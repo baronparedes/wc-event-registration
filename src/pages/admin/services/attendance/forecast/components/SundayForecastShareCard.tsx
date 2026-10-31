@@ -305,6 +305,15 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                         <strong className="font-bold text-text tabular-nums">
                           ~{slotExpected}
                         </strong>
+                        {(slotGroup.totalExcused ?? 0) > 0 && (
+                          <>
+                            {' '}
+                            &bull; Excused:{' '}
+                            <strong className="font-bold text-accent tabular-nums">
+                              {slotGroup.totalExcused}
+                            </strong>
+                          </>
+                        )}
                       </span>
                     )}
                     {slotDeficit ? (
@@ -333,6 +342,8 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                   {slotGroup.roleBreakdown.map((item) => {
                     const isFilled = item.needed === 0 && item.target > 0;
                     const roleDeficit = item.needed > 0;
+                    const committedCount =
+                      item.committed ?? (item as unknown as { scheduled?: number }).scheduled ?? 0;
                     const percent =
                       item.fulfillmentPercentage ??
                       (item.target > 0
@@ -342,9 +353,9 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                     return (
                       <div
                         key={item.role}
-                        className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 shadow-2xs transition-all"
+                        className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all"
                       >
-                        {/* Top Row: Role Name Bold on Left, Status Badge on Right */}
+                        {/* Top Row: Role Name on Left, Status Badge on Right */}
                         <div className="flex items-start justify-between gap-2 min-h-[32px]">
                           <span
                             className="text-sm font-bold text-text leading-snug break-words"
@@ -373,40 +384,40 @@ export function SundayForecastShareCard({ sunday, roleGroupLabel }: SundayForeca
                           )}
                         </div>
 
-                        {/* Bottom Row: Soft Pill Container with Metrics & Mini Color-Coded Progress Bar */}
-                        <div className="mt-2.5 flex flex-col gap-2 rounded-lg border border-border/50 bg-surface-hover/50 p-2.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted font-medium whitespace-nowrap">
+                        {/* Hub Calendar Layout: Target/Expected, Progress Bar, Scheduled • Excused */}
+                        <div className="mt-3.5 space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between text-muted text-xs">
+                            <span>
                               Target:{' '}
                               <strong className="font-bold text-text tabular-nums">
                                 {item.target}
                               </strong>
                             </span>
-                            <span className="font-bold text-text tabular-nums whitespace-nowrap">
+                            <span className="font-bold text-text tabular-nums">
                               ~{item.expectedTurnup} expected
                             </span>
                           </div>
 
-                          {/* Mini Progress Bar */}
-                          {item.target > 0 && (
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-border/60">
-                              <div
-                                className={`h-full rounded-full ${
-                                  percent >= 100
-                                    ? 'bg-emerald-500'
-                                    : percent >= 70
-                                      ? 'bg-amber-500'
-                                      : 'bg-danger'
-                                }`}
-                                style={{ width: `${percent}%` }}
-                                role="progressbar"
-                                aria-valuenow={percent}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                                aria-label={`${item.role} staffing fulfillment`}
-                              />
-                            </div>
-                          )}
+                          <div className="h-2 w-full rounded-full bg-border/60 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                roleDeficit ? 'bg-accent' : isFilled ? 'bg-primary' : 'bg-muted'
+                              }`}
+                              style={{
+                                width: `${Math.min(100, Math.max(0, percent))}%`,
+                              }}
+                              role="progressbar"
+                              aria-valuenow={percent}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={`${item.role} staffing fulfillment`}
+                            />
+                          </div>
+
+                          <p className="text-xs text-muted truncate">
+                            {committedCount} scheduled
+                            {(item.excused ?? 0) > 0 ? ` • ${item.excused} excused` : ''}
+                          </p>
                         </div>
                       </div>
                     );

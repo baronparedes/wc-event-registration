@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
 import { addMonths, isSameMonth, subMonths } from 'date-fns';
-import { Share2, SlidersHorizontal } from 'lucide-react';
+import { Download, Share2, SlidersHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { AdminPageShell } from '@/components/layout';
 import { AlertBanner, Button } from '@/components/ui';
@@ -30,6 +31,7 @@ import {
   type ForecastRoleGroup,
   useAttendanceForecastData,
 } from './hooks/useAttendanceForecastData';
+import { buildSundayForecastCsvExport } from './utils/forecastCsvExport';
 
 export function AdminServiceAttendanceForecastPage() {
   const [viewDate, setViewDate] = useState(() => new Date());
@@ -80,6 +82,44 @@ export function AdminServiceAttendanceForecastPage() {
     setActiveSundayKey('ALL');
   };
 
+  const handleExportCsv = () => {
+    if (!sundayForecasts.length) return;
+
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+
+    try {
+      const { csvText, filename } = buildSundayForecastCsvExport({
+        sundays: sundayForecasts,
+        year: viewYear,
+        monthIndex: viewMonthIndex,
+        selectedSundayKey: activeSundayKey,
+      });
+
+      const blob = new Blob([csvText], { type: 'text/csv; charset=utf-8' });
+      url = URL.createObjectURL(blob);
+      link = document.createElement('a');
+
+      link.href = url;
+      link.download = filename;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Attendance forecast exported to CSV');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to export attendance forecast CSV.';
+      toast.error(message);
+    } finally {
+      if (link && document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
   const displayedSundays =
     activeSundayKey === 'ALL'
       ? sundayForecasts
@@ -93,6 +133,16 @@ export function AdminServiceAttendanceForecastPage() {
         breadcrumbs={[{ label: 'Services', to: ROUTE_PATHS.adminServices }, { label: 'Forecast' }]}
         actions={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExportCsv}
+              className="w-full sm:w-auto"
+              disabled={isLoading || isError || !sundayForecasts.length}
+            >
+              <Download className="mr-1.5 h-4 w-4" />
+              Export CSV
+            </Button>
             <Button
               type="button"
               variant="outline"
