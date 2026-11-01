@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { format } from 'date-fns';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -199,10 +200,13 @@ describe('AdminServiceAttendanceForecastPage', () => {
   it('allows filtering by individual Sunday tab', () => {
     renderPage();
 
+    const monthName = format(new Date(), 'MMMM');
+    const monthRegex = new RegExp(monthName, 'i');
+
     const allSundaysTab = screen.getByRole('tab', { name: /All Sundays/i });
     expect(allSundaysTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('heading', { name: /Monthly Attendance Trend/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 3, name: /October/i }).length).toBeGreaterThan(
+    expect(screen.getAllByRole('heading', { level: 3, name: monthRegex }).length).toBeGreaterThan(
       1,
     );
 
@@ -210,10 +214,10 @@ describe('AdminServiceAttendanceForecastPage', () => {
     fireEvent.click(firstSundayTab);
 
     expect(firstSundayTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getAllByRole('heading', { level: 3, name: /October/i })).toHaveLength(1);
+    expect(screen.getAllByRole('heading', { level: 3, name: monthRegex })).toHaveLength(1);
 
     fireEvent.click(allSundaysTab);
-    expect(screen.getAllByRole('heading', { level: 3, name: /October/i }).length).toBeGreaterThan(
+    expect(screen.getAllByRole('heading', { level: 3, name: monthRegex }).length).toBeGreaterThan(
       1,
     );
   });

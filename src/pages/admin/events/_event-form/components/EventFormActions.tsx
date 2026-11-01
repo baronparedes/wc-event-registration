@@ -13,8 +13,14 @@ export function EventFormActions(props: EventFormActionsProps) {
 
   if (disabled) {
     return (
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 [&>button]:w-full sm:[&>button]:w-auto">
-        <Button onClick={onCancel} size="lg" type="button" variant="primaryOutline">
+      <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
+        <Button
+          onClick={onCancel}
+          size="lg"
+          type="button"
+          variant="primaryOutline"
+          className="w-full sm:w-auto"
+        >
           Back to Events
         </Button>
       </div>
@@ -22,17 +28,24 @@ export function EventFormActions(props: EventFormActionsProps) {
   }
 
   return (
-    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 [&>button]:w-full sm:[&>button]:w-auto">
+    <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
       <Button
         disabled={isPending}
         onClick={onCancel}
         size="lg"
         type="button"
         variant="primaryOutline"
+        className="w-full sm:w-auto"
       >
         Cancel
       </Button>
-      <Button disabled={isPending || !hasChanges} size="lg" type="submit" variant="default">
+      <Button
+        disabled={isPending || !hasChanges}
+        size="lg"
+        type="submit"
+        variant="default"
+        className="w-full sm:w-auto"
+      >
         {isPending && <Spinner size="sm" className="mr-2" aria-hidden="true" />}
         {isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Event'}
       </Button>

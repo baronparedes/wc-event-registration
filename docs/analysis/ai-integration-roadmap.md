@@ -122,13 +122,23 @@ graph TD
 
 ### Phase 3: Event & Form Operations Copilot
 
-#### Phase 3.1: Event & Form One-Click Generator
+#### Phase 3.1: Event & Form One-Click Generator `[Completed]`
 
-- **Location**: [`/admin/events/new`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events) and [`/admin/forms/new`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/forms).
+- **Location**: [`/admin/events/new`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events), [`/admin/forms/new`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/forms), [`/admin/events/[id]/fields`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/events), and [`/admin/forms/[id]/fields`](file:///Users/baronpatrickparedes/Projects/wc-event-registration/src/pages/admin/forms).
 - **User Workflow**:
-  - Admin inputs prompt: _"Couples Retreat registration with childcare, dietary restrictions, and emergency contact."_
-  - AI outputs structured JSON conforming to `DynamicField` registry types (`text`, `number`, `select`, `multiselect`, `radio`, `rating`, `date`).
-  - Pre-populates title, slug, description, and sets up field visibility dependency rules automatically.
+  - Admin inputs prompt or clicks example starter chips (_"Couples Retreat with childcare, dietary restrictions, and emergency contact"_).
+  - AI outputs structured JSON conforming to `DynamicField` registry types (`text`, `textarea`, `number`, `email`, `phone`, `select`, `multiselect`, `radio`, `rating`, `date`, `boolean`).
+  - Pre-populates title, slug, markdown description, location, audience, and sets up field visibility dependency rules automatically (e.g. asking _"Need childcare?"_ triggers dependent text field _"How many children?"_).
+  - **Interactive Blueprint Preview**: Modal lets admins inspect generated general metadata and toggle/select individual questions.
+  - **Dual Action Options**:
+    - _"Apply & Create Draft"_: Atomically creates the draft Event/Form with all selected fields in the database and routes directly to the fields editor.
+    - _"Populate Form Only"_: Fills current `/new` form inputs for manual progressive saving.
+    - _"Add Questions with AI"_: Batch-appends questions directly into existing events or forms in draft status.
+- **Architecture**:
+  - Edge Function: `supabase/functions/generate-entity-blueprint/` with strict Deno unit tests, Zod validation, rate limiting, and zero AI slop enforcement.
+  - API Client: Strongly typed `generateEntityBlueprint`, `createEventWithBlueprint`, `createFormWithBlueprint`, `appendEventFieldsFromBlueprint`, `appendFormFieldsFromBlueprint` in `src/lib/domain/ai-generator/api.ts`.
+  - Frontend Hooks: `useGenerateEntityBlueprintMutation`, `useCreateEventWithBlueprintMutation`, `useCreateFormWithBlueprintMutation`, `useAppendBlueprintFieldsMutation` in `src/hooks/domain/ai-generator/`.
+  - UI Component: `EntityBlueprintAiModal` in `src/components/domain/ai-generator/EntityBlueprintAiModal.tsx`.
 
 #### Phase 3.2: Form Feedback Sentiment & Theme Extractor
 
