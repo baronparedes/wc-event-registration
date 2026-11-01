@@ -6,6 +6,7 @@ import {
   formatDayMonth,
   formatTimeOnly,
   localDateTimeToUTC8ISO,
+  toDatetimeLocal,
 } from '../dateFormat';
 
 describe('dateFormat', () => {
@@ -126,6 +127,30 @@ describe('dateFormat', () => {
       expect(localDateTimeToUTC8ISO(undefined)).toBe(null);
       expect(localDateTimeToUTC8ISO('')).toBe(null);
       expect(localDateTimeToUTC8ISO('   ')).toBe(null);
+    });
+  });
+
+  describe('toDatetimeLocal', () => {
+    it('formats ISO string with UTC offset into Asia/Manila (UTC+8) datetime-local', () => {
+      // 01:00 UTC is 09:00 Asia/Manila
+      expect(toDatetimeLocal('2026-11-21T01:00:00Z')).toBe('2026-11-21T09:00');
+    });
+
+    it('formats ISO string with explicit +08:00 offset into datetime-local', () => {
+      expect(toDatetimeLocal('2026-11-21T09:00:00+08:00')).toBe('2026-11-21T09:00');
+    });
+
+    it('preserves datetime-local string without timezone offset in Asia/Manila', () => {
+      expect(toDatetimeLocal('2026-11-21T09:00')).toBe('2026-11-21T09:00');
+      expect(toDatetimeLocal('2026-11-21 09:00:00')).toBe('2026-11-21T09:00');
+    });
+
+    it('returns empty string for null, undefined, empty, or invalid input', () => {
+      expect(toDatetimeLocal(null)).toBe('');
+      expect(toDatetimeLocal(undefined)).toBe('');
+      expect(toDatetimeLocal('')).toBe('');
+      expect(toDatetimeLocal('   ')).toBe('');
+      expect(toDatetimeLocal('invalid-date')).toBe('');
     });
   });
 });

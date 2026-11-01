@@ -22,6 +22,7 @@ import { useSaveConfirmation, useSlugGeneration } from '@/hooks/utils';
 import type { EntityBlueprintMetadata } from '@/lib/domain/ai-generator';
 import { createEventSchema, derivePublicRegistrationAccess } from '@/lib/domain/events';
 import type { CreateEventInput } from '@/lib/domain/events';
+import { toDatetimeLocal } from '@/lib/infrastructure';
 
 import { EventNavigationLinks, PublishActionButton } from '../components';
 import {
@@ -37,15 +38,6 @@ import {
 type AdminEventFormPageProps = {
   mode: 'create' | 'edit';
 };
-
-/** Converts an ISO timestamp to the datetime-local input format in Asia/Manila (UTC+8). */
-function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return '';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '';
-  // sv-SE locale produces "YYYY-MM-DD HH:mm:ss" — slice and replace space to get datetime-local value
-  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
-}
 
 const DEFAULT_VALUES: CreateEventInput = {
   title: '',

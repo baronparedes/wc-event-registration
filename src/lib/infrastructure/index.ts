@@ -19,6 +19,7 @@ export {
   formatDateTime,
   formatTimeOnly,
   localDateTimeToUTC8ISO,
+  toDatetimeLocal,
 } from './dateFormat';
 export {
   decodeOffsetCursor,

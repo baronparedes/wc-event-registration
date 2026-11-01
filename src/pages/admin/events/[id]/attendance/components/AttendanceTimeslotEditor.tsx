@@ -3,7 +3,7 @@ import type { FieldErrors } from 'react-hook-form';
 import { Button } from '@/components/ui';
 import { FormInputField } from '@/components/ui/FormInputField';
 import type { AttendanceTimeslotConfig } from '@/lib/domain/attendance';
-import { formatDateTime } from '@/lib/infrastructure';
+import { formatDateTime, toDatetimeLocal } from '@/lib/infrastructure';
 
 type AttendanceTimeslotEditorProps = {
   eventStartsAt: string | null;
@@ -21,38 +21,6 @@ type AttendanceTimeslotEditorProps = {
     localValue: string,
   ) => void;
 };
-
-function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-
-  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) return '';
-
-  const parts = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(parsed);
-
-  const year = parts.find((part) => part.type === 'year')?.value;
-  const month = parts.find((part) => part.type === 'month')?.value;
-  const day = parts.find((part) => part.type === 'day')?.value;
-  const hour = parts.find((part) => part.type === 'hour')?.value;
-  const minute = parts.find((part) => part.type === 'minute')?.value;
-
-  if (!year || !month || !day || !hour || !minute) {
-    return '';
-  }
-
-  return `${year}-${month}-${day}T${hour}:${minute}`;
-}
 
 function toErrorMessage(value: unknown): string | null {
   return typeof value === 'string' ? value : null;

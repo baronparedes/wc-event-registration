@@ -15,7 +15,7 @@ import {
   updateAttendanceSettingsSchema,
 } from '@/lib/domain/attendance';
 import { canAdminPerform } from '@/lib/domain/auth';
-import { localDateTimeToUTC8ISO } from '@/lib/infrastructure';
+import { localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
 const ATTENDANCE_TOAST_MESSAGES = {
   updated: 'Attendance settings updated successfully.',
@@ -23,13 +23,6 @@ const ATTENDANCE_TOAST_MESSAGES = {
 } as const;
 
 type AttendanceSettingsFormInput = z.input<typeof updateAttendanceSettingsSchema>;
-
-function toDatetimeLocal(value: string | null | undefined): string {
-  if (!value) return '';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '';
-  return parsed.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).slice(0, 16).replace(' ', 'T');
-}
 
 function isWithinEventWindow(
   slotIso: string,

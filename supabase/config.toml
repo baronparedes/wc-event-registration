@@ -208,6 +208,10 @@ import_map = "./functions/deno.json"
 verify_jwt = true
 import_map = "./functions/deno.json"
 
+[functions.generate-entity-blueprint]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
 [functions.get-excused-members]
 verify_jwt = true
 import_map = "./functions/deno.json"
@@ -273,6 +277,10 @@ verify_jwt = true
 import_map = "./functions/deno.json"
 
 [functions.reactivate-registration]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.recommend-stand-in]
 verify_jwt = true
 import_map = "./functions/deno.json"
 
