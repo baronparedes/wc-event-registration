@@ -402,4 +402,20 @@ describe('AdminServicesPage', () => {
 
     vi.useRealTimers();
   });
+
+  it('opens share dashboard modal when Share Dashboard is clicked', () => {
+    render(
+      <MemoryRouter>
+        <AdminServicesPage />
+      </MemoryRouter>,
+    );
+
+    // Default stats loaded mock
+    expect(screen.getByText('Services Dashboard')).toBeInTheDocument();
+
+    const shareBtn = screen.getByRole('button', { name: /Share Dashboard/i });
+    fireEvent.click(shareBtn);
+
+    expect(screen.getByRole('heading', { name: /Share Dashboard Metrics/i })).toBeInTheDocument();
+  });
 });

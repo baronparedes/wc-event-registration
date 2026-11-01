@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { endOfMonth, format, parseISO } from 'date-fns';
-import { ChartArea, SearchX, Table, TrendingUp, Upload } from 'lucide-react';
+import { ChartArea, SearchX, Share2, Table, TrendingUp, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { AdminPageShell } from '@/components/layout';
@@ -16,6 +16,7 @@ import {
   ServiceDashboardMetrics,
   ServiceDashboardRoleBreakdown,
   ServiceNavigationLinks,
+  ShareServiceDashboardDialog,
   WeeklyDebriefModal,
 } from './components';
 import {
@@ -30,6 +31,7 @@ export function AdminServicesPage() {
   const { can } = useAdminAuthQuery();
   const [filterMode, setFilterMode] = useState<FilterMode>('sunday');
 
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMissedModalOpen, setIsMissedModalOpen] = useState(false);
   const [isDebriefModalOpen, setIsDebriefModalOpen] = useState(false);
   const [missedModalSlot, setMissedModalSlot] = useState<ServiceTimeSlot | 'All'>('All');
@@ -120,6 +122,13 @@ export function AdminServicesPage() {
             </Button>
             <Button
               className="w-full sm:w-auto sm:inline-flex"
+              onClick={() => setIsShareModalOpen(true)}
+            >
+              <Share2 className="mr-1.5 h-4 w-4" />
+              Share Dashboard
+            </Button>
+            <Button
+              className="w-full sm:w-auto sm:inline-flex"
               onClick={() => setIsDebriefModalOpen(true)}
             >
               <AiBrandIcon className="h-6 w-6" />
@@ -161,6 +170,18 @@ export function AdminServicesPage() {
             />
             <ServiceDashboardRoleBreakdown stats={stats} dateFilterParams={dateFilterParams} />
           </div>
+        )}
+
+        {stats && isShareModalOpen && (
+          <ShareServiceDashboardDialog
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            stats={stats}
+            filterMode={filterMode}
+            selectedSunday={selectedSunday}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+          />
         )}
 
         {isMissedModalOpen && (
