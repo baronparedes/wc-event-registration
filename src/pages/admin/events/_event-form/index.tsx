@@ -9,7 +9,7 @@ import { EntityBlueprintAiModal } from '@/components/domain/ai-generator';
 import { AdminPageShell } from '@/components/layout';
 import { AiBrandIcon, Button } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES } from '@/config/constants';
+import { ROUTE_PATHS, TOAST_MESSAGES, UI_MESSAGES, toRoute } from '@/config/constants';
 import {
   useAdminEventQuery,
   useArchiveEventMutation,
@@ -467,6 +467,9 @@ export function AdminEventFormPage({ mode }: AdminEventFormPageProps) {
             domain="event"
             mode="create"
             onApplyToForm={handleApplyFromAi}
+            onCreatedSuccess={(eventId) => {
+              navigate(toRoute('adminEventFields', { id: eventId }));
+            }}
           />
         )}
       </AdminPageShell.Content>

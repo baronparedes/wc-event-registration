@@ -357,8 +357,17 @@ export function parseBlueprintResponse(
           if (optLabel) {
             options.push({ label: optLabel.slice(0, 100), value: optVal.slice(0, 50) });
           }
+        } else if (typeof opt === 'string' && opt.trim()) {
+          const optLabel = opt.trim();
+          const optVal =
+            optLabel.toLowerCase().replace(/[^a-z0-9_-]+/g, '_') || `opt_${options.length + 1}`;
+          options.push({ label: optLabel.slice(0, 100), value: optVal.slice(0, 50) });
         }
       }
+    }
+
+    if (['select', 'radio', 'multi_select'].includes(fieldType) && options.length === 0) {
+      options.push({ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' });
     }
 
     // Sanitize validation rules

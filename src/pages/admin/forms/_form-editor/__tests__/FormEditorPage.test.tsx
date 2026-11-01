@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -43,6 +43,49 @@ vi.mock('@/hooks/domain/forms', () => ({
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+}));
+
+vi.mock('@/components/domain/ai-generator', () => ({
+  EntityBlueprintAiModal: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onApplyToForm?: (metadata: Record<string, unknown>, fields: unknown[]) => void;
+    onCreatedSuccess?: (id: string, slug: string) => void;
+  }) => {
+    if (!props.isOpen) return null;
+    return (
+      <div data-testid="mock-ai-generator-modal">
+        <button
+          type="button"
+          onClick={() => {
+            props.onApplyToForm?.(
+              {
+                title: 'AI Generated Feedback Form',
+                slug: 'ai-generated-feedback-form',
+                description: 'Attendee feedback and ministry ratings.',
+                audience: 'public',
+                duplicate_policy: 'allow_multiple',
+              },
+              [],
+            );
+          }}
+        >
+          Mock Apply AI
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            props.onCreatedSuccess?.('new-form-999', 'ai-generated-feedback-form');
+          }}
+        >
+          Mock Create Success
+        </button>
+        <button type="button" onClick={props.onClose}>
+          Mock Close
+        </button>
+      </div>
+    );
+  },
 }));
 
 function renderPage() {
@@ -445,6 +488,44 @@ describe('FormEditorPage', () => {
 
     await waitFor(() => {
       expect(mockSaveFormMutateAsync).toHaveBeenCalled();
+    });
+  });
+
+  describe('Hub AI Generator integration', () => {
+    it('renders Draft with Hub AI button in create mode and opens modal', () => {
+      renderPage();
+
+      const aiBtn = screen.getByRole('button', { name: /Draft with Hub AI/i });
+      expect(aiBtn).toBeInTheDocument();
+
+      fireEvent.click(aiBtn);
+      expect(screen.getByTestId('mock-ai-generator-modal')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Mock Close' }));
+      expect(screen.queryByTestId('mock-ai-generator-modal')).not.toBeInTheDocument();
+    });
+
+    it('populates form fields when AI blueprint is applied', async () => {
+      renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: /Draft with Hub AI/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Mock Apply AI' }));
+      });
+
+      expect(screen.getByPlaceholderText('e.g. Area Reservation Form')).toHaveValue(
+        'AI Generated Feedback Form',
+      );
+      expect(screen.getByLabelText('Slug')).toHaveValue('ai-generated-feedback-form');
+    });
+
+    it('navigates to form fields editor on creation success callback', () => {
+      renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: /Draft with Hub AI/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Mock Create Success' }));
+
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/forms/new-form-999/fields');
     });
   });
 });

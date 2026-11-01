@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,6 +52,55 @@ vi.mock('sonner', () => ({
   toast: {
     success: mockToastSuccess,
     error: mockToastError,
+  },
+}));
+
+vi.mock('@/components/domain/ai-generator', () => ({
+  EntityBlueprintAiModal: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onApplyToForm?: (metadata: Record<string, unknown>, fields: unknown[]) => void;
+    onCreatedSuccess?: (id: string, slug: string) => void;
+  }) => {
+    if (!props.isOpen) return null;
+    return (
+      <div data-testid="mock-ai-generator-modal">
+        <button
+          type="button"
+          onClick={() => {
+            props.onApplyToForm?.(
+              {
+                title: 'AI Generated Youth Retreat',
+                slug: 'ai-generated-youth-retreat',
+                description: 'A weekend of worship and workshops.',
+                location: 'Subic Bay',
+                audience: 'members_and_public',
+                duplicate_policy: 'allow_multiple',
+                registration_mode: 'open',
+                starts_at: '2026-11-21T09:00',
+                ends_at: '2026-11-21T18:00',
+                registration_opens_at: '2026-11-01T08:00',
+                registration_closes_at: '2026-11-20T23:59',
+              },
+              [],
+            );
+          }}
+        >
+          Mock Apply AI
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            props.onCreatedSuccess?.('new-evt-123', 'ai-generated-youth-retreat');
+          }}
+        >
+          Mock Create Success
+        </button>
+        <button type="button" onClick={props.onClose}>
+          Mock Close
+        </button>
+      </div>
+    );
   },
 }));
 
@@ -408,5 +457,44 @@ describe('AdminEventFormPage', () => {
       expect(mockRestoreToDraftMutateAsync).toHaveBeenCalledWith('event-1');
     });
     expect(mockToastSuccess).toHaveBeenCalledWith('"Archived Event" has been moved to draft.');
+  });
+
+  describe('Hub AI Generator integration', () => {
+    it('renders Draft with Hub AI button in create mode and opens modal', () => {
+      renderWithRouter('create');
+
+      const aiBtn = screen.getByRole('button', { name: /Draft with Hub AI/i });
+      expect(aiBtn).toBeInTheDocument();
+
+      fireEvent.click(aiBtn);
+      expect(screen.getByTestId('mock-ai-generator-modal')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Mock Close' }));
+      expect(screen.queryByTestId('mock-ai-generator-modal')).not.toBeInTheDocument();
+    });
+
+    it('populates form fields and schedules when AI blueprint is applied', async () => {
+      renderWithRouter('create');
+
+      fireEvent.click(screen.getByRole('button', { name: /Draft with Hub AI/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Mock Apply AI' }));
+      });
+
+      expect(screen.getByLabelText('Title *')).toHaveValue('AI Generated Youth Retreat');
+      expect(screen.getByLabelText('Slug')).toHaveValue('ai-generated-youth-retreat');
+      expect(screen.getByLabelText('Location')).toHaveValue('Subic Bay');
+      expect(screen.getByLabelText('Event Start')).toHaveValue('2026-11-21T09:00');
+      expect(screen.getByLabelText('Event End')).toHaveValue('2026-11-21T18:00');
+    });
+
+    it('navigates to event fields editor on creation success callback', () => {
+      renderWithRouter('create');
+
+      fireEvent.click(screen.getByRole('button', { name: /Draft with Hub AI/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Mock Create Success' }));
+
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/events/new-evt-123/fields');
+    });
   });
 });

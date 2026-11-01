@@ -363,6 +363,9 @@ export function FormEditorPage() {
             domain="form"
             mode="create"
             onApplyToForm={handleApplyFromAi}
+            onCreatedSuccess={(formId) => {
+              navigate(toRoute('adminFormFields', { id: formId }));
+            }}
           />
         )}
       </AdminPageShell.Content>

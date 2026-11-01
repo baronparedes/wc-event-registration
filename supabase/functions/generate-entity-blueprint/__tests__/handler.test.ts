@@ -239,6 +239,73 @@ Deno.test(
   },
 );
 
+Deno.test(
+  'parseBlueprintResponse automatically adjusts ends_at when ends_at is before or equal to starts_at',
+  () => {
+    const rawJson = JSON.stringify({
+      metadata: {
+        title: 'Conference 2026',
+        starts_at: '2026-12-10T10:00',
+        ends_at: '2026-12-10T09:00',
+        suggested_duration_hours: 4,
+      },
+      fields: [],
+    });
+
+    const result = parseBlueprintResponse(rawJson, 'event');
+    assertEquals(result.metadata.starts_at, '2026-12-10T10:00');
+    assertEquals(result.metadata.ends_at, '2026-12-10T14:00');
+  },
+);
+
+Deno.test(
+  'parseBlueprintResponse normalizes options string arrays and ensures fallback options for choice fields',
+  () => {
+    const rawJson = JSON.stringify({
+      metadata: { title: 'Survey' },
+      fields: [
+        {
+          field_key: 'shirt_size',
+          label: 'Shirt Size',
+          field_type: 'select',
+          options: ['Small', 'Medium', 'Large'],
+        },
+        {
+          field_key: 'attending_lunch',
+          label: 'Attending lunch?',
+          field_type: 'radio',
+          options: [],
+        },
+      ],
+    });
+
+    const result = parseBlueprintResponse(rawJson, 'form');
+    assertEquals(result.fields[0].options, [
+      { label: 'Small', value: 'small' },
+      { label: 'Medium', value: 'medium' },
+      { label: 'Large', value: 'large' },
+    ]);
+    assertEquals(result.fields[1].options, [
+      { label: 'Yes', value: 'yes' },
+      { label: 'No', value: 'no' },
+    ]);
+  },
+);
+
+Deno.test(
+  'parseBlueprintResponse applies default audience and duplicate policy when missing',
+  () => {
+    const rawJson = JSON.stringify({
+      metadata: { title: 'Default Policy Entity' },
+      fields: [],
+    });
+
+    const result = parseBlueprintResponse(rawJson, 'event');
+    assertEquals(result.metadata.audience, 'members_and_public');
+    assertEquals(result.metadata.duplicate_policy, 'block');
+  },
+);
+
 // 2. HTTP Handler Tests
 Deno.test('handleGenerateEntityBlueprint rejects unauthenticated requests with 401', async () => {
   await withEnv({ apiKey: 'fake-key' }, async (handle) => {

@@ -291,4 +291,112 @@ describe('EntityBlueprintAiModal', () => {
     });
     expect(toast.success).toHaveBeenCalledWith('Added 2 fields successfully!');
   });
+
+  it('creates form draft when domain is form', async () => {
+    const onCreatedSuccess = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <EntityBlueprintAiModal
+          isOpen={true}
+          onClose={vi.fn()}
+          domain="form"
+          onCreatedSuccess={onCreatedSuccess}
+        />
+      </MemoryRouter>,
+    );
+
+    const textarea = screen.getByRole('textbox', { name: /Describe the Form/i });
+    fireEvent.change(textarea, { target: { value: 'Feedback survey questions' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate Blueprint/i }));
+
+    const createBtn = screen.getByRole('button', { name: /Apply & Create Draft/i });
+    await act(async () => {
+      fireEvent.click(createBtn);
+    });
+
+    expect(mockCreateFormMutateAsync).toHaveBeenCalledWith({
+      metadata: expect.objectContaining({ title: 'Couples Fellowship 2026' }),
+      fields: expect.any(Array),
+    });
+    expect(onCreatedSuccess).toHaveBeenCalledWith('new-form-123', 'couples-fellowship-2026');
+  });
+
+  it('validates prompt length and shows toast if less than 3 characters', () => {
+    render(
+      <MemoryRouter>
+        <EntityBlueprintAiModal isOpen={true} onClose={vi.fn()} domain="event" />
+      </MemoryRouter>,
+    );
+
+    const generateBtn = screen.getByRole('button', { name: /Generate Blueprint/i });
+    expect(generateBtn).toBeDisabled();
+
+    const textarea = screen.getByRole('textbox', { name: /Describe the Event/i });
+    fireEvent.change(textarea, { target: { value: 'ab' } });
+    expect(generateBtn).not.toBeDisabled();
+
+    fireEvent.click(generateBtn);
+    expect(toast.error).toHaveBeenCalledWith(
+      'Please enter a description or prompt of at least 3 characters.',
+    );
+    expect(mockGenerateMutate).not.toHaveBeenCalled();
+  });
+
+  it('displays error banner when generation fails', () => {
+    mockHookState.triggerSuccess = false;
+    mockHookState.isError = true;
+    mockHookState.error = new Error('Model overloaded');
+
+    render(
+      <MemoryRouter>
+        <EntityBlueprintAiModal isOpen={true} onClose={vi.fn()} domain="event" />
+      </MemoryRouter>,
+    );
+
+    const textarea = screen.getByRole('textbox', { name: /Describe the Event/i });
+    fireEvent.change(textarea, { target: { value: 'Valid prompt text' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate Blueprint/i }));
+
+    expect(screen.getByText('Generation Failed')).toBeInTheDocument();
+    expect(screen.getByText('Model overloaded')).toBeInTheDocument();
+  });
+
+  it('supports selecting and deselecting fields in questions tab', () => {
+    render(
+      <MemoryRouter>
+        <EntityBlueprintAiModal isOpen={true} onClose={vi.fn()} domain="event" />
+      </MemoryRouter>,
+    );
+
+    const textarea = screen.getByRole('textbox', { name: /Describe the Event/i });
+    fireEvent.change(textarea, { target: { value: 'Valid event prompt' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate Blueprint/i }));
+
+    fireEvent.click(screen.getByRole('tab', { name: /Questions/i }));
+
+    // Initially 2 fields selected
+    expect(
+      screen.getByRole('button', { name: /Apply & Create Draft \(2 fields\)/i }),
+    ).toBeInTheDocument();
+
+    // Click Deselect All
+    fireEvent.click(screen.getByRole('button', { name: /^Deselect All$/i }));
+    expect(
+      screen.getByRole('button', { name: /Apply & Create Draft \(0 fields\)/i }),
+    ).toBeInTheDocument();
+
+    // Click Select All
+    fireEvent.click(screen.getByRole('button', { name: /^Select All$/i }));
+    expect(
+      screen.getByRole('button', { name: /Apply & Create Draft \(2 fields\)/i }),
+    ).toBeInTheDocument();
+
+    // Toggle single field switch
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+    expect(
+      screen.getByRole('button', { name: /Apply & Create Draft \(1 fields\)/i }),
+    ).toBeInTheDocument();
+  });
 });

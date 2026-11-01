@@ -51,6 +51,25 @@ vi.mock('@/hooks/domain/event-fields', async () => {
   };
 });
 
+vi.mock('@/components/domain/ai-generator', () => ({
+  EntityBlueprintAiModal: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    mode?: string;
+    existingEntityId?: string;
+  }) => {
+    if (!props.isOpen) return null;
+    return (
+      <div data-testid="mock-ai-append-modal">
+        <div>{`Mode: ${props.mode}, ID: ${props.existingEntityId}`}</div>
+        <button type="button" onClick={props.onClose}>
+          Close AI Modal
+        </button>
+      </div>
+    );
+  },
+}));
+
 vi.mock('@/pages/admin/events/[id]/fields/components', () => ({
   EventFieldsList: (props: {
     fields: Array<{ id: string; label: string }>;
@@ -186,5 +205,57 @@ describe('AdminEventFieldsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Panel' }));
     expect(screen.queryByText('Edit Panel: Team Name')).not.toBeInTheDocument();
+  });
+
+  describe('Hub AI Question Generator integration', () => {
+    it('renders Add Questions with AI button and opens modal in append_fields mode', () => {
+      mockUseParams.mockReturnValue({ id: 'event-456' });
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: 'event-456', title: 'Active Event', status: 'draft' },
+        isLoading: false,
+      });
+      mockUseAdminEventFieldsQuery.mockReturnValue({
+        data: [],
+        isLoading: false,
+      });
+
+      render(
+        <MemoryRouter>
+          <AdminEventFieldsPage />
+        </MemoryRouter>,
+      );
+
+      const aiBtn = screen.getByRole('button', { name: /Add Questions with AI/i });
+      expect(aiBtn).toBeInTheDocument();
+      expect(aiBtn).not.toBeDisabled();
+
+      fireEvent.click(aiBtn);
+      expect(screen.getByTestId('mock-ai-append-modal')).toBeInTheDocument();
+      expect(screen.getByText('Mode: append_fields, ID: event-456')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close AI Modal' }));
+      expect(screen.queryByTestId('mock-ai-append-modal')).not.toBeInTheDocument();
+    });
+
+    it('disables Add Questions with AI when event is archived', () => {
+      mockUseParams.mockReturnValue({ id: 'event-789' });
+      mockUseAdminEventQuery.mockReturnValue({
+        data: { id: 'event-789', title: 'Archived Event', status: 'archived' },
+        isLoading: false,
+      });
+      mockUseAdminEventFieldsQuery.mockReturnValue({
+        data: [],
+        isLoading: false,
+      });
+
+      render(
+        <MemoryRouter>
+          <AdminEventFieldsPage />
+        </MemoryRouter>,
+      );
+
+      const aiBtn = screen.getByRole('button', { name: /Add Questions with AI/i });
+      expect(aiBtn).toBeDisabled();
+    });
   });
 });
