@@ -37,7 +37,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
     requireAdmin: true,
     allowCronRole: true,
     allowServiceRole: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     rateLimit: {
       scope: 'cron-weekly-sunday-debrief',
       windowMs: RATE_LIMIT_PRESETS.cron.weeklySundayDebrief.windowMs,

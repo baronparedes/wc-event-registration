@@ -39,7 +39,7 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: () => ({ data: { adminRole: 'super_admin' } }),
+    useAdminAuthQuery: () => ({ data: { adminRole: 'super_admin' }, can: () => true }),
     useAdminRolesQuery: () => mockUseAdminRolesQuery(),
     useAuthUsersQuery: (search: string, enabled: boolean) => mockUseAuthUsersQuery(search, enabled),
     useManageAdminRoleMutation: () => ({

@@ -19,8 +19,7 @@ import {
   type AppRouteKey,
   ROUTE_PATHS,
 } from '@/config/constants';
-import type { AdminRole } from '@/lib/domain/auth';
-import { canAdminPerform } from '@/lib/domain/auth';
+import type { AdminPermissionKey } from '@/lib/domain/auth';
 
 import { RouteErrorBoundary } from '../components/RouteErrorBoundary';
 import { AppShell } from '../components/layout';
@@ -424,14 +423,12 @@ function OfflineNavigationGuard() {
 
 function RequireAdminAuth({
   children,
-  allowedRoles,
   requiredPermission,
 }: {
   children: ReactElement;
-  allowedRoles?: readonly AdminRole[];
-  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
+  requiredPermission?: AdminPermissionKey | readonly AdminPermissionKey[];
 }) {
-  const { data, isLoading } = useAdminAuthQuery();
+  const { data, isLoading, can } = useAdminAuthQuery();
   const isOnline = useOnlineStatus();
   const location = useLocation();
   const isOfflineAttendanceRoute = !isOnline && isOfflineSupportedPath(location.pathname);
@@ -459,15 +456,7 @@ function RequireAdminAuth({
     return <Navigate to={ROUTE_PATHS.home} replace />;
   }
 
-  if (allowedRoles) {
-    if (!data?.adminRole || !allowedRoles.includes(data.adminRole)) {
-      return <Navigate to={ROUTE_PATHS.adminEvents} replace />;
-    }
-  } else if (
-    requiredPermission
-      ? !canAdminPerform(data?.adminRole, requiredPermission)
-      : !canAdminPerform(data?.adminRole, 'canReadAdminData')
-  ) {
+  if (requiredPermission ? !can(requiredPermission) : !can('canReadAdminData')) {
     return <Navigate to={ROUTE_PATHS.home} replace />;
   }
 
@@ -477,7 +466,6 @@ function RequireAdminAuth({
 function renderAppRoute({
   key,
   requiresAuth,
-  allowedRoles,
   requiredPermission,
 }: AppRouteDefinition): ReactElement {
   const Component = routeComponents[key];
@@ -487,10 +475,8 @@ function renderAppRoute({
     </LazyRoute>
   );
 
-  return requiresAuth || allowedRoles || requiredPermission !== undefined ? (
-    <RequireAdminAuth allowedRoles={allowedRoles} requiredPermission={requiredPermission}>
-      {page}
-    </RequireAdminAuth>
+  return requiresAuth || requiredPermission !== undefined ? (
+    <RequireAdminAuth requiredPermission={requiredPermission}>{page}</RequireAdminAuth>
   ) : (
     page
   );

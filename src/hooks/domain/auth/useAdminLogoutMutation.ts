@@ -22,6 +22,7 @@ export function useAdminLogoutMutation() {
         isAuthenticated: false,
         session: null,
         adminRole: null,
+        permissions: [],
       });
       queryClient.invalidateQueries({ queryKey: ADMIN_AUTH_QUERY_KEY });
     },

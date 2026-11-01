@@ -58,7 +58,7 @@ export async function handleListAttendeesV2(req: Request): Promise<Response> {
       functionName: 'list-attendees-v2',
       method: 'POST',
       requireAdmin: true,
-      allowedRoles: ['admin', 'super_admin', 'slod', 'kiosk'],
+      requiredPermission: ['canReadAdminData', 'canAccessAttendanceCheckIn'],
       rateLimit: {
         scope: 'list-attendees',
         windowMs: RATE_LIMIT_PRESETS.listAttendees.windowMs,

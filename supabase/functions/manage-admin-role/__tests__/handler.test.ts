@@ -48,6 +48,12 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/auth/v1/user') {
       return Promise.resolve(Response.json({ id: callerUserId }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.callerRole ?? 'super_admin';
+      return Promise.resolve(
+        Response.json(role === 'super_admin' ? [{ permission: 'canManageAdminRoles' }] : []),
+      );
+    }
     if (requestUrl.pathname === '/rest/v1/admins') {
       const method = init?.method ?? 'GET';
       const authUserFilter = requestUrl.searchParams.get('auth_user_id');

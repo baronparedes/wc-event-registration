@@ -21,11 +21,12 @@ describe('useAdminAuthQuery', () => {
     vi.clearAllMocks();
   });
 
-  it('returns admin auth state on success', async () => {
+  it('returns admin auth state on success and evaluates permissions via can()', async () => {
     mockFetchAdminAuthState.mockResolvedValueOnce({
       isAuthenticated: true,
       session: { user: { id: 'auth-1' } },
       adminRole: 'admin',
+      permissions: ['canReadAdminData', 'canWriteAdminData'],
     });
 
     const { result } = renderHookWithClient(() => useAdminAuthQuery());
@@ -38,7 +39,10 @@ describe('useAdminAuthQuery', () => {
       isAuthenticated: true,
       session: { user: { id: 'auth-1' } },
       adminRole: 'admin',
+      permissions: ['canReadAdminData', 'canWriteAdminData'],
     });
+    expect(result.current.can('canWriteAdminData')).toBe(true);
+    expect(result.current.can('canManageAdminRoles')).toBe(false);
   });
 
   it('returns query error state when auth fetch fails', async () => {

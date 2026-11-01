@@ -10,13 +10,12 @@ import {
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useOnlineStatus } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 
 import { isRegistrationOpenNow, isWithinEventWindow } from '../utils';
 
 export function useCheckInEventContext(eventId: string | undefined, nowMs: number) {
   const { data: onlineEvent, isLoading: eventLoading } = useAdminEventQuery(eventId);
-  const { data: authState } = useAdminAuthQuery();
+  const { data: authState, can } = useAdminAuthQuery();
   const { data: onlineSettings, isLoading: settingsLoading } = useAttendanceSettingsQuery(eventId);
   const { event, settings, isUsingCachedEvent, isUsingCachedSettings } =
     useOfflineCheckInEventSettings({ eventId, event: onlineEvent, settings: onlineSettings });
@@ -39,7 +38,7 @@ export function useCheckInEventContext(eventId: string | undefined, nowMs: numbe
     realtimeEnabled: Boolean(event && attendanceEnabled && !isOutsideEventWindow),
   });
   const isOnline = useOnlineStatus();
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWrite = can('canWriteAdminData');
   const isLoading = isUsingCachedEventOrSettings ? false : eventLoading || settingsLoading;
   const registrationOpen = event
     ? isRegistrationOpenNow({

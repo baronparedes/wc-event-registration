@@ -30,7 +30,14 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+    useAdminAuthQuery: (...args: unknown[]) => {
+      const res = mockUseAdminAuthQuery(...args);
+      return {
+        ...res,
+        can: (perm: Parameters<typeof actual.canAdminPerform>[1]) =>
+          actual.canAdminPerform(res?.data, perm),
+      };
+    },
   };
 });
 
@@ -79,7 +86,12 @@ describe('AdminMembersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'admin',
+        permissions: ['canWriteAdminData', 'canReadAdminMemberData'],
+      },
       isLoading: false,
     });
   });
@@ -331,7 +343,12 @@ describe('AdminMembersPage', () => {
 
   it('shows read-only member access for slod users', () => {
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'slod',
+        permissions: ['canReadAdminMemberData'],
+      },
       isLoading: false,
     });
     mockUseAdminMembersQuery.mockReturnValue({
@@ -386,7 +403,9 @@ describe('AdminMembersPage', () => {
     mockUseIsMobileViewport.mockReturnValue(false);
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
+        isAuthenticated: true,
         adminRole: 'super_admin',
+        permissions: ['canWriteAdminData', 'canReadAdminMemberData'],
       },
     });
     mockUseAdminMembersQuery.mockReturnValue({

@@ -120,7 +120,7 @@ export async function handleExportAttendanceCsv(req: Request): Promise<Response>
     functionName: 'export-attendance-csv',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canExportAdminReports',
     rateLimit: {
       scope: 'export-attendance-csv',
       windowMs: RATE_LIMIT_PRESETS.attendanceCsvExport.windowMs,

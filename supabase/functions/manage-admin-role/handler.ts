@@ -42,7 +42,7 @@ export async function handleManageAdminRole(req: Request): Promise<Response> {
     functionName: 'manage-admin-role',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['super_admin'],
+    requiredPermission: 'canManageAdminRoles',
     rateLimit: {
       scope: 'manage-admin-role',
       windowMs: RATE_LIMIT_PRESETS.adminRoleManagement.windowMs,

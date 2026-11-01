@@ -14,15 +14,31 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+    useAdminAuthQuery: (...args: unknown[]) => {
+      const res = mockUseAdminAuthQuery(...args);
+      return {
+        ...res,
+        can: (perm: Parameters<typeof actual.canAdminPerform>[1]) =>
+          actual.canAdminPerform(res?.data, perm),
+      };
+    },
   };
 });
 
 function renderNavigation(role: AdminRole | null) {
+  const permissionsByRole: Record<AdminRole, string[]> = {
+    super_admin: ['canWriteAdminData', 'canReadAdminData', 'canAccessAttendanceCheckIn'],
+    admin: ['canWriteAdminData', 'canReadAdminData', 'canAccessAttendanceCheckIn'],
+    slod: ['canReadAdminData'],
+    imt: ['canReadAdminData'],
+    kiosk: ['canAccessAttendanceCheckIn'],
+  };
+
   mockUseAdminAuthQuery.mockReturnValue({
     data: {
       isAuthenticated: Boolean(role),
       adminRole: role,
+      permissions: role ? permissionsByRole[role] : [],
     },
   });
 

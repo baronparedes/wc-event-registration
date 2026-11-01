@@ -26,7 +26,7 @@ import { ROUTE_PATHS, toRoute } from '@/config/constants';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminFormQuery } from '@/hooks/domain/forms';
 import { useAdminMemberQuery, useCurrentProfileQuery } from '@/hooks/domain/members';
-import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
+import { type AdminPermissionKey, type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 export type DrawerNavItem = {
   to: string;
@@ -38,6 +38,7 @@ export type UseAppDrawerNavigationProps = {
   isAuthenticated: boolean;
   hasSession?: boolean;
   adminRole?: AdminRole | null;
+  permissions?: readonly AdminPermissionKey[];
   currentUserLabel?: string | null;
 };
 
@@ -87,6 +88,7 @@ export function useAppDrawerNavigation({
   isAuthenticated,
   hasSession = isAuthenticated,
   adminRole = null,
+  permissions,
   currentUserLabel = null,
 }: UseAppDrawerNavigationProps) {
   const location = useLocation();
@@ -99,12 +101,12 @@ export function useAppDrawerNavigation({
   const { data: selectedMember } = useAdminMemberQuery(memberId ?? undefined);
   const { data: currentProfile } = useCurrentProfileQuery();
 
-  const canWrite = canAdminPerform(adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(adminRole, 'canReadAdminData');
-  const canReadMembers = canAdminPerform(adminRole, 'canReadAdminMemberData');
-  const canAccessCheckIn = canAdminPerform(adminRole, 'canAccessAttendanceCheckIn');
-  const canReadDashboard = canAdminPerform(adminRole, 'canReadDashboard');
-  const canManageServices = canAdminPerform(adminRole, 'canManageServices');
+  const canWrite = canAdminPerform(permissions, 'canWriteAdminData');
+  const canRead = canAdminPerform(permissions, 'canReadAdminData');
+  const canReadMembers = canAdminPerform(permissions, 'canReadAdminMemberData');
+  const canAccessCheckIn = canAdminPerform(permissions, 'canAccessAttendanceCheckIn');
+  const canReadDashboard = canAdminPerform(permissions, 'canReadDashboard');
+  const canManageServices = canAdminPerform(permissions, 'canManageServices');
 
   const hasProfileAccess = hasSession && Boolean(currentProfile);
   const displayName = currentProfile?.full_name ?? currentUserLabel;

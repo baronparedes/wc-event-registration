@@ -131,6 +131,14 @@ describe('useAppDrawerNavigation', () => {
           isAuthenticated: true,
           hasSession: true,
           adminRole: 'admin',
+          permissions: [
+            'canWriteAdminData',
+            'canReadAdminData',
+            'canReadAdminMemberData',
+            'canAccessAttendanceCheckIn',
+            'canReadDashboard',
+            'canManageServices',
+          ],
         }),
       {
         wrapper: createWrapper('/admin/events/event-456/attendance'),
@@ -179,6 +187,7 @@ describe('useAppDrawerNavigation', () => {
           isAuthenticated: true,
           hasSession: true,
           adminRole: 'kiosk',
+          permissions: ['canAccessAttendanceCheckIn'],
         }),
       {
         wrapper: createWrapper('/admin/events/event-789/attendance'),
@@ -202,6 +211,12 @@ describe('useAppDrawerNavigation', () => {
           isAuthenticated: true,
           hasSession: true,
           adminRole: 'slod',
+          permissions: [
+            'canReadAdminData',
+            'canReadAdminMemberData',
+            'canReadDashboard',
+            'canManageServices',
+          ],
         }),
       {
         wrapper: createWrapper(ROUTE_PATHS.adminServices),
@@ -231,6 +246,7 @@ describe('useAppDrawerNavigation', () => {
           isAuthenticated: true,
           hasSession: true,
           adminRole: 'admin',
+          permissions: ['canWriteAdminData', 'canReadAdminData'],
         }),
       {
         wrapper: createWrapper('/admin/forms/form-123'),
@@ -257,6 +273,7 @@ describe('useAppDrawerNavigation', () => {
           isAuthenticated: true,
           hasSession: true,
           adminRole: 'admin',
+          permissions: ['canReadAdminMemberData'],
         }),
       {
         wrapper: createWrapper('/admin/members/member-123'),

@@ -41,12 +41,42 @@ function renderDrawer(options?: {
   isAuthenticated?: boolean;
   hasSession?: boolean;
   adminRole?: 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk' | null;
+  permissions?: readonly (
+    | 'canWriteAdminData'
+    | 'canReadAdminData'
+    | 'canReadAdminMemberData'
+    | 'canAccessAttendanceCheckIn'
+    | 'canReadDashboard'
+    | 'canManageServices'
+  )[];
   currentUserLabel?: string | null;
   onClose?: () => void;
   onLogout?: () => Promise<void>;
 }) {
   const onClose = options?.onClose ?? vi.fn();
   const onLogout = options?.onLogout ?? vi.fn().mockResolvedValue(undefined);
+  const role = options?.adminRole === undefined ? 'admin' : options.adminRole;
+  const defaultPermissionsByRole = {
+    admin: [
+      'canWriteAdminData',
+      'canReadAdminData',
+      'canReadAdminMemberData',
+      'canAccessAttendanceCheckIn',
+      'canReadDashboard',
+      'canManageServices',
+    ],
+    super_admin: [
+      'canWriteAdminData',
+      'canReadAdminData',
+      'canReadAdminMemberData',
+      'canAccessAttendanceCheckIn',
+      'canReadDashboard',
+      'canManageServices',
+    ],
+    slod: ['canReadAdminData', 'canReadAdminMemberData', 'canReadDashboard', 'canManageServices'],
+    imt: ['canReadAdminMemberData', 'canReadDashboard'],
+    kiosk: ['canAccessAttendanceCheckIn'],
+  } as const;
 
   render(
     <MemoryRouter initialEntries={[options?.path ?? ROUTE_PATHS.home]}>
@@ -55,7 +85,8 @@ function renderDrawer(options?: {
         onClose={onClose}
         isAuthenticated={options?.isAuthenticated ?? true}
         hasSession={options?.hasSession ?? options?.isAuthenticated ?? true}
-        adminRole={options?.adminRole === undefined ? 'admin' : options.adminRole}
+        adminRole={role}
+        permissions={options?.permissions ?? (role ? defaultPermissionsByRole[role] : undefined)}
         currentUserLabel={options?.currentUserLabel ?? null}
         onLogout={onLogout}
       />

@@ -1,6 +1,6 @@
 import { generatePath, matchPath } from 'react-router-dom';
 
-import type { AdminRole } from '@/lib/domain/auth';
+import type { AdminPermissionKey } from '@/lib/domain/auth';
 
 export const ROUTE_PATHS = {
   home: '/',
@@ -131,15 +131,14 @@ export type AppRouteDefinition = {
   path: string;
   layout: 'shell' | 'standalone';
   requiresAuth?: boolean;
-  allowedRoles?: readonly AdminRole[];
-  requiredPermission?: 'canReadAdminData' | 'canReadAdminMemberData' | 'canManageAdminRoles';
+  requiredPermission?: AdminPermissionKey | readonly AdminPermissionKey[];
 };
 export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminApprovals',
     path: ROUTE_PATHS.adminApprovals,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'approvalReview',
@@ -150,7 +149,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminHubCalendar',
     path: ROUTE_PATHS.adminHubCalendar,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageServices',
   },
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
   { key: 'hello', path: ROUTE_PATHS.hello, layout: 'standalone' },
@@ -170,7 +169,6 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminUserRoles',
     path: ROUTE_PATHS.adminUserRoles,
     layout: 'shell',
-    allowedRoles: ['super_admin'],
     requiredPermission: 'canManageAdminRoles',
   },
   {
@@ -189,7 +187,7 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminMembersImport',
     path: ROUTE_PATHS.adminMembersImport,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminMemberDetail',
@@ -213,205 +211,205 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     key: 'adminEvents',
     path: ROUTE_PATHS.adminEvents,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod', 'kiosk'],
+    requiredPermission: ['canReadAdminData', 'canAccessAttendanceCheckIn'],
   },
   {
     key: 'adminEventNew',
     path: ROUTE_PATHS.adminEventNew,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminEventDetail',
     path: ROUTE_PATHS.adminEventDetailPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminEventFields',
     path: ROUTE_PATHS.adminEventFieldsPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminEventAttendance',
     path: ROUTE_PATHS.adminEventAttendancePattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminAttendanceFields',
     path: ROUTE_PATHS.adminEventAttendanceFieldsPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminAttendanceData',
     path: ROUTE_PATHS.adminEventAttendanceDataPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminAttendanceDataBulkUpload',
     path: ROUTE_PATHS.adminEventAttendanceDataBulkUploadPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminAttendanceCheckIn',
     path: ROUTE_PATHS.adminEventAttendanceCheckInPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'kiosk'],
+    requiredPermission: 'canAccessAttendanceCheckIn',
   },
   {
     key: 'adminAttendanceDashboard',
     path: ROUTE_PATHS.adminEventAttendanceDashboardPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminAttendanceUnregisteredMembers',
     path: ROUTE_PATHS.adminEventRegistrationsUnregisteredMembersPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminRegistrationsBulkUpload',
     path: ROUTE_PATHS.adminEventRegistrationsBulkUploadPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminRegistrations',
     path: ROUTE_PATHS.adminEventRegistrationsPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminPublicRegistrationDetail',
     path: ROUTE_PATHS.adminPublicRegistrationDetailPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminPublicRegistrations',
     path: ROUTE_PATHS.adminEventPublicRegistrationsPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminPublicRegistrationsBulkUpload',
     path: ROUTE_PATHS.adminEventPublicRegistrationsBulkUploadPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminRegistrationDetail',
     path: ROUTE_PATHS.adminRegistrationDetailPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminRegistrationNames',
     path: ROUTE_PATHS.adminRegistrationNamesPattern,
     layout: 'standalone',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminForms',
     path: ROUTE_PATHS.adminForms,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminFormNew',
     path: ROUTE_PATHS.adminFormNew,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminFormDetail',
     path: ROUTE_PATHS.adminFormDetailPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminFormFields',
     path: ROUTE_PATHS.adminFormFieldsPattern,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminFormSubmissions',
     path: ROUTE_PATHS.adminFormSubmissionsPattern,
     layout: 'shell',
-    requiresAuth: true,
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminChat',
     path: ROUTE_PATHS.adminChat,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canReadAdminData',
   },
   {
     key: 'adminServices',
     path: ROUTE_PATHS.adminServices,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageServices',
   },
   {
     key: 'adminServiceAttendanceMigration',
     path: ROUTE_PATHS.adminServiceAttendanceMigration,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminServiceAttendanceData',
     path: ROUTE_PATHS.adminServiceAttendanceData,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageServices',
   },
   {
     key: 'adminServiceAttendanceCommitment',
     path: ROUTE_PATHS.adminServiceAttendanceCommitment,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageServices',
   },
   {
     key: 'adminServiceAttendanceForecast',
     path: ROUTE_PATHS.adminServiceAttendanceForecast,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageServices',
   },
   {
     key: 'adminNotifications',
     path: ROUTE_PATHS.adminNotifications,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminNotificationsDashboard',
     path: ROUTE_PATHS.adminNotificationsDashboard,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminSundayReminders',
     path: ROUTE_PATHS.adminSundayReminders,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminSettings',
     path: ROUTE_PATHS.adminSettings,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
   {
     key: 'adminSettingsEmailTemplates',
     path: ROUTE_PATHS.adminSettingsEmailTemplates,
     layout: 'shell',
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
   },
 ];
 export const ROUTE_PREFIXES = {

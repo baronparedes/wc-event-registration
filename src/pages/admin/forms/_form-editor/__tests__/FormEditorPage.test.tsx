@@ -42,7 +42,13 @@ vi.mock('@/hooks/domain/forms', () => ({
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => {
+    const res = mockUseAdminAuthQuery();
+    return {
+      ...res,
+      can: () => true,
+    };
+  },
 }));
 
 vi.mock('@/components/domain/ai-generator', () => ({

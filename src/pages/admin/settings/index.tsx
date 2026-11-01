@@ -7,7 +7,6 @@ import { Button, EmptyState, SearchInputField } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useDebounceSearch } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 
 import { SettingsFeatureCard } from './components';
 
@@ -90,15 +89,15 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
 
 export function AdminSettingsPage() {
   const isSettingsSearchEnabled = false;
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const availableFeatures = useMemo(() => {
     return SETTINGS_FEATURES.filter((feature) => {
       if (!feature.requiredPermission) return true;
-      return canAdminPerform(authState?.adminRole, feature.requiredPermission);
+      return can(feature.requiredPermission);
     });
-  }, [authState?.adminRole]);
+  }, [can]);
 
   const filteredFeatures = useMemo(() => {
     if (!normalizedSearchTerm) return availableFeatures;

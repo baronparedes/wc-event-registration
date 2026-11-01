@@ -16,7 +16,6 @@ import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventsQuery, useDuplicateEventMutation } from '@/hooks/domain/events';
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminEvent } from '@/lib/domain/events';
 import { ShareCountdownDialog } from '@/pages/events/[slug]/countdown/components';
 
@@ -24,7 +23,7 @@ import { AdminEventsTable, DuplicateEventDialog, MobileEventCard } from './compo
 
 export function AdminEventsPage() {
   const navigate = useNavigate();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const eventsQuery = useAdminEventsQuery({
@@ -41,9 +40,9 @@ export function AdminEventsPage() {
 
   const isLoading = eventsQuery.isLoading;
   const error = eventsQuery.error;
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
-  const canAccessCheckIn = canAdminPerform(authState?.adminRole, 'canAccessAttendanceCheckIn');
+  const canWrite = can('canWriteAdminData');
+  const canRead = can('canReadAdminData');
+  const canAccessCheckIn = can('canAccessAttendanceCheckIn');
   const isMobileViewport = useIsMobileViewport();
 
   const { sentinelRef } = useInfiniteScrollTrigger({

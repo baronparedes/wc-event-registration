@@ -125,7 +125,7 @@ export async function handleExportRegistrationsCsv(req: Request): Promise<Respon
     functionName: 'export-registrations-csv',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canExportAdminReports',
     rateLimit: {
       scope: 'export-registrations-csv',
       windowMs: RATE_LIMIT_PRESETS.exportRegistrationsCsv.windowMs,

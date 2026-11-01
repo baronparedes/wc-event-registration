@@ -29,7 +29,6 @@ import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminMembersQuery, useExportMembersCSVMutation } from '@/hooks/domain/members';
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, MemberAttributeFilter } from '@/lib/domain/members';
 import { formatDateOnly } from '@/lib/infrastructure';
 
@@ -116,7 +115,7 @@ function downloadCsv(text: string, filename: string) {
 
 export function AdminMembersPage() {
   const navigate = useNavigate();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const [statusFilter, setStatusFilter] = useState<'active' | 'deleted' | 'all'>('active');
   const [attributeFilter, setAttributeFilter] = useState<MemberAttributeFilter>('all');
@@ -142,7 +141,7 @@ export function AdminMembersPage() {
 
   const isLoading = membersQuery.isLoading;
   const error = membersQuery.error;
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWrite = can('canWriteAdminData');
   const isMobileViewport = useIsMobileViewport();
   const hasError = Boolean(error);
   const hasNoMembers = !hasError && members.length === 0;

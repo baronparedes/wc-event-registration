@@ -32,9 +32,11 @@ describe('AdminSettingsPage', () => {
     vi.mocked(useAdminAuthQuery).mockReturnValue({
       data: {
         adminRole: 'super_admin',
+        permissions: ['canWriteAdminData', 'canManageAdminRoles'],
         isAuthenticated: true,
         session: null,
       },
+      can: () => true,
       isLoading: false,
       error: null,
     } as never);
@@ -90,9 +92,11 @@ describe('AdminSettingsPage', () => {
     vi.mocked(useAdminAuthQuery).mockReturnValue({
       data: {
         adminRole: 'admin',
+        permissions: ['canWriteAdminData'],
         isAuthenticated: true,
         session: null,
       },
+      can: (perm: string) => perm === 'canWriteAdminData',
       isLoading: false,
       error: null,
     } as never);

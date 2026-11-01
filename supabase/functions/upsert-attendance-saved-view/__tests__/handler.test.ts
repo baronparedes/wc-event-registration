@@ -51,6 +51,16 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.role ?? 'admin' }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.role ?? 'admin';
+      return Promise.resolve(
+        Response.json(
+          role === 'admin' || role === 'super_admin' || role === 'slod'
+            ? [{ permission: 'canManageAttendanceSavedViews' }]
+            : [],
+        ),
+      );
+    }
     if (requestUrl.pathname === '/rest/v1/attendance_saved_views' && init?.method === 'HEAD') {
       if (options.countError) {
         return Promise.resolve(Response.json({ message: 'count failed' }, { status: 500 }));

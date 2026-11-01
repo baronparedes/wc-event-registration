@@ -148,7 +148,7 @@ export async function handleCronUpcomingSundayExcusedExportEmail(req: Request): 
     requireAdmin: true,
     allowServiceRole: true,
     allowCronRole: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     publicRateLimit: {
       scope: 'cron-upcoming-sunday-excused-export-email',
       windowMs: RATE_LIMIT_PRESETS.cron.upcomingSundayExcusedExportEmail.windowMs,

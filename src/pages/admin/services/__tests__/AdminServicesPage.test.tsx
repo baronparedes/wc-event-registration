@@ -4,7 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
-import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
+import { canAdminPerform as realCanAdminPerform } from '@/lib/domain/auth';
 
 import { AdminServicesPage } from '../index';
 
@@ -19,7 +20,8 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: vi.fn(),
-  canAdminPerform: vi.fn(),
+  canAdminPerform: (...args: Parameters<typeof realCanAdminPerform>) =>
+    realCanAdminPerform(...args),
 }));
 
 const mockUseServiceDashboardQuery = vi.fn();
@@ -45,18 +47,14 @@ describe('AdminServicesPage', () => {
         adminRole: 'admin',
         isAuthenticated: true,
         session: null,
+        permissions: ['canWriteAdminData', 'canReadAdminData', 'canManageServices'],
         user: { id: 'test-user-id' },
       },
+      can: (perm: Parameters<typeof realCanAdminPerform>[1]) =>
+        realCanAdminPerform(['canWriteAdminData', 'canReadAdminData', 'canManageServices'], perm),
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useAdminAuthQuery>);
-
-    vi.mocked(canAdminPerform).mockImplementation((role, action) => {
-      if (action === 'canWriteAdminData') {
-        return role === 'admin' || role === 'super_admin';
-      }
-      return true;
-    });
 
     mockUseServiceDashboardQuery.mockReturnValue({
       data: {
@@ -132,8 +130,11 @@ describe('AdminServicesPage', () => {
         adminRole: 'slod',
         isAuthenticated: true,
         session: null,
+        permissions: ['canReadAdminData', 'canManageServices'],
         user: { id: 'test-user-id' },
       },
+      can: (perm: Parameters<typeof realCanAdminPerform>[1]) =>
+        realCanAdminPerform(['canReadAdminData', 'canManageServices'], perm),
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useAdminAuthQuery>);

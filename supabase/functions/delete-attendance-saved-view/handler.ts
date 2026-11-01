@@ -14,7 +14,7 @@ export async function handleDeleteAttendanceSavedView(req: Request): Promise<Res
     functionName: 'delete-attendance-saved-view',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     schema: deleteViewRequestSchema,
   });
 

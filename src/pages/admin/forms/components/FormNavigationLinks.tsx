@@ -2,7 +2,6 @@ import { AdminSubNavLink } from '@/components/layout';
 import { toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useIsMobileViewport } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 
 type FormNavigationSection = 'form' | 'fields' | 'submissions';
 
@@ -12,9 +11,9 @@ type FormNavigationLinksProps = {
 };
 
 export function FormNavigationLinks({ formId }: FormNavigationLinksProps) {
-  const { data: authState } = useAdminAuthQuery();
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const { can } = useAdminAuthQuery();
+  const canWrite = can('canWriteAdminData');
+  const canRead = can('canReadAdminData');
   const isMobile = useIsMobileViewport();
 
   if (isMobile) return null;

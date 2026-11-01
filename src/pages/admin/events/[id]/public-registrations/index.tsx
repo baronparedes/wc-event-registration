@@ -10,14 +10,13 @@ import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminPublicRegistrationsQuery } from '@/hooks/domain/public-registrations';
 import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 import { EventNavigationLinks } from '@/pages/admin/events/components';
 
 import { PublicRegistrationsList } from '../registrations/components';
 
 export function AdminPublicRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
 
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
   const navigate = useNavigate();
@@ -56,7 +55,7 @@ export function AdminPublicRegistrationsPage() {
   const isLoading = eventQuery.isLoading || publicRegistrationsQuery.isLoading;
   const error = eventQuery.error || publicRegistrationsQuery.error;
   const isEventArchived = event?.status === 'archived';
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWrite = can('canWriteAdminData');
 
   if (error) {
     return (

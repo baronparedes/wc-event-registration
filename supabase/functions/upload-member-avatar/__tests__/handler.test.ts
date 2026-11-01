@@ -64,6 +64,14 @@ function mockFetch(options: FetchOptions = {}) {
     if (url.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-record', role: options.role ?? 'admin' }));
     }
+    if (url.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.role ?? 'admin';
+      return Promise.resolve(
+        Response.json(
+          role === 'admin' || role === 'super_admin' ? [{ permission: 'canWriteAdminData' }] : [],
+        ),
+      );
+    }
     if (url.pathname === '/rest/v1/users' && init?.method === 'PATCH') {
       updates.push({ url, body: JSON.parse(String(init.body)) as unknown });
       return Promise.resolve(

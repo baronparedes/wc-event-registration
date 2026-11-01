@@ -11,7 +11,7 @@ export async function handleSendAppNotification(req: Request): Promise<Response>
     functionName: 'send-app-notification',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     schema: payloadSchema,
   });
 

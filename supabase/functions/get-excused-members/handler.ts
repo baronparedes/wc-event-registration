@@ -38,7 +38,7 @@ export async function handleGetExcusedMembers(req: Request): Promise<Response> {
     functionName: 'get-excused-members',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canReadAdminData',
     publicRateLimit: {
       scope: 'get-excused-members',
       windowMs: RATE_LIMIT_PRESETS.getExcusedMembers.windowMs,

@@ -31,7 +31,7 @@ export async function handleUpsertAttendanceSavedView(req: Request): Promise<Res
     functionName: 'upsert-attendance-saved-view',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canManageAttendanceSavedViews',
     schema: upsertViewRequestSchema,
   });
 

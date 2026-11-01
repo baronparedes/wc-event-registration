@@ -36,7 +36,13 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+    useAdminAuthQuery: (...args: unknown[]) => {
+      const res = mockUseAdminAuthQuery(...args);
+      return {
+        ...res,
+        can: () => true,
+      };
+    },
   };
 });
 

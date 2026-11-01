@@ -79,6 +79,7 @@ export function AppShell() {
         isAuthenticated={adminAuth?.isAuthenticated ?? false}
         hasSession={hasSession}
         adminRole={adminAuth?.adminRole ?? null}
+        permissions={adminAuth?.permissions}
         currentUserLabel={currentUserLabel}
         onLogout={handleLogout}
       />
