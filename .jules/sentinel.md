@@ -1,41 +1,5 @@
-## 2025-02-21 - Explicit XSS Protection in ReactMarkdown
+## 2025-05-24 - Cryptographically Insecure Randomness
 
-**Vulnerability:** Potential XSS via malicious links (e.g., `javascript:alert(1)`) if `urlTransform` defaults are accidentally overridden or explicitly removed.
-**Learning:** While `react-markdown` applies `defaultUrlTransform` internally by default to strip unsafe protocols, explicitly defining `urlTransform={defaultUrlTransform}` provides defense-in-depth and prevents future regressions if configuration defaults change or are unknowingly merged incorrectly.
-**Prevention:** Always explicitly pass `urlTransform={defaultUrlTransform}` alongside `remarkPlugins` and `components` when configuring `ReactMarkdown` instances across the application.
-
-## 2025-02-23 - Prevent Sensitive Data Leakage in Supabase Edge Functions
-
-**Vulnerability:** Leaking internal `error.message` (e.g. from database query errors) directly to the client in HTTP responses via the `errorResponse` function.
-**Learning:** Returning raw database error messages or internal error details to the client exposes the database schema, query structures, or internal state, which malicious actors can use to further exploit the system.
-**Prevention:** Always log the detailed error using `console.error` on the server and return a generic, user-safe error message (e.g., `'Internal server error'`) to the client.
-
-## 2026-10-03 - Added Security Headers to Supabase Edge Functions
-
-**Vulnerability:** Missing standard security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, X-XSS-Protection) in Edge Function responses.
-**Learning:** By default, Supabase edge functions do not enforce these headers. A central place to manage these is required to prevent widespread vulnerability.
-**Prevention:** Added standard security headers to `buildCorsHeaders` utility function inside `_shared/security.ts`, guaranteeing they are present across all standard API responses.
-
-## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
-
-**Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
-**Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
-**Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
-
-## 2025-02-08 - Fix Open Redirect Vulnerability in LoginPage
-
-**Vulnerability:** Open redirect allowing attackers to bypass validation using backslash protocol-relative URLs (`/\`).
-**Learning:** Browsers normalize backslashes `/\` to double forward slashes `//` inside URLs. Relying solely on `//` blocking is insufficient.
-**Prevention:** Always block both `//` and `/\` when restricting redirects to relative URLs.
-
-## 2025-02-14 - Replace Math.random with crypto.randomUUID for Secure Queue IDs
-
-**Vulnerability:** Insecure randomness in queue ID generation (`generateQueueItemId`), using `Math.random` as a fallback.
-**Learning:** `Math.random` generates predictable pseudorandom numbers, which can lead to predictability in queue IDs.
-**Prevention:** Always use Cryptographically Secure Pseudorandom Number Generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` instead of `Math.random()`.
-
-## 2024-11-20 - Open Redirect bypass using backslash
-
-**Vulnerability:** Found an open redirect vulnerability bypassing validation on login redirect targets via `\\` path prefixes which correctly parses to `//` in most modern browsers.
-**Learning:** `new URLSearchParams` and typical validators verify URL safety against `//` or `/\`, but an explicit double backslash `\\` is missing as a checked variation that gets translated by modern browsers into a valid external link prefix `//`.
-**Prevention:** To prevent open redirects, use a strict regular expression like `/^\/([^/\\]|$)/` which ensures the path starts exactly with a single forward slash, followed by either the end of the string or any character that is not a forward slash or backslash.
+**Vulnerability:** Found `Math.random()` being used to generate supposedly unique `batchId` values in `supabase/functions/cron-process-email-queue/outlookBatchDispatcher.ts`.
+**Learning:** `Math.random()` is not cryptographically secure and may result in predictable values or collisions, particularly in edge functions processing concurrently.
+**Prevention:** Use `crypto.randomUUID()` for generating secure, unique IDs.
