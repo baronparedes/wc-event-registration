@@ -28,6 +28,7 @@ export interface ServiceDashboardRpcResponse {
   time_slots?: Record<string, SlotStats>;
   roles?: string[];
   committed_roles?: string[];
+  unique_volunteers?: number;
 }
 
 export interface ComputedSundayMetrics {
@@ -36,6 +37,7 @@ export interface ComputedSundayMetrics {
   totalCommitted: number;
   totalPresent: number;
   totalWalkIns: number;
+  uniqueVolunteers: number;
   peakSlot: string;
   slotSummaries: Array<{
     slot: string;

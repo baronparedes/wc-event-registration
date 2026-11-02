@@ -245,6 +245,7 @@ Deno.test('computeSundayMetrics calculates turnup rate, peak slot, and role vari
         committed_roles: { Usher: 8, Greeter: 6 },
       },
     },
+    unique_volunteers: 50,
   };
 
   const metrics = computeSundayMetrics('2026-10-18', dashboardStats);
@@ -252,6 +253,7 @@ Deno.test('computeSundayMetrics calculates turnup rate, peak slot, and role vari
   assertEquals(metrics.totalCommitted, 60);
   assertEquals(metrics.totalPresent, 56);
   assertEquals(metrics.totalWalkIns, 6);
+  assertEquals(metrics.uniqueVolunteers, 50);
   assertEquals(metrics.turnupRate, 93.3);
   assertEquals(metrics.peakSlot, '9AM');
   assertEquals(metrics.overallSurplusRoles.length, 1);
@@ -277,6 +279,7 @@ Deno.test('getUserPrompt formats metrics with slot and role breakdown', () => {
     totalCommitted: 70,
     totalPresent: 63,
     totalWalkIns: 7,
+    uniqueVolunteers: 60,
     peakSlot: '9AM',
     slotSummaries: [
       {
@@ -295,6 +298,7 @@ Deno.test('getUserPrompt formats metrics with slot and role breakdown', () => {
 
   assertMatch(prompt, /Sunday Service Data for 2026-10-18/);
   assertMatch(prompt, /Overall Turn-up Rate: 90%/);
+  assertMatch(prompt, /Unique Volunteers: 60/);
   assertMatch(prompt, /Slot 9AM/);
   assertMatch(prompt, /Usher: 14\/16 \(-2\)/);
 });

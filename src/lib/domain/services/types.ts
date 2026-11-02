@@ -125,6 +125,7 @@ export type ServiceWeeklyBrief = {
   total_committed: number;
   total_present: number;
   total_walk_ins: number;
+  unique_volunteers?: number;
   peak_slot: string;
   summary: string;
   key_highlights: string[];

@@ -42,6 +42,7 @@ const sampleBrief: ServiceWeeklyBrief = {
   total_committed: 70,
   total_present: 64,
   total_walk_ins: 6,
+  unique_volunteers: 52,
   peak_slot: '9AM',
   summary:
     'Sunday services on October 18 saw strong volunteer turn-up of 91.5%, with 64 volunteers serving across morning and afternoon services.\n\nProduction and Greeter teams achieved full coverage, while Ushers had a 2-person deficit during the 12NN service.\n\nA total of 6 walk-in volunteers supported service operations seamlessly.',
@@ -109,6 +110,8 @@ describe('WeeklyDebriefModal', () => {
     expect(screen.getAllByText('Sunday, October 18, 2026')[0]).toBeInTheDocument();
     expect(screen.getByText('91.5%')).toBeInTheDocument();
     expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('Unique Volunteers')).toBeInTheDocument();
+    expect(screen.getByText('52')).toBeInTheDocument();
     expect(screen.getByText('+6')).toBeInTheDocument();
     expect(screen.getByText('Turn-up rate reached 91.5%')).toBeInTheDocument();
     expect(
@@ -140,7 +143,7 @@ describe('WeeklyDebriefModal', () => {
     fireEvent.click(copyBtn);
 
     await waitFor(() => {
-      expect(writeTextMock).toHaveBeenCalled();
+      expect(writeTextMock).toHaveBeenCalledWith(expect.stringContaining('Unique Volunteers: 52'));
       expect(toast.success).toHaveBeenCalledWith('Executive debrief copied to clipboard');
     });
   });

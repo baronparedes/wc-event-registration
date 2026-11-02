@@ -94,12 +94,19 @@ describe('ServiceDashboardMetrics', () => {
       '3PM': { committed: 30, present: 25, walk_ins: 10, late_tardy: 3, roles: { Usher: 15 } },
     },
     roles: ['Usher'],
+    unique_volunteers: 40,
   };
 
   it('renders primary metrics and exception cards with totals', () => {
     render(
       <ServiceDashboardMetrics stats={sampleStats} dateFilterParams={new URLSearchParams()} />,
     );
+
+    expect(screen.getByText('Unique Volunteers')).toBeInTheDocument();
+    expect(screen.getByText('Whole Day')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
+    expect(screen.getByText('unique attendees')).toBeInTheDocument();
+    expect(screen.getByText('65 total service slots filled')).toBeInTheDocument();
 
     expect(screen.getByText('Committed')).toBeInTheDocument();
     expect(screen.getByText('60 Total')).toBeInTheDocument();
@@ -171,6 +178,32 @@ describe('ServiceDashboardMetrics', () => {
     }
   });
 
+  it('opens all attendance records in a new tab when clicking the unique volunteers card', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(
+        <ServiceDashboardMetrics
+          stats={sampleStats}
+          dateFilterParams={
+            new URLSearchParams('service_start_date=2026-03-15&service_end_date=2026-03-15')
+          }
+        />,
+      );
+
+      fireEvent.click(screen.getByTitle('View all attendees for this period (opens in new tab)'));
+
+      expect(open).toHaveBeenCalledWith(
+        expect.stringContaining('service_start_date=2026-03-15&service_end_date=2026-03-15'),
+        '_blank',
+        'noopener,noreferrer',
+      );
+      // Ensure time_slot was not set for the whole-day drill-down
+      expect(open.mock.calls[0][0]).not.toContain('time_slot=');
+    } finally {
+      open.mockRestore();
+    }
+  });
+
   it('shows zero turn-up and disables drill-downs when no check-ins exist', () => {
     render(
       <ServiceDashboardMetrics
@@ -181,6 +214,7 @@ describe('ServiceDashboardMetrics', () => {
             '3PM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, roles: {} },
           },
           roles: [],
+          unique_volunteers: 0,
         }}
         dateFilterParams={new URLSearchParams()}
       />,
@@ -188,7 +222,7 @@ describe('ServiceDashboardMetrics', () => {
 
     expect(screen.getByText('0% Avg')).toBeInTheDocument();
     expect(screen.queryByTitle(/View present attendees/)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(12);
+    expect(screen.getAllByRole('button')).toHaveLength(13);
     expect(screen.getAllByRole('button').every((button) => button.hasAttribute('disabled'))).toBe(
       true,
     );
@@ -226,6 +260,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
       },
       roles: ['Usher', 'Greeter'],
       committed_roles: ['Usher', 'Greeter'],
+      unique_volunteers: 40,
     };
 
     render(
@@ -251,6 +286,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
         '3PM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, roles: {} },
       },
       roles: [],
+      unique_volunteers: 0,
     };
 
     render(

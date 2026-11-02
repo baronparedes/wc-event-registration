@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react';
 
 import { format, parseISO } from 'date-fns';
-import { Bell, Check, Clock, Copy, FileText, RefreshCw, TrendingUp, Users } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Clock,
+  Copy,
+  FileText,
+  RefreshCw,
+  TrendingUp,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { AiBrandIcon, Badge, Button, Dialog, EmptyState, LoadingState } from '@/components/ui';
@@ -37,8 +47,17 @@ export function WeeklyDebriefModal({ isOpen, onClose, selectedSunday }: WeeklyDe
   const handleCopy = async () => {
     if (!brief) return;
     try {
+      const uniqueVolunteersVal =
+        brief.unique_volunteers ??
+        ((brief.metrics_snapshot as Record<string, unknown> | undefined)?.uniqueVolunteers as
+          | number
+          | undefined);
+      const uniqueLine =
+        uniqueVolunteersVal !== undefined ? ` | Unique Volunteers: ${uniqueVolunteersVal}` : '';
+
       const fullText = `CCF Welcome Center — Sunday Executive Debrief (${brief.sunday_date})
-Turn-up Rate: ${brief.turnup_rate}% | Peak: ${brief.peak_slot}
+Turn-up Rate: ${brief.turnup_rate}% | Peak: ${brief.peak_slot}${uniqueLine}
+Present: ${brief.total_present} / ${brief.total_committed} | Walk-ins: +${brief.total_walk_ins}
 
 ${brief.summary}
 
@@ -76,7 +95,7 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
   const paragraphs = brief?.summary ? brief.summary.split(/\n\s*\n/).filter(Boolean) : [];
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="3xl">
+    <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
       <Dialog.Header>
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between w-full pr-6">
           <div className="flex items-center gap-2">
@@ -101,14 +120,16 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
         ) : brief ? (
           <div className="flex flex-col gap-5">
             {/* Summary Metrics Banner */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-border bg-surface p-3.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Turn-up Rate</span>
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-5">
+              <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted min-w-0">
+                  <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Turn-up Rate</span>
                 </div>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-text">{brief.turnup_rate}%</span>
+                <div className="mt-1.5 flex items-baseline gap-1.5 min-w-0 flex-wrap">
+                  <span className="text-xl sm:text-2xl font-bold text-text tabular-nums">
+                    {brief.turnup_rate}%
+                  </span>
                   <Badge
                     variant={
                       brief.turnup_rate >= 90
@@ -117,7 +138,7 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
                           ? 'default'
                           : 'destructive'
                     }
-                    className="text-[10px]"
+                    className="text-[10px] px-1.5 py-0 shrink-0"
                   >
                     {brief.turnup_rate >= 90
                       ? 'Optimal'
@@ -128,31 +149,54 @@ ${brief.key_highlights.map((h) => `• ${h}`).join('\n')}`;
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-surface p-3.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Peak Slot</span>
+              <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted min-w-0">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Peak Slot</span>
                 </div>
-                <div className="mt-1 text-2xl font-bold text-text">{brief.peak_slot}</div>
+                <div className="mt-1.5 text-xl sm:text-2xl font-bold text-text truncate">
+                  {brief.peak_slot}
+                </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-surface p-3.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <Users className="h-3.5 w-3.5" />
-                  <span>Present / Committed</span>
+              <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted min-w-0">
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate" title="Unique Volunteers">
+                    Unique Volunteers
+                  </span>
                 </div>
-                <div className="mt-1 text-2xl font-bold text-text">
+                <div className="mt-1.5 text-xl sm:text-2xl font-bold text-text tabular-nums">
+                  {brief.unique_volunteers ??
+                    ((brief.metrics_snapshot as Record<string, unknown> | undefined)
+                      ?.uniqueVolunteers as number | undefined) ??
+                    '—'}
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted min-w-0">
+                  <UserCheck className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate" title="Present / Committed">
+                    Present / Committed
+                  </span>
+                </div>
+                <div className="mt-1.5 text-xl sm:text-2xl font-bold text-text tabular-nums whitespace-nowrap">
                   {brief.total_present}{' '}
-                  <span className="text-sm font-normal text-muted">/ {brief.total_committed}</span>
+                  <span className="text-xs sm:text-sm font-normal text-muted">
+                    / {brief.total_committed}
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-surface p-3.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <FileText className="h-3.5 w-3.5" />
-                  <span>Walk-ins</span>
+              <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-3 min-w-0 col-span-2 md:col-span-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted min-w-0">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Walk-ins</span>
                 </div>
-                <div className="mt-1 text-2xl font-bold text-text">+{brief.total_walk_ins}</div>
+                <div className="mt-1.5 text-xl sm:text-2xl font-bold text-text tabular-nums">
+                  +{brief.total_walk_ins}
+                </div>
               </div>
             </div>
 

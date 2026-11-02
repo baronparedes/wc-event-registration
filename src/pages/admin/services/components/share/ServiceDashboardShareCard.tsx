@@ -95,7 +95,10 @@ export function ServiceDashboardShareCard({
           </div>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2.5">
+          <Badge variant="secondary" className="text-sm px-3.5 py-1 font-bold tabular-nums">
+            {stats.unique_volunteers ?? 0} Unique Volunteers
+          </Badge>
           <Badge
             variant={overallTurnup < 50 ? 'destructive' : 'default'}
             className="text-sm px-3.5 py-1 font-bold"

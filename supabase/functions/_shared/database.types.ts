@@ -1574,6 +1574,7 @@ export type Database = {
           total_committed: number;
           total_present: number;
           total_walk_ins: number;
+          unique_volunteers: number;
           turnup_rate: number;
           updated_at: string;
         };
@@ -1589,6 +1590,7 @@ export type Database = {
           total_committed?: number;
           total_present?: number;
           total_walk_ins?: number;
+          unique_volunteers?: number;
           turnup_rate: number;
           updated_at?: string;
         };
@@ -1604,6 +1606,7 @@ export type Database = {
           total_committed?: number;
           total_present?: number;
           total_walk_ins?: number;
+          unique_volunteers?: number;
           turnup_rate?: number;
           updated_at?: string;
         };
