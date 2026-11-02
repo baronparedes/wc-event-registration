@@ -1,22 +1,21 @@
-import { ReactNode, createElement } from 'react';
-
-import { faker } from '@faker-js/faker';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { type SlodUserItem, fetchSlodUsers } from '@/lib/domain/approvals';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { faker } from '@faker-js/faker';
 
 import { useSlodUsersQuery } from '../useSlodUsersQuery';
+import { fetchSlodUsers, type SlodUserItem } from '@/lib/domain/approvals';
 
 vi.mock('@/lib/domain/approvals', () => ({
   fetchSlodUsers: vi.fn(),
 }));
 
 const mockSlodUsers: SlodUserItem[] = [
-  { id: 'user-1', full_name: faker.person.fullName(), email: faker.internet.email() },
-  { id: 'user-2', full_name: faker.person.fullName(), email: faker.internet.email() },
+  { auth_user_id: 'user-1', name: faker.person.fullName(), email: faker.internet.email(), avatar_object_key: null },
+  { auth_user_id: 'user-2', name: faker.person.fullName(), email: faker.internet.email(), avatar_object_key: null },
 ];
 
 function createWrapper() {
@@ -31,7 +30,7 @@ function createWrapper() {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children)
     );
   };
 }
