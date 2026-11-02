@@ -125,17 +125,20 @@ Triggered when safety constraints are violated:
 
 ## 5. Safe Partial Updates & Field Preservation
 
-To protect existing records from being wiped when importing partial CSVs, the database RPC `apply_bulk_member_upsert` uses SQL `coalesce` rules:
+To protect existing records from being wiped when importing partial CSVs, the database RPC `apply_bulk_member_upsert` uses SQL `coalesce` rules and JSONB shallow merging:
 
 ```sql
 email = coalesce(v_email, public.users.email),
 phone = coalesce(v_phone, public.users.phone),
 date_of_birth = coalesce(case when v_date_of_birth is null then null else v_date_of_birth::date end, public.users.date_of_birth),
+metadata = (coalesce(public.users.metadata, '{}'::jsonb) - 'role' - 'category') || v_metadata,
 ```
 
-- If `email`, `phone`, or `date_of_birth` is omitted or empty in the CSV for an existing member, their **current value is preserved**.
-- Only explicitly provided, non-empty values update existing contact details.
-- Role, category, and metadata are updated according to the CSV input.
+- **Contact Fields**: If `email`, `phone`, or `date_of_birth` is omitted or empty in the CSV for an existing member, their **current value is preserved**. Only explicitly provided, non-empty values update existing contact details.
+- **Metadata & Sunday Schedules**: Existing metadata keys (such as `first_sunday` through `fifth_sunday`, `start_date`, and `is_oic`) are **preserved** when omitted from the CSV upload.
+  - Partial updates merge `v_metadata` onto existing `users.metadata`, modifying only explicitly provided attributes while pruning legacy `role`/`category` JSON keys.
+  - Omitted or blank cells in the CSV preserve existing values; to clear a commitment or metadata field, edit the member directly in the profile management UI.
+- **Role and Category**: Role and category are always updated to the required values provided in the CSV.
 
 ---
 
