@@ -1,7 +1,27 @@
 import { enqueueApprovalOutcomeEmail, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
+import type { Json } from '../_shared/database.types.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
-import { z } from '../_shared/validation.ts';
+import {
+  type EventFieldWithValidation,
+  isFieldVisible,
+  validateFieldValue,
+  z,
+} from '../_shared/validation.ts';
+
+const endorsementQuestionSchema = z.object({
+  id: z.string().optional(),
+  field_key: z.string().min(1),
+  label: z.string(),
+  field_type: z.string(),
+  is_required: z.boolean().optional().default(false),
+  is_active: z.boolean().optional().default(true),
+  options: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .optional()
+    .default([]),
+  validation_rules: z.record(z.string(), z.unknown()).optional(),
+});
 
 export const processApprovalDecisionSchema = z
   .object({
@@ -13,6 +33,7 @@ export const processApprovalDecisionSchema = z
     reviewer_email: z.string().trim().email().optional().nullable(),
     assigned_to_email: z.string().trim().email().optional().nullable(),
     assigned_to_user_id: z.string().uuid().optional().nullable(),
+    attestation_answers: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((data) => Boolean(data.token || data.approval_id), {
     message: 'Either token or approval_id must be provided',
@@ -25,6 +46,10 @@ export const processApprovalDecisionSchema = z
   .refine((data) => data.action !== 'delegate_approval' || Boolean(data.assigned_to_email), {
     message: 'assigned_to_email is required when delegating approval',
     path: ['assigned_to_email'],
+  })
+  .refine((data) => !data.attestation_answers || data.action === 'submit_decision', {
+    message: 'attestation_answers can only be submitted with a decision',
+    path: ['attestation_answers'],
   });
 
 export type ProcessApprovalDecisionRequest = z.infer<typeof processApprovalDecisionSchema>;
@@ -55,6 +80,7 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
     reviewer_email,
     assigned_to_email,
     assigned_to_user_id,
+    attestation_answers,
   } = guard.data;
   const supabase = guard.client;
 
@@ -169,6 +195,80 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
           .maybeSingle();
 
         entityDetails = excuse ?? null;
+      } else if (String(approval.entity_type) === 'recruitment_endorsement') {
+        const { data: application, error: applicationError } = await supabase
+          .from('recruitment_applications')
+          .select(
+            'id, first_name, middle_name, last_name, full_name, nickname, desired_role, created_at',
+          )
+          .eq('id', approval.entity_id)
+          .eq('dgroup_approval_id', approval.id)
+          .maybeSingle();
+
+        if (applicationError) {
+          console.error('Error fetching recruitment endorsement application:', applicationError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Database error fetching recruitment endorsement',
+              error_code: 'DB_ERROR',
+            }),
+            {
+              status: 500,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const { data: settings, error: settingsError } = await supabase
+          .from('recruitment_settings')
+          .select('endorsement_questions')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (settingsError || !settings) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Recruitment endorsement questions are unavailable',
+              error_code: 'SETTINGS_UNAVAILABLE',
+            }),
+            {
+              status: 503,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const questionsResult = z
+          .array(endorsementQuestionSchema)
+          .safeParse(settings.endorsement_questions);
+        if (!questionsResult.success) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Recruitment endorsement questions are invalid',
+              error_code: 'INVALID_SETTINGS',
+            }),
+            {
+              status: 500,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        entityDetails = application
+          ? {
+              ...application,
+              endorsement_questions: questionsResult.data.filter((question) => question.is_active),
+              attestation_answers:
+                typeof approval.metadata === 'object' &&
+                approval.metadata !== null &&
+                !Array.isArray(approval.metadata)
+                  ? ((approval.metadata as Record<string, unknown>).attestation_answers ?? {})
+                  : {},
+            }
+          : null;
       }
 
       return new Response(
@@ -232,6 +332,164 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
             headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
           },
         );
+      }
+
+      if (attestation_answers && String(approval.entity_type) !== 'recruitment_endorsement') {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Attestation answers are only accepted for recruitment endorsements',
+            error_code: 'INVALID_ENTITY_TYPE',
+          }),
+          {
+            status: 400,
+            headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      let validatedAttestationAnswers: Record<string, unknown> | undefined;
+      if (String(approval.entity_type) === 'recruitment_endorsement') {
+        if (!attestation_answers) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Endorsement answers are required to decide this request',
+              error_code: 'ATTESTATION_REQUIRED',
+            }),
+            {
+              status: 400,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const { data: settings, error: settingsError } = await supabase
+          .from('recruitment_settings')
+          .select('endorsement_questions')
+          .eq('id', 1)
+          .maybeSingle();
+        if (settingsError || !settings) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Recruitment endorsement questions are unavailable',
+              error_code: 'SETTINGS_UNAVAILABLE',
+            }),
+            {
+              status: 503,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const questionsResult = z
+          .array(endorsementQuestionSchema)
+          .safeParse(settings.endorsement_questions);
+        if (!questionsResult.success) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Recruitment endorsement questions are invalid',
+              error_code: 'INVALID_SETTINGS',
+            }),
+            {
+              status: 500,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const activeQuestions = questionsResult.data.filter((question) => question.is_active);
+        const questionKeys = new Set(activeQuestions.map((question) => question.field_key));
+        if (Object.keys(attestation_answers).some((key) => !questionKeys.has(key))) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Endorsement answers contain unknown fields',
+              error_code: 'INVALID_ATTESTATION',
+            }),
+            {
+              status: 400,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        const fields: EventFieldWithValidation[] = activeQuestions.map((question) => ({
+          id: question.id ?? question.field_key,
+          field_key: question.field_key,
+          label: question.label,
+          field_type: question.field_type,
+          is_required: question.is_required,
+          options: question.options,
+          validation_rules: question.validation_rules ?? {},
+        }));
+        const visibleAnswers: Record<string, unknown> = {};
+        for (const field of fields) {
+          if (!isFieldVisible(field, fields, attestation_answers)) continue;
+          const validationError = validateFieldValue(
+            field.field_key,
+            attestation_answers[field.field_key],
+            field,
+            fields,
+            attestation_answers,
+          );
+          if (validationError) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Endorsement answers are invalid',
+                error_code: 'INVALID_ATTESTATION',
+                field_error: validationError,
+              }),
+              {
+                status: 400,
+                headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
+          }
+          if (field.field_key in attestation_answers) {
+            visibleAnswers[field.field_key] = attestation_answers[field.field_key];
+          }
+        }
+        validatedAttestationAnswers = visibleAnswers;
+      }
+
+      if (validatedAttestationAnswers) {
+        const existingMetadata =
+          typeof approval.metadata === 'object' &&
+          approval.metadata !== null &&
+          !Array.isArray(approval.metadata)
+            ? (approval.metadata as Record<string, Json | undefined>)
+            : {};
+        const { data: updatedApproval, error: metadataError } = await supabase
+          .from('approval_requests')
+          .update({
+            metadata: {
+              ...existingMetadata,
+              attestation_answers: JSON.parse(JSON.stringify(validatedAttestationAnswers)) as Json,
+            },
+          })
+          .eq('id', approval.id)
+          .eq('status', 'pending')
+          .select('id')
+          .maybeSingle();
+
+        if (metadataError || !updatedApproval) {
+          console.error('Failed to persist recruitment endorsement answers:', metadataError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Failed to save endorsement answers',
+              error_code: 'DB_ERROR',
+            }),
+            {
+              status: metadataError ? 500 : 409,
+              headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
       }
 
       // Execute apply_approval_decision RPC

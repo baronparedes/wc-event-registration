@@ -45,8 +45,11 @@ function mockFetch(
     approvalRecord?: unknown;
     formSubmission?: unknown;
     serviceExcuse?: unknown;
+    recruitmentApplication?: unknown;
+    recruitmentSettings?: unknown;
     rpcResult?: unknown;
     failRpc?: boolean;
+    failMetadataUpdate?: boolean;
   } = {},
 ) {
   const originalFetch = globalThis.fetch;
@@ -61,6 +64,15 @@ function mockFetch(
       method,
       body: init?.body ? (JSON.parse(String(init.body)) as unknown) : null,
     });
+
+    if (url.pathname === '/rest/v1/approval_requests' && method === 'PATCH') {
+      if (options.failMetadataUpdate) {
+        return Promise.resolve(
+          Response.json({ message: 'Metadata update failed' }, { status: 500 }),
+        );
+      }
+      return Promise.resolve(Response.json({ id: APPROVAL_ID }));
+    }
 
     if (url.pathname === '/rest/v1/approval_requests') {
       return Promise.resolve(
@@ -113,6 +125,64 @@ function mockFetch(
             services: ['All Services'],
             reason: 'Extended family mission',
             users: { full_name: 'John Doe', email: 'john@example.com' },
+          },
+        ),
+      );
+    }
+
+    if (url.pathname === '/rest/v1/recruitment_applications') {
+      return Promise.resolve(
+        Response.json(
+          options.recruitmentApplication ?? {
+            id: '44444444-4444-4444-8444-444444444444',
+            full_name: 'Jane Doe',
+            nickname: 'Janey',
+            email: 'jane@example.com',
+            phone: '+639171234567',
+            desired_role: 'Usher',
+            dgroup_info: { leader_name: 'Leader Name' },
+          },
+        ),
+      );
+    }
+
+    if (url.pathname === '/rest/v1/recruitment_settings') {
+      return Promise.resolve(
+        Response.json(
+          options.recruitmentSettings ?? {
+            endorsement_questions: [
+              {
+                id: 'eq_1',
+                field_key: 'attendance',
+                label: 'Attendance',
+                field_type: 'radio',
+                is_required: true,
+                is_active: true,
+                options: [
+                  { label: 'Weekly', value: 'weekly' },
+                  { label: 'Monthly', value: 'monthly' },
+                ],
+              },
+              {
+                id: 'eq_2',
+                field_key: 'known_for',
+                label: 'Known for service',
+                field_type: 'boolean',
+                is_required: false,
+                is_active: true,
+                options: [],
+              },
+              {
+                id: 'eq_3',
+                field_key: 'rating',
+                label: 'Rating',
+                field_type: 'rating',
+                is_required: true,
+                is_active: true,
+                options: [],
+                validation_rules: { min: 1, max: 3 },
+              },
+            ],
           },
         ),
       );
@@ -213,6 +283,41 @@ Deno.test(
         assertEquals(body.approval.status, 'pending');
         assertEquals(body.approval.is_expired, false);
         assertEquals(body.entity_details.id, '44444444-4444-4444-8444-444444444444');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'process-approval-decision returns recruitment details and endorsement fields for leader review',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        approvalRecord: {
+          id: APPROVAL_ID,
+          entity_type: 'recruitment_endorsement',
+          entity_id: '44444444-4444-4444-8444-444444444444',
+          status: 'pending',
+          title: 'DGroup Leader Endorsement',
+          requester_name: 'Jane Doe',
+          access_token: VALID_TOKEN,
+          token_expires_at: new Date(Date.now() + 86400000).toISOString(),
+          metadata: { attestation_answers: { attendance: 'weekly' } },
+        },
+      });
+      try {
+        const res = await handleProcessApprovalDecision(
+          createRequest({ action: 'get_review_data', token: VALID_TOKEN }),
+        );
+
+        assertEquals(res.status, 200);
+        const body = await res.json();
+        assertEquals(body.entity_details.full_name, 'Jane Doe');
+        assertEquals(body.entity_details.desired_role, 'Usher');
+        assertEquals(body.entity_details.endorsement_questions.length, 3);
+        assertEquals(body.entity_details.attestation_answers, { attendance: 'weekly' });
       } finally {
         mock.restore();
       }
@@ -362,6 +467,145 @@ Deno.test(
           (c) => c.path === '/rest/v1/rpc/enqueue_email_notification',
         );
         assertEquals(Boolean(emailCall), true);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'process-approval-decision persists recruitment endorsement answers before applying the decision',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        approvalRecord: {
+          id: APPROVAL_ID,
+          entity_type: 'recruitment_endorsement',
+          entity_id: '44444444-4444-4444-8444-444444444444',
+          status: 'pending',
+          title: 'DGroup Leader Endorsement',
+          requester_name: 'Jane Doe',
+          access_token: VALID_TOKEN,
+          token_expires_at: new Date(Date.now() + 86400000).toISOString(),
+          metadata: { source: 'recruitment' },
+        },
+      });
+      try {
+        const res = await handleProcessApprovalDecision(
+          createRequest({
+            action: 'submit_decision',
+            token: VALID_TOKEN,
+            decision: 'approved',
+            attestation_answers: { attendance: 'weekly', known_for: true, rating: 3 },
+          }),
+        );
+
+        assertEquals(res.status, 200);
+        const metadataCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'PATCH',
+        );
+        assertEquals(metadataCall?.body, {
+          metadata: {
+            source: 'recruitment',
+            attestation_answers: { attendance: 'weekly', known_for: true, rating: 3 },
+          },
+        });
+        assertEquals(
+          mock.calls.some((call) => call.path === '/rest/v1/rpc/apply_approval_decision'),
+          true,
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'process-approval-decision does not apply the decision when endorsement answers cannot be saved',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        approvalRecord: {
+          id: APPROVAL_ID,
+          entity_type: 'recruitment_endorsement',
+          entity_id: '44444444-4444-4444-8444-444444444444',
+          status: 'pending',
+          title: 'DGroup Leader Endorsement',
+          requester_name: 'Jane Doe',
+          access_token: VALID_TOKEN,
+          token_expires_at: new Date(Date.now() + 86400000).toISOString(),
+          metadata: {},
+        },
+        failMetadataUpdate: true,
+      });
+      try {
+        const res = await handleProcessApprovalDecision(
+          createRequest({
+            action: 'submit_decision',
+            token: VALID_TOKEN,
+            decision: 'approved',
+            attestation_answers: { attendance: 'weekly', rating: 3 },
+          }),
+        );
+
+        assertEquals(res.status, 500);
+        assertEquals(
+          mock.calls.some((call) => call.path === '/rest/v1/rpc/apply_approval_decision'),
+          false,
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'process-approval-decision rejects missing, unknown, and invalid endorsement answers before persisting',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        approvalRecord: {
+          id: APPROVAL_ID,
+          entity_type: 'recruitment_endorsement',
+          entity_id: '44444444-4444-4444-8444-444444444444',
+          status: 'pending',
+          title: 'DGroup Leader Endorsement',
+          requester_name: 'Jane Doe',
+          access_token: VALID_TOKEN,
+          token_expires_at: new Date(Date.now() + 86400000).toISOString(),
+          metadata: {},
+        },
+      });
+      try {
+        for (const answers of [
+          { attendance: 'weekly', known_for: true },
+          { attendance: 'weekly', known_for: true, rating: 3, unexpected: 'value' },
+          { attendance: 'weekly', known_for: true, rating: 4 },
+        ]) {
+          const res = await handleProcessApprovalDecision(
+            createRequest({
+              action: 'submit_decision',
+              token: VALID_TOKEN,
+              decision: 'approved',
+              attestation_answers: answers,
+            }),
+          );
+          assertEquals(res.status, 400);
+        }
+
+        assertEquals(
+          mock.calls.some(
+            (call) => call.path === '/rest/v1/approval_requests' && call.method === 'PATCH',
+          ),
+          false,
+        );
+        assertEquals(
+          mock.calls.some((call) => call.path === '/rest/v1/rpc/apply_approval_decision'),
+          false,
+        );
       } finally {
         mock.restore();
       }

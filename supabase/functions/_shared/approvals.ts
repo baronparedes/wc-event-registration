@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { enqueueEmailNotification, triggerEmailProcessor } from './emailQueue.ts';
 import { buildApprovalOutcomeEmail, buildApprovalReviewEmail } from './emailTemplates/index.ts';
 
-export type ApprovalEntityType = 'service_excuse' | 'form_submission';
+export type ApprovalEntityType = 'service_excuse' | 'form_submission' | 'recruitment_endorsement';
 
 export interface CreateApprovalRequestParams {
   entityType: ApprovalEntityType;

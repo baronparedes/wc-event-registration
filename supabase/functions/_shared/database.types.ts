@@ -1,5 +1,78 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
+type RecruitmentSettingsRow = {
+  endorsement_questions: Json;
+  eligibility_rules: Json;
+  id: number;
+  is_recruitment_open: boolean;
+  orientation_instructions: string;
+  survey_questions: Json;
+  updated_at: string;
+  vmt_registration_url: string;
+};
+
+type RecruitmentApplicationRow = {
+  applicant_attested_at: string;
+  application_history: Json;
+  assigned_rfid_member_id: string | null;
+  auth_user_id: string | null;
+  avatar_object_key: string | null;
+  ccf_vmt_date: string | null;
+  ccf_vmt_id: string | null;
+  confirmed_role: string | null;
+  created_at: string;
+  current_step: number;
+  date_of_birth: string;
+  deployed_at: string | null;
+  desired_role: string;
+  dgroup_approval_id: string | null;
+  dgroup_info: Json;
+  email: string;
+  emergency_contact: Json;
+  first_name: string;
+  full_name: string;
+  gender: string;
+  id: string;
+  last_name: string;
+  life_stage: string;
+  middle_name: string | null;
+  nickname: string;
+  personal_details: Json;
+  phone: string;
+  promoted_user_id: string | null;
+  service_commitments: Json;
+  spiritual_background: Json;
+  status: string;
+  survey_answers: Json;
+  survey_score: number;
+  survey_total: number;
+  updated_at: string;
+  vmt_registered: boolean;
+  vmt_registered_at: string | null;
+  vmt_verified_by: string | null;
+};
+
+type RecruitmentPipelineTransactionRow = {
+  applicant_visible_notes: string | null;
+  application_id: string;
+  assigned_reviewer_id: string | null;
+  assigned_reviewer_name: string | null;
+  attempt_number: number;
+  completed_at: string | null;
+  created_at: string;
+  created_by_user_id: string | null;
+  from_step: number | null;
+  id: string;
+  notes: string | null;
+  rubric_data: Json;
+  scheduled_at: string | null;
+  status: string;
+  step_key: string;
+  step_number: number;
+  to_step: number | null;
+  transaction_type: string;
+};
+
 export type Database = {
   graphql_public: {
     Tables: {
@@ -23,6 +96,90 @@ export type Database = {
   };
   public: {
     Tables: {
+      recruitment_settings: {
+        Row: RecruitmentSettingsRow;
+        Insert: Pick<RecruitmentSettingsRow, 'id'> & Partial<Omit<RecruitmentSettingsRow, 'id'>>;
+        Update: Partial<RecruitmentSettingsRow>;
+        Relationships: [];
+      };
+      recruitment_applications: {
+        Row: RecruitmentApplicationRow;
+        Insert: Pick<
+          RecruitmentApplicationRow,
+          | 'email'
+          | 'first_name'
+          | 'last_name'
+          | 'full_name'
+          | 'nickname'
+          | 'phone'
+          | 'date_of_birth'
+          | 'gender'
+          | 'life_stage'
+          | 'desired_role'
+        > &
+          Partial<
+            Omit<
+              RecruitmentApplicationRow,
+              | 'email'
+              | 'first_name'
+              | 'last_name'
+              | 'full_name'
+              | 'nickname'
+              | 'phone'
+              | 'date_of_birth'
+              | 'gender'
+              | 'life_stage'
+              | 'desired_role'
+            >
+          >;
+        Update: Partial<RecruitmentApplicationRow>;
+        Relationships: [
+          {
+            foreignKeyName: 'recruitment_applications_auth_user_id_fkey';
+            columns: ['auth_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recruitment_applications_dgroup_approval_id_fkey';
+            columns: ['dgroup_approval_id'];
+            isOneToOne: false;
+            referencedRelation: 'approval_requests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recruitment_applications_promoted_user_id_fkey';
+            columns: ['promoted_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recruitment_pipeline_transactions: {
+        Row: RecruitmentPipelineTransactionRow;
+        Insert: Pick<
+          RecruitmentPipelineTransactionRow,
+          'application_id' | 'step_number' | 'step_key' | 'transaction_type'
+        > &
+          Partial<
+            Omit<
+              RecruitmentPipelineTransactionRow,
+              'application_id' | 'step_number' | 'step_key' | 'transaction_type'
+            >
+          >;
+        Update: Partial<RecruitmentPipelineTransactionRow>;
+        Relationships: [
+          {
+            foreignKeyName: 'recruitment_pipeline_transactions_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'recruitment_applications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       approval_requests: {
         Row: {
           access_token: string;
@@ -1630,8 +1787,37 @@ export type Database = {
         };
         Relationships: [];
       };
+      recruitment_application_latest_schedules_view: {
+        Row: {
+          application_id: string;
+          evaluation_count: number;
+          observation_count: number;
+          scheduled_evaluation_on: string | null;
+          scheduled_interview_on: string | null;
+          scheduled_observation_on: string | null;
+          scheduled_operations_onboarding_on: string | null;
+          scheduled_orientation_on: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      deploy_recruitment_applicant: {
+        Args: { p_application_id: string };
+        Returns: Json;
+      };
+      get_my_recruitment_application: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_public_recruitment_config: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      complete_recruitment_vmt_registration: {
+        Args: { p_application_id: string; p_actor_user_id: string; p_actor_email: string };
+        Returns: Json;
+      };
       apply_approval_decision: {
         Args: {
           p_approval_id: string;
@@ -1951,7 +2137,7 @@ export type Database = {
       trigger_email_processor: { Args: Record<PropertyKey, never>; Returns: undefined };
     };
     Enums: {
-      approval_entity_type: 'form_submission' | 'service_excuse';
+      approval_entity_type: 'form_submission' | 'service_excuse' | 'recruitment_endorsement';
       approval_status: 'pending' | 'approved' | 'rejected' | 'cancelled';
       attendance_field_type:
         | 'text'
