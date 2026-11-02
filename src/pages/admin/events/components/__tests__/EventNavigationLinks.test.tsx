@@ -30,6 +30,7 @@ function renderNavigation(role: AdminRole | null) {
     super_admin: ['canWriteAdminData', 'canReadAdminData', 'canAccessAttendanceCheckIn'],
     admin: ['canWriteAdminData', 'canReadAdminData', 'canAccessAttendanceCheckIn'],
     slod: ['canReadAdminData'],
+    vmt: ['canWriteAdminData', 'canReadAdminData', 'canReadAdminMemberData', 'canReadDashboard'],
     imt: ['canReadAdminData'],
     kiosk: ['canAccessAttendanceCheckIn'],
   };
@@ -81,6 +82,24 @@ describe('EventNavigationLinks', () => {
       'href',
       '/admin/events/event-1/attendance/check-in',
     );
+  });
+
+  it('shows event management links for VMT', () => {
+    renderNavigation('vmt');
+
+    expect(screen.getByRole('link', { name: 'Event' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1',
+    );
+    expect(screen.getByRole('link', { name: 'Fields' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/fields',
+    );
+    expect(screen.getByRole('link', { name: 'Registrations' })).toHaveAttribute(
+      'href',
+      '/admin/events/event-1/registrations',
+    );
+    expect(screen.queryByRole('link', { name: 'Check-In' })).not.toBeInTheDocument();
   });
 
   it('hides write-only and check-in links for slod while preserving read links', () => {

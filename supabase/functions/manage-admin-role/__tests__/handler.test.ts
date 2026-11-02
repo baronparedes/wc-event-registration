@@ -164,6 +164,24 @@ Deno.test(
   },
 );
 
+Deno.test('manage-admin-role accepts VMT assignments', async () => {
+  await withFunctionEnv(async () => {
+    const fetchMock = mockFetch({ targetExists: false });
+    try {
+      const response = await handleManageAdminRole(
+        buildRequest({ action: 'assign', auth_user_id: TARGET_AUTH_USER_ID, role: 'vmt' }),
+      );
+      assertEquals(response.status, 200);
+      assertEquals(fetchMock.writes[0].body, {
+        auth_user_id: TARGET_AUTH_USER_ID,
+        role: 'vmt',
+      });
+    } finally {
+      fetchMock.restore();
+    }
+  });
+});
+
 Deno.test('manage-admin-role refuses to change an existing super-admin target', async () => {
   await withFunctionEnv(async () => {
     const updateMock = mockFetch({ targetRole: 'super_admin' });

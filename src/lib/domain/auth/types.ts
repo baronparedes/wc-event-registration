@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 
-export type AdminRole = 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk';
+export type AdminRole = 'admin' | 'super_admin' | 'slod' | 'vmt' | 'imt' | 'kiosk';
 
 export type AssignableAdminRole = Exclude<AdminRole, 'super_admin'>;
 
