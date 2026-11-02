@@ -39,3 +39,9 @@
 **Vulnerability:** Found an open redirect vulnerability bypassing validation on login redirect targets via `\\` path prefixes which correctly parses to `//` in most modern browsers.
 **Learning:** `new URLSearchParams` and typical validators verify URL safety against `//` or `/\`, but an explicit double backslash `\\` is missing as a checked variation that gets translated by modern browsers into a valid external link prefix `//`.
 **Prevention:** To prevent open redirects, use a strict regular expression like `/^\/([^/\\]|$)/` which ensures the path starts exactly with a single forward slash, followed by either the end of the string or any character that is not a forward slash or backslash.
+
+## 2025-05-24 - Cryptographically Insecure Randomness
+
+**Vulnerability:** Found `Math.random()` being used to generate supposedly unique `batchId` values in `supabase/functions/cron-process-email-queue/outlookBatchDispatcher.ts`.
+**Learning:** `Math.random()` is not cryptographically secure and may result in predictable values or collisions, particularly in edge functions processing concurrently.
+**Prevention:** Use `crypto.randomUUID()` for generating secure, unique IDs.

@@ -151,7 +151,8 @@ async function dispatchSingleOutlookBatch(
     : isApprovalBatch
       ? '[APPROVAL]'
       : '[BROADCAST]';
-  const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  // Use cryptographically secure randomness instead of Math.random()
+  const batchId = `batch_${Date.now()}_${crypto.randomUUID().split('-')[0]}`;
   const batchPayload: PowerAutomateBatchPayload = {
     batch_id: batchId,
     batch_type: category,
