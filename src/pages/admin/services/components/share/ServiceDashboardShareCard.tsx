@@ -17,7 +17,6 @@ import { LEGAL_CONFIG } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 import { type ServiceTimeSlot, TIME_SLOTS } from '@/pages/admin/services/constants';
 
-import { ServiceMetricCard, ServiceSlotCell } from '../ServiceMetricCard';
 import { getTurnupPercentage } from './utils';
 
 export type ServiceDashboardShareCardProps = {
@@ -84,7 +83,7 @@ export function ServiceDashboardShareCard({
       className="relative flex flex-col w-[960px] min-w-[960px] max-w-[960px] shrink-0 box-border rounded-2xl border border-border bg-surface font-sans text-text shadow-sm overflow-hidden"
     >
       {/* Header section */}
-      <div className="flex items-center justify-between border-b border-border bg-surface px-8 py-6">
+      <div className="flex items-center justify-between border-b border-border bg-surface px-8 py-5">
         <div className="flex items-center gap-4">
           <BrandAvatar size="md" alt={LEGAL_CONFIG.appName} />
           <div>
@@ -99,143 +98,247 @@ export function ServiceDashboardShareCard({
         <div>
           <Badge
             variant={overallTurnup < 50 ? 'destructive' : 'default'}
-            className="text-sm px-3 py-1 font-bold"
+            className="text-sm px-3.5 py-1 font-bold"
           >
             {overallTurnup}% Overall Turn-Up
           </Badge>
         </div>
       </div>
 
-      {/* Primary 6 Metrics Grid */}
-      <div className="grid grid-cols-3 gap-4 p-8 pb-6">
-        {/* 1. Committed */}
-        <ServiceMetricCard
-          icon={<Handshake className="h-5 w-5" />}
-          iconClassName="bg-primary/10 text-primary"
-          title="Committed"
-          subtitle="Expected volunteers"
-          badgeContent={`${totalCommitted} Total`}
-          badgeVariant="default"
-        >
-          {TIME_SLOTS.map((ts) => (
-            <ServiceSlotCell key={ts} timeSlot={ts} value={getSlot(ts).committed} />
-          ))}
-        </ServiceMetricCard>
+      {/* Key Service Metrics Matrix Table */}
+      <div className="px-8 pt-6 pb-6">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs">
+          <div className="border-b border-border bg-surface-hover/30 px-5 py-3">
+            <h2 className="font-heading text-sm font-semibold text-text">Key Service Metrics</h2>
+            <p className="text-xs text-muted">
+              Summary across service time slots: 9:00 AM, 12:00 NN, and 3:00 PM
+            </p>
+          </div>
 
-        {/* 2. Present */}
-        <ServiceMetricCard
-          icon={<UserCheck className="h-5 w-5" />}
-          iconClassName="bg-secondary/15 text-secondary"
-          title="Present"
-          subtitle="Scheduled turn-up"
-          badgeContent={`${totalPresent} Total`}
-          badgeVariant="secondary"
-        >
-          {TIME_SLOTS.map((ts) => {
-            const slot = getSlot(ts);
-            return (
-              <ServiceSlotCell
-                key={ts}
-                timeSlot={ts}
-                value={slot.present}
-                sublabel={
-                  slot.walk_ins > 0 ? (
-                    <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
-                      +{slot.walk_ins} walk-in
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border/70 bg-surface-hover/10 text-xs font-semibold text-muted">
+              <tr>
+                <th className="px-5 py-3 font-semibold uppercase tracking-wider text-[11px]">
+                  Metric
+                </th>
+                {TIME_SLOTS.map((ts) => (
+                  <th
+                    key={ts}
+                    className="px-4 py-3 text-center font-semibold uppercase tracking-wider text-[11px]"
+                  >
+                    {ts} Service
+                  </th>
+                ))}
+                <th className="px-5 py-3 text-right font-semibold uppercase tracking-wider text-[11px]">
+                  Overall Total
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60 text-text">
+              {/* 1. Committed */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Handshake className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Committed</div>
+                      <div className="text-[11px] text-muted">Expected volunteers</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => (
+                  <td key={ts} className="px-4 py-3.5 text-center">
+                    <span className="font-heading text-lg font-bold text-text tabular-nums">
+                      {getSlot(ts).committed}
                     </span>
-                  ) : (
-                    '—'
-                  )
-                }
-              />
-            );
-          })}
-        </ServiceMetricCard>
+                  </td>
+                ))}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge variant="default" className="text-xs font-bold tabular-nums">
+                    {totalCommitted} Total
+                  </Badge>
+                </td>
+              </tr>
 
-        {/* 3. Turn-up % */}
-        <ServiceMetricCard
-          icon={<Percent className="h-5 w-5" />}
-          iconClassName="bg-accent/20 text-text"
-          title="Turn-Up Rate"
-          subtitle="Attended vs Committed"
-          badgeContent={`${overallTurnup}% Avg`}
-          badgeVariant={overallTurnup < 50 ? 'destructive' : 'default'}
-        >
-          {TIME_SLOTS.map((ts) => {
-            const slot = getSlot(ts);
-            const perc = getTurnupPercentage(slot.present, slot.committed);
-            const isLow = perc < 50;
-            return (
-              <ServiceSlotCell
-                key={ts}
-                timeSlot={ts}
-                value={`${perc}%`}
-                isLowRate={isLow}
-                valueClassName={isLow ? 'text-danger' : 'text-primary'}
-                sublabel={
-                  <span className="text-[10px] font-medium text-muted">
-                    {slot.present}/{slot.committed}
-                  </span>
-                }
-              />
-            );
-          })}
-        </ServiceMetricCard>
+              {/* 2. Present */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/15 text-secondary">
+                      <UserCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Present</div>
+                      <div className="text-[11px] text-muted">Scheduled turn-up</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => {
+                  const slot = getSlot(ts);
+                  return (
+                    <td key={ts} className="px-4 py-3.5 text-center">
+                      <div className="font-heading text-lg font-bold text-text tabular-nums">
+                        {slot.present}
+                      </div>
+                      {slot.walk_ins > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary tabular-nums">
+                          +{slot.walk_ins} walk-in
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted/60">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge variant="secondary" className="text-xs font-bold tabular-nums">
+                    {totalPresent} Total
+                  </Badge>
+                </td>
+              </tr>
 
-        {/* 4. Missed Commitments */}
-        <ServiceMetricCard
-          icon={<UserX className="h-5 w-5" />}
-          iconClassName="bg-danger/10 text-danger"
-          title="Missed Commitments"
-          subtitle="Absent volunteers"
-          badgeContent={`${totalMissed} Total`}
-          badgeVariant={totalMissed > 0 ? 'destructive' : 'default'}
-        >
-          {TIME_SLOTS.map((ts) => {
-            const slot = getSlot(ts);
-            return (
-              <ServiceSlotCell
-                key={ts}
-                timeSlot={ts}
-                value={slot.missed}
-                valueClassName={slot.missed > 0 ? 'text-danger' : undefined}
-              />
-            );
-          })}
-        </ServiceMetricCard>
+              {/* 3. Turn-Up Rate */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/20 text-text">
+                      <Percent className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Turn-Up Rate</div>
+                      <div className="text-[11px] text-muted">Attended vs committed</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => {
+                  const slot = getSlot(ts);
+                  const perc = getTurnupPercentage(slot.present, slot.committed);
+                  const isLow = perc < 50;
+                  return (
+                    <td key={ts} className="px-4 py-3.5 text-center">
+                      <div
+                        className={`font-heading text-lg font-bold tabular-nums ${
+                          isLow ? 'text-danger' : 'text-primary'
+                        }`}
+                      >
+                        {perc}%
+                      </div>
+                      <span className="text-[10px] text-muted tabular-nums">
+                        {slot.present}/{slot.committed}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge
+                    variant={overallTurnup < 50 ? 'destructive' : 'default'}
+                    className="text-xs font-bold tabular-nums"
+                  >
+                    {overallTurnup}% Avg
+                  </Badge>
+                </td>
+              </tr>
 
-        {/* 5. Late Check-In */}
-        <ServiceMetricCard
-          icon={<Clock className="h-5 w-5" />}
-          iconClassName="bg-accent/20 text-text"
-          title="Late Check-In"
-          subtitle="Override check-ins"
-          badgeContent={`${totalLateTardy} Total`}
-          badgeVariant="accent"
-        >
-          {TIME_SLOTS.map((ts) => (
-            <ServiceSlotCell key={ts} timeSlot={ts} value={getSlot(ts).late_tardy} />
-          ))}
-        </ServiceMetricCard>
+              {/* 4. Missed Commitments */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
+                      <UserX className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Missed Commitments</div>
+                      <div className="text-[11px] text-muted">Absent volunteers</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => {
+                  const slot = getSlot(ts);
+                  return (
+                    <td key={ts} className="px-4 py-3.5 text-center">
+                      <span
+                        className={`font-heading text-lg font-bold tabular-nums ${
+                          slot.missed > 0 ? 'text-danger' : 'text-text'
+                        }`}
+                      >
+                        {slot.missed}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge
+                    variant={totalMissed > 0 ? 'destructive' : 'default'}
+                    className="text-xs font-bold tabular-nums"
+                  >
+                    {totalMissed} Total
+                  </Badge>
+                </td>
+              </tr>
 
-        {/* 6. Total Walk-In */}
-        <ServiceMetricCard
-          icon={<Users className="h-5 w-5" />}
-          iconClassName="bg-secondary/15 text-secondary"
-          title="Total Walk-In"
-          subtitle="Uncommitted attendees"
-          badgeContent={`${totalWalkIns} Total`}
-          badgeVariant="secondary"
-        >
-          {TIME_SLOTS.map((ts) => (
-            <ServiceSlotCell key={ts} timeSlot={ts} value={getSlot(ts).walk_ins} />
-          ))}
-        </ServiceMetricCard>
+              {/* 5. Late Check-In */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/20 text-text">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Late Check-In</div>
+                      <div className="text-[11px] text-muted">Override check-ins</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => (
+                  <td key={ts} className="px-4 py-3.5 text-center">
+                    <span className="font-heading text-lg font-bold text-text tabular-nums">
+                      {getSlot(ts).late_tardy}
+                    </span>
+                  </td>
+                ))}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge variant="accent" className="text-xs font-bold tabular-nums">
+                    {totalLateTardy} Total
+                  </Badge>
+                </td>
+              </tr>
+
+              {/* 6. Total Walk-In */}
+              <tr className="hover:bg-surface-hover/5">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/15 text-secondary">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-heading font-semibold text-text">Total Walk-In</div>
+                      <div className="text-[11px] text-muted">Uncommitted attendees</div>
+                    </div>
+                  </div>
+                </td>
+                {TIME_SLOTS.map((ts) => (
+                  <td key={ts} className="px-4 py-3.5 text-center">
+                    <span className="font-heading text-lg font-bold text-text tabular-nums">
+                      {getSlot(ts).walk_ins}
+                    </span>
+                  </td>
+                ))}
+                <td className="px-5 py-3.5 text-right">
+                  <Badge variant="secondary" className="text-xs font-bold tabular-nums">
+                    {totalWalkIns} Total
+                  </Badge>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Attendance & Commitment by Role */}
+      {/* Attendance & Commitment by Role Section */}
       <div className="px-8 pb-6">
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs">
           <div className="border-b border-border bg-surface-hover/30 px-5 py-3">
             <h2 className="font-heading text-sm font-semibold text-text">
               Attendance & Commitment by Role

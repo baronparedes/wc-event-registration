@@ -66,7 +66,13 @@ describe('ServiceDashboardShareCard', () => {
     // Overall turn-up header badge
     expect(screen.getByText('84% Overall Turn-Up')).toBeInTheDocument();
 
-    // 6 Metric Cards
+    // Key Service Metrics Table
+    expect(screen.getByText('Key Service Metrics')).toBeInTheDocument();
+    expect(screen.getByText('9AM Service')).toBeInTheDocument();
+    expect(screen.getByText('12NN Service')).toBeInTheDocument();
+    expect(screen.getByText('3PM Service')).toBeInTheDocument();
+
+    // 6 Metrics Rows
     expect(screen.getByText('Committed')).toBeInTheDocument();
     expect(screen.getByText('45 Total')).toBeInTheDocument();
 
