@@ -17,6 +17,7 @@ describe('ServiceDashboardShareCard', () => {
         late_tardy: 2,
         missed: 2,
         roles: { Usher: 10, 'Prayer Coach': 8 },
+        committed_roles: { Usher: 10, 'Prayer Coach': 10 },
       },
       '12NN': {
         committed: 15,
@@ -25,6 +26,7 @@ describe('ServiceDashboardShareCard', () => {
         late_tardy: 1,
         missed: 3,
         roles: { Usher: 8, 'Prayer Coach': 4 },
+        committed_roles: { Usher: 8, 'Prayer Coach': 7 },
       },
       '3PM': {
         committed: 10,
@@ -33,9 +35,11 @@ describe('ServiceDashboardShareCard', () => {
         late_tardy: 0,
         missed: 2,
         roles: { Usher: 5, 'Prayer Coach': 3 },
+        committed_roles: { Usher: 5, 'Prayer Coach': 5 },
       },
     },
     roles: ['Usher', 'Prayer Coach'],
+    committed_roles: ['Usher', 'Prayer Coach'],
   };
 
   it('calculates turnup percentage correctly', () => {
@@ -44,7 +48,7 @@ describe('ServiceDashboardShareCard', () => {
     expect(getTurnupPercentage(5, 10)).toBe(50);
   });
 
-  it('renders overall metrics and slot breakdown for Sunday filter mode', () => {
+  it('renders overall metrics, per-slot cells, and role breakdown for Sunday filter mode', () => {
     render(
       <ServiceDashboardShareCard
         stats={mockStats}
@@ -59,20 +63,37 @@ describe('ServiceDashboardShareCard', () => {
     expect(screen.getByText('Services Dashboard')).toBeInTheDocument();
     expect(screen.getByText('November 1, 2026')).toBeInTheDocument();
 
-    // Summary Metric Cards (Total Expected: 45, Present: 38, Missed: 7, Late: 3, Walk-ins: 6)
-    // Turnup: 38 / 45 = 84%
+    // Overall turn-up header badge
     expect(screen.getByText('84% Overall Turn-Up')).toBeInTheDocument();
-    expect(screen.getByText('45')).toBeInTheDocument();
-    expect(screen.getByText('38')).toBeInTheDocument();
-    expect(screen.getAllByText('7').length).toBeGreaterThanOrEqual(1); // totalMissed
-    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1); // totalLateTardy
-    expect(screen.getByText('6')).toBeInTheDocument(); // totalWalkIns
 
-    // Service Breakdown Table
-    expect(screen.getByText('Service Breakdown by Time Slot')).toBeInTheDocument();
-    expect(screen.getByText('9AM Service')).toBeInTheDocument();
-    expect(screen.getByText('12NN Service')).toBeInTheDocument();
-    expect(screen.getByText('3PM Service')).toBeInTheDocument();
+    // 6 Metric Cards
+    expect(screen.getByText('Committed')).toBeInTheDocument();
+    expect(screen.getByText('45 Total')).toBeInTheDocument();
+
+    expect(screen.getByText('Present')).toBeInTheDocument();
+    expect(screen.getByText('38 Total')).toBeInTheDocument();
+    expect(screen.getByText('+3 walk-in')).toBeInTheDocument();
+
+    expect(screen.getByText('Turn-Up Rate')).toBeInTheDocument();
+    expect(screen.getByText('84% Avg')).toBeInTheDocument();
+
+    expect(screen.getByText('Missed Commitments')).toBeInTheDocument();
+    expect(screen.getByText('7 Total')).toBeInTheDocument();
+
+    expect(screen.getByText('Late Check-In')).toBeInTheDocument();
+    expect(screen.getByText('3 Total')).toBeInTheDocument();
+
+    expect(screen.getByText('Total Walk-In')).toBeInTheDocument();
+    expect(screen.getByText('6 Total')).toBeInTheDocument();
+
+    // Attendance & Commitment by Role Section
+    expect(screen.getByText('Attendance & Commitment by Role')).toBeInTheDocument();
+    expect(screen.getByText('Usher')).toBeInTheDocument();
+    expect(screen.getByText('Prayer Coach')).toBeInTheDocument();
+    // Usher: 23 attended / 23 committed
+    expect(screen.getByText('23 / 23')).toBeInTheDocument();
+    // Prayer Coach: 15 attended / 22 committed
+    expect(screen.getByText('15 / 22')).toBeInTheDocument();
 
     // Footer with legal config
     expect(
@@ -104,7 +125,7 @@ describe('ServiceDashboardShareCard', () => {
     expect(screen.getByText('Year 2026')).toBeInTheDocument();
   });
 
-  it('gracefully handles empty / zero commitments', () => {
+  it('gracefully handles empty roles and zero commitments', () => {
     const emptyStats: DashboardStatsResponse = {
       time_slots: {
         '9AM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, missed: 0, roles: {} },
@@ -112,6 +133,7 @@ describe('ServiceDashboardShareCard', () => {
         '3PM': { committed: 0, present: 0, walk_ins: 0, late_tardy: 0, missed: 0, roles: {} },
       },
       roles: [],
+      committed_roles: [],
     };
 
     render(
@@ -126,5 +148,6 @@ describe('ServiceDashboardShareCard', () => {
 
     expect(screen.getByText('Sunday Service')).toBeInTheDocument();
     expect(screen.getByText('0% Overall Turn-Up')).toBeInTheDocument();
+    expect(screen.getByText('No volunteer roles recorded for this period.')).toBeInTheDocument();
   });
 });

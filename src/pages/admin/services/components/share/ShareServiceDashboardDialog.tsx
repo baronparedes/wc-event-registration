@@ -15,7 +15,7 @@ export type ShareServiceDashboardDialogProps = {
   selectedMonth: number;
 };
 
-const EXPORT_WIDTH_PX = 800;
+const EXPORT_WIDTH_PX = 960;
 
 export function ShareServiceDashboardDialog({
   isOpen,
@@ -49,7 +49,7 @@ export function ShareServiceDashboardDialog({
         shareError: 'Failed to generate shareable image',
       }}
     >
-      <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
+      <Dialog isOpen={isOpen} onClose={onClose} size="5xl">
         <Dialog.Header showCloseButton>
           <Dialog.Title>Share Dashboard Metrics</Dialog.Title>
           <Dialog.Description>
