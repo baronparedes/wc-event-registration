@@ -33,6 +33,7 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
   const hook = await useEdgeHook({
     req,
     functionName: 'cron-weekly-sunday-debrief',
+    allowMissingOrigin: true,
     method: 'POST',
     requireAdmin: true,
     allowCronRole: true,

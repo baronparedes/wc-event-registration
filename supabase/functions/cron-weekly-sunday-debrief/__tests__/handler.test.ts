@@ -192,8 +192,14 @@ async function withEnv(
   }
 }
 
-function request(body: unknown, options: { authHeader?: string; cronKey?: string } = {}) {
-  const headers = new Headers({ origin: ORIGIN, 'content-type': 'application/json' });
+function request(
+  body: unknown,
+  options: { authHeader?: string; cronKey?: string; omitOrigin?: boolean } = {},
+) {
+  const headers = new Headers({ 'content-type': 'application/json' });
+  if (!options.omitOrigin) {
+    headers.set('origin', ORIGIN);
+  }
   if (options.authHeader) {
     headers.set('authorization', options.authHeader);
   }
@@ -396,6 +402,22 @@ Deno.test(
       assertEquals(body.success, true);
       assertEquals(body.brief.sunday_date, '2026-10-18');
       assertEquals(body.emailDeliveries, 1);
+    });
+  },
+);
+
+Deno.test(
+  'handleCronWeeklySundayDebrief successfully processes origin-less pg_net request via cron key',
+  async () => {
+    await withEnv({ apiKey: 'fake-google-api-key' }, async (handle) => {
+      const res = await handle(
+        request({ sunday_date: '2026-10-18' }, { cronKey: 'valid-cron-key', omitOrigin: true }),
+      );
+      assertEquals(res.status, 200);
+      const body = await res.json();
+      assertEquals(body.success, true);
+      assertEquals(body.brief.sunday_date, '2026-10-18');
+      assertEquals(body.metrics.turnupRate, 90);
     });
   },
 );
