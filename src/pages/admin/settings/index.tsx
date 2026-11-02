@@ -77,7 +77,7 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     category: 'Access & Security',
     title: 'User Roles & Permissions',
     description:
-      'Assign, modify, and revoke administrative access (super_admin, admin, slod, imt, kiosk) for authenticated users.',
+      'Assign, modify, and revoke administrative access (super_admin, admin, slod, vmt, imt, kiosk) for authenticated users.',
     to: ROUTE_PATHS.adminUserRoles,
     icon: Shield,
     tag: 'Super Admin',

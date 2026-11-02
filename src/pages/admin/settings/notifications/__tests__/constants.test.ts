@@ -13,7 +13,7 @@ describe('Broadcast Notification Constants', () => {
     expect(BROADCAST_ROLE_CATEGORIES[1].title).toBe('Member / Volunteer Roles');
 
     const authRoleValues = BROADCAST_ROLE_CATEGORIES[0].items.map((i) => i.value);
-    expect(authRoleValues).toEqual(['super_admin', 'admin', 'slod', 'imt', 'kiosk']);
+    expect(authRoleValues).toEqual(['super_admin', 'admin', 'slod', 'vmt', 'imt', 'kiosk']);
   });
 
   it('flattens ALL_BROADCAST_ROLES completely', () => {

@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 export const approvalStatusSchema = z.enum(['pending', 'approved', 'rejected', 'cancelled']);
-export const approvalEntityTypeSchema = z.enum(['form_submission', 'service_excuse']);
+export const approvalEntityTypeSchema = z.enum([
+  'form_submission',
+  'service_excuse',
+  'recruitment_endorsement',
+]);
 
 export const submitApprovalDecisionSchema = z
   .object({
@@ -10,6 +14,7 @@ export const submitApprovalDecisionSchema = z
     decision: z.enum(['approved', 'rejected']),
     notes: z.string().trim().max(1000).optional().nullable(),
     reviewer_email: z.string().trim().email().optional().nullable(),
+    attestation_answers: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((data) => Boolean(data.token || data.approval_id), {
     message: 'Either token or approval_id is required',

@@ -1,5 +1,5 @@
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
-export type ApprovalEntityType = 'form_submission' | 'service_excuse';
+export type ApprovalEntityType = 'form_submission' | 'service_excuse' | 'recruitment_endorsement';
 
 export interface ApprovalRequest {
   id: string;
@@ -55,6 +55,7 @@ export interface SubmitApprovalDecisionInput {
   decision: 'approved' | 'rejected';
   notes?: string | null;
   reviewer_email?: string | null;
+  attestation_answers?: Record<string, unknown>;
 }
 
 export interface ApprovalDecisionResponse {

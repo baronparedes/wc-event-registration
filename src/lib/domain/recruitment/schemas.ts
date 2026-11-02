@@ -1,0 +1,466 @@
+import { z } from 'zod';
+
+import { RECRUITMENT_ROLES, RECRUITMENT_SERVICE_SLOTS } from './constants';
+
+const monthYearPattern = /^\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const timestampSchema = z.string().datetime({ offset: true });
+
+const dateSchema = z
+  .string()
+  .regex(datePattern, 'Date must be in YYYY-MM-DD format')
+  .refine((value) => {
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    );
+  }, 'Date is invalid');
+
+const monthYearSchema = z
+  .string()
+  .regex(monthYearPattern, 'Month and year must use YYYY MMM format');
+
+const dynamicFieldOptionSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  toggle_label: z.string().optional(),
+  toggle_default: z.boolean().optional(),
+});
+
+const dynamicFieldSchema = z.object({
+  id: z.string().optional(),
+  field_key: z.string().trim().min(1),
+  label: z.string(),
+  field_type: z.enum([
+    'text',
+    'textarea',
+    'number',
+    'email',
+    'phone',
+    'select',
+    'radio',
+    'checkbox',
+    'multi_select',
+    'multi_select_toggle',
+    'date',
+    'datetime',
+    'boolean',
+    'color_picker',
+    'rating',
+    'required_approval',
+  ]),
+  is_required: z.boolean(),
+  is_active: z.boolean().optional(),
+  placeholder: z.string().nullable().optional(),
+  help_text: z.string().nullable().optional(),
+  options: z.array(dynamicFieldOptionSchema).optional(),
+  validation_rules: z.record(z.string(), z.unknown()).optional(),
+  display_order: z.number().int().optional(),
+});
+
+const surveyQuestionSchema = dynamicFieldSchema.extend({
+  correct_answer: z.enum(['true', 'false']),
+  explanation: z.string().optional(),
+});
+
+function hasActiveQuestion(questions: Array<{ is_active?: boolean }>): boolean {
+  return questions.some((question) => question.is_active === true);
+}
+
+const surveyQuestionBankSchema = z
+  .array(surveyQuestionSchema)
+  .min(1)
+  .refine(hasActiveQuestion, 'At least one survey question must be active');
+
+const endorsementQuestionBankSchema = z
+  .array(dynamicFieldSchema)
+  .min(1)
+  .refine(hasActiveQuestion, 'At least one endorsement question must be active');
+
+const publicSurveyQuestionBankSchema = z
+  .array(dynamicFieldSchema)
+  .min(1)
+  .refine(hasActiveQuestion, 'At least one survey question must be active');
+
+const eligibilityRulesSchema = z
+  .object({
+    min_age: z.number().int().min(0),
+    max_age: z.number().int().min(0),
+    requires_glc1_completed: z.boolean(),
+    min_dgroup_months: z.number().int().min(0),
+  })
+  .refine((rules) => rules.max_age >= rules.min_age, {
+    message: 'Maximum age must be greater than or equal to minimum age',
+    path: ['max_age'],
+  });
+
+const commitmentsShapeSchema = z.object({
+  first_sunday: z.array(z.enum(RECRUITMENT_SERVICE_SLOTS)).optional(),
+  second_sunday: z.array(z.enum(RECRUITMENT_SERVICE_SLOTS)).optional(),
+  third_sunday: z.array(z.enum(RECRUITMENT_SERVICE_SLOTS)).optional(),
+  fourth_sunday: z.array(z.enum(RECRUITMENT_SERVICE_SLOTS)).optional(),
+  fifth_sunday: z.array(z.enum(RECRUITMENT_SERVICE_SLOTS)).optional(),
+});
+
+const recruitmentStepKeySchema = z.enum([
+  'register',
+  'interview',
+  'orientation',
+  'observation',
+  'evaluation',
+  'onboarding',
+  'vmt_registration',
+  'rfid_releasing',
+  'deployment',
+]);
+
+const recruitmentStepNumberSchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+  z.literal(6),
+  z.literal(7),
+  z.literal(8),
+  z.literal(9),
+]);
+
+const recruitmentApplicationStatusSchema = z.enum([
+  'active',
+  'on_hold',
+  'deployed',
+  'declined',
+  'withdrawn',
+]);
+
+const recruitmentStageStatusSchema = z.enum([
+  'locked',
+  'pending',
+  'scheduled',
+  'in_progress',
+  'completed',
+  'skipped',
+  'declined',
+]);
+
+export const recruitmentStep1Schema = z
+  .object({
+    email: z.string().trim().email().toLowerCase(),
+    first_name: z.string().trim().min(1).max(100),
+    middle_name: z.string().trim().max(100).optional().nullable(),
+    last_name: z.string().trim().min(1).max(100),
+    nickname: z.string().trim().min(1).max(100),
+    phone: z.string().trim().min(5).max(30),
+    date_of_birth: dateSchema,
+    gender: z.enum(['Male', 'Female']),
+    life_stage: z.string().trim().min(1).max(100),
+    desired_role: z.enum(RECRUITMENT_ROLES),
+    personal_details: z.object({
+      wedding_anniversary: dateSchema.optional().nullable(),
+      occupation: z.string().trim().min(1).max(150),
+      company_name: z.string().trim().max(150).optional().nullable(),
+    }),
+    emergency_contact: z.object({
+      name: z.string().trim().min(1).max(150),
+      phone: z.string().trim().min(5).max(30),
+      relation: z.string().trim().min(1).max(100),
+    }),
+    application_history: z.object({
+      is_first_time_applicant: z.boolean(),
+      previous_application_notes: z.string().trim().max(2000).optional().nullable(),
+    }),
+    spiritual_background: z.object({
+      ccf_member_since: monthYearSchema,
+      other_ministries: z.string().trim().max(1000).optional().nullable(),
+      glc1_status: z.enum(['Completed', 'Ongoing', 'None']),
+      glc2_status: z.enum(['Completed', 'Ongoing', 'None']),
+    }),
+    dgroup_info: z.object({
+      is_constant_attendee: z.boolean(),
+      member_since: monthYearSchema,
+      leader_name: z.string().trim().min(1).max(150),
+      leader_email: z.string().trim().email().toLowerCase(),
+      leader_phone: z.string().trim().min(5).max(30),
+      is_dgroup_leader: z.boolean(),
+      leader_since: monthYearSchema.optional().nullable(),
+      dgroup_member_count: z.number().int().positive().optional().nullable(),
+    }),
+    survey_answers: z.record(z.string(), z.enum(['true', 'false'])),
+    applicant_attested: z.literal(true),
+  })
+  .superRefine((application, context) => {
+    if (
+      !application.application_history.is_first_time_applicant &&
+      !application.application_history.previous_application_notes?.trim()
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Previous application details are required for returning applicants',
+        path: ['application_history', 'previous_application_notes'],
+      });
+    }
+
+    if (application.life_stage === 'Married' && !application.personal_details.wedding_anniversary) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Wedding anniversary is required for married applicants',
+        path: ['personal_details', 'wedding_anniversary'],
+      });
+    }
+
+    if (
+      application.dgroup_info.is_dgroup_leader &&
+      (!application.dgroup_info.leader_since || !application.dgroup_info.dgroup_member_count)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'DGroup leader tenure and group size are required for DGroup leaders',
+        path: ['dgroup_info'],
+      });
+    }
+  });
+
+export const dgroupEndorsementDecisionSchema = z.object({
+  action: z.literal('submit_decision'),
+  token: z.string().trim().min(1),
+  decision: z.enum(['approved', 'rejected']),
+  notes: z.string().trim().max(1000).optional().nullable(),
+  attestation_answers: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const applicantCommitmentsSchema = z
+  .object(commitmentsShapeSchema.shape)
+  .refine((commitments) => Object.values(commitments).some((slots) => (slots?.length ?? 0) > 0), {
+    message: 'Select at least one Sunday service slot',
+  });
+
+export const adminUpdateStageSchema = z
+  .object({
+    action: z.enum([
+      'complete_vmt',
+      'save_commitments',
+      'resend_endorsement',
+      'update_stage',
+      'repeat_step',
+      'return_to_observation',
+    ]),
+    application_id: z.string().uuid(),
+    step_number: z.number().int().min(2).max(8).optional(),
+    status: z
+      .enum(['pending', 'scheduled', 'in_progress', 'completed', 'skipped', 'declined', 'on_hold'])
+      .optional(),
+    scheduled_at: z.string().datetime().optional().nullable(),
+    assigned_reviewer_id: z.string().uuid().optional().nullable(),
+    assigned_reviewer_name: z.string().trim().max(150).optional().nullable(),
+    rubric_data: z.record(z.string(), z.unknown()).optional(),
+    notes: z.string().trim().max(5000).optional().nullable(),
+    applicant_visible_notes: z.string().trim().max(2000).optional().nullable(),
+    confirmed_role: z.enum(RECRUITMENT_ROLES).optional(),
+    ccf_vmt_id: z.string().trim().max(100).optional().nullable(),
+    ccf_vmt_date: dateSchema.optional().nullable(),
+    assigned_rfid_member_id: z.string().trim().max(100).optional().nullable(),
+    service_commitments: applicantCommitmentsSchema.optional(),
+    override_endorsement_gate: z.boolean().optional().default(false),
+  })
+  .superRefine((request, context) => {
+    if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'step_number and status are required for update_stage',
+        path: ['step_number'],
+      });
+    }
+    if (
+      request.action === 'repeat_step' &&
+      request.step_number !== 4 &&
+      request.step_number !== 5
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only observation and evaluation can be repeated',
+        path: ['step_number'],
+      });
+    }
+    if (request.action === 'return_to_observation' && request.step_number !== 5) {
+      context.addIssue({
+        code: 'custom',
+        message: 'return_to_observation must reference evaluation step 5',
+        path: ['step_number'],
+      });
+    }
+  });
+
+export const recruitmentSettingsSchema = z.object({
+  is_recruitment_open: z.boolean(),
+  eligibility_rules: eligibilityRulesSchema,
+  vmt_registration_url: z.string().trim().url().or(z.literal('')),
+  orientation_instructions: z.string().trim().max(5000),
+  survey_questions: surveyQuestionBankSchema,
+  endorsement_questions: endorsementQuestionBankSchema,
+});
+
+export const recruitmentSettingsRecordSchema = recruitmentSettingsSchema.extend({
+  id: z.literal(1),
+  updated_at: timestampSchema,
+});
+
+export const publicRecruitmentConfigSchema = z.object({
+  is_recruitment_open: z.boolean(),
+  eligibility_rules: eligibilityRulesSchema,
+  vmt_registration_url: z.string(),
+  orientation_instructions: z.string(),
+  survey_questions: publicSurveyQuestionBankSchema,
+});
+
+const applicantRecruitmentTimelineItemSchema = z.object({
+  step_number: recruitmentStepNumberSchema,
+  step_key: recruitmentStepKeySchema,
+  attempt_number: z.number().int().positive(),
+  status: recruitmentStageStatusSchema,
+  transaction_type: z.enum([
+    'scheduled',
+    'rescheduled',
+    'completed',
+    'repeated_step',
+    'returned_to_observation',
+    'skipped',
+    'on_hold',
+    'declined',
+  ]),
+  scheduled_at: z.string().nullable(),
+  completed_at: z.string().nullable(),
+  assigned_reviewer_name: z.string().nullable(),
+  applicant_visible_notes: z.string().nullable(),
+  created_at: timestampSchema,
+});
+
+export const applicantRecruitmentViewSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  first_name: z.string(),
+  last_name: z.string(),
+  full_name: z.string(),
+  nickname: z.string(),
+  avatar_object_key: z.string().nullable(),
+  desired_role: z.enum(RECRUITMENT_ROLES),
+  confirmed_role: z.enum(RECRUITMENT_ROLES).nullable(),
+  current_step: recruitmentStepNumberSchema,
+  status: recruitmentApplicationStatusSchema,
+  dgroup_approval_status: z.string().nullable(),
+  vmt_registered: z.boolean(),
+  service_commitments: commitmentsShapeSchema,
+  assigned_rfid_member_id: z.string().nullable(),
+  deployed_at: z.string().nullable(),
+  transactions: z.array(applicantRecruitmentTimelineItemSchema),
+});
+
+export const recruitmentApplicationRecordSchema = z
+  .object({
+    id: z.string().uuid(),
+    auth_user_id: z.string().uuid().nullable(),
+    email: z.string().email(),
+    first_name: z.string().min(1),
+    middle_name: z.string().nullable(),
+    last_name: z.string().min(1),
+    full_name: z.string().min(1),
+    nickname: z.string().min(1),
+    phone: z.string().min(1),
+    date_of_birth: dateSchema,
+    gender: z.enum(['Male', 'Female']),
+    life_stage: z.string().min(1),
+    avatar_object_key: z.string().nullable(),
+    desired_role: z.enum(RECRUITMENT_ROLES),
+    confirmed_role: z.enum(RECRUITMENT_ROLES).nullable(),
+    personal_details: z.object({
+      wedding_anniversary: dateSchema.nullable().optional(),
+      occupation: z.string().min(1),
+      company_name: z.string().nullable().optional(),
+    }),
+    emergency_contact: z.object({
+      name: z.string().min(1),
+      phone: z.string().min(1),
+      relation: z.string().min(1),
+    }),
+    application_history: z.object({
+      is_first_time_applicant: z.boolean(),
+      previous_application_notes: z.string().nullable().optional(),
+    }),
+    spiritual_background: z.object({
+      ccf_member_since: monthYearSchema,
+      other_ministries: z.string().nullable().optional(),
+      glc1_status: z.enum(['Completed', 'Ongoing', 'None']),
+      glc2_status: z.enum(['Completed', 'Ongoing', 'None']),
+    }),
+    dgroup_info: z.object({
+      is_constant_attendee: z.boolean(),
+      member_since: monthYearSchema,
+      leader_name: z.string().min(1),
+      leader_email: z.string().email(),
+      leader_phone: z.string().min(1),
+      is_dgroup_leader: z.boolean(),
+      leader_since: monthYearSchema.nullable().optional(),
+      dgroup_member_count: z.number().int().positive().nullable().optional(),
+    }),
+    applicant_attested_at: timestampSchema,
+    survey_answers: z.record(z.string(), z.enum(['true', 'false'])),
+    survey_score: z.number().int().min(0),
+    survey_total: z.number().int().min(0),
+    current_step: recruitmentStepNumberSchema,
+    status: recruitmentApplicationStatusSchema,
+    dgroup_approval_id: z.string().uuid().nullable(),
+    vmt_registered: z.boolean(),
+    ccf_vmt_id: z.string().nullable(),
+    ccf_vmt_date: dateSchema.nullable(),
+    vmt_registered_at: timestampSchema.nullable(),
+    vmt_verified_by: z.string().uuid().nullable(),
+    service_commitments: commitmentsShapeSchema,
+    assigned_rfid_member_id: z.string().nullable(),
+    promoted_user_id: z.string().uuid().nullable(),
+    deployed_at: timestampSchema.nullable(),
+    created_at: timestampSchema,
+    updated_at: timestampSchema,
+  })
+  .refine((application) => application.survey_total >= application.survey_score, {
+    message: 'Survey total cannot be less than the score',
+    path: ['survey_total'],
+  });
+
+export const recruitmentPipelineTransactionSchema = z.object({
+  id: z.string().uuid(),
+  application_id: z.string().uuid(),
+  step_number: recruitmentStepNumberSchema,
+  step_key: recruitmentStepKeySchema,
+  attempt_number: z.number().int().positive(),
+  transaction_type: z.enum([
+    'scheduled',
+    'rescheduled',
+    'completed',
+    'repeated_step',
+    'returned_to_observation',
+    'skipped',
+    'on_hold',
+    'declined',
+  ]),
+  from_step: recruitmentStepNumberSchema.nullable(),
+  to_step: recruitmentStepNumberSchema.nullable(),
+  status: recruitmentStageStatusSchema,
+  assigned_reviewer_id: z.string().uuid().nullable(),
+  assigned_reviewer_name: z.string().nullable(),
+  scheduled_at: timestampSchema.nullable(),
+  completed_at: timestampSchema.nullable(),
+  rubric_data: z.record(z.string(), z.unknown()),
+  notes: z.string().nullable(),
+  applicant_visible_notes: z.string().nullable(),
+  created_by_user_id: z.string().uuid().nullable(),
+  created_at: timestampSchema,
+});
+
+export type RecruitmentStep1Input = z.infer<typeof recruitmentStep1Schema>;
+export type DgroupEndorsementDecisionInput = z.infer<typeof dgroupEndorsementDecisionSchema>;
+export type ApplicantCommitmentsInput = z.infer<typeof applicantCommitmentsSchema>;
+export type AdminUpdateStageInput = z.infer<typeof adminUpdateStageSchema>;
+export type RecruitmentSettingsInput = z.infer<typeof recruitmentSettingsSchema>;

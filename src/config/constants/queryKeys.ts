@@ -1,4 +1,13 @@
 export const QUERY_KEYS = {
+  recruitmentSettings: () => ['recruitment-settings'] as const,
+  publicRecruitmentConfig: () => ['public-recruitment-config'] as const,
+  myRecruitmentApplication: (authUserId?: string) =>
+    authUserId
+      ? (['my-recruitment-application', authUserId] as const)
+      : (['my-recruitment-application'] as const),
+  adminRecruitmentApplications: () => ['admin-recruitment-applications'] as const,
+  adminRecruitmentApplication: (applicationId: string | undefined) =>
+    ['admin-recruitment-application', applicationId] as const,
   publicEventBySlug: (slug: string | null | undefined) => ['public-event-by-slug', slug] as const,
   publicEventListing: () => ['public-event-listing'] as const,
   publicEventFields: (eventId: string | undefined, audience: 'members' | 'guests' | undefined) =>
