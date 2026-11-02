@@ -402,4 +402,45 @@ describe('AdminServicesPage', () => {
 
     vi.useRealTimers();
   });
+
+  it('opens share dashboard modal when Share Dashboard is clicked and closes on Cancel', () => {
+    render(
+      <MemoryRouter>
+        <AdminServicesPage />
+      </MemoryRouter>,
+    );
+
+    // Default stats loaded mock
+    expect(screen.getByText('Services Dashboard')).toBeInTheDocument();
+
+    const shareBtn = screen.getByRole('button', { name: /Share Dashboard/i });
+    expect(shareBtn).not.toBeDisabled();
+    fireEvent.click(shareBtn);
+
+    expect(screen.getByRole('heading', { name: /Share Dashboard Metrics/i })).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+    fireEvent.click(cancelBtn);
+
+    expect(
+      screen.queryByRole('heading', { name: /Share Dashboard Metrics/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('disables share dashboard button when stats are loading', () => {
+    mockUseServiceDashboardQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminServicesPage />
+      </MemoryRouter>,
+    );
+
+    const shareBtn = screen.getByRole('button', { name: /Share Dashboard/i });
+    expect(shareBtn).toBeDisabled();
+  });
 });

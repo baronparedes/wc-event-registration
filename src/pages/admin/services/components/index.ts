@@ -9,3 +9,4 @@ export * from './MissedCommitmentsMobileList';
 export * from './ExportMissedCommitmentsButton';
 export * from './WeeklyDebriefModal';
 export * from './types';
+export * from './share';
