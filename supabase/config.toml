@@ -176,6 +176,10 @@ import_map = "./functions/deno.json"
 verify_jwt = true
 import_map = "./functions/deno.json"
 
+[functions.deploy-recruitment-applicant]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
 [functions.duplicate-event]
 verify_jwt = true
 import_map = "./functions/deno.json"
@@ -304,6 +308,10 @@ import_map = "./functions/deno.json"
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.submit-recruitment-application]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.submit-registration]
 verify_jwt = false
 import_map = "./functions/deno.json"
@@ -329,6 +337,10 @@ verify_jwt = true
 import_map = "./functions/deno.json"
 
 [functions.update-member-id]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.update-recruitment-stage]
 verify_jwt = true
 import_map = "./functions/deno.json"
 

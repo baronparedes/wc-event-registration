@@ -11,7 +11,7 @@ This document defines the architectural blueprint, database schema, backend work
 | Phase                                                                                         | Milestone                                                                         | Target Layer / Surface                                                    | Key Deliverables                                                                                                                                                                                                                                                                         |   Status    |
 | :-------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
 | **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                    | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC | ✅ Complete |
-| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ⬜ Not Done |
+| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ✅ Complete |
 | **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`            | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                     | ⬜ Not Done |
 | **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`     | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ⬜ Not Done |
 | **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/recruitment/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 9-step review & coaching modal (repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy), & `DynamicFieldLike` question bank editor                                                           | ⬜ Not Done |
@@ -23,11 +23,11 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Create `public.recruitment_settings` seeded with 20 Doctrinal Survey & 25 DGroup Endorsement `DynamicFieldLike` questions + `public.get_public_recruitment_config()` RPC
   - [x] Create `public.recruitment_applications`, `public.recruitment_pipeline_transactions`, & `public.recruitment_application_latest_schedules_view` (`security_invoker = true`) with strict RLS
   - [x] Extend `public.approval_entity_type` with `'recruitment_endorsement'` and create `public.get_my_recruitment_application()` & `public.deploy_recruitment_applicant()` RPCs
-- [ ] **Phase 2: Backend Edge Functions & Deno Unit Tests**
-  - [ ] Implement `submit-recruitment-application` Edge Function + Deno unit tests
-  - [ ] Implement `update-recruitment-stage` Edge Function + Deno unit tests
-  - [ ] Implement `deploy-recruitment-applicant` Edge Function + Deno unit tests
-  - [ ] Extend `process-approval-decision` Edge Function for `recruitment_endorsement` + Deno unit tests
+- [x] **Phase 2: Backend Edge Functions & Deno Unit Tests**
+  - [x] Implement `submit-recruitment-application` Edge Function + Deno unit tests
+  - [x] Implement `update-recruitment-stage` Edge Function + Deno unit tests
+  - [x] Implement `deploy-recruitment-applicant` Edge Function + Deno unit tests
+  - [x] Extend `process-approval-decision` Edge Function for `recruitment_endorsement` + Deno unit tests
 - [ ] **Phase 3: Domain Layer (`src/lib/domain/recruitment/`) & Hooks (`src/hooks/domain/recruitment/`)**
   - [ ] Extend `AdminRole` with `'vmt'` in `src/lib/domain/auth/types.ts` and role management UI
   - [ ] Create `constants.ts`, `types.ts`, `schemas.ts`, `api.ts`, and barrel `index.ts` in `src/lib/domain/recruitment/` + Vitest schema tests
@@ -51,7 +51,7 @@ This document defines the architectural blueprint, database schema, backend work
 | Phase                                                                                         | Milestone                                                                         | Target Layer / Surface                                                    | Key Deliverables                                                                                                                                                                                                                                                                         |   Status    |
 | :-------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
 | **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                    | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC | ✅ Complete |
-| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ⬜ Not Done |
+| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ✅ Complete |
 | **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`            | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                     | ⬜ Not Done |
 | **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`     | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ⬜ Not Done |
 | **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/recruitment/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 9-step review & coaching modal (repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy), & `DynamicFieldLike` question bank editor                                                           | ⬜ Not Done |
@@ -63,11 +63,11 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Create `public.recruitment_settings` seeded with 20 Doctrinal Survey & 25 DGroup Endorsement `DynamicFieldLike` questions + `public.get_public_recruitment_config()` RPC
   - [x] Create `public.recruitment_applications`, `public.recruitment_pipeline_transactions`, & `public.recruitment_application_latest_schedules_view` (`security_invoker = true`) with strict RLS
   - [x] Extend `public.approval_entity_type` with `'recruitment_endorsement'` and create `public.get_my_recruitment_application()` & `public.deploy_recruitment_applicant()` RPCs
-- [ ] **Phase 2: Backend Edge Functions & Deno Unit Tests**
-  - [ ] Implement `submit-recruitment-application` Edge Function + Deno unit tests
-  - [ ] Implement `update-recruitment-stage` Edge Function + Deno unit tests
-  - [ ] Implement `deploy-recruitment-applicant` Edge Function + Deno unit tests
-  - [ ] Extend `process-approval-decision` Edge Function for `recruitment_endorsement` + Deno unit tests
+- [x] **Phase 2: Backend Edge Functions & Deno Unit Tests**
+  - [x] Implement `submit-recruitment-application` Edge Function + Deno unit tests
+  - [x] Implement `update-recruitment-stage` Edge Function + Deno unit tests
+  - [x] Implement `deploy-recruitment-applicant` Edge Function + Deno unit tests
+  - [x] Extend `process-approval-decision` Edge Function for `recruitment_endorsement` + Deno unit tests
 - [ ] **Phase 3: Domain Layer (`src/lib/domain/recruitment/`) & Hooks (`src/hooks/domain/recruitment/`)**
   - [ ] Extend `AdminRole` with `'vmt'` in `src/lib/domain/auth/types.ts` and role management UI
   - [ ] Create `constants.ts`, `types.ts`, `schemas.ts`, `api.ts`, and barrel `index.ts` in `src/lib/domain/recruitment/` + Vitest schema tests
@@ -342,6 +342,7 @@ erDiagram
    - Both `survey_questions` and `endorsement_questions` conform directly to `DynamicFieldLike` (`src/lib/domain/dynamic-fields/types.ts`) so they render via `DynamicFieldRenderer` (`src/components/fields/DynamicFieldRenderer.tsx`), validate via `buildDynamicFieldResponseSchema` (`src/lib/domain/dynamic-fields/validation.ts`), and use `DynamicFieldTypeSelector` + `DynamicFieldValidationRulesSection` in `/admin/recruitment/settings`:
      - **`survey_questions` (`RecruitmentSurveyFieldItem[] extends DynamicFieldLike` — 20 Seeded Doctrinal Survey Questions)**:
        - Seeded with the 20 official **Doctrinal Survey** `radio` (`[{ label: 'True', value: 'true' }, { label: 'False', value: 'false' }]`) `DynamicFieldLike` items, plus `correct_answer` (`'true' | 'false'`) and `explanation` (`string`) for auto-scoring and Step 2 Interviewer guidance:
+
          ```json
          {
            "id": "sq_1",
@@ -441,7 +442,7 @@ erDiagram
   - Direct `UPDATE` is restricted to `public.is_admin()`.
   - Public/Kiosk and applicant views call `public.get_public_recruitment_config()` (`SECURITY DEFINER`, `search_path = public`), which returns `is_recruitment_open`, `eligibility_rules`, `vmt_registration_url`, `orientation_instructions`, and `survey_questions` mapped strictly to `DynamicFieldLike` (stripping `correct_answer` and `explanation`).
 
-3. **Table `public.recruitment_applications`**:
+1. **Table `public.recruitment_applications`**:
    - Tracks applicant profile, `desired_role`, `confirmed_role`, `spiritual_background`, `dgroup_info`, `survey_answers`, `survey_score`, `survey_total`, `current_step` (`1..9`), `status` (`'active' | 'on_hold' | 'deployed' | 'declined' | 'withdrawn'`), `dgroup_approval_id`, `vmt_registered`, `ccf_vmt_id`, `ccf_vmt_date`, `service_commitments`, `assigned_rfid_member_id`, and `promoted_user_id`.
    - **RLS**:
      - `anon` (Public / Kiosk): **Zero direct table access** (`NO` `SELECT`, `INSERT`, `UPDATE`, or `DELETE` policy). Kiosk submissions go exclusively through the `submit-recruitment-application` Edge Function (`service_role`), preventing anyone on a shared Kiosk from querying or enumerating applications.
@@ -449,7 +450,7 @@ erDiagram
        - Can `SELECT` their own row when `auth_user_id = auth.uid()` **OR** `lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))` (matching the `/profile` pattern on `public.users`).
        - **Zero direct `UPDATE` or `DELETE` policies** for applicants — all applicant self-service updates (Step 7 VMT confirmation, Step 8 Sunday commitments, Resend Endorsement) go through validated RPCs/Edge Functions so applicants cannot tamper with `current_step`, `status`, `confirmed_role`, or `survey_score`.
      - `authenticated` (Admins, SLODs & VMT — `public.is_recruitment_reviewer()`): Full `SELECT`, `INSERT`, and `UPDATE` policies for Steps 1–8; final transition to `status = 'deployed'` / `current_step = 9` is enforced by `public.deploy_recruitment_applicant` (`public.is_admin_or_slod()`).
-4. **Transaction Table `public.recruitment_pipeline_transactions` & Schedule View**:
+2. **Transaction Table `public.recruitment_pipeline_transactions` & Schedule View**:
    - **Multi-Session & Back-and-Forth Audit Trail**: Unlike a static 1-row-per-step table, `recruitment_pipeline_transactions` is a transactional log (with no unique constraint on `(application_id, step_number)`), allowing an applicant to be scheduled for Observation (`step_number = 4`) and Evaluated (`step_number = 5`) as many times as needed.
    - **Columns**:
      - `step_number` (`1..9`) and `step_key` (`'register'`, `'interview'`, `'orientation'`, `'observation'`, `'evaluation'`, `'onboarding'`, `'vmt_registration'`, `'rfid_releasing'`, `'deployment'`).
@@ -462,10 +463,10 @@ erDiagram
      - Signed-in applicants retrieve their own progress timeline via `public.get_my_recruitment_application()` (`SECURITY DEFINER`, `search_path = public`), which verifies `auth_user_id = auth.uid() OR lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))`, automatically backfills `auth_user_id = auth.uid()` on first sign-in, and returns only safe fields (`step_number`, `step_key`, `attempt_number`, `status`, `scheduled_at`, `completed_at`, `assigned_reviewer_name`, `applicant_visible_notes`) while excluding `notes`, `rubric_data`, and internal `survey_score`.
    - **Latest Schedule View (`public.recruitment_application_latest_schedules_view`)**:
      - Created `with (security_invoker = true)` (per `AGENTS.md` Rule 3) using `DISTINCT ON (application_id, step_number) ... ORDER BY created_at DESC` to expose `scheduled_interview_on`, `scheduled_orientation_on`, `scheduled_observation_on`, `scheduled_evaluation_on`, and `scheduled_operations_onboarding_on` alongside total iteration counts (`observation_count`, `evaluation_count`) for Admin/SLOD/VMT table queries and CSV exports.
-5. **Approval Workflow Extension**:
+3. **Approval Workflow Extension**:
    - `ALTER TYPE public.approval_entity_type ADD VALUE IF NOT EXISTS 'recruitment_endorsement';`
    - Extend `get_approval_review_by_token` and `apply_approval_decision` to support `'recruitment_endorsement'`, saving the DGroup Leader's attestation answers into `approval_requests.metadata` and synchronizing endorsement status on the application.
-6. **Atomic Deployment RPC (`public.deploy_recruitment_applicant`)**:
+4. **Atomic Deployment RPC (`public.deploy_recruitment_applicant`)**:
    - Strictly validates `public.is_admin_or_slod()` (`admin`, `super_admin`, or `slod` — **`vmt` is excluded from executing final deployment**).
    - Verifies `assigned_rfid_member_id` is non-empty and not already used by another user in `public.users`.
    - Verifies at least one Sunday commitment is configured in `service_commitments`.
@@ -517,34 +518,41 @@ sequenceDiagram
 #### 2.3 Edge Function Deliverables (`supabase/functions/`)
 
 1. **`submit-recruitment-application`**:
-   - Public/Kiosk endpoint (does not require an authenticated session; optionally attaches `auth_user_id` if submitted while signed in).
-   - Validates personal details, spiritual background, DGroup leader info, and 20 survey answers via Zod.
-   - Scores the 20 answers against `recruitment_settings.survey_questions`.
-   - Creates the `recruitment_applications` record (`current_step = 2`, Step 1 marked `'completed'`, Step 2 marked `'pending'`, Step 6 marked `'pending'` if `desired_role === 'Prayer Coach'` else `'skipped'`).
-   - Creates `approval_requests` record (`entity_type: 'recruitment_endorsement'`) and enqueues the DGroup Leader endorsement email in `email_queue`.
-   - Unit tests: `supabase/functions/submit-recruitment-application/__tests__/handler.test.ts`.
-2. **`update-recruitment-stage`**:
+
+- Public/Kiosk endpoint with no authenticated-session requirement. It inserts `auth_user_id = null`; own-phone sign-in links the application later by matching the normalized session email.
+- Validates personal details, spiritual background, DGroup leader info, and all required active survey answers via Zod. Unknown survey keys are rejected; optional active questions may be omitted.
+- Scores the 20 answers against `recruitment_settings.survey_questions`.
+- Creates the `recruitment_applications` record (`current_step = 2`, Step 1 marked `'completed'`, Step 2 marked `'pending'`, Step 6 marked `'pending'` if `desired_role === 'Prayer Coach'` else `'skipped'`).
+- Creates and links the `approval_requests` record (`entity_type: 'recruitment_endorsement'`) and enqueues the DGroup Leader endorsement email in `email_queue`. If pipeline, endorsement, linking, or email setup fails, it removes incomplete application/approval records.
+- Unit tests: `supabase/functions/submit-recruitment-application/__tests__/handler.test.ts`.
+
+1. **`update-recruitment-stage`**:
    - Supports two caller modes:
      - **Applicant Self-Service Actions**:
-       - `action: 'complete_vmt'` (Step 7): Sets `vmt_registered = true`, marks Step 7 `'completed'`, advances `current_step` to `8`.
+     - `action: 'complete_vmt'` (Step 7): Calls the service-role-only `public.complete_recruitment_vmt_registration` RPC. The RPC matches the verified actor ID/email, links the account, completes the Step 7 transaction, and advances to Step 8 atomically; retries are idempotent.
        - `action: 'save_commitments'` (Step 8): Saves `service_commitments` (`first_sunday`..`fifth_sunday`).
-       - `action: 'resend_endorsement'` (Step 1): Rate-limited resend of the DGroup Leader magic-link email.
+     - `action: 'resend_endorsement'` (Step 1): Rate-limited resend that rotates the pending DGroup Leader token and resets its 14-day expiry before queuing the email.
      - **Admin / SLOD / VMT Pipeline Actions** (`public.is_recruitment_reviewer()`):
        - `action: 'update_stage'`: Appends/updates a transaction row in `recruitment_pipeline_transactions` (`status`, `scheduled_at`, `assigned_reviewer_id`, `rubric_data`, `notes`, `applicant_visible_notes`, `confirmed_role`, `ccf_vmt_id`, `ccf_vmt_date`, and `assigned_rfid_member_id`).
+     - Reviewer updates are limited to the current step, except Steps 2 (Interview) and 3 (Orientation), which may proceed in parallel. Completing one does not skip an unfinished peer step.
        - `action: 'repeat_step'`: Logs the current session's rubric/notes and schedules another session on the **same** step (`from_step = 4, to_step = 4` for another Observation or `from_step = 5, to_step = 5` for another Evaluation, `transaction_type = 'repeated_step'`, `attempt_number = N + 1`).
        - `action: 'return_to_observation'`: Records an Evaluation outcome requiring additional shadowing (`from_step = 5`, `to_step = 4`, `transaction_type = 'returned_to_observation'`), sets `current_step = 4`, and creates a new Observation session (`attempt_number = N + 1`) so the applicant can observe and be evaluated as many times as needed.
        - Enforces the DGroup Leader endorsement gate before starting Step 4 (Observation) — `dgroup_approval_id` must be `'approved'` to schedule, start, or advance into Step 4+ (unless `override_endorsement_gate: true` is passed by an Admin).
-       - Automatically synchronizes Step 6 (`'skipped'` vs `'pending'`) whenever `confirmed_role` is updated.
+     - Automatically synchronizes Step 6 (`'skipped'` vs `'pending'`) whenever `confirmed_role` is updated through evaluation.
        - Dispatches in-app and email notifications to the applicant when advancing to a new step, returning to Observation for another session, or updating `scheduled_at` / `applicant_visible_notes`.
    - Unit tests: `supabase/functions/update-recruitment-stage/__tests__/handler.test.ts`.
-3. **`deploy-recruitment-applicant`**:
+2. **`deploy-recruitment-applicant`**:
    - Restricted strictly to `admin`, `super_admin`, and `slod` (`public.is_admin_or_slod()` — **`vmt` is forbidden from calling this endpoint**).
    - Invokes `public.deploy_recruitment_applicant` RPC.
-   - Dispatches a celebratory Welcome & Deployment email and in-app notification to the new volunteer.
-   - Unit tests: `supabase/functions/deploy-recruitment-applicant/__tests__/handler.test.ts`.
-4. **`process-approval-decision` (Extended)**:
-   - Accepts optional `attestation_answers` in the request body for `recruitment_endorsement` approvals and persists them into `approval_requests.metadata`.
-   - Updates existing Deno unit tests in `supabase/functions/process-approval-decision/__tests__/handler.test.ts`.
+
+- Dispatches a Welcome & Deployment email and in-app notification to the new volunteer. Already-deployed retries return the existing member result without dispatching duplicate notifications.
+- Unit tests: `supabase/functions/deploy-recruitment-applicant/__tests__/handler.test.ts`.
+
+1. **`process-approval-decision` (Extended)**:
+
+- `get_review_data` returns the limited applicant identity/role summary, configured active endorsement questions, and any previously saved answers for `recruitment_endorsement` tokens.
+- Requires endorsement answers on a decision, validates required and visible values against the configured dynamic fields, rejects unknown keys, and persists only visible answers into `approval_requests.metadata` before applying the decision.
+- Updates existing Deno unit tests in `supabase/functions/process-approval-decision/__tests__/handler.test.ts`.
 
 ---
 
@@ -696,9 +704,12 @@ Every phase must pass `npm run precommit` before completion:
 1. **Edge Function Deno Tests (`npm run test:edge`)**:
    - Unit and handler tests for `submit-recruitment-application`, `update-recruitment-stage`, `deploy-recruitment-applicant`, and `process-approval-decision`.
    - Verify 20-question survey auto-scoring, DGroup Leader email queueing, endorsement gate enforcement before starting Step 4 (Observation), automatic Step 6 skip for non-Prayer Coach roles, and atomic `public.users` promotion at Step 9.
-2. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
+
+- Database integration coverage for the atomic Step 7 RPC is in `supabase/tests/complete_recruitment_vmt_registration.test.sql` and runs with `supabase test db` when the local Supabase/Docker environment is available.
+
+1. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
    - Schema validation tests (`src/lib/domain/recruitment/__tests__/schemas.test.ts`).
    - Applicant Registration Wizard & 9-Step Portal tests (`src/pages/recruitment/__tests__/`).
    - Admin Recruitment Pipeline & Detail Dialog tests (`src/pages/admin/recruitment/__tests__/`).
-3. **Static Analysis & Formatting (`npm run precommit`)**:
+2. **Static Analysis & Formatting (`npm run precommit`)**:
    - Zero TypeScript errors, zero ESLint warnings, zero `any` types, and strict adherence to semantic theme tokens (no `dark:` modifiers).
