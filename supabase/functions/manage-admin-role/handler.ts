@@ -3,7 +3,7 @@ import { useEdgeHook } from '@/shared/edge.ts';
 import { errorResponse, jsonResponse } from '@/shared/http.ts';
 import { z } from '@/shared/validation.ts';
 
-const assignableRoleSchema = z.enum(['admin', 'slod', 'imt', 'kiosk']);
+const assignableRoleSchema = z.enum(['admin', 'slod', 'vmt', 'imt', 'kiosk']);
 
 const manageAdminRoleRequestSchema = z.discriminatedUnion('action', [
   z.object({

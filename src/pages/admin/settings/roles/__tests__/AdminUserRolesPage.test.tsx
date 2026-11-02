@@ -92,6 +92,14 @@ const mockAssignments = [
     created_at: '2026-02-03T00:00:00Z',
   },
   {
+    id: 'admin-row-vmt',
+    auth_user_id: 'user-id-vmt',
+    avatar_object_key: null,
+    email: 'vmtuser@example.com',
+    role: 'vmt' as const,
+    created_at: '2026-02-03T12:00:00Z',
+  },
+  {
     id: 'admin-row-5',
     auth_user_id: 'user-id-kiosk',
     avatar_object_key: null,
@@ -179,6 +187,7 @@ describe('AdminUserRolesPage', () => {
     expect(screen.getByText('regularadmin@example.com')).toBeInTheDocument();
     expect(screen.getByText('sloduser@example.com')).toBeInTheDocument();
     expect(screen.getByText('imtuser@example.com')).toBeInTheDocument();
+    expect(screen.getByText('vmtuser@example.com')).toBeInTheDocument();
     expect(screen.getByText('kioskuser@example.com')).toBeInTheDocument();
 
     expect(screen.getByText('Protected')).toBeInTheDocument();
@@ -241,6 +250,24 @@ describe('AdminUserRolesPage', () => {
     expect(mockToastSuccess).toHaveBeenCalledWith('Role "admin" assigned to newuser@example.com.');
   });
 
+  it('assigns the VMT role to a user', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Role to User' }));
+    fireEvent.click(screen.getByText('newuser@example.com'));
+    fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
+    fireEvent.click(screen.getByRole('option', { name: 'VMT' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Role' }));
+
+    await waitFor(() => {
+      expect(mockAssignMutateAsync).toHaveBeenCalledWith({
+        action: 'assign',
+        auth_user_id: 'user-id-new',
+        role: 'vmt',
+      });
+    });
+  });
+
   it('handles assign error gracefully', async () => {
     mockAssignMutateAsync.mockRejectedValueOnce(new Error('Assign error'));
 
@@ -278,6 +305,23 @@ describe('AdminUserRolesPage', () => {
     expect(mockToastSuccess).toHaveBeenCalledWith(
       'Role for regularadmin@example.com updated to "slod".',
     );
+  });
+
+  it('updates an assigned user to the VMT role', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit role for regularadmin@example.com' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
+    fireEvent.click(screen.getByRole('option', { name: 'VMT' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
+        action: 'update',
+        admin_id: 'admin-row-2',
+        role: 'vmt',
+      });
+    });
   });
 
   it('handles update error gracefully', async () => {

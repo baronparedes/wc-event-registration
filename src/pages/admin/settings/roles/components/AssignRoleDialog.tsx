@@ -37,6 +37,7 @@ type AssignRoleDialogProps = {
 const ROLE_OPTIONS: Array<{ value: AssignableAdminRole; label: string }> = [
   { value: 'admin', label: 'Admin' },
   { value: 'slod', label: 'SLOD' },
+  { value: 'vmt', label: 'VMT' },
   { value: 'imt', label: 'IMT' },
   { value: 'kiosk', label: 'Kiosk' },
 ];

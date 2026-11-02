@@ -73,6 +73,7 @@ function renderDrawer(options?: {
       'canReadDashboard',
       'canManageServices',
     ],
+    vmt: ['canWriteAdminData', 'canReadAdminData', 'canReadAdminMemberData', 'canReadDashboard'],
     slod: ['canReadAdminData', 'canReadAdminMemberData', 'canReadDashboard', 'canManageServices'],
     imt: ['canReadAdminMemberData', 'canReadDashboard'],
     kiosk: ['canAccessAttendanceCheckIn'],
