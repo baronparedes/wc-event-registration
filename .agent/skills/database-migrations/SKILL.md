@@ -22,9 +22,11 @@ All migration files MUST follow the strict timestamped naming pattern:
 supabase/migrations/YYYYMMDDHHMMSS_<descriptive_action_name>.sql
 ```
 
-- **Format:** 14-digit UTC/local timestamp (`YYYYMMDDHHMMSS`) followed by snake_case description.
+- **Format:** 14-digit UTC timestamp (`YYYYMMDDHHMMSS`) followed by a snake_case description.
 - **Example:** `20260926164000_create_service_exception_dates_table.sql`
-- **Chronological Sequence:** Never backdate timestamps behind already applied migrations on `main`. Ensure each new migration's timestamp is strictly later than existing migrations.
+- **Use the Real Timestamp:** Generate the prefix from the system clock when creating the migration (for example, `date -u +%Y%m%d%H%M%S`). The prefix represents the migration's creation time; it is not a sequence number.
+- **No Fabricated Series:** Do not invent times, append counters, or use patterns such as `001`, `002`, `010`, or evenly spaced minute values to order migrations. Give each migration its own actual UTC timestamp. If two files would receive the same second, obtain a fresh timestamp after the clock advances instead of incrementing the digits manually.
+- **Chronological Sequence:** Ensure each new timestamp is strictly later than the latest migration already in the repository or applied to `main`. If the system clock would produce an earlier timestamp, stop and resolve the clock/version conflict rather than fabricating a later one.
 
 ---
 
@@ -147,7 +149,7 @@ Declaring `with (security_invoker = true)` ensures that queries against the view
 
 Before finalizing any migration:
 
-- [ ] Migration filename matches `YYYYMMDDHHMMSS_description.sql`.
+- [ ] Migration filename uses its actual UTC creation timestamp in `YYYYMMDDHHMMSS_description.sql` format, with no fabricated sequence suffix.
 - [ ] Scope is focused (1 table or 1 RPC per file when possible).
 - [ ] Strictly no `anon` access or table privileges granted.
 - [ ] All database views declare `with (security_invoker = true)` to enforce underlying RLS.
