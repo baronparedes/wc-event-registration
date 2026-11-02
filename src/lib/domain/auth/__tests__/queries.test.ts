@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { canAdminPerform } from '@/lib/domain/auth/permissions';
-import { fetchAdminAuthState } from '@/lib/domain/auth/queries';
+import { fetchAdminAuthState, fetchAuthSession } from '@/lib/domain/auth/queries';
 
 const { mockGetSession, mockRpc } = vi.hoisted(() => {
   const mockGetSession = vi.fn();
@@ -23,6 +23,29 @@ vi.mock('@/lib/infrastructure', async () => {
       rpc: mockRpc,
     },
   };
+});
+
+describe('fetchAuthSession', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns a signed-in non-admin session without querying admin permissions', async () => {
+    const session = { user: { id: 'member-user' } };
+    mockGetSession.mockResolvedValue({ data: { session }, error: null });
+
+    await expect(fetchAuthSession()).resolves.toBe(session);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('throws when session retrieval fails', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: null },
+      error: new Error('session failed'),
+    });
+
+    await expect(fetchAuthSession()).rejects.toThrow('session failed');
+  });
 });
 
 describe('fetchAdminAuthState', () => {

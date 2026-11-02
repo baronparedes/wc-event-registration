@@ -19,6 +19,7 @@ interface ProcessApprovalDecisionPayload {
   decision?: 'approved' | 'rejected';
   notes?: string | null;
   reviewer_email?: string | null;
+  attestation_answers?: Record<string, unknown>;
   assigned_to_email?: string | null;
   assigned_to_user_id?: string | null;
 }
@@ -122,6 +123,7 @@ export async function submitApprovalDecision(
     decision: validated.decision,
     notes: validated.notes,
     reviewer_email: validated.reviewer_email,
+    attestation_answers: validated.attestation_answers,
   });
 
   if (!response.success) {

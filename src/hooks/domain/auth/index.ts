@@ -9,6 +9,7 @@ export {
   type AuthUserItem,
 } from '@/lib/domain/auth';
 export { useAdminAuthQuery } from './useAdminAuthQuery';
+export { useAuthSessionQuery } from './useAuthSessionQuery';
 export { useAdminLoginMutation } from './useAdminLoginMutation';
 export { useAdminLogoutMutation } from './useAdminLogoutMutation';
 export { useGoogleLoginMutation } from './useGoogleLoginMutation';

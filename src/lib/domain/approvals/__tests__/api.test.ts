@@ -151,10 +151,16 @@ describe('approvals API', () => {
         status: 'approved',
       });
 
+      const attestationAnswers = {
+        leader_full_name: 'Test DGroup Leader',
+        recommendation_decision: 'Yes',
+      };
+
       const result = await submitApprovalDecision({
         token: 'token-123',
         decision: 'approved',
         notes: 'Looks good',
+        attestation_answers: attestationAnswers,
       });
 
       expect(mockCaller).toHaveBeenCalledWith({
@@ -164,6 +170,7 @@ describe('approvals API', () => {
         decision: 'approved',
         notes: 'Looks good',
         reviewer_email: undefined,
+        attestation_answers: attestationAnswers,
       });
       expect(result.success).toBe(true);
       expect(result.status).toBe('approved');

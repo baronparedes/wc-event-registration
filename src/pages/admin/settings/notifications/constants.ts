@@ -17,6 +17,7 @@ export const BROADCAST_ROLE_CATEGORIES: RoleCategory[] = [
       { value: 'super_admin', label: 'Super Admin' },
       { value: 'admin', label: 'Admin' },
       { value: 'slod', label: 'SLOD' },
+      { value: 'vmt', label: 'VMT' },
       { value: 'imt', label: 'IMT' },
       { value: 'kiosk', label: 'Kiosk' },
     ],

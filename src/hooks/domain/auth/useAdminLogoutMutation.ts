@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { QUERY_KEYS } from '@/config/constants';
 import { CURRENT_PROFILE_QUERY_KEY } from '@/hooks/domain/members/queries/useCurrentProfileQuery';
 import { ADMIN_AUTH_QUERY_KEY, type AdminAuthState } from '@/lib/domain/auth';
 import { supabase } from '@/lib/infrastructure';
@@ -18,6 +19,7 @@ export function useAdminLogoutMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
       queryClient.removeQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.myRecruitmentApplication() });
       queryClient.setQueryData<AdminAuthState>(ADMIN_AUTH_QUERY_KEY, {
         isAuthenticated: false,
         session: null,
