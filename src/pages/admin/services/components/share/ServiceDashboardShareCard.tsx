@@ -1,22 +1,20 @@
-import { format, parseISO } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { CalendarDays, Clock, Handshake, Percent, UserCheck, UserX, Users } from 'lucide-react';
 
-import { AiBrandIcon } from '@/components/ui';
+import { Badge, BrandAvatar } from '@/components/ui';
+import { LEGAL_CONFIG } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 import { type ServiceTimeSlot, TIME_SLOTS } from '@/pages/admin/services/constants';
 
-type ServiceDashboardShareCardProps = {
+import { getTurnupPercentage } from './utils';
+
+export type ServiceDashboardShareCardProps = {
   stats: DashboardStatsResponse;
   filterMode: 'sunday' | 'month' | 'annual';
   selectedSunday: string;
   selectedYear: number;
   selectedMonth: number;
 };
-
-function getTurnupPercentage(present: number, committed: number) {
-  if (committed === 0) return 0;
-  return Math.round((present / committed) * 100);
-}
 
 export function ServiceDashboardShareCard({
   stats,
@@ -45,80 +43,143 @@ export function ServiceDashboardShareCard({
   const totalWalkIns = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).walk_ins, 0);
 
   const displayDate = () => {
-    if (filterMode === 'sunday') {
-      return format(parseISO(selectedSunday), 'MMMM d, yyyy');
+    try {
+      if (filterMode === 'sunday') {
+        if (!selectedSunday) return 'Sunday Service';
+        const parsed = parseISO(selectedSunday);
+        return isValid(parsed) ? format(parsed, 'MMMM d, yyyy') : selectedSunday;
+      }
+      if (filterMode === 'month') {
+        if (!selectedYear || !selectedMonth) return 'Monthly Summary';
+        const d = new Date(selectedYear, selectedMonth - 1, 1);
+        return isValid(d) ? format(d, 'MMMM yyyy') : `Month ${selectedMonth}, ${selectedYear}`;
+      }
+      return selectedYear ? `Year ${selectedYear}` : 'Annual Summary';
+    } catch {
+      return 'Services Dashboard';
     }
-    if (filterMode === 'month') {
-      return format(new Date(selectedYear, selectedMonth - 1, 1), 'MMMM yyyy');
-    }
-    return `Year ${selectedYear}`;
   };
 
   return (
-    <div className="relative flex flex-col w-[800px] overflow-hidden bg-background font-sans text-text shadow-2xl">
-      {/* Background decoration */}
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-secondary/5 blur-3xl" />
-
+    <div
+      style={{ width: '800px', minWidth: '800px', maxWidth: '800px' }}
+      className="relative flex flex-col w-[800px] min-w-[800px] max-w-[800px] shrink-0 box-border rounded-2xl border border-border bg-surface font-sans text-text shadow-sm overflow-hidden"
+    >
       {/* Header section */}
-      <div className="relative z-10 flex items-center justify-between border-b border-border/50 bg-surface/50 px-8 py-6 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-border bg-surface px-8 py-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-border/50">
-            <AiBrandIcon className="h-8 w-8 text-primary" />
-          </div>
+          <BrandAvatar size="md" alt={LEGAL_CONFIG.appName} />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-text">Service Dashboard</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-text">Services Dashboard</h1>
             <div className="mt-1 flex items-center gap-2 text-sm font-medium text-muted">
               <CalendarDays className="h-4 w-4 text-primary" />
               <span>{displayDate()}</span>
             </div>
           </div>
         </div>
+
+        <div>
+          <Badge
+            variant={overallTurnup < 50 ? 'destructive' : 'default'}
+            className="text-sm px-3 py-1 font-bold"
+          >
+            {overallTurnup}% Overall Turn-Up
+          </Badge>
+        </div>
       </div>
 
-      <div className="relative z-10 grid grid-cols-3 gap-5 p-8">
-        {/* Metric Cards */}
+      {/* Summary Metric Cards */}
+      <div className="grid grid-cols-3 gap-4 p-8 pb-6">
         <MetricCard
           title="Turn-Up Rate"
           value={`${overallTurnup}%`}
-          icon={<Percent className="h-6 w-6 text-accent" />}
+          icon={<Percent className="h-5 w-5 text-accent" />}
           iconBg="bg-accent/20"
         />
         <MetricCard
           title="Present Volunteers"
           value={totalPresent}
-          icon={<UserCheck className="h-6 w-6 text-secondary" />}
+          icon={<UserCheck className="h-5 w-5 text-secondary" />}
           iconBg="bg-secondary/20"
         />
         <MetricCard
           title="Expected Volunteers"
           value={totalCommitted}
-          icon={<Handshake className="h-6 w-6 text-primary" />}
+          icon={<Handshake className="h-5 w-5 text-primary" />}
           iconBg="bg-primary/20"
         />
         <MetricCard
           title="Missed Commitments"
           value={totalMissed}
-          icon={<UserX className="h-6 w-6 text-danger" />}
+          icon={<UserX className="h-5 w-5 text-danger" />}
           iconBg="bg-danger/20"
         />
         <MetricCard
           title="Late Check-In"
           value={totalLateTardy}
-          icon={<Clock className="h-6 w-6 text-accent" />}
+          icon={<Clock className="h-5 w-5 text-accent" />}
           iconBg="bg-accent/20"
         />
         <MetricCard
           title="Walk-In Attendees"
           value={totalWalkIns}
-          icon={<Users className="h-6 w-6 text-secondary" />}
+          icon={<Users className="h-5 w-5 text-secondary" />}
           iconBg="bg-secondary/20"
         />
       </div>
 
+      {/* Service Slot Breakdown */}
+      <div className="px-8 pb-6">
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-surface">
+          <div className="border-b border-border/70 bg-surface-hover/30 px-4 py-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted">
+              Service Breakdown by Time Slot
+            </span>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border/60 bg-surface-hover/10 text-xs font-semibold text-muted">
+              <tr>
+                <th className="px-4 py-2.5">Service Slot</th>
+                <th className="px-4 py-2.5 text-center">Expected</th>
+                <th className="px-4 py-2.5 text-center">Present</th>
+                <th className="px-4 py-2.5 text-center">Turn-Up Rate</th>
+                <th className="px-4 py-2.5 text-center">Missed</th>
+                <th className="px-4 py-2.5 text-center">Late</th>
+                <th className="px-4 py-2.5 text-center">Walk-In</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50 text-text">
+              {TIME_SLOTS.map((ts) => {
+                const slot = getSlot(ts);
+                const perc = getTurnupPercentage(slot.present, slot.committed);
+                return (
+                  <tr key={ts} className="hover:bg-surface-hover/10">
+                    <td className="px-4 py-2.5 font-semibold">{ts} Service</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums">{slot.committed}</td>
+                    <td className="px-4 py-2.5 text-center font-medium text-secondary tabular-nums">
+                      {slot.present}
+                    </td>
+                    <td className="px-4 py-2.5 text-center font-semibold tabular-nums">
+                      <span className={perc < 50 ? 'text-danger' : 'text-primary'}>{perc}%</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center tabular-nums">
+                      <span className={slot.missed > 0 ? 'font-medium text-danger' : 'text-muted'}>
+                        {slot.missed}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center tabular-nums">{slot.late_tardy}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums">{slot.walk_ins}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Footer */}
-      <div className="relative z-10 border-t border-border/50 bg-surface/30 px-8 py-4 text-center text-sm text-muted backdrop-blur-sm">
-        Generated from CCF Welcome Center on {format(new Date(), 'MMM d, yyyy')}
+      <div className="border-t border-border bg-surface-hover/20 px-8 py-3.5 text-center text-xs text-muted">
+        Generated from {LEGAL_CONFIG.organizationName} on {format(new Date(), 'MMM d, yyyy')}
       </div>
     </div>
   );
@@ -136,12 +197,12 @@ function MetricCard({
   iconBg: string;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-border/60 bg-surface p-6 shadow-sm">
-      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} mb-4`}>
+    <div className="flex flex-col items-center rounded-xl border border-border/70 bg-surface-hover/20 p-4 shadow-2xs">
+      <div className={`mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
         {icon}
       </div>
-      <div className="mb-1 text-3xl font-bold tracking-tight text-text tabular-nums">{value}</div>
-      <div className="text-sm font-medium uppercase tracking-wider text-muted">{title}</div>
+      <div className="mb-0.5 text-2xl font-bold tracking-tight text-text tabular-nums">{value}</div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted">{title}</div>
     </div>
   );
 }

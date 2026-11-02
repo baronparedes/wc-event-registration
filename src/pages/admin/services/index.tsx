@@ -121,8 +121,11 @@ export function AdminServicesPage() {
               Attendance Data
             </Button>
             <Button
+              type="button"
+              variant="outline"
               className="w-full sm:w-auto sm:inline-flex"
               onClick={() => setIsShareModalOpen(true)}
+              disabled={isLoading || isError || !stats}
             >
               <Share2 className="mr-1.5 h-4 w-4" />
               Share Dashboard
