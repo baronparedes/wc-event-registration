@@ -168,6 +168,7 @@ The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/
   - [`edge-function-testing`](.agent/skills/edge-function-testing/SKILL.md): Incremental Deno unit, handler, and local-Supabase integration testing for Supabase Edge Functions.
   - [`chat-tools`](.agent/skills/chat-tools/SKILL.md): Guidelines for authoring chat tools in `supabase/functions/chat/tools/`, standardized timeframe schemas, and tool parameter validation.
   - [`background-jobs`](.agent/skills/background-jobs/skill.md): Asynchronous database job queues, email queues, retry patterns, and worker logic.
+  - [`scheduled-jobs`](.agent/skills/scheduled-jobs/SKILL.md): Authoring, scheduling, securing, and testing recurring background cron jobs using Supabase `pg_cron`, `pg_net`, PGMQ queues, Vault secrets, and GitHub Actions scheduled workflows.
   - [`database-migrations`](.agent/skills/database-migrations/SKILL.md): Supabase SQL migration authoring rules, timestamp naming conventions, single responsibility decomposition, idempotent DDL/RLS patterns, and RPC signature preservation.
 - **Data Transformation, Formatting & Testing**:
   - [`dynamic-fields`](.agent/skills/dynamic-fields/SKILL.md): Centralized Dynamic Field registry, schema validation, parsing, admin controls, and modular renderers across Events, Forms, and Attendance.
