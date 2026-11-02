@@ -2,35 +2,33 @@ import type { ComputedSundayMetrics, DebriefParsedResponse } from './types.ts';
 
 export function getSystemPrompt(): string {
   return `You are a ministry operations analyst for the CCF Welcome Center.
-Author a concise, factual 3-paragraph Sunday debrief for the Officer-in-Charge (OIC).
+Author a concise, highly readable executive debrief for the Officer-in-Charge (OIC).
 
-Strict Guidelines:
-- Strictly factual, data-driven, and concise. No fluff, greetings, preambles, or sign-offs.
-- PARAGRAPH 1 (Attendance Overview): Report the overall turn-up rate percentage, total present vs committed volunteers, and peak attendance slot.
-- PARAGRAPH 2 (Role Variances): Highlight specific role surpluses and deficits (e.g. Ushers, Greeters, Prayer Coaches) by slot with exact numbers.
-- PARAGRAPH 3 (Walk-ins & Action Items): Detail total walk-in volunteers, notable flow trends, and 1-2 actionable operational takeaways for next Sunday.
+Readability & Style Guidelines:
+- High-level synthesis over raw data: Write for quick scanning. Keep paragraphs short (2-3 sentences max).
+- DO NOT LIST EVERY ROLE OR DELTA: Never mechanically recite every role or slot's plus/minus in running prose. The OIC already has the data table.
+- Focus only on the 1 or 2 biggest operational takeaways and outliers (e.g. highlight the primary bottleneck). Ignore trivial ±1 variations.
+- Professional, objective, and plain-spoken: Avoid storytelling fluff, editorial praise, or run-on parenthetical lists.
+
+Structure (exactly 3 short, readable paragraphs separated by \\n\\n):
+- PARAGRAPH 1 (Attendance Overview): High-level snapshot of overall turn-up percentage, total shifts filled vs committed, unique volunteer count, and peak service slot. (2 sentences max).
+- PARAGRAPH 2 (Key Staffing Bottlenecks): Synthesize the single largest role shortage across the day and where it hit hardest. Mention any major surplus role in 1 sentence. (2-3 sentences max).
+- PARAGRAPH 3 (Operational Takeaways): Note total walk-in volunteer impact in 1 sentence, and give 1-2 practical staffing priorities for the upcoming Sunday. (2 sentences max).
 
 Output ONLY a valid JSON object matching this schema:
 {
-  "summary": "Three distinct paragraphs separated by double newlines (\\n\\n). Crisp, direct, and professional tone.",
+  "summary": "Three short, scannable paragraphs separated by double newlines (\\n\\n). Crisp, clear prose without run-on number lists.",
   "keyHighlights": [
-    "3 to 5 concise executive bullet strings (under 60 characters each)",
-    "e.g. 'Turn-up reached 92.5% (64/70 volunteers)'",
-    "e.g. 'Peak Service: 9:00 AM (38 present)'",
-    "e.g. 'Usher shortage across 12:00 NN slot (-2)'",
-    "e.g. '6 Walk-in volunteers accommodated'"
+    "3 to 5 concise executive bullets (under 60 characters each)",
+    "e.g. 'Turn-up reached 75.1% across 143 unique volunteers'",
+    "e.g. 'Peak service: 12NN with 65 volunteers present'",
+    "e.g. 'Primary shortage: Prayer Coach (-46 across all slots)'",
+    "e.g. '37 walk-in volunteers helped cover operational gaps'"
   ]
 }`;
 }
 
 export function getUserPrompt(metrics: ComputedSundayMetrics): string {
-  const surplusStr =
-    metrics.overallSurplusRoles.length > 0
-      ? metrics.overallSurplusRoles
-          .map((r) => `${r.role}: ${r.present}/${r.committed} (+${r.diff})`)
-          .join(', ')
-      : 'None';
-
   const deficitStr =
     metrics.overallDeficitRoles.length > 0
       ? metrics.overallDeficitRoles
@@ -38,11 +36,18 @@ export function getUserPrompt(metrics: ComputedSundayMetrics): string {
           .join(', ')
       : 'None';
 
+  const surplusStr =
+    metrics.overallSurplusRoles.length > 0
+      ? metrics.overallSurplusRoles
+          .map((r) => `${r.role}: ${r.present}/${r.committed} (+${r.diff})`)
+          .join(', ')
+      : 'None';
+
   const slotBreakdown = metrics.slotSummaries
     .map((s) => {
-      const surplus = s.surplusRoles.map((r) => `${r.role} (+${r.diff})`).join(', ') || 'None';
       const deficit = s.deficitRoles.map((r) => `${r.role} (${r.diff})`).join(', ') || 'None';
-      return `Slot ${s.slot}: Committed=${s.committed}, Present=${s.present}, Walk-ins=${s.walkIns}, Turn-up=${s.turnupRate}%. Surplus=[${surplus}], Deficits=[${deficit}]`;
+      const surplus = s.surplusRoles.map((r) => `${r.role} (+${r.diff})`).join(', ') || 'None';
+      return `Slot ${s.slot}: Committed=${s.committed}, Present=${s.present}, Walk-ins=${s.walkIns}, Turn-up=${s.turnupRate}%. Deficits=[${deficit}], Surplus=[${surplus}]`;
     })
     .join('\n');
 
@@ -51,14 +56,15 @@ export function getUserPrompt(metrics: ComputedSundayMetrics): string {
 - Total Committed: ${metrics.totalCommitted}
 - Total Present: ${metrics.totalPresent}
 - Total Walk-ins: ${metrics.totalWalkIns}
+- Unique Volunteers: ${metrics.uniqueVolunteers}
 - Peak Attendance Slot: ${metrics.peakSlot}
-- Overall Surplus Roles: ${surplusStr}
 - Overall Deficit Roles: ${deficitStr}
+- Overall Surplus Roles: ${surplusStr}
 
 Slots:
 ${slotBreakdown}
 
-Generate the debrief JSON now.`;
+Generate the debrief JSON now. Synthesize top patterns into short, readable prose. Do NOT list every role delta in a run-on sentence.`;
 }
 
 /**

@@ -36,6 +36,7 @@ describe('ShareServiceDashboardDialog', () => {
       },
     },
     roles: [],
+    unique_volunteers: 35,
   };
 
   beforeEach(() => {

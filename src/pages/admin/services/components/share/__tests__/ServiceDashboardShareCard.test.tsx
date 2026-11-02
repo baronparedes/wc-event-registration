@@ -40,6 +40,7 @@ describe('ServiceDashboardShareCard', () => {
     },
     roles: ['Usher', 'Prayer Coach'],
     committed_roles: ['Usher', 'Prayer Coach'],
+    unique_volunteers: 35,
   };
 
   it('calculates turnup percentage correctly', () => {
@@ -63,7 +64,8 @@ describe('ServiceDashboardShareCard', () => {
     expect(screen.getByText('Services Dashboard')).toBeInTheDocument();
     expect(screen.getByText('November 1, 2026')).toBeInTheDocument();
 
-    // Overall turn-up header badge
+    // Unique volunteers and overall turn-up header badges
+    expect(screen.getByText('35 Unique Volunteers')).toBeInTheDocument();
     expect(screen.getByText('84% Overall Turn-Up')).toBeInTheDocument();
 
     // Key Service Metrics Table
@@ -140,6 +142,7 @@ describe('ServiceDashboardShareCard', () => {
       },
       roles: [],
       committed_roles: [],
+      unique_volunteers: 0,
     };
 
     render(

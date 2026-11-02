@@ -387,6 +387,7 @@ export interface SundayDebriefEmailTextParams {
   totalCommitted: number;
   totalPresent: number;
   totalWalkIns: number;
+  uniqueVolunteers?: number;
   summary: string;
   keyHighlights: string[];
   actionUrl: string;
@@ -397,8 +398,10 @@ export interface SundayDebriefEmailTextParams {
  */
 export function formatSundayDebriefEmailText(params: SundayDebriefEmailTextParams): string {
   const highlightsList = params.keyHighlights.map((h) => `• ${h}`).join('\n');
+  const uniqueStr =
+    params.uniqueVolunteers !== undefined ? ` | Unique Volunteers: ${params.uniqueVolunteers}` : '';
   return `CCF Welcome Center — Sunday Executive Debrief (${params.sundayDate})
-Turn-up Rate: ${params.turnupRate}% | Peak: ${params.peakSlot}
+Turn-up Rate: ${params.turnupRate}% | Peak: ${params.peakSlot}${uniqueStr}
 Present: ${params.totalPresent} / ${params.totalCommitted} | Walk-ins: +${params.totalWalkIns}
 
 ${params.summary}

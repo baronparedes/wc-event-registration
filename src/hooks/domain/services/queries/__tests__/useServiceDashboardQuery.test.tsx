@@ -25,6 +25,7 @@ describe('useServiceDashboardQuery', () => {
       },
       roles: ['Usher'],
       committed_roles: ['Usher'],
+      unique_volunteers: 4,
     });
     const { result } = renderHookWithClient(() =>
       useServiceDashboardQuery({ year: 2026, month: 3 }),
@@ -38,6 +39,7 @@ describe('useServiceDashboardQuery', () => {
     expect(result.current.data?.time_slots['12NN'].committed_roles).toEqual({});
     expect(result.current.data?.roles).toEqual(['Usher']);
     expect(result.current.data?.committed_roles).toEqual(['Usher']);
+    expect(result.current.data?.unique_volunteers).toBe(4);
   });
 
   it('prioritizes a selected Sunday and normalizes an empty response', async () => {
@@ -52,6 +54,7 @@ describe('useServiceDashboardQuery', () => {
     expect(result.current.data?.time_slots['3PM'].committed_roles).toEqual({});
     expect(result.current.data?.roles).toEqual([]);
     expect(result.current.data?.committed_roles).toEqual([]);
+    expect(result.current.data?.unique_volunteers).toBe(0);
   });
 
   it('does not request stats with no date and exposes request errors', async () => {

@@ -1,5 +1,6 @@
-import { Clock, Handshake, Percent, UserCheck, UserX, Users } from 'lucide-react';
+import { Clock, ExternalLink, Handshake, Percent, UserCheck, UserX, Users } from 'lucide-react';
 
+import { Badge } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import type { DashboardStatsResponse } from '@/hooks/domain/services';
 
@@ -55,162 +56,243 @@ export function ServiceDashboardMetrics({
 
   const totalLateTardy = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).late_tardy, 0);
   const totalWalkIns = TIME_SLOTS.reduce((sum, ts) => sum + getSlot(ts).walk_ins, 0);
+  const uniqueVolunteers = stats.unique_volunteers ?? 0;
+  const totalSlotAttendances = totalPresent + totalWalkIns;
+  const isDrillDownClickable = totalSlotAttendances > 0;
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {/* 1. Committed */}
-      <ServiceMetricCard
-        icon={<Handshake className="h-5 w-5" />}
-        iconClassName="bg-primary/10 text-primary"
-        title="Committed"
-        subtitle="Expected volunteers"
-        badgeContent={`${totalCommitted} Total`}
-        badgeVariant="default"
+    <div className="space-y-6">
+      {/* Featured Whole-Day Card: Unique Volunteers */}
+      <button
+        type="button"
+        disabled={!isDrillDownClickable}
+        onClick={() => handleDrillDown(null)}
+        title={
+          isDrillDownClickable
+            ? 'View all attendees for this period (opens in new tab)'
+            : 'No attendees recorded for this period'
+        }
+        className={`group relative flex w-full flex-col justify-between rounded-2xl border text-left p-5 shadow-xs transition-all ${
+          isDrillDownClickable
+            ? 'cursor-pointer border-border bg-surface hover:border-primary/50 hover:bg-primary/5 hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/40'
+            : 'cursor-default border-border/40 bg-surface/50 opacity-60'
+        }`}
       >
-        {TIME_SLOTS.map((ts) => (
-          <ServiceSlotCell key={ts} timeSlot={ts} value={getSlot(ts).committed} />
-        ))}
-      </ServiceMetricCard>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
+          <div className="flex items-center gap-3.5">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform ${
+                isDrillDownClickable ? 'group-hover:scale-105' : ''
+              }`}
+            >
+              <Users className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3
+                  className={`font-heading text-base font-semibold text-text transition-colors ${
+                    isDrillDownClickable ? 'group-hover:text-primary' : ''
+                  }`}
+                >
+                  Unique Volunteers
+                </h3>
+                <Badge variant="secondary" className="text-[11px] font-semibold">
+                  Whole Day
+                </Badge>
+              </div>
+              <p className="text-xs text-muted">
+                Distinct individuals who served across all service slots
+              </p>
+            </div>
+          </div>
 
-      {/* 2. Present */}
-      <ServiceMetricCard
-        icon={<UserCheck className="h-5 w-5" />}
-        iconClassName="bg-secondary/15 text-secondary"
-        title="Present"
-        subtitle="Scheduled turn-up • Click slot to view"
-        badgeContent={`${totalPresent} Total`}
-        badgeVariant="secondary"
-      >
-        {TIME_SLOTS.map((ts) => {
-          const slot = getSlot(ts);
-          const isClickable = slot.present > 0;
-          return (
-            <ServiceSlotCell
-              key={ts}
-              timeSlot={ts}
-              value={slot.present}
-              disabled={!isClickable}
-              onClick={() => handleDrillDown(ts)}
-              title={`View present attendees for ${ts} (opens in new tab)`}
-              sublabel={
-                slot.walk_ins > 0 ? (
-                  <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
-                    +{slot.walk_ins} walk-in
-                  </span>
-                ) : (
-                  '—'
-                )
-              }
-            />
-          );
-        })}
-      </ServiceMetricCard>
-
-      {/* 3. Turn-up % */}
-      <ServiceMetricCard
-        icon={<Percent className="h-5 w-5" />}
-        iconClassName="bg-accent/20 text-text"
-        title="Turn-Up Rate"
-        subtitle="Attended vs Committed"
-        badgeContent={`${overallTurnup}% Avg`}
-        badgeVariant={overallTurnup < 50 ? 'destructive' : 'default'}
-      >
-        {TIME_SLOTS.map((ts) => {
-          const slot = getSlot(ts);
-          const perc = getTurnupPercentage(slot.present, slot.committed);
-          const isLow = perc < 50;
-          return (
-            <ServiceSlotCell
-              key={ts}
-              timeSlot={ts}
-              value={`${perc}%`}
-              isLowRate={isLow}
-              valueClassName={isLow ? 'text-danger' : 'text-primary'}
-              sublabel={
-                <span className="text-[10px] font-medium text-muted">
-                  {slot.present}/{slot.committed}
+          <div className="flex items-center justify-between sm:justify-end gap-6 border-t border-border/60 pt-3 sm:border-0 sm:pt-0">
+            <div className="flex flex-col items-start sm:items-end">
+              <div className="flex items-baseline gap-2">
+                <span
+                  className={`font-heading text-3xl font-bold tracking-tight text-text transition-colors tabular-nums ${
+                    isDrillDownClickable ? 'group-hover:text-primary' : ''
+                  }`}
+                >
+                  {uniqueVolunteers}
                 </span>
-              }
-            />
-          );
-        })}
-      </ServiceMetricCard>
+                <span className="text-xs font-semibold text-muted">unique attendees</span>
+              </div>
+              <span className="text-xs text-muted">
+                {totalSlotAttendances} total service {totalSlotAttendances === 1 ? 'slot' : 'slots'}{' '}
+                filled
+              </span>
+            </div>
 
-      {/* 4. Missed Commitments (before Late Check-In) */}
-      <ServiceMetricCard
-        icon={<UserX className="h-5 w-5" />}
-        iconClassName="bg-danger/10 text-danger"
-        title="Missed Commitments"
-        subtitle="Absent volunteers • Click slot to view"
-        badgeContent={`${totalMissed} Total`}
-        badgeVariant={totalMissed > 0 ? 'destructive' : 'default'}
-      >
-        {TIME_SLOTS.map((ts) => {
-          const slot = getSlot(ts);
-          const isClickable = slot.missed > 0;
-          return (
-            <ServiceSlotCell
-              key={ts}
-              timeSlot={ts}
-              value={slot.missed}
-              disabled={!isClickable}
-              onClick={() => onViewMissed?.(ts)}
-              title={`View missed volunteers for ${ts}`}
-              valueClassName={slot.missed > 0 ? 'text-danger' : undefined}
-            />
-          );
-        })}
-      </ServiceMetricCard>
+            <div
+              className={`flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 py-2 text-xs font-medium text-muted transition-colors ${
+                isDrillDownClickable
+                  ? 'group-hover:border-primary/40 group-hover:text-primary'
+                  : 'opacity-50'
+              }`}
+            >
+              <span className="hidden sm:inline">View Attendees</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </div>
+      </button>
 
-      {/* 5. Late Check-In */}
-      <ServiceMetricCard
-        icon={<Clock className="h-5 w-5" />}
-        iconClassName="bg-accent/20 text-text"
-        title="Late Check-In"
-        subtitle="Override check-ins • Click slot to view"
-        badgeContent={`${totalLateTardy} Total`}
-        badgeVariant="accent"
-      >
-        {TIME_SLOTS.map((ts) => {
-          const count = getSlot(ts).late_tardy;
-          const isClickable = count > 0;
-          return (
-            <ServiceSlotCell
-              key={ts}
-              timeSlot={ts}
-              value={count}
-              disabled={!isClickable}
-              onClick={() => handleDrillDown(ts, { is_late_tardy: 'true' })}
-              title={`View late/tardy attendees for ${ts} (opens in new tab)`}
-            />
-          );
-        })}
-      </ServiceMetricCard>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 1. Committed */}
+        <ServiceMetricCard
+          icon={<Handshake className="h-5 w-5" />}
+          iconClassName="bg-primary/10 text-primary"
+          title="Committed"
+          subtitle="Expected volunteers"
+          badgeContent={`${totalCommitted} Total`}
+          badgeVariant="default"
+        >
+          {TIME_SLOTS.map((ts) => (
+            <ServiceSlotCell key={ts} timeSlot={ts} value={getSlot(ts).committed} />
+          ))}
+        </ServiceMetricCard>
 
-      {/* 6. Total Walk-In */}
-      <ServiceMetricCard
-        icon={<Users className="h-5 w-5" />}
-        iconClassName="bg-secondary/15 text-secondary"
-        title="Total Walk-In"
-        subtitle="Uncommitted attendees • Click slot to view"
-        badgeContent={`${totalWalkIns} Total`}
-        badgeVariant="secondary"
-      >
-        {TIME_SLOTS.map((ts) => {
-          const count = getSlot(ts).walk_ins;
-          const isClickable = count > 0;
-          return (
-            <ServiceSlotCell
-              key={ts}
-              timeSlot={ts}
-              value={count}
-              disabled={!isClickable}
-              onClick={() => handleDrillDown(ts, { is_walk_in: 'true' })}
-              title={`View walk-in attendees for ${ts} (opens in new tab)`}
-            />
-          );
-        })}
-      </ServiceMetricCard>
+        {/* 2. Present */}
+        <ServiceMetricCard
+          icon={<UserCheck className="h-5 w-5" />}
+          iconClassName="bg-secondary/15 text-secondary"
+          title="Present"
+          subtitle="Scheduled turn-up • Click slot to view"
+          badgeContent={`${totalPresent} Total`}
+          badgeVariant="secondary"
+        >
+          {TIME_SLOTS.map((ts) => {
+            const slot = getSlot(ts);
+            const isClickable = slot.present > 0;
+            return (
+              <ServiceSlotCell
+                key={ts}
+                timeSlot={ts}
+                value={slot.present}
+                disabled={!isClickable}
+                onClick={() => handleDrillDown(ts)}
+                title={`View present attendees for ${ts} (opens in new tab)`}
+                sublabel={
+                  slot.walk_ins > 0 ? (
+                    <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
+                      +{slot.walk_ins} walk-in
+                    </span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+            );
+          })}
+        </ServiceMetricCard>
+
+        {/* 3. Turn-up % */}
+        <ServiceMetricCard
+          icon={<Percent className="h-5 w-5" />}
+          iconClassName="bg-accent/20 text-text"
+          title="Turn-Up Rate"
+          subtitle="Attended vs Committed"
+          badgeContent={`${overallTurnup}% Avg`}
+          badgeVariant={overallTurnup < 50 ? 'destructive' : 'default'}
+        >
+          {TIME_SLOTS.map((ts) => {
+            const slot = getSlot(ts);
+            const perc = getTurnupPercentage(slot.present, slot.committed);
+            const isLow = perc < 50;
+            return (
+              <ServiceSlotCell
+                key={ts}
+                timeSlot={ts}
+                value={`${perc}%`}
+                isLowRate={isLow}
+                valueClassName={isLow ? 'text-danger' : 'text-primary'}
+                sublabel={
+                  <span className="text-[10px] font-medium text-muted">
+                    {slot.present}/{slot.committed}
+                  </span>
+                }
+              />
+            );
+          })}
+        </ServiceMetricCard>
+
+        {/* 4. Missed Commitments (before Late Check-In) */}
+        <ServiceMetricCard
+          icon={<UserX className="h-5 w-5" />}
+          iconClassName="bg-danger/10 text-danger"
+          title="Missed Commitments"
+          subtitle="Absent volunteers • Click slot to view"
+          badgeContent={`${totalMissed} Total`}
+          badgeVariant={totalMissed > 0 ? 'destructive' : 'default'}
+        >
+          {TIME_SLOTS.map((ts) => {
+            const slot = getSlot(ts);
+            const isClickable = slot.missed > 0;
+            return (
+              <ServiceSlotCell
+                key={ts}
+                timeSlot={ts}
+                value={slot.missed}
+                disabled={!isClickable}
+                onClick={() => onViewMissed?.(ts)}
+                title={`View missed volunteers for ${ts}`}
+                valueClassName={slot.missed > 0 ? 'text-danger' : undefined}
+              />
+            );
+          })}
+        </ServiceMetricCard>
+
+        {/* 5. Late Check-In */}
+        <ServiceMetricCard
+          icon={<Clock className="h-5 w-5" />}
+          iconClassName="bg-accent/20 text-text"
+          title="Late Check-In"
+          subtitle="Override check-ins • Click slot to view"
+          badgeContent={`${totalLateTardy} Total`}
+          badgeVariant="accent"
+        >
+          {TIME_SLOTS.map((ts) => {
+            const count = getSlot(ts).late_tardy;
+            const isClickable = count > 0;
+            return (
+              <ServiceSlotCell
+                key={ts}
+                timeSlot={ts}
+                value={count}
+                disabled={!isClickable}
+                onClick={() => handleDrillDown(ts, { is_late_tardy: 'true' })}
+                title={`View late/tardy attendees for ${ts} (opens in new tab)`}
+              />
+            );
+          })}
+        </ServiceMetricCard>
+
+        {/* 6. Total Walk-In */}
+        <ServiceMetricCard
+          icon={<Users className="h-5 w-5" />}
+          iconClassName="bg-secondary/15 text-secondary"
+          title="Total Walk-In"
+          subtitle="Uncommitted attendees • Click slot to view"
+          badgeContent={`${totalWalkIns} Total`}
+          badgeVariant="secondary"
+        >
+          {TIME_SLOTS.map((ts) => {
+            const count = getSlot(ts).walk_ins;
+            const isClickable = count > 0;
+            return (
+              <ServiceSlotCell
+                key={ts}
+                timeSlot={ts}
+                value={count}
+                disabled={!isClickable}
+                onClick={() => handleDrillDown(ts, { is_walk_in: 'true' })}
+                title={`View walk-in attendees for ${ts} (opens in new tab)`}
+              />
+            );
+          })}
+        </ServiceMetricCard>
+      </div>
     </div>
   );
 }

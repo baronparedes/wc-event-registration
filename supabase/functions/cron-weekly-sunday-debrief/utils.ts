@@ -139,6 +139,7 @@ export function computeSundayMetrics(
     totalCommitted,
     totalPresent,
     totalWalkIns,
+    uniqueVolunteers: dashboardStats.unique_volunteers ?? totalPresent,
     peakSlot: peakSlot === 'N/A' && slotKeys.length > 0 ? slotKeys[0] : peakSlot,
     slotSummaries,
     overallSurplusRoles,

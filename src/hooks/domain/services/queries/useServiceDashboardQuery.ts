@@ -26,6 +26,7 @@ export interface DashboardStatsResponse {
   };
   roles: string[];
   committed_roles?: string[];
+  unique_volunteers: number;
 }
 
 export const serviceDashboardQueryKey = (filters: DashboardStatsFilters) =>
@@ -64,6 +65,7 @@ export function useServiceDashboardQuery(filters: DashboardStatsFilters) {
         time_slots?: Record<string, Partial<TimeSlotStats>>;
         roles?: string[];
         committed_roles?: string[];
+        unique_volunteers?: number;
       };
       const rawSlots = response.time_slots ?? {};
 
@@ -75,6 +77,7 @@ export function useServiceDashboardQuery(filters: DashboardStatsFilters) {
         },
         roles: response.roles ?? [],
         committed_roles: response.committed_roles ?? [],
+        unique_volunteers: response.unique_volunteers ?? 0,
       };
     },
   });

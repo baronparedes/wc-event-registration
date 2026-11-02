@@ -15,6 +15,7 @@ describe('ServiceDashboardRoleBreakdown', () => {
   const mockStats: DashboardStatsResponse = {
     roles: ['Usher', 'Tech'],
     committed_roles: ['Usher', 'Tech'],
+    unique_volunteers: 25,
     time_slots: {
       '9AM': {
         committed: 10,

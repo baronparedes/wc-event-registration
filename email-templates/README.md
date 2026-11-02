@@ -173,6 +173,7 @@ The `.html` files in this directory are production-ready email templates designe
     "total_committed": 120,
     "total_present": 105,
     "total_walk_ins": 6,
+    "unique_volunteers": 98,
     "summary": "Sunday services ran smoothly with solid turnup across all shifts.",
     "key_highlights": [
       "11:30 AM service achieved peak attendance with 45 volunteers present.",
@@ -191,6 +192,7 @@ The `.html` files in this directory are production-ready email templates designe
   | `total_committed` | `number` | Count of scheduled volunteers committed for that Sunday |
   | `total_present` | `number` | Count of volunteers checked in / present |
   | `total_walk_ins` | `number` | Unscheduled volunteer walk-ins who attended |
+  | `unique_volunteers` | `number` | Count of distinct unique volunteers who served across all service slots |
   | `summary` | `string` | AI-generated executive summary |
   | `key_highlights` | `string[]` | Array of key analytical highlight bullets |
   | `key_highlights_html` | `string` | Formatted `<ul><li>...</li></ul>` HTML list for direct injection |
