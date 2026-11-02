@@ -45,7 +45,13 @@ vi.mock('@/hooks/domain/members', () => ({
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => {
+    const res = mockUseAdminAuthQuery();
+    return {
+      ...res,
+      can: () => true,
+    };
+  },
   canAdminPerform: () => true,
 }));
 
@@ -92,7 +98,13 @@ const sampleMember = {
 describe('AdminMemberDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseAdminAuthQuery.mockReturnValue({ data: { adminRole: 'super_admin' } });
+    mockUseAdminAuthQuery.mockReturnValue({
+      data: {
+        isAuthenticated: true,
+        adminRole: 'super_admin',
+        permissions: ['canWriteAdminData', 'canReadAdminData', 'canReadAdminMemberData'],
+      },
+    });
     mockUseUpdateMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseSoftDeleteMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseRestoreMemberMutation.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });

@@ -1,26 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { canAdminPerform } from '@/lib/domain/auth/permissions';
 import { fetchAdminAuthState } from '@/lib/domain/auth/queries';
 
-const { mockGetSession, mockAdminMaybeSingle, mockFrom } = vi.hoisted(() => {
+const { mockGetSession, mockRpc } = vi.hoisted(() => {
   const mockGetSession = vi.fn();
-  const adminBuilder = {
-    select: vi.fn(),
-    eq: vi.fn(),
-    maybeSingle: vi.fn(),
-  };
-  adminBuilder.select.mockReturnValue(adminBuilder);
-  adminBuilder.eq.mockReturnValue(adminBuilder);
-
-  const from = vi.fn((table: string) => {
-    if (table === 'admins') return adminBuilder;
-    throw new Error(`Unexpected table ${table}`);
-  });
+  const mockRpc = vi.fn();
 
   return {
     mockGetSession,
-    mockAdminMaybeSingle: adminBuilder.maybeSingle,
-    mockFrom: from,
+    mockRpc,
   };
 });
 
@@ -31,7 +20,7 @@ vi.mock('@/lib/infrastructure', async () => {
     ...actual,
     supabase: {
       auth: { getSession: mockGetSession },
-      from: mockFrom,
+      rpc: mockRpc,
     },
   };
 });
@@ -57,13 +46,14 @@ describe('fetchAdminAuthState', () => {
       isAuthenticated: false,
       session: null,
       adminRole: null,
+      permissions: [],
     });
   });
 
-  it('throws when admin lookup fails', async () => {
+  it('throws when admin auth context RPC fails', async () => {
     const session = { user: { id: 'auth-1' } };
     mockGetSession.mockResolvedValue({ data: { session }, error: null });
-    mockAdminMaybeSingle.mockResolvedValue({ data: null, error: new Error('admin failed') });
+    mockRpc.mockResolvedValue({ data: null, error: new Error('admin failed') });
 
     await expect(fetchAdminAuthState()).rejects.toThrow('admin failed');
   });
@@ -71,48 +61,82 @@ describe('fetchAdminAuthState', () => {
   it('returns unauthenticated state when session user is not an admin', async () => {
     const session = { user: { id: 'auth-1' } };
     mockGetSession.mockResolvedValue({ data: { session }, error: null });
-    mockAdminMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockRpc.mockResolvedValue({ data: [], error: null });
 
     await expect(fetchAdminAuthState()).resolves.toEqual({
       isAuthenticated: false,
       session,
       adminRole: null,
+      permissions: [],
     });
+    expect(mockRpc).toHaveBeenCalledWith('get_my_admin_auth_context');
   });
 
-  it('returns authenticated state with admin role', async () => {
+  it('returns authenticated state with super_admin role and backend permissions', async () => {
     const session = { user: { id: 'auth-1' } };
     mockGetSession.mockResolvedValue({ data: { session }, error: null });
-    mockAdminMaybeSingle.mockResolvedValue({ data: { role: 'super_admin' }, error: null });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          role: 'super_admin',
+          permissions: ['canManageAdminRoles', 'canReadAdminData', 'canWriteAdminData'],
+        },
+      ],
+      error: null,
+    });
 
-    await expect(fetchAdminAuthState()).resolves.toEqual({
+    const result = await fetchAdminAuthState();
+    expect(result).toEqual({
       isAuthenticated: true,
       session,
       adminRole: 'super_admin',
+      permissions: ['canManageAdminRoles', 'canReadAdminData', 'canWriteAdminData'],
     });
+    expect(canAdminPerform(result, 'canManageAdminRoles')).toBe(true);
   });
 
-  it('returns authenticated state with slod role', async () => {
+  it('returns authenticated state with slod role and backend permissions', async () => {
     const session = { user: { id: 'auth-1' } };
     mockGetSession.mockResolvedValue({ data: { session }, error: null });
-    mockAdminMaybeSingle.mockResolvedValue({ data: { role: 'slod' }, error: null });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          role: 'slod',
+          permissions: ['canReadAdminData', 'canManageServices'],
+        },
+      ],
+      error: null,
+    });
 
-    await expect(fetchAdminAuthState()).resolves.toEqual({
+    const result = await fetchAdminAuthState();
+    expect(result).toEqual({
       isAuthenticated: true,
       session,
       adminRole: 'slod',
+      permissions: ['canReadAdminData', 'canManageServices'],
     });
+    expect(canAdminPerform(result, 'canReadAdminData')).toBe(true);
+    expect(canAdminPerform(result, 'canExportAdminReports')).toBe(false);
   });
 
   it('returns authenticated state with kiosk role', async () => {
     const session = { user: { id: 'auth-1' } };
     mockGetSession.mockResolvedValue({ data: { session }, error: null });
-    mockAdminMaybeSingle.mockResolvedValue({ data: { role: 'kiosk' }, error: null });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          role: 'kiosk',
+          permissions: ['canAccessAttendanceCheckIn'],
+        },
+      ],
+      error: null,
+    });
 
     await expect(fetchAdminAuthState()).resolves.toEqual({
       isAuthenticated: true,
       session,
       adminRole: 'kiosk',
+      permissions: ['canAccessAttendanceCheckIn'],
     });
   });
 });

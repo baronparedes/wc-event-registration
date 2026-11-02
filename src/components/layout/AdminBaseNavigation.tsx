@@ -1,15 +1,14 @@
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
-import { canAdminPerform } from '@/lib/domain/auth';
 
 import { AdminPageShell, AdminSubNavLink } from './AdminPageShell';
 
 export function AdminBaseNavigation() {
-  const { data: authState } = useAdminAuthQuery();
-  const canReadAdminMemberData = canAdminPerform(authState?.adminRole, 'canReadAdminMemberData');
-  const canManageServices = canAdminPerform(authState?.adminRole, 'canManageServices');
-  const canWriteAdminData = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canReadAdminData = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const { can } = useAdminAuthQuery();
+  const canReadAdminMemberData = can('canReadAdminMemberData');
+  const canManageServices = can('canManageServices');
+  const canWriteAdminData = can('canWriteAdminData');
+  const canReadAdminData = can('canReadAdminData');
 
   return (
     <AdminPageShell.SubNav>

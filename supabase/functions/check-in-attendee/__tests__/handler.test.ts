@@ -75,6 +75,9 @@ function mockFetch(options: MockOptions = {}) {
     if (url.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'admin' }));
     }
+    if (url.pathname === '/rest/v1/admin_role_permissions') {
+      return Promise.resolve(Response.json([{ permission: 'canAccessAttendanceCheckIn' }]));
+    }
     if (url.pathname === '/rest/v1/events') {
       if (options.eventError) {
         return Promise.resolve(Response.json(options.eventError, { status: 500 }));

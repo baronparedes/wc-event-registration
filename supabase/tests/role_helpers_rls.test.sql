@@ -587,6 +587,47 @@ values
       from
         public.users_import_staging
     )
+  ),
+  (
+    'non-admin has no permissions via has_admin_permission',
+    not public.has_admin_permission ('canReadAdminData')
+  ),
+  (
+    'non-admin get_my_admin_auth_context returns empty',
+    (
+      select
+        count(*) = 0
+      from
+        public.get_my_admin_auth_context ()
+    )
+  );
+
+set
+  local "request.jwt.claims" to '{"sub": "00000000-0000-0000-0000-000000000110", "role": "authenticated"}';
+
+insert into
+  tap_results (name, pass)
+values
+  (
+    'admin has canWriteAdminData via has_admin_permission',
+    public.has_admin_permission ('canWriteAdminData')
+  ),
+  (
+    'admin does not have canManageAdminRoles via has_admin_permission',
+    not public.has_admin_permission ('canManageAdminRoles')
+  ),
+  (
+    'admin get_my_admin_auth_context returns role and permissions',
+    exists (
+      select
+        1
+      from
+        public.get_my_admin_auth_context () ctx
+      where
+        ctx.role = 'admin'
+        and 'canWriteAdminData' = any (ctx.permissions)
+        and not ('canManageAdminRoles' = any (ctx.permissions))
+    )
   );
 
 reset role;

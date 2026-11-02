@@ -44,6 +44,7 @@ vi.mock('@/hooks/domain/auth', () => ({
       isAuthenticated: true,
       session: null,
     },
+    can: () => true,
     isLoading: false,
     error: null,
   }),

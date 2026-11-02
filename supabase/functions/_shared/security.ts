@@ -60,9 +60,22 @@ export interface AdminGuardOptions {
     maxHits: number;
   };
   allowedRoles?: AdminAccountRole[];
+  requiredPermission?: AdminPermissionKey | readonly AdminPermissionKey[];
 }
 
-export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'kiosk';
+export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk';
+
+export type AdminPermissionKey =
+  | 'canWriteAdminData'
+  | 'canReadAdminData'
+  | 'canReadAdminMemberData'
+  | 'canManageAttendanceSavedViews'
+  | 'canExportAdminReports'
+  | 'canAccessAttendanceCheckIn'
+  | 'canViewMemberHistory'
+  | 'canManageAdminRoles'
+  | 'canReadDashboard'
+  | 'canManageServices';
 
 export interface AdminAuditLogOptions {
   adminClient: ReturnType<typeof createClient<Database>>;
@@ -235,7 +248,8 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     authHeader,
     corsHeaders,
     rateLimit,
-    allowedRoles = DEFAULT_ADMIN_GUARD_ROLES,
+    allowedRoles,
+    requiredPermission,
   } = options;
 
   if (!authHeader || !authHeader.startsWith(AUTH.bearerPrefix)) {
@@ -360,7 +374,52 @@ export async function requireAdminAccess(options: AdminGuardOptions): Promise<Ad
     };
   }
 
-  if (!allowedRoles.includes(adminRecord.role)) {
+  if (requiredPermission !== undefined) {
+    if (allowedRoles && !allowedRoles.includes(adminRecord.role)) {
+      return {
+        ok: false,
+        response: createJsonResponse(
+          {
+            success: false,
+            error: 'Unauthorized',
+            error_code: ERROR_CODES.unauthorized,
+          },
+          HTTP_STATUS.unauthorized,
+          corsHeaders,
+        ),
+      };
+    }
+
+    const requiredPermissions: readonly AdminPermissionKey[] = Array.isArray(requiredPermission)
+      ? requiredPermission
+      : [requiredPermission];
+
+    const { data: permissionRows, error: permissionError } = await authClient
+      .from('admin_role_permissions')
+      .select('permission')
+      .eq('role', adminRecord.role)
+      .in('permission', [...requiredPermissions]);
+
+    if (permissionError || !permissionRows || permissionRows.length === 0) {
+      return {
+        ok: false,
+        response: createJsonResponse(
+          {
+            success: false,
+            error: 'Unauthorized',
+            error_code: ERROR_CODES.unauthorized,
+          },
+          HTTP_STATUS.unauthorized,
+          corsHeaders,
+        ),
+      };
+    }
+
+    return { ok: true, userId };
+  }
+
+  const effectiveAllowedRoles = allowedRoles ?? DEFAULT_ADMIN_GUARD_ROLES;
+  if (!effectiveAllowedRoles.includes(adminRecord.role)) {
     return {
       ok: false,
       response: createJsonResponse(

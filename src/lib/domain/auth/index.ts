@@ -1,15 +1,19 @@
-export type {
-  AdminAuthState,
-  AdminRole,
-  AssignableAdminRole,
-  AdminRoleAssignment,
-  ApproverUserItem,
-  AuthUserItem,
-} from './types';
 export {
-  ADMIN_PERMISSION_POLICIES,
-  canAdminPerform,
-  getAdminPermissionPolicy,
-} from './permissions';
+  ALL_ADMIN_PERMISSION_KEYS,
+  type AdminAuthContextRow,
+  type AdminAuthState,
+  type AdminPermissionKey,
+  type AdminRole,
+  type AssignableAdminRole,
+  type AdminRoleAssignment,
+  type ApproverUserItem,
+  type AuthUserItem,
+} from './types';
+export { type AdminPermissionSubject, canAdminPerform } from './permissions';
 export { ADMIN_AUTH_QUERY_KEY, fetchAdminAuthState } from './queries';
-export { fetchAdminRoles, fetchApproverUsers, fetchAuthUsers } from './api';
+export {
+  fetchAdminRoles,
+  fetchApproverUsers,
+  fetchAuthUsers,
+  fetchMyAdminAuthContext,
+} from './api';

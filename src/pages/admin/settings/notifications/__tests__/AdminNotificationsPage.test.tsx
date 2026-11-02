@@ -60,6 +60,7 @@ describe('AdminNotificationsPage', () => {
         isAuthenticated: true,
         session: null,
       },
+      can: () => true,
       isLoading: false,
       error: null,
     } as never);

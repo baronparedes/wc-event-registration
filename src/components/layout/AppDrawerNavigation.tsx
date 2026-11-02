@@ -4,7 +4,7 @@ import { FileText, LogOut, ShieldCheck, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
-import type { AdminRole } from '@/lib/domain/auth';
+import type { AdminPermissionKey, AdminRole } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
 import { UserIdentity } from './UserIdentity';
@@ -16,6 +16,7 @@ type AppDrawerNavigationProps = {
   isAuthenticated: boolean;
   hasSession?: boolean;
   adminRole?: AdminRole | null;
+  permissions?: readonly AdminPermissionKey[];
   currentUserLabel?: string | null;
   onLogout: () => Promise<void>;
 };
@@ -57,6 +58,7 @@ export function AppDrawerNavigation({
   isAuthenticated,
   hasSession = isAuthenticated,
   adminRole = null,
+  permissions,
   currentUserLabel = null,
   onLogout,
 }: AppDrawerNavigationProps) {
@@ -81,6 +83,7 @@ export function AppDrawerNavigation({
     isAuthenticated,
     hasSession,
     adminRole,
+    permissions,
     currentUserLabel,
   });
 

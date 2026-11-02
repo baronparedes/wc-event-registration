@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ROUTE_PATHS } from '@/config/constants';
 import type { AppRouteDefinition } from '@/config/constants';
-import type { AdminRole } from '@/lib/domain/auth';
+import { type AdminRole, canAdminPerform } from '@/lib/domain/auth';
 
 import {
   LazyRoute,
@@ -31,14 +31,21 @@ vi.mock('../../components/layout', () => ({
 }));
 
 const mockUseAdminAuthQuery = vi.fn();
+function getMockAdminAuthQueryResult() {
+  const res = mockUseAdminAuthQuery();
+  return {
+    ...res,
+    can: (perm: Parameters<typeof canAdminPerform>[1]) => canAdminPerform(res?.data, perm),
+  };
+}
 vi.mock('@/hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => getMockAdminAuthQueryResult(),
 }));
 vi.mock('../hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => getMockAdminAuthQueryResult(),
 }));
 vi.mock('../../hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => getMockAdminAuthQueryResult(),
 }));
 
 const mockUseOnlineStatus = vi.fn();
@@ -336,56 +343,6 @@ describe('src/app/router.tsx', () => {
       expect(screen.getByText('Home Page Redirected')).toBeInTheDocument();
     });
 
-    it('redirects to adminEvents when allowedRoles does not include current role', () => {
-      mockUseAdminAuthQuery.mockReturnValue({
-        data: {
-          isAuthenticated: true,
-          session: { user: { id: 'u1' } },
-          adminRole: 'kiosk' as AdminRole,
-        },
-        isLoading: false,
-      });
-
-      render(
-        <MemoryRouter initialEntries={['/admin/users/roles']}>
-          <Routes>
-            <Route
-              path="/admin/users/roles"
-              element={
-                <RequireAdminAuth allowedRoles={['super_admin']}>
-                  <div>Super Admin Only</div>
-                </RequireAdminAuth>
-              }
-            />
-            <Route path={ROUTE_PATHS.adminEvents} element={<div>Admin Events Redirected</div>} />
-          </Routes>
-        </MemoryRouter>,
-      );
-
-      expect(screen.getByText('Admin Events Redirected')).toBeInTheDocument();
-    });
-
-    it('renders children when user role matches allowedRoles', () => {
-      mockUseAdminAuthQuery.mockReturnValue({
-        data: {
-          isAuthenticated: true,
-          session: { user: { id: 'u1' } },
-          adminRole: 'super_admin' as AdminRole,
-        },
-        isLoading: false,
-      });
-
-      render(
-        <MemoryRouter initialEntries={['/admin/users/roles']}>
-          <RequireAdminAuth allowedRoles={['super_admin']}>
-            <div>Super Admin Granted</div>
-          </RequireAdminAuth>
-        </MemoryRouter>,
-      );
-
-      expect(screen.getByText('Super Admin Granted')).toBeInTheDocument();
-    });
-
     it('redirects to home when requiredPermission is not granted', () => {
       mockUseAdminAuthQuery.mockReturnValue({
         data: {
@@ -421,6 +378,7 @@ describe('src/app/router.tsx', () => {
           isAuthenticated: true,
           session: { user: { id: 'u1' } },
           adminRole: 'admin' as AdminRole,
+          permissions: ['canReadAdminMemberData'],
         },
         isLoading: false,
       });
@@ -442,6 +400,7 @@ describe('src/app/router.tsx', () => {
           isAuthenticated: true,
           session: { user: { id: 'u1' } },
           adminRole: 'slod' as AdminRole,
+          permissions: ['canReadAdminData'],
         },
         isLoading: false,
       });
@@ -455,6 +414,28 @@ describe('src/app/router.tsx', () => {
       );
 
       expect(screen.getByText('General Admin Data Granted')).toBeInTheDocument();
+    });
+
+    it('renders children when any permission in a requiredPermission array is granted via backend permissions', () => {
+      mockUseAdminAuthQuery.mockReturnValue({
+        data: {
+          isAuthenticated: true,
+          session: { user: { id: 'u1' } },
+          adminRole: 'kiosk' as AdminRole,
+          permissions: ['canAccessAttendanceCheckIn'],
+        },
+        isLoading: false,
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/admin/events']}>
+          <RequireAdminAuth requiredPermission={['canReadAdminData', 'canAccessAttendanceCheckIn']}>
+            <div>Kiosk Events Access Granted</div>
+          </RequireAdminAuth>
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByText('Kiosk Events Access Granted')).toBeInTheDocument();
     });
   });
 

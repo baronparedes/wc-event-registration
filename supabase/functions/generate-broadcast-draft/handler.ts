@@ -16,7 +16,7 @@ export async function handleGenerateBroadcastDraft(req: Request): Promise<Respon
     functionName: 'generate-broadcast-draft',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     rateLimit: {
       scope: 'generate-broadcast-draft',
       windowMs: 60 * 1000,

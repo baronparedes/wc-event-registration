@@ -24,7 +24,6 @@ import {
   useUploadMemberAvatarMutation,
 } from '@/hooks/domain/members';
 import { useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
-import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminMember, UpdateMemberInput } from '@/lib/domain/members';
 import { updateMemberSchema } from '@/lib/domain/members';
 import { getLastCommitmentUpdatedAt } from '@/lib/domain/services';
@@ -73,7 +72,7 @@ function toFormValues(member: AdminMember): UpdateMemberInput {
 export function AdminMemberDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
 
   const memberQuery = useAdminMemberQuery(id, { includeInactive: true });
   const commitmentHistoryQuery = useUserCommitmentHistoryQuery(memberQuery.data?.id ?? id ?? '');
@@ -110,8 +109,8 @@ export function AdminMemberDetailPage() {
     .map((value) => value.trim())
     .filter(Boolean)
     .join(' ');
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const canWrite = can('canWriteAdminData');
+  const canRead = can('canReadAdminData');
 
   async function onSubmit(values: UpdateMemberInput) {
     if (!id) return;

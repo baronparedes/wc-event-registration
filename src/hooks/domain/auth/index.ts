@@ -2,6 +2,7 @@ export {
   ADMIN_AUTH_QUERY_KEY,
   canAdminPerform,
   type AdminAuthState,
+  type AdminPermissionKey,
   type AdminRole,
   type AssignableAdminRole,
   type AdminRoleAssignment,

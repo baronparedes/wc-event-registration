@@ -42,6 +42,16 @@ function mockFetch(rows: TokenRow[], options: { role?: string; queryError?: bool
     if (url.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.role ?? 'slod' }));
     }
+    if (url.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.role ?? 'slod';
+      return Promise.resolve(
+        Response.json(
+          role === 'admin' || role === 'super_admin' || role === 'slod'
+            ? [{ permission: 'canReadAdminData' }]
+            : [],
+        ),
+      );
+    }
     if (url.pathname === '/rest/v1/user_tokens') {
       queries.push(url);
       return Promise.resolve(

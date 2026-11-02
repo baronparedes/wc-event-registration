@@ -1,6 +1,35 @@
 import { supabase } from '@/lib/infrastructure';
 
-import type { AdminRoleAssignment, ApproverUserItem, AuthUserItem } from './types';
+import type {
+  AdminAuthContextRow,
+  AdminRoleAssignment,
+  ApproverUserItem,
+  AuthUserItem,
+} from './types';
+
+export async function fetchMyAdminAuthContext(): Promise<AdminAuthContextRow | null> {
+  const { data, error } = await supabase.rpc('get_my_admin_auth_context');
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const row = Array.isArray(data)
+    ? (data[0] as AdminAuthContextRow | undefined)
+    : (data as AdminAuthContextRow);
+
+  if (!row || !row.role) {
+    return null;
+  }
+
+  return {
+    role: row.role,
+    permissions: Array.isArray(row.permissions) ? row.permissions : [],
+  };
+}
 
 export async function fetchAuthUsers(
   search: string,

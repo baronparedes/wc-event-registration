@@ -53,6 +53,9 @@ function mockFetch(rpcResponse: { body: unknown; status?: number }) {
     if (url.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-record', role: 'slod' }));
     }
+    if (url.pathname === '/rest/v1/admin_role_permissions') {
+      return Promise.resolve(Response.json([{ permission: 'canReadAdminData' }]));
+    }
     if (url.pathname === '/rest/v1/rpc/list_event_attendees_v2') {
       rpcCalls.push({ url, body: String(init?.body) });
       return Promise.resolve(

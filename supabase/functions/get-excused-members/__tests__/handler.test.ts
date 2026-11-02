@@ -48,6 +48,9 @@ function mockFetch(options: { excuses?: unknown[]; queryError?: boolean }) {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      return Promise.resolve(Response.json([{ permission: 'canReadAdminData' }]));
+    }
     if (requestUrl.pathname === '/rest/v1/service_excuse_sundays') {
       if (options.queryError) {
         return Promise.resolve(Response.json({ message: 'excuse lookup failed' }, { status: 500 }));

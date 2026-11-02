@@ -5,6 +5,7 @@ import type { Database } from './database.types.ts';
 import { errorResponse } from './http.ts';
 import {
   type AdminAccountRole,
+  type AdminPermissionKey,
   buildCorsHeaders,
   createObscuredDenyResponse,
   enforcePublicRateLimit,
@@ -48,6 +49,7 @@ type EdgeHookAdminOptions =
       requireCron?: never;
       rateLimit?: AdminRateLimitConfig;
       allowedRoles?: AdminAccountRole[];
+      requiredPermission?: AdminPermissionKey | readonly AdminPermissionKey[];
       /** Also accept SUPABASE_SERVICE_ROLE_KEY as a valid caller (e.g. cron jobs). */
       allowServiceRole?: boolean;
       /** Also accept CRON_ROLE_KEY (via X-Cron-Key or Bearer token) as a valid caller. */
@@ -59,6 +61,7 @@ type EdgeHookAdminOptions =
       requireCron?: never;
       rateLimit?: never;
       allowedRoles?: never;
+      requiredPermission?: never;
       allowServiceRole?: never;
       allowCronRole?: never;
     }
@@ -70,6 +73,7 @@ type EdgeHookAdminOptions =
       requireSync?: never;
       rateLimit?: never;
       allowedRoles?: never;
+      requiredPermission?: never;
       allowServiceRole?: boolean;
       allowCronRole?: true;
     }
@@ -81,6 +85,7 @@ type EdgeHookAdminOptions =
       requireSync: true;
       rateLimit?: never;
       allowedRoles?: never;
+      requiredPermission?: never;
       allowServiceRole?: boolean;
       allowCronRole?: never;
     }
@@ -91,6 +96,7 @@ type EdgeHookAdminOptions =
       requireSync?: false;
       rateLimit?: never;
       allowedRoles?: never;
+      requiredPermission?: never;
       allowServiceRole?: never;
       allowCronRole?: boolean;
     };
@@ -363,6 +369,7 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
           corsHeaders,
           rateLimit: options.rateLimit,
           allowedRoles: options.allowedRoles,
+          requiredPermission: options.requiredPermission,
         });
 
         if (!adminAccess.ok) {
@@ -387,6 +394,7 @@ export async function useEdgeHook<TSchema extends z.ZodTypeAny>(
         corsHeaders,
         rateLimit: options.rateLimit,
         allowedRoles: options.allowedRoles,
+        requiredPermission: options.requiredPermission,
       });
 
       if (!adminAccess.ok) {

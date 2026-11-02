@@ -41,7 +41,7 @@ export async function handleUploadMemberAvatar(req: Request): Promise<Response> 
     functionName: 'upload-member-avatar',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     rateLimit: {
       scope: 'upload-member-avatar',
       windowMs: RATE_LIMIT_PRESETS.createMember.windowMs,

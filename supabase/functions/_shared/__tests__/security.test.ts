@@ -268,6 +268,62 @@ Deno.test('requireAdminAccess enforces the configured admin role allowlist', asy
   );
 });
 
+Deno.test(
+  'requireAdminAccess enforces requiredPermission against admin_role_permissions',
+  async () => {
+    await withMockFetch(
+      (input) => {
+        const requestUrl = new URL(input instanceof Request ? input.url : input.toString());
+        if (requestUrl.pathname === '/auth/v1/user') {
+          return jsonResponse({ id: 'imt-user' });
+        }
+        if (requestUrl.pathname === '/rest/v1/admins') {
+          return jsonResponse({ id: 'admin-record', role: 'imt' });
+        }
+        if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+          const permFilter = requestUrl.searchParams.get('permission') ?? '';
+          if (permFilter.includes('canReadAdminMemberData')) {
+            return jsonResponse([{ permission: 'canReadAdminMemberData' }]);
+          }
+          return jsonResponse([]);
+        }
+        return Promise.resolve(new Response('Unexpected request', { status: 500 }));
+      },
+      async () => {
+        const options = {
+          requestId: 'request-perm',
+          logPrefix: 'security-test',
+          supabaseUrl: 'https://example.supabase.co',
+          supabaseServiceKey: 'service-key',
+          authHeader: 'Bearer imt-token',
+          corsHeaders: CORS_HEADERS,
+        };
+
+        const grantedResult = await requireAdminAccess({
+          ...options,
+          requiredPermission: 'canReadAdminMemberData',
+        });
+        assertEquals(grantedResult, { ok: true, userId: 'imt-user' });
+
+        const grantedArrayResult = await requireAdminAccess({
+          ...options,
+          requiredPermission: ['canWriteAdminData', 'canReadAdminMemberData'],
+        });
+        assertEquals(grantedArrayResult, { ok: true, userId: 'imt-user' });
+
+        const deniedResult = await requireAdminAccess({
+          ...options,
+          requiredPermission: 'canWriteAdminData',
+        });
+        assertEquals(deniedResult.ok, false);
+        if (!deniedResult.ok) {
+          assertEquals(deniedResult.response.status, HTTP_STATUS.unauthorized);
+        }
+      },
+    );
+  },
+);
+
 Deno.test('logAdminAction resolves the admin record and writes the audit payload', async () => {
   let auditPayload: unknown;
 

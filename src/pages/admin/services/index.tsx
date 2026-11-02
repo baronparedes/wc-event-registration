@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { AiBrandIcon, Button, EmptyState, LoadingState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
-import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useServiceDashboardQuery } from '@/hooks/domain/services';
 
 import {
@@ -27,7 +27,7 @@ import {
 
 export function AdminServicesPage() {
   const navigate = useNavigate();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const [filterMode, setFilterMode] = useState<FilterMode>('sunday');
 
   const [isMissedModalOpen, setIsMissedModalOpen] = useState(false);
@@ -87,7 +87,7 @@ export function AdminServicesPage() {
         breadcrumbs={[{ label: 'Services' }]}
         actions={
           <>
-            {canAdminPerform(authState?.adminRole, 'canWriteAdminData') && (
+            {can('canWriteAdminData') && (
               <Button
                 className="w-full sm:w-auto sm:inline-flex"
                 variant="primaryOutline"

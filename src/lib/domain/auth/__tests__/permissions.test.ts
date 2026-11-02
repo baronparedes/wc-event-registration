@@ -1,84 +1,78 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  ADMIN_PERMISSION_POLICIES,
-  ALL_ADMIN_PERMISSION_KEYS,
-  ROLE_PERMISSION_GRANTS,
-  canAdminPerform,
-  getAdminPermissionPolicy,
-} from '@/lib/domain/auth/permissions';
-import type { AdminRole } from '@/lib/domain/auth/types';
+import { ALL_ADMIN_PERMISSION_KEYS, canAdminPerform } from '@/lib/domain/auth/permissions';
+import type { AdminAuthState } from '@/lib/domain/auth/types';
 
-describe('admin permission policies', () => {
-  it('defines role permission grants with proper inheritance', () => {
-    // super_admin inherits all admin permissions plus canManageAdminRoles
-    const adminPerms = ROLE_PERMISSION_GRANTS.admin;
-    const superAdminPerms = ROLE_PERMISSION_GRANTS.super_admin;
-
-    adminPerms.forEach((perm) => {
-      expect(superAdminPerms).toContain(perm);
-    });
-
-    expect(superAdminPerms).toContain('canManageAdminRoles');
-    expect(adminPerms).not.toContain('canManageAdminRoles');
+describe('canAdminPerform (strict backend permissions)', () => {
+  it('exposes all canonical admin permission keys', () => {
+    expect(ALL_ADMIN_PERMISSION_KEYS).toEqual([
+      'canWriteAdminData',
+      'canReadAdminData',
+      'canReadAdminMemberData',
+      'canManageAttendanceSavedViews',
+      'canExportAdminReports',
+      'canAccessAttendanceCheckIn',
+      'canViewMemberHistory',
+      'canManageAdminRoles',
+      'canReadDashboard',
+      'canManageServices',
+    ]);
   });
 
-  it('generates centralized policy data for all roles', () => {
-    const roles: AdminRole[] = ['admin', 'super_admin', 'slod', 'imt', 'kiosk'];
-    expect(ADMIN_PERMISSION_POLICIES.map((p) => p.role)).toEqual(roles);
+  it('evaluates permissions from an authenticated AdminAuthState returned by the backend', () => {
+    const backendState: AdminAuthState = {
+      isAuthenticated: true,
+      session: null,
+      adminRole: 'slod',
+      permissions: [
+        'canReadAdminData',
+        'canReadAdminMemberData',
+        'canManageAttendanceSavedViews',
+        'canExportAdminReports',
+        'canViewMemberHistory',
+        'canReadDashboard',
+        'canManageServices',
+      ],
+    };
 
-    ADMIN_PERMISSION_POLICIES.forEach((policy) => {
-      ALL_ADMIN_PERMISSION_KEYS.forEach((key) => {
-        expect(typeof policy.permissions[key]).toBe('boolean');
-      });
-    });
+    expect(canAdminPerform(backendState, 'canReadAdminData')).toBe(true);
+    expect(canAdminPerform(backendState, 'canExportAdminReports')).toBe(true);
+    expect(canAdminPerform(backendState, 'canManageServices')).toBe(true);
+    expect(canAdminPerform(backendState, 'canWriteAdminData')).toBe(false);
+    expect(canAdminPerform(backendState, 'canManageAdminRoles')).toBe(false);
+    expect(canAdminPerform(backendState, ['canWriteAdminData', 'canExportAdminReports'])).toBe(
+      true,
+    );
+    expect(canAdminPerform(backendState, ['canWriteAdminData', 'canManageAdminRoles'])).toBe(false);
   });
 
-  it('returns the matching policy for a role', () => {
-    const slodPolicy = getAdminPermissionPolicy('slod');
-    expect(slodPolicy).toEqual({
-      role: 'slod',
-      permissions: {
-        canWriteAdminData: false,
-        canReadAdminData: true,
-        canReadAdminMemberData: true,
-        canManageAttendanceSavedViews: true,
-        canExportAdminReports: true,
-        canAccessAttendanceCheckIn: false,
-        canViewMemberHistory: true,
-        canManageAdminRoles: false,
-        canReadDashboard: true,
-        canManageServices: true,
-      },
-    });
+  it('evaluates permissions from a permission array or Set directly', () => {
+    const permArray = ['canReadAdminMemberData', 'canReadDashboard'] as const;
+    const permSet = new Set(permArray);
 
-    expect(getAdminPermissionPolicy(null)).toBeUndefined();
-    expect(getAdminPermissionPolicy(undefined)).toBeUndefined();
+    expect(canAdminPerform(permArray, 'canReadAdminMemberData')).toBe(true);
+    expect(canAdminPerform(permArray, 'canWriteAdminData')).toBe(false);
+    expect(canAdminPerform(permSet, 'canReadDashboard')).toBe(true);
+    expect(canAdminPerform(permSet, 'canManageServices')).toBe(false);
   });
 
-  it('supports generic and specific permission checks', () => {
-    expect(canAdminPerform('admin', 'canWriteAdminData')).toBe(true);
-    expect(canAdminPerform('admin', 'canReadAdminData')).toBe(true);
-    expect(canAdminPerform('admin', 'canManageServices')).toBe(true);
-    expect(canAdminPerform('super_admin', 'canManageServices')).toBe(true);
-    expect(canAdminPerform('super_admin', 'canManageAdminRoles')).toBe(true);
-    expect(canAdminPerform('admin', 'canManageAdminRoles')).toBe(false);
-    expect(canAdminPerform('imt', 'canReadAdminMemberData')).toBe(true);
-    expect(canAdminPerform('slod', 'canManageAttendanceSavedViews')).toBe(true);
-    expect(canAdminPerform('slod', 'canExportAdminReports')).toBe(true);
-    expect(canAdminPerform('slod', 'canManageServices')).toBe(true);
-    expect(canAdminPerform('imt', 'canManageServices')).toBe(false);
-    expect(canAdminPerform('kiosk', 'canAccessAttendanceCheckIn')).toBe(true);
-    expect(canAdminPerform('kiosk', 'canManageServices')).toBe(false);
-  });
+  it('strictly denies access when unauthenticated or when backend permissions are missing', () => {
+    const unauthState: AdminAuthState = {
+      isAuthenticated: false,
+      session: null,
+      adminRole: 'super_admin',
+      permissions: ['canManageAdminRoles'],
+    };
 
-  it('denies access for missing or disabled roles', () => {
+    const missingPermissionsState: AdminAuthState = {
+      isAuthenticated: true,
+      session: null,
+      adminRole: 'super_admin',
+    };
+
+    expect(canAdminPerform(unauthState, 'canManageAdminRoles')).toBe(false);
+    expect(canAdminPerform(missingPermissionsState, 'canManageAdminRoles')).toBe(false);
     expect(canAdminPerform(null, 'canReadAdminData')).toBe(false);
     expect(canAdminPerform(undefined, 'canReadAdminData')).toBe(false);
-    expect(canAdminPerform('kiosk', 'canWriteAdminData')).toBe(false);
-    expect(canAdminPerform('kiosk', 'canReadAdminData')).toBe(false);
-    expect(canAdminPerform('kiosk', 'canReadAdminMemberData')).toBe(false);
-    expect(canAdminPerform('slod', 'canWriteAdminData')).toBe(false);
-    expect(canAdminPerform('admin', 'canManageAdminRoles')).toBe(false);
   });
 });

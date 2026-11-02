@@ -23,7 +23,14 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+    useAdminAuthQuery: (...args: unknown[]) => {
+      const res = mockUseAdminAuthQuery(...args);
+      return {
+        ...res,
+        can: (perm: Parameters<typeof actual.canAdminPerform>[1]) =>
+          actual.canAdminPerform(res?.data, perm),
+      };
+    },
   };
 });
 
@@ -95,7 +102,12 @@ describe('AdminRegistrationsPage', () => {
     testEventId = faker.string.uuid();
     mockUseParams.mockReturnValue({ id: testEventId });
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'admin',
+        permissions: ['canWriteAdminData', 'canReadAdminData', 'canExportAdminReports'],
+      },
       isLoading: false,
     });
     mockNavigate.mockReset();
@@ -347,7 +359,12 @@ describe('AdminRegistrationsPage', () => {
 
   it('passes read-only mode to the registrations list for slod users', () => {
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'slod',
+        permissions: ['canReadAdminData', 'canExportAdminReports'],
+      },
       isLoading: false,
     });
 
@@ -387,7 +404,12 @@ describe('AdminRegistrationsPage', () => {
 
   it('shows both registrations sub-actions for write-enabled admins', () => {
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'admin',
+        permissions: ['canWriteAdminData', 'canReadAdminData', 'canExportAdminReports'],
+      },
       isLoading: false,
     });
 

@@ -16,14 +16,13 @@ import { PAGINATION_DEFAULTS, ROUTE_PATHS, UI_MESSAGES, toRoute } from '@/config
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminFormsQuery, useDuplicateFormMutation } from '@/hooks/domain/forms';
 import { useDebounceSearch, useInfiniteScrollTrigger, useIsMobileViewport } from '@/hooks/utils';
-import { canAdminPerform } from '@/lib/domain/auth';
 import type { AdminForm } from '@/lib/domain/forms';
 
 import { AdminFormsTable, DuplicateFormDialog, MobileFormCard } from './components';
 
 export function AdminFormsPage() {
   const navigate = useNavigate();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
 
   const formsQuery = useAdminFormsQuery({
@@ -40,8 +39,8 @@ export function AdminFormsPage() {
 
   const isLoading = formsQuery.isLoading;
   const error = formsQuery.error;
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
+  const canWrite = can('canWriteAdminData');
+  const canRead = can('canReadAdminData');
   const isMobileViewport = useIsMobileViewport();
 
   const { sentinelRef } = useInfiniteScrollTrigger({

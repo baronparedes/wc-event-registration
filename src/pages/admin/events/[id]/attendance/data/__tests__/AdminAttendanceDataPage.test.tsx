@@ -50,7 +50,13 @@ vi.mock('@/hooks/domain/event-fields', () => ({
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
-  useAdminAuthQuery: () => mockUseAdminAuthQuery(),
+  useAdminAuthQuery: () => {
+    const res = mockUseAdminAuthQuery();
+    return {
+      ...res,
+      can: () => true,
+    };
+  },
   canAdminPerform: () => true,
 }));
 

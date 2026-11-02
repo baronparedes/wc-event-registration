@@ -16,7 +16,7 @@ export async function handleRecommendStandIn(req: Request): Promise<Response> {
     functionName: 'recommend-stand-in',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'slod'],
+    requiredPermission: 'canReadAdminData',
     rateLimit: {
       scope: 'recommend-stand-in',
       windowMs: 60 * 1000,

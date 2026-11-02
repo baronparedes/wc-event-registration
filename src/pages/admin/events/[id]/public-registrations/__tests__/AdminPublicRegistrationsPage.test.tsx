@@ -25,7 +25,14 @@ vi.mock('@/hooks/domain/auth', async () => {
   const actual = await vi.importActual<typeof import('@/hooks/domain/auth')>('@/hooks/domain/auth');
   return {
     ...actual,
-    useAdminAuthQuery: (...args: unknown[]) => mockUseAdminAuthQuery(...args),
+    useAdminAuthQuery: (...args: unknown[]) => {
+      const res = mockUseAdminAuthQuery(...args);
+      return {
+        ...res,
+        can: (perm: Parameters<typeof actual.canAdminPerform>[1]) =>
+          actual.canAdminPerform(res?.data, perm),
+      };
+    },
   };
 });
 
@@ -77,7 +84,12 @@ describe('AdminPublicRegistrationsPage', () => {
     testEventId = faker.string.uuid();
     mockUseParams.mockReturnValue({ id: testEventId });
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'admin' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'admin',
+        permissions: ['canWriteAdminData', 'canReadAdminData'],
+      },
       isLoading: false,
     });
     mockUseDownloadPublicRegistrationsTemplateMutation.mockReturnValue({
@@ -309,7 +321,12 @@ describe('AdminPublicRegistrationsPage', () => {
 
   it('passes read-only mode to the list for slod users', () => {
     mockUseAdminAuthQuery.mockReturnValue({
-      data: { isAuthenticated: true, session: null, adminRole: 'slod' },
+      data: {
+        isAuthenticated: true,
+        session: null,
+        adminRole: 'slod',
+        permissions: ['canReadAdminData'],
+      },
       isLoading: false,
     });
     mockUseAdminEventQuery.mockReturnValue({

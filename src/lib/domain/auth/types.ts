@@ -4,10 +4,31 @@ export type AdminRole = 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk';
 
 export type AssignableAdminRole = Exclude<AdminRole, 'super_admin'>;
 
+export const ALL_ADMIN_PERMISSION_KEYS = [
+  'canWriteAdminData',
+  'canReadAdminData',
+  'canReadAdminMemberData',
+  'canManageAttendanceSavedViews',
+  'canExportAdminReports',
+  'canAccessAttendanceCheckIn',
+  'canViewMemberHistory',
+  'canManageAdminRoles',
+  'canReadDashboard',
+  'canManageServices',
+] as const;
+
+export type AdminPermissionKey = (typeof ALL_ADMIN_PERMISSION_KEYS)[number];
+
+export type AdminAuthContextRow = {
+  role: AdminRole;
+  permissions: AdminPermissionKey[];
+};
+
 export type AdminAuthState = {
   isAuthenticated: boolean;
   session: Session | null;
   adminRole: AdminRole | null;
+  permissions?: readonly AdminPermissionKey[];
 };
 
 export type AdminRoleAssignment = {

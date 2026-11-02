@@ -50,6 +50,9 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      return Promise.resolve(Response.json([{ permission: 'canExportAdminReports' }]));
+    }
     if (requestUrl.pathname === '/rest/v1/events') {
       return Promise.resolve(Response.json({ title: 'Community Day' }));
     }

@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/layout';
 import { AdminInfiniteScrollFooter, AlertBanner, Button, SearchInputField } from '@/components/ui';
 import { PAGINATION_DEFAULTS, ROUTE_PATHS, toRoute } from '@/config/constants';
-import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { useAdminRegistrationsQuery } from '@/hooks/domain/registrations';
 import { useDebounceSearch, useInfiniteScrollTrigger } from '@/hooks/utils';
@@ -16,7 +16,7 @@ import { CopyNamesButton, ExportButton, RegistrationsList, ViewNamesButton } fro
 
 export function AdminRegistrationsPage() {
   const { id: eventId } = useParams<{ id: string }>();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const navigate = useNavigate();
 
   const { searchTerm, setSearchTerm, normalizedSearchTerm, clearSearch } = useDebounceSearch();
@@ -54,9 +54,9 @@ export function AdminRegistrationsPage() {
   const isLoading = eventQuery.isLoading || registrationsQuery.isLoading;
   const error = eventQuery.error || registrationsQuery.error;
   const hasRegistrations = totalCount > 0;
-  const canRead = canAdminPerform(authState?.adminRole, 'canReadAdminData');
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
-  const canExport = canAdminPerform(authState?.adminRole, 'canExportAdminReports');
+  const canRead = can('canReadAdminData');
+  const canWrite = can('canWriteAdminData');
+  const canExport = can('canExportAdminReports');
 
   if (error) {
     return (

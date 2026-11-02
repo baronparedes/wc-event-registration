@@ -15,7 +15,7 @@ import {
   useOfflineAttendanceDataSnapshot,
 } from '@/hooks/domain/attendance';
 import { useAttendanceFieldsQuery } from '@/hooks/domain/attendance-fields';
-import { canAdminPerform, useAdminAuthQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useAdminEventFieldsQuery } from '@/hooks/domain/event-fields';
 import { useAdminEventQuery } from '@/hooks/domain/events';
 import { attendeeViewConfigSchema, buildAttendeeView } from '@/lib/domain/attendance-views';
@@ -34,7 +34,7 @@ import { useSelectedAttendanceView } from './hooks/useSelectedAttendanceView';
 export function AdminAttendanceDataPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: authState } = useAdminAuthQuery();
+  const { can } = useAdminAuthQuery();
   const [searchParams] = useSearchParams();
   const [savedViewsModalOpen, setSavedViewsModalOpen] = useState(false);
 
@@ -198,10 +198,10 @@ export function AdminAttendanceDataPage() {
   }
 
   const attendanceEnabled = settings?.attendance_enabled ?? false;
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWrite = can('canWriteAdminData');
   const canWriteOnline = canWrite && offlineSnapshot.isOnline && !isUsingSnapshot;
-  const canManageViews = canAdminPerform(authState?.adminRole, 'canManageAttendanceSavedViews');
-  const canExport = canAdminPerform(authState?.adminRole, 'canExportAdminReports');
+  const canManageViews = can('canManageAttendanceSavedViews');
+  const canExport = can('canExportAdminReports');
 
   const canRunBulkOps = Boolean(id) && attendanceEnabled && fields.length > 0;
 

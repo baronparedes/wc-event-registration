@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     functionName: 'chat',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['slod', 'admin', 'super_admin'],
+    requiredPermission: 'canReadAdminData',
     rateLimit: {
       scope: 'chat',
       windowMs: 60 * 1000,

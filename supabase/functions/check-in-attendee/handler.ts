@@ -71,7 +71,7 @@ export async function handleCheckInAttendee(req: Request): Promise<Response> {
     functionName: 'check-in-attendee',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin', 'kiosk'],
+    requiredPermission: 'canAccessAttendanceCheckIn',
     rateLimit: {
       scope: 'check-in-attendee',
       windowMs: RATE_LIMIT_PRESETS.checkInAttendee.windowMs,

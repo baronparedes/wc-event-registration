@@ -26,7 +26,7 @@ export async function handleResolveUserTokens(req: Request): Promise<Response> {
     functionName: 'resolve-user-tokens',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['slod', 'admin', 'super_admin'],
+    requiredPermission: 'canReadAdminData',
     schema: resolveTokensRequestSchema,
   });
 

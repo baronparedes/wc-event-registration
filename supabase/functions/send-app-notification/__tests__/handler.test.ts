@@ -68,6 +68,14 @@ function mockFetch(
     if (url.pathname === '/auth/v1/user') return Promise.resolve(Response.json({ id: ADMIN_ID }));
     if (url.pathname === '/rest/v1/admins')
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.role ?? 'admin' }));
+    if (url.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.role ?? 'admin';
+      return Promise.resolve(
+        Response.json(
+          role === 'admin' || role === 'super_admin' ? [{ permission: 'canWriteAdminData' }] : [],
+        ),
+      );
+    }
     if (url.pathname === '/rest/v1/rpc/broadcast_app_notification') {
       return Promise.resolve(
         options.broadcastError

@@ -1,12 +1,9 @@
 import { supabase } from '@/lib/infrastructure';
 
-import type { AdminAuthState, AdminRole } from './types';
+import { fetchMyAdminAuthContext } from './api';
+import type { AdminAuthState } from './types';
 
 export const ADMIN_AUTH_QUERY_KEY = ['admin-auth-state'] as const;
-
-type AdminRow = {
-  role: AdminRole;
-};
 
 export async function fetchAdminAuthState(): Promise<AdminAuthState> {
   const {
@@ -23,30 +20,25 @@ export async function fetchAdminAuthState(): Promise<AdminAuthState> {
       isAuthenticated: false,
       session: null,
       adminRole: null,
+      permissions: [],
     };
   }
 
-  const { data: adminRow, error: adminError } = await supabase
-    .from('admins')
-    .select('role')
-    .eq('auth_user_id', session.user.id)
-    .maybeSingle<AdminRow>();
+  const adminContext = await fetchMyAdminAuthContext();
 
-  if (adminError) {
-    throw adminError;
-  }
-
-  if (!adminRow) {
+  if (!adminContext) {
     return {
       isAuthenticated: false,
       session,
       adminRole: null,
+      permissions: [],
     };
   }
 
   return {
     isAuthenticated: true,
     session,
-    adminRole: adminRow.role,
+    adminRole: adminContext.role,
+    permissions: adminContext.permissions,
   };
 }

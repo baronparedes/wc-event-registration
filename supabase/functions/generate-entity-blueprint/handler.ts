@@ -16,7 +16,7 @@ export async function handleGenerateEntityBlueprint(req: Request): Promise<Respo
     functionName: 'generate-entity-blueprint',
     method: 'POST',
     requireAdmin: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     rateLimit: {
       scope: 'generate-entity-blueprint',
       windowMs: 60 * 1000,

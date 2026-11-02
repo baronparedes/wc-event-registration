@@ -10,7 +10,7 @@ export async function handleCronTokenizeUsers(req: Request): Promise<Response> {
     method: 'POST',
     requireAdmin: true,
     allowServiceRole: true,
-    allowedRoles: ['admin', 'super_admin'],
+    requiredPermission: 'canWriteAdminData',
     publicRateLimit: {
       scope: 'cron-tokenize-users',
       windowMs: RATE_LIMIT_PRESETS.cron.tokenizeUsers.windowMs,

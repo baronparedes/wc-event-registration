@@ -48,6 +48,7 @@ describe('useAdminLogoutMutation', () => {
       isAuthenticated: false,
       session: null,
       adminRole: null,
+      permissions: [],
     });
     expect(queryClient.getQueryData(CURRENT_PROFILE_QUERY_KEY)).toBeUndefined();
 

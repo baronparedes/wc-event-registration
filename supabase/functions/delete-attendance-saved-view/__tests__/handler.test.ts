@@ -43,6 +43,14 @@ function mockFetch(options: { role?: string; deleteError?: boolean }) {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: options.role ?? 'admin' }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      const role = options.role ?? 'admin';
+      return Promise.resolve(
+        Response.json(
+          role === 'admin' || role === 'super_admin' ? [{ permission: 'canWriteAdminData' }] : [],
+        ),
+      );
+    }
     if (requestUrl.pathname === '/rest/v1/attendance_saved_views' && init?.method === 'DELETE') {
       deletions.push(requestUrl);
       if (options.deleteError) {

@@ -51,6 +51,9 @@ function mockFetch(options: {
     if (requestUrl.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: 'admin-row', role: 'slod' }));
     }
+    if (requestUrl.pathname === '/rest/v1/admin_role_permissions') {
+      return Promise.resolve(Response.json([{ permission: 'canExportAdminReports' }]));
+    }
     if (requestUrl.pathname === '/rest/v1/events') {
       return Promise.resolve(
         Response.json({ title: options.nullTitle ? null : 'Annual, Gathering' }),
@@ -301,6 +304,8 @@ Deno.test(
             return Promise.resolve(Response.json({ id: crypto.randomUUID() }));
           if (url.pathname === '/rest/v1/admins')
             return Promise.resolve(Response.json({ id: 'admin-1', role: 'admin' }));
+          if (url.pathname === '/rest/v1/admin_role_permissions')
+            return Promise.resolve(Response.json([{ permission: 'canExportAdminReports' }]));
           if (url.pathname === '/rest/v1/events')
             return Promise.resolve(Response.json({ title: 'Diverse Event' }));
           if (url.pathname === '/rest/v1/registrations') {

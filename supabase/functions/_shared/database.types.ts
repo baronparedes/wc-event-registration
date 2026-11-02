@@ -155,6 +155,24 @@ export type Database = {
           },
         ];
       };
+      admin_role_permissions: {
+        Row: {
+          created_at: string;
+          permission: string;
+          role: string;
+        };
+        Insert: {
+          created_at?: string;
+          permission: string;
+          role: string;
+        };
+        Update: {
+          created_at?: string;
+          permission?: string;
+          role?: string;
+        };
+        Relationships: [];
+      };
       admins: {
         Row: {
           auth_user_id: string;
@@ -1802,6 +1820,13 @@ export type Database = {
           user_id: string;
         }[];
       };
+      get_my_admin_auth_context: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          permissions: string[];
+          role: string;
+        }[];
+      };
       get_nearest_upcoming_sunday: { Args: { base_date: string }; Returns: string };
       get_public_event_registration_count: { Args: { p_event_id: string }; Returns: number };
       get_service_dashboard_stats: {
@@ -1833,6 +1858,7 @@ export type Database = {
           time_slot: string;
         }[];
       };
+      has_admin_permission: { Args: { p_permission: string }; Returns: boolean };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_admin_member_viewer: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_admin_or_slod: { Args: Record<PropertyKey, never>; Returns: boolean };

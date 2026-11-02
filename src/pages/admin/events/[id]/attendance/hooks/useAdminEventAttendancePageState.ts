@@ -14,7 +14,6 @@ import {
   type UpdateAttendanceSettingsInput,
   updateAttendanceSettingsSchema,
 } from '@/lib/domain/attendance';
-import { canAdminPerform } from '@/lib/domain/auth';
 import { localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
 const ATTENDANCE_TOAST_MESSAGES = {
@@ -49,7 +48,7 @@ function createEmptyTimeslot(): AttendanceTimeslotConfig {
 }
 
 export function useAdminEventAttendancePageState(eventId: string | undefined) {
-  const { data: authState, isLoading: isAuthLoading } = useAdminAuthQuery();
+  const { data: authState, isLoading: isAuthLoading, can } = useAdminAuthQuery();
   const canLoadAdminData = !isAuthLoading && (authState?.isAuthenticated ?? false);
 
   const { data: event, isLoading: isEventLoading } = useAdminEventQuery(
@@ -85,7 +84,7 @@ export function useAdminEventAttendancePageState(eventId: string | undefined) {
   const effectiveTimeslots = timeslots ?? [];
 
   const isArchived = event?.status === 'archived';
-  const canWrite = canAdminPerform(authState?.adminRole, 'canWriteAdminData');
+  const canWrite = can('canWriteAdminData');
   const eventStartLocal = toDatetimeLocal(event?.starts_at);
   const eventEndLocal = toDatetimeLocal(event?.ends_at);
 
