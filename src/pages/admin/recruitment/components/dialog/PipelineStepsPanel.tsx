@@ -320,16 +320,16 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               <TabsTrigger
                 key={s.stepNumber}
                 value={String(s.stepNumber)}
-                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all ${
+                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all border-2 ${
                   isStepSelected
-                    ? 'bg-primary text-white font-bold shadow-xs'
+                    ? 'border-primary bg-primary text-white font-bold shadow-xs'
                     : isStepCurrent
-                      ? 'border border-primary/50 bg-primary/10 text-primary font-semibold'
+                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-2xs'
                       : isStepCompleted
-                        ? 'text-text hover:bg-surface-hover'
+                        ? 'border-transparent text-text hover:bg-surface-hover'
                         : isStepLocked
-                          ? 'text-muted/60 hover:text-text'
-                          : 'text-muted hover:text-text'
+                          ? 'border-transparent text-muted/60 hover:text-text'
+                          : 'border-transparent text-muted hover:text-text'
                 }`}
               >
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -354,13 +354,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       {s.stepNumber}
                     </span>
                   )}
-                  {isStepCurrent && !isStepSelected && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  )}
                 </div>
-                <span className="whitespace-nowrap font-medium">
-                  {s.stepNumber}. {s.shortLabel}
-                </span>
+                <span className="whitespace-nowrap font-medium">{s.shortLabel}</span>
               </TabsTrigger>
             );
           })}
