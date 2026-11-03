@@ -153,7 +153,7 @@ export function AdminRecruitmentPage() {
 
             <FormSelectField
               placeholder=""
-              label="Filter by Step"
+              ariaLabel="Filter by Step"
               value={stepFilter}
               onChange={(val) => setStepFilter(val)}
               options={STEP_OPTIONS}
@@ -161,7 +161,7 @@ export function AdminRecruitmentPage() {
 
             <FormSelectField
               placeholder=""
-              label="Filter by Role"
+              ariaLabel="Filter by Role"
               value={roleFilter}
               onChange={(val) => setRoleFilter(val)}
               options={ROLE_OPTIONS}
