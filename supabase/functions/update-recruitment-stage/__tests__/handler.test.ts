@@ -138,6 +138,18 @@ function mockFetch(
         }),
       );
     }
+    if (url.pathname === '/rest/v1/recruitment_pipeline_transactions') {
+      if (method === 'POST' || method === 'PATCH') {
+        return Promise.resolve(Response.json({ id: 'tx-mock-1' }));
+      }
+      return Promise.resolve(Response.json([]));
+    }
+    if (url.pathname === '/rest/v1/app_notifications') {
+      return Promise.resolve(Response.json({ id: 'mock-notif-1' }));
+    }
+    if (url.pathname === '/rest/v1/app_notification_recipients') {
+      return Promise.resolve(Response.json({ id: 'mock-recip-1' }));
+    }
     if (url.pathname === '/rest/v1/approval_requests') {
       if (method === 'PATCH') {
         return Promise.resolve(Response.json({ id: APPROVAL_ID, access_token: 'rotated-token' }));
@@ -519,3 +531,30 @@ Deno.test(
     });
   },
 );
+
+Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      approvalStatus: 'approved',
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'update_stage',
+          application_id: APPLICATION_ID,
+          step_number: 3,
+          status: 'scheduled',
+          scheduled_at: '2026-11-08T09:00:00+08:00',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+    } finally {
+      mock.restore();
+    }
+  });
+});

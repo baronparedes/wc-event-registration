@@ -124,7 +124,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     action: 'update_stage' | 'repeat_step' | 'return_to_observation' = 'update_stage',
   ) => {
     const assignedReviewer = approvers?.find((u) => u.auth_user_id === reviewerId);
-    const isoScheduledAt = localDateTimeToUTC8ISO(scheduledAtLocal);
+    const isoScheduledAt = scheduledAtLocal?.trim()
+      ? localDateTimeToUTC8ISO(scheduledAtLocal)
+      : null;
 
     updateStageMutation.mutate(
       {
