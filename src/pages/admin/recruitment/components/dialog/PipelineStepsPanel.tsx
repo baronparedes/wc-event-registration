@@ -22,6 +22,9 @@ import {
   FormSelectField,
   FormTextareaField,
   Spinner,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
 import { useAdminAuthQuery, useApproverUsersQuery } from '@/hooks/domain/auth';
 import {
@@ -163,25 +166,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     value: role,
   }));
 
-  // Options for mobile step selector dropdown
-  const stepSelectOptions = RECRUITMENT_STEPS.map((s) => {
-    const isStepCurrent = application.current_step === s.stepNumber;
-    const isStepCompleted =
-      application.current_step > s.stepNumber || application.status === 'deployed';
-    const isAllowedParallel = application.current_step === 2 && s.stepNumber === 3;
-    const tag = isStepCurrent
-      ? ' (Active)'
-      : isStepCompleted
-        ? ' (Completed)'
-        : isAllowedParallel
-          ? ' (Parallel)'
-          : ' (Locked)';
-    return {
-      value: String(s.stepNumber),
-      label: `Step ${s.stepNumber}: ${s.shortLabel}${tag}`,
-    };
-  });
-
   const handleStepSelect = (stepNum: RecruitmentStepNumber) => {
     setSelectedStep(stepNum);
     const tx = [...transactions].reverse().find((t) => t.step_number === stepNum);
@@ -274,20 +258,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
   return (
     <div className="space-y-4">
-      {/* Mobile Step Selector (No sideways scrolling on phones) */}
-      <div className="sm:hidden">
-        <FormSelectField
-          label="Jump to Step"
-          placeholder=""
-          value={String(selectedStep)}
-          onChange={(val) => handleStepSelect(Number(val) as RecruitmentStepNumber)}
-          options={stepSelectOptions}
-        />
-      </div>
-
-      {/* Desktop Step Segmented Selector */}
-      <div className="hidden sm:block rounded-xl border border-border bg-surface p-1.5 shadow-2xs">
-        <div className="grid grid-cols-9 gap-1 text-center">
+      {/* 9-Step Pipeline Stepper Navigation */}
+      <Tabs
+        value={String(selectedStep)}
+        onValueChange={(val) => handleStepSelect(Number(val) as RecruitmentStepNumber)}
+      >
+        <TabsList containerClassName="justify-start" className="w-full">
           {RECRUITMENT_STEPS.map((s) => {
             const isStepCurrent = application.current_step === s.stepNumber;
             const isStepCompleted =
@@ -297,42 +273,55 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             const isStepLocked = !isStepCompleted && !isStepCurrent && !isAllowedParallel;
 
             return (
-              <button
+              <TabsTrigger
                 key={s.stepNumber}
-                type="button"
-                onClick={() => handleStepSelect(s.stepNumber)}
-                className={`flex flex-col items-center justify-center rounded-lg px-1 py-1.5 transition-all text-xs ${
+                value={String(s.stepNumber)}
+                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all ${
                   isStepSelected
-                    ? 'bg-primary text-white font-bold shadow-2xs'
+                    ? 'bg-primary text-white font-bold shadow-xs'
                     : isStepCurrent
-                      ? 'border border-primary bg-primary/10 text-primary font-semibold'
+                      ? 'border border-primary/50 bg-primary/10 text-primary font-semibold'
                       : isStepCompleted
                         ? 'text-text hover:bg-surface-hover'
-                        : isAllowedParallel
-                          ? 'border border-border/80 text-text hover:bg-surface-hover'
-                          : 'text-muted/60 hover:text-text'
+                        : isStepLocked
+                          ? 'text-muted/60 hover:text-text'
+                          : 'text-muted hover:text-text'
                 }`}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {isStepCompleted ? (
-                    <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
+                    <CheckCircle2
+                      className={`h-4 w-4 shrink-0 ${isStepSelected ? 'text-white' : 'text-emerald-500'}`}
+                    />
                   ) : isStepLocked ? (
-                    <Lock className="h-3 w-3 text-muted shrink-0" />
+                    <Lock
+                      className={`h-3.5 w-3.5 shrink-0 ${isStepSelected ? 'text-white' : 'text-muted'}`}
+                    />
                   ) : (
-                    <span className="font-mono text-[11px] leading-none">{s.stepNumber}</span>
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-mono font-bold leading-none ${
+                        isStepSelected
+                          ? 'bg-white/20 text-white'
+                          : isStepCurrent
+                            ? 'bg-primary text-white'
+                            : 'bg-surface-hover text-text'
+                      }`}
+                    >
+                      {s.stepNumber}
+                    </span>
                   )}
                   {isStepCurrent && !isStepSelected && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                   )}
                 </div>
-                <span className="mt-0.5 truncate max-w-full text-[10px] leading-tight">
-                  {s.shortLabel}
+                <span className="whitespace-nowrap font-medium">
+                  {s.stepNumber}. {s.shortLabel}
                 </span>
-              </button>
+              </TabsTrigger>
             );
           })}
-        </div>
-      </div>
+        </TabsList>
+      </Tabs>
 
       {/* Viewing other step notice banner */}
       {!isCurrentActiveStep && (
