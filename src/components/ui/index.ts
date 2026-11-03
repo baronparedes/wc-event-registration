@@ -178,6 +178,8 @@ export {
   DEFAULT_SUNDAY_TIME_SLOTS,
   formatDisplayDateTime,
   formatTime12Hour,
+  parse12HourTimeString,
   parseDateTimeParts,
+  split24HourTime,
 } from './sundayDateTimeUtils';
 export { ApproverSelectField, type ApproverSelectFieldProps } from './ApproverSelectField';
