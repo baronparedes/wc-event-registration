@@ -45,6 +45,31 @@ import { useIsMobileViewport } from '@/hooks/utils';
 import type { ApprovalEntityType, ApprovalRequest, ApprovalStatus } from '@/lib/domain/approvals';
 import { formatDateOnly } from '@/lib/infrastructure';
 
+function getApprovalEntityTypeLabel(entityType: ApprovalEntityType, isMobile = false): string {
+  switch (entityType) {
+    case 'form_submission':
+      return isMobile ? 'Form Registration' : 'Form';
+    case 'recruitment_endorsement':
+      return 'Endorsement';
+    case 'service_excuse':
+    default:
+      return 'Long Leave';
+  }
+}
+
+function getApprovalEntityTypeBadgeVariant(
+  entityType: ApprovalEntityType,
+): 'secondary' | 'outline' {
+  switch (entityType) {
+    case 'form_submission':
+      return 'secondary';
+    case 'recruitment_endorsement':
+    case 'service_excuse':
+    default:
+      return 'outline';
+  }
+}
+
 export function AdminApprovalsPage() {
   const isMobileViewport = useIsMobileViewport();
   const [selectedStatus, setSelectedStatus] = useState<ApprovalStatus | 'all'>('pending');
@@ -168,7 +193,7 @@ export function AdminApprovalsPage() {
       <AdminPageShell.Header
         breadcrumbs={[{ label: 'Approvals' }]}
         title="Approvals Inbox"
-        description="Review and process pending Form Registrations and Long Leave volunteer requests."
+        description="Review and process pending Form Registrations, Long Leave requests, and Endorsements."
       />
 
       <AdminBaseNavigation />
@@ -273,6 +298,7 @@ export function AdminApprovalsPage() {
                   { value: 'all', label: 'All Request Types' },
                   { value: 'form_submission', label: 'Form Registrations' },
                   { value: 'service_excuse', label: 'Long Leave Requests' },
+                  { value: 'recruitment_endorsement', label: 'Endorsements' },
                 ]}
               />
             </div>
@@ -322,14 +348,10 @@ export function AdminApprovalsPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <Badge
-                              variant={
-                                req.entity_type === 'form_submission' ? 'secondary' : 'outline'
-                              }
+                              variant={getApprovalEntityTypeBadgeVariant(req.entity_type)}
                               className="mb-1.5"
                             >
-                              {req.entity_type === 'form_submission'
-                                ? 'Form Registration'
-                                : 'Long Leave'}
+                              {getApprovalEntityTypeLabel(req.entity_type, true)}
                             </Badge>
                             <h3 className="font-heading font-semibold text-text truncate">
                               {req.title}
@@ -428,12 +450,8 @@ export function AdminApprovalsPage() {
                           )}
                         </ListTableCell>
                         <ListTableCell>
-                          <Badge
-                            variant={
-                              req.entity_type === 'form_submission' ? 'secondary' : 'outline'
-                            }
-                          >
-                            {req.entity_type === 'form_submission' ? 'Form' : 'Long Leave'}
+                          <Badge variant={getApprovalEntityTypeBadgeVariant(req.entity_type)}>
+                            {getApprovalEntityTypeLabel(req.entity_type, false)}
                           </Badge>
                         </ListTableCell>
                         <ListTableCell>
@@ -503,8 +521,13 @@ export function AdminApprovalsPage() {
       <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="lg">
         <Dialog.Header>
           <div className="flex items-center gap-2">
-            <Dialog.Title className="flex items-center gap-2.5 text-lg font-heading font-bold text-text">
+            <Dialog.Title className="flex flex-wrap items-center gap-2.5 text-lg font-heading font-bold text-text">
               {inspectingRequest?.title}
+              {inspectingRequest && (
+                <Badge variant={getApprovalEntityTypeBadgeVariant(inspectingRequest.entity_type)}>
+                  {getApprovalEntityTypeLabel(inspectingRequest.entity_type)}
+                </Badge>
+              )}
               <Badge
                 variant={
                   inspectingRequest?.status === 'approved'

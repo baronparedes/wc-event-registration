@@ -465,4 +465,56 @@ describe('AdminApprovalsPage', () => {
     fireEvent.click(mobileReviewButtons[0]);
     expect(screen.getByText(/Review request details/i)).toBeInTheDocument();
   });
+
+  it('renders Endorsement badge and handles Endorsements entity filter', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'app-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Daniel G Paredes',
+          summary: 'Please review volunteer application.',
+          requester_user_id: 'user-1',
+          requester_name: 'Bryan Daniel G Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {},
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    expect(screen.getByText('Endorsement')).toBeInTheDocument();
+    expect(
+      screen.getByText('Welcome Center endorsement for Bryan Daniel G Paredes'),
+    ).toBeInTheDocument();
+
+    const selectTrigger = screen.getByLabelText(/Request Type/i);
+    fireEvent.click(selectTrigger);
+
+    const endorsementOption = screen.getByRole('option', { name: /^Endorsements$/i });
+    fireEvent.click(endorsementOption);
+
+    expect(mockUseApprovalRequestsQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ entity_type: 'recruitment_endorsement' }),
+    );
+  });
 });
