@@ -1,34 +1,46 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import {
   AlertTriangle,
-  Calendar,
+  ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Clock,
-  FileText,
-  MessageSquare,
   ShieldAlert,
-  User,
   XCircle,
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { Avatar, Badge, Button, Skeleton } from '@/components/ui';
+import {
+  Avatar,
+  Badge,
+  Button,
+  FormTextareaField,
+  SectionCard,
+  Skeleton,
+  StepIndicator,
+  WizardStep,
+} from '@/components/ui';
 import {
   useApprovalReviewQuery,
   useSubmitApprovalDecisionMutation,
 } from '@/hooks/domain/approvals';
+import { useWizardStepScroll } from '@/hooks/utils';
 
 import { RecruitmentEndorsementReviewSection } from './components/RecruitmentEndorsementReviewSection';
 
 export function ApprovalReviewPage() {
   const { token } = useParams<{ token: string }>();
+  const [activeStep, setActiveStep] = useState<number>(1);
   const [decisionNotes, setDecisionNotes] = useState('');
   const [selectedAction, setSelectedAction] = useState<'approved' | 'rejected' | null>(null);
 
-  const { data: reviewData, isLoading, isError, error, refetch } = useApprovalReviewQuery(token);
+  const stepOneRef = useRef<HTMLDivElement | null>(null);
+  const stepTwoRef = useRef<HTMLDivElement | null>(null);
+  useWizardStepScroll(activeStep, [stepOneRef, stepTwoRef]);
 
+  const { data: reviewData, isLoading, isError, error, refetch } = useApprovalReviewQuery(token);
   const { mutate: submitDecision, isPending: isSubmitting } = useSubmitApprovalDecisionMutation();
 
   const handleDecision = (
@@ -93,21 +105,37 @@ export function ApprovalReviewPage() {
   const { approval, entity_details } = reviewData;
   const isPending = approval.status === 'pending' && !approval.is_expired;
 
+  const excuseStartDate = String(
+    (entity_details as { start_date?: string })?.start_date ||
+      (approval.metadata as { start_date?: string })?.start_date ||
+      '—',
+  );
+  const excuseEndDate = String(
+    (entity_details as { end_date?: string })?.end_date ||
+      (approval.metadata as { end_date?: string })?.end_date ||
+      '—',
+  );
+  const excuseReason = String(
+    (entity_details as { reason?: string })?.reason ||
+      (approval.metadata as { reason?: string })?.reason ||
+      'No reason provided.',
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
-      {/* Top Banner / Status Indicator */}
+      {/* Top Banner / Request Identification */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
                 approval.status === 'approved'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  ? 'border border-emerald-200 bg-emerald-100 text-emerald-800'
                   : approval.status === 'rejected'
-                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                    ? 'border border-rose-200 bg-rose-100 text-rose-800'
                     : approval.is_expired
-                      ? 'bg-slate-100 text-slate-800 border border-slate-200'
-                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                      ? 'border border-slate-200 bg-slate-100 text-slate-800'
+                      : 'border border-amber-200 bg-amber-100 text-amber-800'
               }`}
             >
               {approval.status === 'approved' && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -138,23 +166,23 @@ export function ApprovalReviewPage() {
         </div>
       </div>
 
-      {/* Decision Summary Banner if already decided */}
+      {/* Outcome Summary Banner if decided or expired */}
       {approval.status !== 'pending' && (
         <div
-          className={`rounded-2xl border p-4 ${
+          className={`rounded-2xl border p-5 ${
             approval.status === 'approved'
               ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
               : 'border-rose-200 bg-rose-50/70 text-rose-950'
           }`}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3.5">
             {approval.status === 'approved' ? (
-              <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
             ) : (
-              <XCircle className="mt-0.5 h-5 w-5 text-rose-600 shrink-0" />
+              <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-rose-600" />
             )}
-            <div>
-              <p className="font-semibold">
+            <div className="min-w-0 flex-1">
+              <p className="font-heading text-base font-semibold">
                 This request was {approval.status}
                 {approval.decided_by_email && ` by ${approval.decided_by_email}`}
                 {approval.decided_at &&
@@ -164,7 +192,7 @@ export function ApprovalReviewPage() {
                   })}`}
               </p>
               {approval.decision_notes && (
-                <p className="mt-1 text-sm opacity-90">
+                <p className="mt-1.5 text-sm opacity-90">
                   <span className="font-medium">Note:</span> {approval.decision_notes}
                 </p>
               )}
@@ -173,10 +201,9 @@ export function ApprovalReviewPage() {
         </div>
       )}
 
-      {/* Expiration Notice if expired and still pending */}
       {approval.status === 'pending' && approval.is_expired && (
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600" />
           <p className="text-sm">
             This review link expired on {new Date(approval.token_expires_at).toLocaleDateString()}.
             Please contact an administrator if action is still required.
@@ -184,196 +211,351 @@ export function ApprovalReviewPage() {
         </div>
       )}
 
-      {/* Applicant / Volunteer Card */}
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
-        <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
-          <User className="h-4 w-4" />
-          Applicant Details
-        </h2>
-        <div className="mt-4 flex items-center gap-3.5">
-          <Avatar
-            name={approval.requester_name}
-            avatarObjectKey={approval.requester_avatar_object_key}
-            size="md"
-          />
-          <div className="min-w-0">
-            <div className="font-heading text-lg font-bold text-text">
-              {approval.requester_name}
-            </div>
-            {approval.requester_email && (
-              <div className="text-sm text-muted mt-0.5">{approval.requester_email}</div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Entity-specific flows */}
+      {approval.entity_type === 'recruitment_endorsement' && entity_details && (
+        <RecruitmentEndorsementReviewSection
+          entityDetails={entity_details}
+          canDecide={isPending}
+          isSubmitting={isSubmitting}
+          decisionNotes={decisionNotes}
+          onDecisionNotesChange={(event) => setDecisionNotes(event.target.value)}
+          onDecision={handleDecision}
+        />
+      )}
 
-      {/* Details Section: Form Answers or Leave Details */}
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
-        <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
-          {approval.entity_type === 'form_submission' ? (
-            <FileText className="h-4 w-4" />
-          ) : (
-            <Calendar className="h-4 w-4" />
-          )}
-          {approval.entity_type === 'form_submission'
-            ? 'Submission Responses'
-            : approval.entity_type === 'service_excuse'
-              ? 'Leave Schedule & Reason'
-              : 'DGroup Leader Endorsement'}
-        </h2>
+      {approval.entity_type !== 'recruitment_endorsement' && (
+        <>
+          {isPending ? (
+            <div className="space-y-6">
+              <StepIndicator
+                currentStep={activeStep}
+                totalSteps={2}
+                labels={['Request Details', 'Decision & Notes']}
+                categoryLabel="Approval Review"
+              />
 
-        {approval.entity_type === 'form_submission' && entity_details && (
-          <div className="mt-4 divide-y divide-border">
-            {Array.isArray(
-              (entity_details as { form_submission_answers?: unknown[] }).form_submission_answers,
-            ) &&
-            (
-              entity_details as {
-                form_submission_answers: Array<{
-                  id: string;
-                  answer_text: string | null;
-                  form_fields?: { label: string; field_type: string };
-                }>;
-              }
-            ).form_submission_answers.length > 0 ? (
-              (
-                entity_details as {
-                  form_submission_answers: Array<{
-                    id: string;
-                    answer_text: string | null;
-                    form_fields?: { label: string; field_type: string };
-                  }>;
-                }
-              ).form_submission_answers.map((answer) => {
-                const isApproval = answer.form_fields?.field_type === 'required_approval';
-                return (
-                  <div key={answer.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="text-xs font-medium text-muted">
-                      {answer.form_fields?.label || 'Field'}
+              {activeStep === 1 && (
+                <WizardStep
+                  title="Request Details"
+                  subtitle="Review the requester information and submission details below."
+                >
+                  <div ref={stepOneRef} className="space-y-6">
+                    <SectionCard title="Requester Details">
+                      <div className="flex items-center gap-3.5">
+                        <Avatar
+                          name={approval.requester_name}
+                          avatarObjectKey={approval.requester_avatar_object_key}
+                          size="md"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-heading text-lg font-bold text-text">
+                            {approval.requester_name}
+                          </div>
+                          {approval.requester_email && (
+                            <div className="text-sm text-muted">{approval.requester_email}</div>
+                          )}
+                        </div>
+                      </div>
+                    </SectionCard>
+
+                    <SectionCard
+                      title={
+                        approval.entity_type === 'form_submission'
+                          ? 'Submission Responses'
+                          : 'Leave Schedule & Reason'
+                      }
+                    >
+                      {approval.entity_type === 'form_submission' && entity_details && (
+                        <div className="divide-y divide-border">
+                          {Array.isArray(
+                            (entity_details as { form_submission_answers?: unknown[] })
+                              .form_submission_answers,
+                          ) &&
+                          (
+                            entity_details as {
+                              form_submission_answers: Array<{
+                                id: string;
+                                answer_text: string | null;
+                                form_fields?: { label: string; field_type: string };
+                              }>;
+                            }
+                          ).form_submission_answers.length > 0 ? (
+                            (
+                              entity_details as {
+                                form_submission_answers: Array<{
+                                  id: string;
+                                  answer_text: string | null;
+                                  form_fields?: { label: string; field_type: string };
+                                }>;
+                              }
+                            ).form_submission_answers.map((answer) => {
+                              const isApproval =
+                                answer.form_fields?.field_type === 'required_approval';
+                              return (
+                                <div key={answer.id} className="py-3 first:pt-0 last:pb-0">
+                                  <div className="text-xs font-medium text-muted">
+                                    {answer.form_fields?.label || 'Field'}
+                                  </div>
+                                  {isApproval ? (
+                                    <div className="mt-1 flex items-center gap-2">
+                                      {answer.answer_text === 'approved' ? (
+                                        <Badge variant="default">Approved</Badge>
+                                      ) : answer.answer_text === 'rejected' ||
+                                        answer.answer_text === 'declined' ? (
+                                        <Badge variant="destructive">Declined</Badge>
+                                      ) : (
+                                        <Badge variant="secondary">Pending Review</Badge>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="mt-0.5 text-sm font-medium text-text">
+                                      {answer.answer_text || '—'}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="py-3 text-sm italic text-muted">
+                              No field answers recorded.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {approval.entity_type === 'service_excuse' && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                              <div className="text-xs text-muted">Leave Period</div>
+                              <div className="mt-0.5 text-sm font-semibold text-text">
+                                {excuseStartDate} to {excuseEndDate}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted">Excused Commitments</div>
+                              <div className="mt-0.5 text-sm font-semibold text-text">
+                                All Sunday Service Commitments
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-muted">Reason for Leave</div>
+                            <div className="mt-1 rounded-xl border border-border bg-background p-3 text-sm text-text">
+                              {excuseReason}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </SectionCard>
+
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="button"
+                        onClick={() => setActiveStep(2)}
+                        className="w-full sm:w-auto"
+                      >
+                        Continue to Decision <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
                     </div>
-                    {isApproval ? (
-                      <div className="mt-1 flex items-center gap-2">
-                        {answer.answer_text === 'approved' ? (
-                          <Badge variant="default">Approved</Badge>
-                        ) : answer.answer_text === 'rejected' ||
-                          answer.answer_text === 'declined' ? (
-                          <Badge variant="destructive">Declined</Badge>
-                        ) : (
-                          <Badge variant="secondary">Pending Review</Badge>
-                        )}
+                  </div>
+                </WizardStep>
+              )}
+
+              {activeStep === 2 && (
+                <WizardStep
+                  title="Decision & Notes"
+                  subtitle="Provide your review notes and submit your approval decision."
+                >
+                  <div ref={stepTwoRef} className="space-y-6">
+                    <SectionCard title="Request Summary">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <div className="text-xs text-muted">Requester</div>
+                          <div className="text-sm font-semibold text-text">
+                            {approval.requester_name}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted">Request Type</div>
+                          <div className="text-sm font-semibold text-text">
+                            {approval.entity_type === 'form_submission'
+                              ? 'Form Submission'
+                              : 'Service Excuse'}
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="mt-0.5 text-sm font-medium text-text">
-                        {answer.answer_text || '—'}
+                    </SectionCard>
+
+                    <SectionCard
+                      title="Reviewer Notes"
+                      subtitle="Optional for approval, required if declining."
+                    >
+                      <FormTextareaField
+                        id="decision-notes"
+                        label="Notes / Feedback for Applicant"
+                        value={decisionNotes}
+                        onChange={(e) => setDecisionNotes(e.target.value)}
+                        rows={3}
+                        textareaClassName="resize-none"
+                        placeholder="e.g. Approved. Thank you for your commitment to our community."
+                        helperText="A note is required when declining a request."
+                        disabled={isSubmitting}
+                      />
+                    </SectionCard>
+
+                    <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isSubmitting}
+                        onClick={() => setActiveStep(1)}
+                        className="w-full sm:w-auto"
+                      >
+                        <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Details
+                      </Button>
+                      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isSubmitting}
+                          onClick={() => handleDecision('rejected')}
+                          className="w-full sm:w-auto border-rose-300 text-rose-700 hover:bg-rose-50"
+                        >
+                          <XCircle className="mr-1.5 h-4 w-4" />
+                          {isSubmitting && selectedAction === 'rejected'
+                            ? 'Declining...'
+                            : 'Decline Request'}
+                        </Button>
+                        <Button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => handleDecision('approved')}
+                          className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700"
+                        >
+                          <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                          {isSubmitting && selectedAction === 'approved'
+                            ? 'Approving...'
+                            : 'Approve Request'}
+                        </Button>
                       </div>
+                    </div>
+                  </div>
+                </WizardStep>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <SectionCard title="Requester Details">
+                <div className="flex items-center gap-3.5">
+                  <Avatar
+                    name={approval.requester_name}
+                    avatarObjectKey={approval.requester_avatar_object_key}
+                    size="md"
+                  />
+                  <div className="min-w-0">
+                    <div className="font-heading text-lg font-bold text-text">
+                      {approval.requester_name}
+                    </div>
+                    {approval.requester_email && (
+                      <div className="text-sm text-muted">{approval.requester_email}</div>
                     )}
                   </div>
-                );
-              })
-            ) : (
-              <p className="py-3 text-sm text-muted italic">No field answers recorded.</p>
-            )}
-          </div>
-        )}
-
-        {approval.entity_type === 'service_excuse' && (
-          <div className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <div className="text-xs text-muted">Leave Period</div>
-                <div className="mt-0.5 text-sm font-semibold text-text">
-                  {String(
-                    (entity_details as { start_date?: string })?.start_date ||
-                      (approval.metadata as { start_date?: string })?.start_date ||
-                      '—',
-                  )}{' '}
-                  to{' '}
-                  {String(
-                    (entity_details as { end_date?: string })?.end_date ||
-                      (approval.metadata as { end_date?: string })?.end_date ||
-                      '—',
-                  )}
                 </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted">Excused Commitments</div>
-                <div className="mt-0.5 text-sm font-semibold text-text">
-                  All Sunday Service Commitments
-                </div>
-              </div>
-            </div>
+              </SectionCard>
 
-            <div>
-              <div className="text-xs text-muted">Reason for Leave</div>
-              <div className="mt-1 rounded-xl border border-border bg-slate-50/70 p-3 text-sm text-text">
-                {String(
-                  (entity_details as { reason?: string })?.reason ||
-                    (approval.metadata as { reason?: string })?.reason ||
-                    'No reason provided.',
+              <SectionCard
+                title={
+                  approval.entity_type === 'form_submission'
+                    ? 'Submission Responses'
+                    : 'Leave Schedule & Reason'
+                }
+              >
+                {approval.entity_type === 'form_submission' && entity_details && (
+                  <div className="divide-y divide-border">
+                    {Array.isArray(
+                      (entity_details as { form_submission_answers?: unknown[] })
+                        .form_submission_answers,
+                    ) &&
+                    (
+                      entity_details as {
+                        form_submission_answers: Array<{
+                          id: string;
+                          answer_text: string | null;
+                          form_fields?: { label: string; field_type: string };
+                        }>;
+                      }
+                    ).form_submission_answers.length > 0 ? (
+                      (
+                        entity_details as {
+                          form_submission_answers: Array<{
+                            id: string;
+                            answer_text: string | null;
+                            form_fields?: { label: string; field_type: string };
+                          }>;
+                        }
+                      ).form_submission_answers.map((answer) => {
+                        const isApproval = answer.form_fields?.field_type === 'required_approval';
+                        return (
+                          <div key={answer.id} className="py-3 first:pt-0 last:pb-0">
+                            <div className="text-xs font-medium text-muted">
+                              {answer.form_fields?.label || 'Field'}
+                            </div>
+                            {isApproval ? (
+                              <div className="mt-1 flex items-center gap-2">
+                                {answer.answer_text === 'approved' ? (
+                                  <Badge variant="default">Approved</Badge>
+                                ) : answer.answer_text === 'rejected' ||
+                                  answer.answer_text === 'declined' ? (
+                                  <Badge variant="destructive">Declined</Badge>
+                                ) : (
+                                  <Badge variant="secondary">Pending Review</Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="mt-0.5 text-sm font-medium text-text">
+                                {answer.answer_text || '—'}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="py-3 text-sm italic text-muted">No field answers recorded.</p>
+                    )}
+                  </div>
                 )}
-              </div>
+
+                {approval.entity_type === 'service_excuse' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <div className="text-xs text-muted">Leave Period</div>
+                        <div className="mt-0.5 text-sm font-semibold text-text">
+                          {excuseStartDate} to {excuseEndDate}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted">Excused Commitments</div>
+                        <div className="mt-0.5 text-sm font-semibold text-text">
+                          All Sunday Service Commitments
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-muted">Reason for Leave</div>
+                      <div className="mt-1 rounded-xl border border-border bg-background p-3 text-sm text-text">
+                        {excuseReason}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </SectionCard>
             </div>
-          </div>
-        )}
-
-        {approval.entity_type === 'recruitment_endorsement' && entity_details && (
-          <RecruitmentEndorsementReviewSection
-            entityDetails={entity_details}
-            canDecide={isPending}
-            isSubmitting={isSubmitting}
-            decisionNotes={decisionNotes}
-            onDecisionNotesChange={(event) => setDecisionNotes(event.target.value)}
-            onDecision={handleDecision}
-          />
-        )}
-      </div>
-
-      {/* Decision Action Area (When pending and valid) */}
-      {isPending && approval.entity_type !== 'recruitment_endorsement' && (
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
-          <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text">
-            <MessageSquare className="h-4 w-4" />
-            Decision & Notes
-          </h2>
-
-          <div className="mt-3">
-            <label htmlFor="decision-notes" className="block text-xs font-medium text-muted">
-              Notes / Feedback for Applicant (Optional for approval, required if declining)
-            </label>
-            <textarea
-              id="decision-notes"
-              rows={3}
-              value={decisionNotes}
-              onChange={(e) => setDecisionNotes(e.target.value)}
-              placeholder="e.g. Approved. Thank you for your commitment to our community."
-              disabled={isSubmitting}
-              className="mt-1.5 block w-full rounded-xl border border-border bg-surface p-3 text-sm text-text placeholder:text-muted shadow-xs focus:border-primary focus:outline-hidden"
-            />
-          </div>
-
-          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => handleDecision('rejected')}
-              className="w-full sm:w-auto border-rose-300 text-rose-700 hover:bg-rose-50"
-            >
-              <XCircle className="mr-1.5 h-4 w-4" />
-              {isSubmitting && selectedAction === 'rejected' ? 'Declining...' : 'Decline Request'}
-            </Button>
-
-            <Button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => handleDecision('approved')}
-              className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              <CheckCircle2 className="mr-1.5 h-4 w-4" />
-              {isSubmitting && selectedAction === 'approved' ? 'Approving...' : 'Approve Request'}
-            </Button>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

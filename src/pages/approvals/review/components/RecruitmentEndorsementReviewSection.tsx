@@ -1,12 +1,32 @@
-import type { ChangeEvent } from 'react';
+import { type ChangeEvent, type ReactNode, useMemo, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  ClipboardCheck,
+  HeartHandshake,
+  ShieldAlert,
+  Sparkles,
+  UserCheck,
+  XCircle,
+} from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { DynamicFieldRenderer } from '@/components/fields';
-import { Avatar, Badge, Button, FormTextareaField } from '@/components/ui';
+import {
+  Avatar,
+  Badge,
+  Button,
+  FormTextareaField,
+  SectionCard,
+  StepIndicator,
+  WizardStep,
+} from '@/components/ui';
+import { useWizardStepScroll } from '@/hooks/utils';
 import {
   type DynamicFieldResponseValues,
   buildDynamicFieldResponseSchema,
@@ -28,6 +48,65 @@ type RecruitmentEndorsementReviewSectionProps = {
   onDecision: (decision: 'approved' | 'rejected', answers: Record<string, unknown>) => void;
 };
 
+type ThematicGroup = {
+  id: string;
+  title: string;
+  description: string;
+  icon: ReactNode;
+  match: (fieldKey: string) => boolean;
+};
+
+const THEMATIC_GROUPS: ThematicGroup[] = [
+  {
+    id: 'dgroup_relationship',
+    title: 'Leader & DGroup Relationship',
+    description: 'Verify your disciple-maker relationship and involvement in your DGroup.',
+    icon: <HeartHandshake className="h-4 w-4 text-primary" />,
+    match: (key) =>
+      [
+        'leader_full_name',
+        'disciple_dgroup_since',
+        'is_disciple_dgroup_leader',
+        'disciple_led_dgroup_since',
+      ].includes(key),
+  },
+  {
+    id: 'spiritual_character',
+    title: 'Spiritual Maturity & Character Evaluation',
+    description: 'Evaluate spiritual disciplines, private life, and walk with God.',
+    icon: <Sparkles className="h-4 w-4 text-primary" />,
+    match: (key) => key.startsWith('eval_'),
+  },
+  {
+    id: 'growth_assessment',
+    title: 'Disciple Growth & Assessment',
+    description: 'Share observed strengths, weaknesses, and areas for improvement.',
+    icon: <ClipboardCheck className="h-4 w-4 text-primary" />,
+    match: (key) =>
+      ['disciple_strengths', 'disciple_weaknesses', 'disciple_improvements'].includes(key),
+  },
+  {
+    id: 'credibility_concerns',
+    title: 'Ministry Credibility & Concerns',
+    description: 'Disclose any potential concerns that may impact their ministry role.',
+    icon: <ShieldAlert className="h-4 w-4 text-primary" />,
+    match: (key) => ['credibility_concerns', 'credibility_concerns_details'].includes(key),
+  },
+  {
+    id: 'recommendation_attestation',
+    title: 'Attestation & Recommendation',
+    description: 'Formal ministry recommendation and leader attestation commitment.',
+    icon: <UserCheck className="h-4 w-4 text-primary" />,
+    match: (key) =>
+      [
+        'recommendation_decision',
+        'recommendation_comments',
+        'leader_attestation_statement',
+        'attestation_comments',
+      ].includes(key),
+  },
+];
+
 const responseRecordSchema = z.record(z.string(), z.unknown());
 
 function formatCreatedAt(value: string): string {
@@ -43,6 +122,38 @@ function displayAnswer(
     { answer_json: value },
     { options: question.options, rules: question.validation_rules },
   );
+}
+
+function groupQuestions(questions: RecruitmentEndorsementReviewDetails['endorsement_questions']) {
+  const groups: Array<{
+    group: ThematicGroup;
+    questions: RecruitmentEndorsementReviewDetails['endorsement_questions'];
+  }> = [];
+  const assignedKeys = new Set<string>();
+
+  for (const group of THEMATIC_GROUPS) {
+    const matching = questions.filter((q) => group.match(q.field_key));
+    if (matching.length > 0) {
+      groups.push({ group, questions: matching });
+      matching.forEach((q) => assignedKeys.add(q.field_key));
+    }
+  }
+
+  const unassigned = questions.filter((q) => !assignedKeys.has(q.field_key));
+  if (unassigned.length > 0) {
+    groups.push({
+      group: {
+        id: 'general',
+        title: 'General Questions',
+        description: 'Additional questionnaire fields.',
+        icon: <ClipboardCheck className="h-4 w-4 text-primary" />,
+        match: () => true,
+      },
+      questions: unassigned,
+    });
+  }
+
+  return groups;
 }
 
 export function RecruitmentEndorsementReviewSection({
@@ -71,9 +182,21 @@ function RecruitmentEndorsementReviewForm({
 }: Omit<RecruitmentEndorsementReviewSectionProps, 'entityDetails'> & {
   details: RecruitmentEndorsementReviewDetails;
 }) {
-  const questions = details.endorsement_questions
-    .filter((question) => question.is_active !== false)
-    .sort((left, right) => (left.display_order ?? 0) - (right.display_order ?? 0));
+  const [activeStep, setActiveStep] = useState<number>(1);
+  const stepOneRef = useRef<HTMLDivElement | null>(null);
+  const stepTwoRef = useRef<HTMLDivElement | null>(null);
+  const stepThreeRef = useRef<HTMLDivElement | null>(null);
+
+  useWizardStepScroll(activeStep, [stepOneRef, stepTwoRef, stepThreeRef]);
+
+  const questions = useMemo(
+    () =>
+      details.endorsement_questions
+        .filter((question) => question.is_active !== false)
+        .sort((left, right) => (left.display_order ?? 0) - (right.display_order ?? 0)),
+    [details.endorsement_questions],
+  );
+
   const form = useForm<DynamicFieldResponseValues>({
     resolver: zodResolver(responseRecordSchema),
     defaultValues: {
@@ -81,101 +204,314 @@ function RecruitmentEndorsementReviewForm({
       ...details.attestation_answers,
     },
   });
+
   const values = useWatch({ control: form.control }) ?? {};
   const visibleQuestions = questions.filter((question) =>
     isFieldVisible(question, questions, values),
   );
 
-  const submitDecision = (decision: 'approved' | 'rejected') => {
-    form.clearErrors();
-    void form.handleSubmit((formValues) => {
-      const visibleValues = filterVisibleFieldValues(visibleQuestions, formValues);
-      const result = buildDynamicFieldResponseSchema(visibleQuestions).safeParse(visibleValues);
-      if (!result.success) {
-        for (const issue of result.error.issues) {
-          const fieldKey = issue.path[0];
-          if (typeof fieldKey === 'string') {
-            form.setError(fieldKey, { type: 'validate', message: issue.message });
-          }
-        }
-        return;
-      }
+  const groupedQuestions = useMemo(() => groupQuestions(questions), [questions]);
 
-      onDecision(decision, result.data);
-    })();
+  const validateVisibleAnswers = (): Record<string, unknown> | null => {
+    form.clearErrors();
+    const visibleValues = filterVisibleFieldValues(visibleQuestions, form.getValues());
+    const result = buildDynamicFieldResponseSchema(visibleQuestions).safeParse(visibleValues);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const fieldKey = issue.path[0];
+        if (typeof fieldKey === 'string') {
+          form.setError(fieldKey, { type: 'validate', message: issue.message });
+        }
+      }
+      return null;
+    }
+    return result.data;
   };
 
-  return (
-    <section className="mt-4 space-y-5 border-t border-border pt-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <Avatar name={details.full_name} size="md" />
-        <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-text">{details.full_name}</h2>
-          <p className="text-sm text-muted">Applied {formatCreatedAt(details.created_at)}</p>
-        </div>
-        <Badge variant="secondary">{details.desired_role}</Badge>
-      </div>
+  const handleContinueToStep3 = () => {
+    const valid = validateVisibleAnswers();
+    if (valid) {
+      setActiveStep(3);
+    }
+  };
 
-      {canDecide ? (
-        <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
-          <div className="space-y-5">
-            {visibleQuestions.map((question) => {
-              const error = form.formState.errors[question.field_key]?.message;
-              return (
-                <div key={question.field_key} className="space-y-1.5">
-                  <label
-                    className="block text-sm font-medium text-text"
-                    htmlFor={`field-${question.field_key}`}
-                  >
-                    {question.label}
-                    {question.is_required && <span className="text-danger"> *</span>}
-                  </label>
-                  {question.help_text && <p className="text-xs text-muted">{question.help_text}</p>}
-                  <DynamicFieldRenderer field={question} dynamicForm={form} />
-                  {error && <p className="text-sm text-danger">{String(error)}</p>}
-                </div>
-              );
-            })}
-          </div>
+  const handleDecisionSubmit = (decision: 'approved' | 'rejected') => {
+    if (decision === 'rejected' && !decisionNotes.trim()) {
+      toast.error('Please provide a reason or note when declining an applicant.');
+      return;
+    }
 
-          <FormTextareaField
-            id="endorsement-decision-notes"
-            label="Notes / Feedback for Applicant"
-            value={decisionNotes}
-            onChange={onDecisionNotesChange}
-            rows={3}
-            textareaClassName="resize-none"
-            helperText="A note is required when declining an applicant."
-          />
+    const answers = validateVisibleAnswers();
+    if (!answers && decision === 'approved') {
+      setActiveStep(2);
+      return;
+    }
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              disabled={isSubmitting}
-              onClick={() => submitDecision('rejected')}
-              variant="destructive"
-            >
-              <XCircle aria-hidden="true" className="h-4 w-4" />
-              Decline
-            </Button>
-            <Button disabled={isSubmitting} onClick={() => submitDecision('approved')}>
-              <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-              Endorse Applicant
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-text">DGroup Leader Attestation</h3>
-          {questions.map((question) => (
-            <div key={question.field_key} className="border-b border-border py-3 last:border-0">
-              <p className="text-xs font-medium text-muted">{question.label}</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-text">
-                {displayAnswer(question, details.attestation_answers[question.field_key])}
-              </p>
+    onDecision(decision, answers ?? filterVisibleFieldValues(visibleQuestions, form.getValues()));
+  };
+
+  if (!canDecide) {
+    return (
+      <div className="space-y-6">
+        <SectionCard title="Applicant Profile">
+          <div className="flex flex-wrap items-center gap-4">
+            <Avatar name={details.full_name} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xl font-bold text-text">{details.full_name}</div>
+              {details.nickname && (
+                <div className="text-sm text-muted">Nickname: {details.nickname}</div>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{details.desired_role}</Badge>
+                <span className="text-xs text-muted">
+                  Applied {formatCreatedAt(details.created_at)}
+                </span>
+              </div>
             </div>
+          </div>
+        </SectionCard>
+
+        <div className="space-y-6">
+          <h3 className="font-heading text-lg font-semibold text-text">
+            DGroup Leader Attestation
+          </h3>
+          {groupedQuestions.map(({ group, questions: grpQuestions }) => (
+            <SectionCard
+              key={group.id}
+              title={
+                <div className="flex items-center gap-2">
+                  {group.icon}
+                  <span>{group.title}</span>
+                </div>
+              }
+              subtitle={group.description}
+            >
+              <div className="divide-y divide-border">
+                {grpQuestions.map((question) => (
+                  <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
+                    <p className="text-xs font-medium text-muted">{question.label}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+                      {displayAnswer(question, details.attestation_answers[question.field_key]) ||
+                        '—'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <StepIndicator
+        currentStep={activeStep}
+        totalSteps={3}
+        labels={['Applicant', 'Attestation', 'Decision']}
+        categoryLabel="Endorsement Review"
+      />
+
+      {activeStep === 1 && (
+        <WizardStep
+          title="Applicant Overview"
+          subtitle="Review the disciple's application details before completing the endorsement."
+        >
+          <div ref={stepOneRef} className="space-y-6">
+            <SectionCard title="Applicant Profile">
+              <div className="flex flex-wrap items-center gap-4">
+                <Avatar name={details.full_name} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xl font-bold text-text">{details.full_name}</div>
+                  {details.nickname && (
+                    <div className="text-sm text-muted">Nickname: {details.nickname}</div>
+                  )}
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{details.desired_role}</Badge>
+                    <span className="text-xs text-muted">
+                      Applied {formatCreatedAt(details.created_at)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Welcome Center Volunteer Ministry"
+              subtitle="DGroup Leader Endorsement Context"
+            >
+              <p className="text-sm leading-relaxed text-muted">
+                Your disciple has applied to serve as a volunteer in the Welcome Center ministry as{' '}
+                <strong className="text-text">{details.desired_role}</strong>. As their DGroup
+                Leader, your firsthand observations regarding their spiritual walk, character, and
+                readiness help ensure thoughtful placement and volunteer care.
+              </p>
+            </SectionCard>
+
+            <div className="flex justify-end pt-2">
+              <Button type="button" onClick={() => setActiveStep(2)} className="w-full sm:w-auto">
+                Continue to Attestation <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </WizardStep>
       )}
-    </section>
+
+      {activeStep === 2 && (
+        <WizardStep
+          title="Leader Attestation Questionnaire"
+          subtitle="Please complete each section of the attestation questionnaire based on your discipleship observations."
+        >
+          <div ref={stepTwoRef} className="space-y-6">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+              {groupedQuestions.map(({ group, questions: grpQuestions }) => {
+                const visibleGrpQuestions = grpQuestions.filter((q) =>
+                  visibleQuestions.some((vq) => vq.field_key === q.field_key),
+                );
+                if (visibleGrpQuestions.length === 0) return null;
+
+                return (
+                  <SectionCard
+                    key={group.id}
+                    title={
+                      <div className="flex items-center gap-2">
+                        {group.icon}
+                        <span>{group.title}</span>
+                      </div>
+                    }
+                    subtitle={group.description}
+                  >
+                    <div className="space-y-5">
+                      {visibleGrpQuestions.map((question) => {
+                        const error = form.formState.errors[question.field_key]?.message;
+                        return (
+                          <div key={question.field_key} className="space-y-1.5">
+                            <label
+                              className="block text-sm font-medium text-text"
+                              htmlFor={`field-${question.field_key}`}
+                            >
+                              {question.label}
+                              {question.is_required && <span className="text-danger"> *</span>}
+                            </label>
+                            {question.help_text && (
+                              <p className="text-xs text-muted">{question.help_text}</p>
+                            )}
+                            <DynamicFieldRenderer field={question} dynamicForm={form} />
+                            {error && <p className="text-sm text-danger">{String(error)}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </SectionCard>
+                );
+              })}
+            </form>
+
+            <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setActiveStep(1)}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Overview
+              </Button>
+              <Button type="button" onClick={handleContinueToStep3} className="w-full sm:w-auto">
+                Continue to Decision <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </WizardStep>
+      )}
+
+      {activeStep === 3 && (
+        <WizardStep
+          title="Endorsement Decision"
+          subtitle="Review your recommendation and submit your endorsement decision."
+        >
+          <div ref={stepThreeRef} className="space-y-6">
+            <SectionCard title="Recommendation Summary">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <div className="text-xs text-muted">Applicant</div>
+                  <div className="text-sm font-semibold text-text">{details.full_name}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted">Desired Role</div>
+                  <div className="text-sm font-semibold text-text">{details.desired_role}</div>
+                </div>
+                {Boolean(values.recommendation_decision) && (
+                  <div>
+                    <div className="text-xs text-muted">Recommendation</div>
+                    <div className="text-sm font-semibold text-text">
+                      {String(values.recommendation_decision)}
+                    </div>
+                  </div>
+                )}
+                {Boolean(values.leader_attestation_statement) && (
+                  <div>
+                    <div className="text-xs text-muted">Attestation Commitment</div>
+                    <div className="text-sm font-semibold text-text">
+                      {String(values.leader_attestation_statement)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Notes & Feedback"
+              subtitle="Optional for endorsement, required if declining."
+            >
+              <FormTextareaField
+                id="endorsement-decision-notes"
+                label="Notes / Feedback for Applicant"
+                value={decisionNotes}
+                onChange={onDecisionNotesChange}
+                rows={3}
+                textareaClassName="resize-none"
+                placeholder="e.g. Strongly recommended. Diligent and consistent in spiritual growth."
+                helperText="A note is required when declining an applicant."
+                disabled={isSubmitting}
+              />
+            </SectionCard>
+
+            <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => setActiveStep(2)}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Attestation
+              </Button>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  onClick={() => handleDecisionSubmit('rejected')}
+                  className="w-full sm:w-auto border-rose-300 text-rose-700 hover:bg-rose-50"
+                >
+                  <XCircle className="mr-1.5 h-4 w-4" />
+                  {isSubmitting ? 'Declining...' : 'Decline'}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleDecisionSubmit('approved')}
+                  className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  {isSubmitting ? 'Endorsing...' : 'Endorse Applicant'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </WizardStep>
+      )}
+    </div>
   );
 }
