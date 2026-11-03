@@ -354,60 +354,73 @@ function RecruitmentEndorsementReviewForm({
           </div>
         </SectionCard>
 
-        <div className="space-y-6">
-          <h3 className="font-heading text-lg font-semibold text-text">
-            DGroup Leader Attestation
-          </h3>
-          {groupedQuestions.map(({ group, questions: grpQuestions }) => (
-            <SectionCard
-              key={group.id}
-              title={
-                <div className="flex items-center gap-2">
-                  {group.icon}
-                  <span>{group.title}</span>
-                </div>
-              }
-              subtitle={group.description}
-            >
-              {group.id === 'spiritual_character' && <RatingScaleLegend />}
-              <div className="divide-y divide-border">
-                {grpQuestions.map((question) => {
-                  if (question.field_key === 'leader_attestation_statement') {
-                    const answer = details.attestation_answers[question.field_key];
-                    const isAttested = answer === 'I attest';
-                    return (
-                      <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
-                        <div className="overflow-hidden rounded-xl border border-border bg-surface">
-                          <div className="bg-background p-4 sm:p-6">
-                            <MarkdownRenderer content={LEADER_ATTESTATION_MARKDOWN} />
-                          </div>
-                          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3 sm:px-6">
-                            <span className="text-xs font-semibold text-text">
-                              Leader Attestation Commitment:
-                            </span>
-                            <Badge variant={isAttested ? 'default' : 'destructive'}>
-                              {String(answer || '—')}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
+        <SectionCard
+          title="DGroup Leader Attestation"
+          subtitle="Submitted discipleship evaluation and attestation responses."
+        >
+          <div className="divide-y divide-border">
+            {groupedQuestions.map(({ group, questions: grpQuestions }) => {
+              const visibleGrpQuestions = grpQuestions.filter((q) =>
+                questions.some((vq) => vq.field_key === q.field_key),
+              );
+              if (visibleGrpQuestions.length === 0) return null;
 
-                  return (
-                    <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
-                      <p className="text-xs font-medium text-muted">{question.label}</p>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-text">
-                        {displayAnswer(question, details.attestation_answers[question.field_key]) ||
-                          '—'}
-                      </p>
+              return (
+                <div key={group.id} className="space-y-3 py-5 first:pt-0 last:pb-0">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      {group.icon}
+                      <h4 className="font-heading text-sm font-semibold text-text">
+                        {group.title}
+                      </h4>
                     </div>
-                  );
-                })}
-              </div>
-            </SectionCard>
-          ))}
-        </div>
+                    <p className="text-xs text-muted">{group.description}</p>
+                  </div>
+
+                  {group.id === 'spiritual_character' && <RatingScaleLegend />}
+
+                  <div className="divide-y divide-border/60">
+                    {visibleGrpQuestions.map((question) => {
+                      if (question.field_key === 'leader_attestation_statement') {
+                        const answer = details.attestation_answers[question.field_key];
+                        const isAttested = answer === 'I attest';
+                        return (
+                          <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
+                            <div className="overflow-hidden rounded-xl border border-border bg-surface">
+                              <div className="bg-background p-4 sm:p-6">
+                                <MarkdownRenderer content={LEADER_ATTESTATION_MARKDOWN} />
+                              </div>
+                              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3 sm:px-6">
+                                <span className="text-xs font-semibold text-text">
+                                  Leader Attestation Commitment:
+                                </span>
+                                <Badge variant={isAttested ? 'default' : 'destructive'}>
+                                  {String(answer || '—')}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
+                          <p className="text-xs font-medium text-muted">{question.label}</p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+                            {displayAnswer(
+                              question,
+                              details.attestation_answers[question.field_key],
+                            ) || '—'}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
       </div>
     );
   }
@@ -472,7 +485,7 @@ function RecruitmentEndorsementReviewForm({
           subtitle="Please complete each section of the attestation questionnaire based on your discipleship observations."
         >
           <div ref={stepTwoRef} className="space-y-6">
-            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+            <form onSubmit={(e) => e.preventDefault()} className="divide-y divide-border">
               {groupedQuestions.map(({ group, questions: grpQuestions }) => {
                 const visibleGrpQuestions = grpQuestions.filter((q) =>
                   visibleQuestions.some((vq) => vq.field_key === q.field_key),
@@ -480,17 +493,19 @@ function RecruitmentEndorsementReviewForm({
                 if (visibleGrpQuestions.length === 0) return null;
 
                 return (
-                  <SectionCard
-                    key={group.id}
-                    title={
+                  <div key={group.id} className="space-y-4 py-6 first:pt-0 last:pb-0">
+                    <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         {group.icon}
-                        <span>{group.title}</span>
+                        <h3 className="font-heading text-base font-semibold text-text sm:text-lg">
+                          {group.title}
+                        </h3>
                       </div>
-                    }
-                    subtitle={group.description}
-                  >
+                      <p className="text-xs text-muted">{group.description}</p>
+                    </div>
+
                     {group.id === 'spiritual_character' && <RatingScaleLegend />}
+
                     <div className="space-y-5">
                       {visibleGrpQuestions.map((question) => {
                         const error = form.formState.errors[question.field_key]?.message;
@@ -587,7 +602,7 @@ function RecruitmentEndorsementReviewForm({
                         );
                       })}
                     </div>
-                  </SectionCard>
+                  </div>
                 );
               })}
             </form>
