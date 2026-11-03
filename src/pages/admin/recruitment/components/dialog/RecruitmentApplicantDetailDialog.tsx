@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  Avatar,
   Badge,
   Button,
   ButtonGroup,
@@ -52,18 +53,27 @@ export function RecruitmentApplicantDetailDialog({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
       <Dialog.Header showCloseButton onClose={onClose}>
-        <div className="flex flex-wrap items-center gap-2">
-          <Dialog.Title>
-            {currentApp.full_name} {currentApp.nickname ? `(${currentApp.nickname})` : ''}
-          </Dialog.Title>
-          <Badge variant="outline">{role}</Badge>
-          <Badge variant="secondary" className="font-mono">
-            Step {currentApp.current_step}: {stepMeta?.shortLabel}
-          </Badge>
+        <div className="flex items-center gap-3">
+          <Avatar
+            name={currentApp.full_name}
+            avatarObjectKey={currentApp.avatar_object_key}
+            size="md"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Dialog.Title>
+                {currentApp.full_name} {currentApp.nickname ? `(${currentApp.nickname})` : ''}
+              </Dialog.Title>
+              <Badge variant="outline">{role}</Badge>
+              <Badge variant="secondary" className="font-mono">
+                Step {currentApp.current_step}: {stepMeta?.shortLabel}
+              </Badge>
+            </div>
+            <Dialog.Description className="truncate">
+              {currentApp.email} · {currentApp.phone}
+            </Dialog.Description>
+          </div>
         </div>
-        <Dialog.Description>
-          Application ID: {currentApp.id} · Email: {currentApp.email} · Phone: {currentApp.phone}
-        </Dialog.Description>
       </Dialog.Header>
 
       <div className="mt-4 border-b border-border pb-3">

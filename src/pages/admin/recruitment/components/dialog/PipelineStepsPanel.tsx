@@ -98,6 +98,27 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     value: role,
   }));
 
+  // Options for mobile step selector dropdown
+  const stepSelectOptions = RECRUITMENT_STEPS.map((s) => {
+    const isStepCurrent = application.current_step === s.stepNumber;
+    const isStepCompleted =
+      application.current_step > s.stepNumber || application.status === 'deployed';
+    const tag = isStepCurrent ? ' (Active)' : isStepCompleted ? ' (Completed)' : '';
+    return {
+      value: String(s.stepNumber),
+      label: `Step ${s.stepNumber}: ${s.shortLabel}${tag}`,
+    };
+  });
+
+  const handleStepSelect = (stepNum: RecruitmentStepNumber) => {
+    setSelectedStep(stepNum);
+    const tx = [...transactions].reverse().find((t) => t.step_number === stepNum);
+    setReviewerId(tx?.assigned_reviewer_id ?? '');
+    setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
+    setNotes(tx?.notes ?? '');
+    setApplicantNotes(tx?.applicant_visible_notes ?? '');
+  };
+
   const handleUpdateStage = (
     status: 'scheduled' | 'completed' | 'in_progress',
     action: 'update_stage' | 'repeat_step' | 'return_to_observation' = 'update_stage',
@@ -149,67 +170,82 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     });
   };
 
+  const formatActivityTitle = (tx: RecruitmentPipelineTransaction) => {
+    switch (tx.transaction_type) {
+      case 'completed':
+        return `Step ${tx.step_number} Completed`;
+      case 'scheduled':
+        return `Session Scheduled for Step ${tx.step_number}`;
+      case 'rescheduled':
+        return `Session Rescheduled for Step ${tx.step_number}`;
+      case 'repeated_step':
+        return `Repeat Session Scheduled for Step ${tx.step_number}`;
+      case 'returned_to_observation':
+        return 'Returned to Observation (Step 4)';
+      default:
+        return `Step ${tx.step_number} Activity`;
+    }
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Visual Pipeline Progress Stepper */}
-      <div className="rounded-2xl border border-border bg-surface p-3 overflow-x-auto">
-        <div className="flex min-w-max items-center justify-between gap-1">
-          {RECRUITMENT_STEPS.map((s, idx) => {
+    <div className="space-y-4">
+      {/* Mobile Step Selector (No sideways scrolling on phones) */}
+      <div className="sm:hidden">
+        <FormSelectField
+          label="Jump to Step"
+          placeholder=""
+          value={String(selectedStep)}
+          onChange={(val) => handleStepSelect(Number(val) as RecruitmentStepNumber)}
+          options={stepSelectOptions}
+        />
+      </div>
+
+      {/* Desktop Step Segmented Selector */}
+      <div className="hidden sm:block rounded-xl border border-border bg-surface p-1.5 shadow-2xs">
+        <div className="grid grid-cols-9 gap-1 text-center">
+          {RECRUITMENT_STEPS.map((s) => {
             const isStepCurrent = application.current_step === s.stepNumber;
             const isStepCompleted =
               application.current_step > s.stepNumber || application.status === 'deployed';
             const isStepSelected = selectedStep === s.stepNumber;
 
             return (
-              <div key={s.stepNumber} className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedStep(s.stepNumber);
-                    const tx = [...transactions]
-                      .reverse()
-                      .find((t) => t.step_number === s.stepNumber);
-                    setReviewerId(tx?.assigned_reviewer_id ?? '');
-                    setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
-                    setNotes(tx?.notes ?? '');
-                    setApplicantNotes(tx?.applicant_visible_notes ?? '');
-                  }}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-all ${
-                    isStepSelected
-                      ? 'bg-primary text-white shadow-xs font-bold'
-                      : isStepCurrent
-                        ? 'border-2 border-primary text-primary bg-primary/5 font-semibold'
-                        : isStepCompleted
-                          ? 'bg-surface-hover/80 text-text font-medium'
-                          : 'text-muted hover:text-text'
-                  }`}
-                >
+              <button
+                key={s.stepNumber}
+                type="button"
+                onClick={() => handleStepSelect(s.stepNumber)}
+                className={`flex flex-col items-center justify-center rounded-lg px-1 py-1.5 transition-all text-xs ${
+                  isStepSelected
+                    ? 'bg-primary text-white font-bold shadow-2xs'
+                    : isStepCurrent
+                      ? 'border border-primary bg-primary/10 text-primary font-semibold'
+                      : isStepCompleted
+                        ? 'text-text hover:bg-surface-hover'
+                        : 'text-muted hover:text-text'
+                }`}
+              >
+                <div className="flex items-center gap-1">
                   {isStepCompleted ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
                   ) : (
-                    <span className="font-mono text-[11px] shrink-0">{s.stepNumber}.</span>
+                    <span className="font-mono text-[11px] leading-none">{s.stepNumber}</span>
                   )}
-                  <span className="truncate max-w-[85px]">{s.shortLabel}</span>
-                  {isStepCurrent && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shrink-0" />
+                  {isStepCurrent && !isStepSelected && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   )}
-                </button>
-                {idx < RECRUITMENT_STEPS.length - 1 && (
-                  <div
-                    className={`mx-1 h-0.5 w-2 shrink-0 ${
-                      isStepCompleted ? 'bg-emerald-500/60' : 'bg-border'
-                    }`}
-                  />
-                )}
-              </div>
+                </div>
+                <span className="mt-0.5 truncate max-w-full text-[10px] leading-tight">
+                  {s.shortLabel}
+                </span>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Non-active step notice banner */}
+      {/* Viewing other step notice banner */}
       {!isCurrentActiveStep && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 text-xs text-text">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border bg-background p-3 text-xs text-text">
           <div>
             <strong>
               Viewing {isCompletedStep ? 'Completed' : 'Upcoming'} Step {selectedStep}:{' '}
@@ -217,7 +253,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             </strong>
             <p className="text-muted text-[11px]">
               {isCompletedStep
-                ? 'This step was previously passed. Active operations are performed on the current step.'
+                ? 'This step was previously passed. Operations are typically performed on the active step.'
                 : `This step will unlock once Step ${application.current_step} is completed.`}
             </p>
           </div>
@@ -225,25 +261,28 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             type="button"
             size="xs"
             variant="primaryOutline"
-            onClick={() => setSelectedStep(application.current_step)}
+            className="w-full sm:w-auto shrink-0"
+            onClick={() => handleStepSelect(application.current_step)}
           >
             Jump to Active Step ({application.current_step})
           </Button>
         </div>
       )}
 
-      {/* Smart Action Card: Hero Container for Stage Progression */}
-      <div className="space-y-4 rounded-2xl border-2 border-primary/20 bg-surface p-5 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-          <div>
-            <div className="flex items-center gap-2">
+      {/* Smart Action Card: On-Theme Surface Card */}
+      <div className="space-y-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant={isCurrentActiveStep ? 'default' : 'secondary'}
                 className="font-mono text-xs uppercase"
               >
                 {isCurrentActiveStep ? `Active Step ${selectedStep}` : `Step ${selectedStep}`}
               </Badge>
-              <h3 className="font-heading text-base font-bold text-text">{stepMeta?.title}</h3>
+              <h3 className="font-heading text-base font-bold text-text truncate">
+                {stepMeta?.title}
+              </h3>
             </div>
             <p className="mt-1 text-xs text-muted">{stepMeta?.description}</p>
           </div>
@@ -255,7 +294,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
         {/* Step 1: Intake & DGroup summary */}
         {selectedStep === 1 && (
-          <div className="space-y-3 text-xs text-text">
+          <div className="space-y-2.5 text-xs text-text rounded-xl border border-border bg-background p-3.5">
             <p>
               <strong>Application Submitted:</strong> {formatDateTime(application.created_at)}
             </p>
@@ -266,9 +305,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             <p>
               <strong>DGroup Endorsement Status:</strong>{' '}
               {application.dgroup_approval_id ? (
-                <span className="text-emerald-600 font-semibold">Endorsed</span>
+                <span className="text-primary font-semibold">Endorsed</span>
               ) : (
-                <span className="text-amber-600 font-semibold">Pending Leader Endorsement</span>
+                <span className="text-muted font-semibold">Pending Leader Endorsement</span>
               )}
             </p>
           </div>
@@ -277,18 +316,18 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         {/* Steps 2 through 6: Coaching, Observation & Evaluation sessions */}
         {selectedStep >= 2 && selectedStep <= 6 && (
           <div className="space-y-4">
-            {/* Session Schedule Status Bar with Quick Toggle */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 text-xs">
-              <div className="flex items-center gap-2">
+            {/* Session Schedule Status Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-border bg-background p-3 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
                 <Clock className="h-4 w-4 text-primary shrink-0" />
-                <div>
-                  <span className="font-medium text-muted">Session Schedule: </span>
+                <div className="truncate">
+                  <span className="text-muted">Session: </span>
                   {latestStepTransaction?.scheduled_at ? (
                     <span className="font-semibold text-text">
                       {formatDateTime(latestStepTransaction.scheduled_at)}
                     </span>
                   ) : (
-                    <span className="text-muted italic">No session scheduled yet</span>
+                    <span className="text-muted italic">Not scheduled yet</span>
                   )}
                   {latestStepTransaction?.assigned_reviewer_name && (
                     <span className="text-muted">
@@ -307,7 +346,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 variant="ghost"
                 size="xs"
                 onClick={() => setIsSchedulingOpen((prev) => !prev)}
-                className="text-primary hover:underline text-xs"
+                className="text-primary hover:underline text-xs shrink-0 self-start sm:self-auto"
               >
                 <Calendar className="mr-1 h-3.5 w-3.5" />
                 {latestStepTransaction?.scheduled_at ? 'Reschedule Session' : 'Schedule Session'}
@@ -321,7 +360,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
             {/* Expandable Session Scheduler */}
             {isSchedulingOpen && (
-              <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4 animate-in fade-in duration-150">
+              <div className="space-y-3 rounded-xl border border-border bg-background p-3.5">
                 <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-primary" />
                   Schedule Coaching Session
@@ -343,7 +382,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-1">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1 [&>button]:w-full sm:[&>button]:w-auto">
                   <Button
                     type="button"
                     variant="outline"
@@ -368,13 +407,13 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </div>
             )}
 
-            {/* Primary Action Button Bar */}
-            <div className="rounded-xl border border-border/80 bg-background/50 p-4 space-y-3">
-              <div className="text-[11px] font-semibold text-muted uppercase tracking-wider">
+            {/* Primary Action Button Bar: 100% Mobile Friendly */}
+            <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
                 Stage Action
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
                 <Button
                   type="button"
                   size="sm"
@@ -430,11 +469,11 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             </div>
 
             {/* Collapsible Coaching Notes Drawer */}
-            <div className="border-t border-border/60 pt-3">
+            <div className="border-t border-border pt-3">
               <button
                 type="button"
                 onClick={() => setIsNotesOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-text"
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-text cursor-pointer"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 <span>Coaching Notes & Instructions</span>
@@ -446,7 +485,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </button>
 
               {isNotesOpen && (
-                <div className="mt-3 space-y-3 animate-in fade-in duration-150">
+                <div className="mt-3 space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <FormSelectField
                       label="Confirmed Ministry Role"
@@ -483,8 +522,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
         {/* Step 7: VMT Registration */}
         {selectedStep === 7 && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-background p-4 text-xs">
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border bg-background p-3 text-xs">
               <p>
                 <strong>Applicant Self-Attestation:</strong>{' '}
                 {application.vmt_registered ? (
@@ -497,7 +536,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <FormInputField
                 label="CCF VMT ID"
                 placeholder="e.g. VMT-12345"
@@ -517,6 +556,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               <Button
                 type="button"
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => handleUpdateStage('completed')}
                 disabled={updateStageMutation.isPending || !ccfVmtId.trim()}
               >
@@ -529,10 +569,10 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
         {/* Step 8: RFID Releasing */}
         {selectedStep === 8 && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-background p-4 text-xs">
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border bg-background p-3 text-xs">
               <h4 className="font-semibold text-text">Selected Sunday Commitments:</h4>
-              <div className="mt-2 grid gap-1 sm:grid-cols-2">
+              <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
                 {Object.entries(application.service_commitments ?? {}).map(([key, slots]) => (
                   <div key={key} className="text-muted">
                     <span className="capitalize">{key.replace('_', ' ')}:</span>{' '}
@@ -554,6 +594,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               <Button
                 type="button"
                 size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => handleUpdateStage('completed')}
                 disabled={updateStageMutation.isPending || !rfidTag.trim()}
               >
@@ -566,8 +607,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
         {/* Step 9: Final Deployment */}
         {selectedStep === 9 && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-background p-4 text-xs space-y-2">
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border bg-background p-3 text-xs space-y-1.5">
               <p>
                 <strong>Volunteer:</strong> {application.full_name} ({confirmedRole})
               </p>
@@ -588,11 +629,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             </div>
 
             {application.status !== 'deployed' && (
-              <div>
+              <div className="pt-1">
                 {canDeploy ? (
                   <Button
                     type="button"
                     size="sm"
+                    className="w-full sm:w-auto"
                     onClick={handleDeploy}
                     disabled={deployMutation.isPending || !application.assigned_rfid_member_id}
                   >
@@ -620,31 +662,38 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         )}
       </div>
 
-      {/* Transaction History Feed */}
-      <div className="space-y-3 rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-2 border-b border-border pb-2.5">
-          <History className="h-4 w-4 text-muted" />
-          <h4 className="font-heading text-sm font-bold text-text">Pipeline Transaction History</h4>
+      {/* Activity & Coaching History (Clear, Human-Centric Timeline) */}
+      <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs">
+        <div className="flex items-center justify-between gap-2 border-b border-border pb-2.5">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            <div>
+              <h4 className="font-heading text-sm font-bold text-text">
+                Pipeline Transaction History
+              </h4>
+              <p className="text-[11px] text-muted">
+                Activity & coaching log of scheduled sessions, attempts, and notes
+              </p>
+            </div>
+          </div>
           <Badge variant="outline" className="font-mono text-xs">
             {transactions.length}
           </Badge>
         </div>
 
         {transactions.length === 0 ? (
-          <p className="text-xs text-muted">No session transactions recorded yet.</p>
+          <p className="text-xs text-muted py-2">No activity recorded yet for this applicant.</p>
         ) : (
-          <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
             {[...transactions].reverse().map((tx) => (
               <div
                 key={tx.id}
-                className="rounded-xl border border-border/60 bg-background p-3 text-xs space-y-1"
+                className="rounded-xl border border-border bg-background p-3 text-xs space-y-1.5"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="font-mono text-[10px]">
-                      Step {tx.step_number}
-                    </Badge>
-                    <span className="font-semibold text-text">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-text">{formatActivityTitle(tx)}</span>
+                    <span className="text-muted text-[10px] font-mono">
                       Attempt #{tx.attempt_number} ({tx.transaction_type.replace('_', ' ')})
                     </span>
                   </div>
@@ -653,26 +702,38 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </Badge>
                 </div>
 
-                {tx.scheduled_at && (
-                  <p className="text-muted">
-                    Scheduled: <span className="text-text">{formatDateTime(tx.scheduled_at)}</span>
-                  </p>
-                )}
+                <div className="text-muted space-y-0.5 text-[11px]">
+                  {tx.scheduled_at && (
+                    <p>
+                      Scheduled for:{' '}
+                      <strong className="text-text">{formatDateTime(tx.scheduled_at)}</strong>
+                    </p>
+                  )}
+                  {tx.assigned_reviewer_name && (
+                    <p>
+                      Coach: <strong className="text-text">{tx.assigned_reviewer_name}</strong>
+                    </p>
+                  )}
+                  {tx.notes && (
+                    <div className="mt-1 rounded-md bg-surface p-2 text-text border border-border/60">
+                      <span className="text-[10px] font-semibold text-muted block uppercase tracking-wider">
+                        Leadership Note
+                      </span>
+                      <p className="italic text-xs mt-0.5">{tx.notes}</p>
+                    </div>
+                  )}
+                  {tx.applicant_visible_notes && (
+                    <div className="mt-1 rounded-md bg-surface p-2 text-text border border-border/60">
+                      <span className="text-[10px] font-semibold text-muted block uppercase tracking-wider">
+                        Applicant Instruction
+                      </span>
+                      <p className="text-xs mt-0.5">{tx.applicant_visible_notes}</p>
+                    </div>
+                  )}
+                </div>
 
-                {tx.assigned_reviewer_name && (
-                  <p className="text-muted">
-                    Reviewer: <span className="text-text">{tx.assigned_reviewer_name}</span>
-                  </p>
-                )}
-
-                {tx.notes && (
-                  <p className="text-muted">
-                    Internal Note: <span className="italic text-text">{tx.notes}</span>
-                  </p>
-                )}
-
-                <p className="text-[10px] text-muted text-right">
-                  Logged on {formatDateTime(tx.created_at)}
+                <p className="text-[10px] text-muted text-right pt-0.5">
+                  Logged {formatDateTime(tx.created_at)}
                 </p>
               </div>
             ))}
