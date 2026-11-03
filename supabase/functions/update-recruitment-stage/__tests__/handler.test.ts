@@ -558,3 +558,30 @@ Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', 
     }
   });
 });
+
+Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      approvalStatus: 'approved',
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'update_stage',
+          application_id: APPLICATION_ID,
+          step_number: 3,
+          status: 'scheduled',
+          scheduled_at: '2026-11-08T09:00:00+08:00',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+    } finally {
+      mock.restore();
+    }
+  });
+});
