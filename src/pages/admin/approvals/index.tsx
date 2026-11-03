@@ -45,6 +45,196 @@ import { useIsMobileViewport } from '@/hooks/utils';
 import type { ApprovalEntityType, ApprovalRequest, ApprovalStatus } from '@/lib/domain/approvals';
 import { formatDateOnly } from '@/lib/infrastructure';
 
+type EndorsementQuestionDef = {
+  key: string;
+  label: string;
+  type?: 'rating' | 'badge' | 'text' | 'textarea' | 'list';
+};
+
+type EndorsementGroupDef = {
+  id: string;
+  title: string;
+  description?: string;
+  questions: EndorsementQuestionDef[];
+};
+
+const RATING_SCORE_DESCRIPTIONS: Record<number, string> = {
+  1: 'Not Observed',
+  2: 'Observed Some of the time',
+  3: 'Observed Most of the time',
+};
+
+const ENDORSEMENT_GROUPS: EndorsementGroupDef[] = [
+  {
+    id: 'dgroup_relationship',
+    title: '1. Leader & DGroup Relationship',
+    description: 'Disciple-maker relationship and involvement in the DGroup.',
+    questions: [
+      { key: 'leader_full_name', label: 'Leader Full Name', type: 'text' },
+      { key: 'disciple_dgroup_since', label: 'Started in DGroup Since', type: 'text' },
+      { key: 'is_disciple_dgroup_leader', label: 'Already a DGroup Leader?', type: 'badge' },
+      { key: 'disciple_led_dgroup_since', label: 'Started Leading Own DGroup Since', type: 'text' },
+    ],
+  },
+  {
+    id: 'spiritual_character',
+    title: '2. Spiritual Maturity & Character Evaluation',
+    description:
+      'Score Scale: 1 = Not Observed · 2 = Observed Some of the time · 3 = Observed Most of the time',
+    questions: [
+      {
+        key: 'eval_prayer_and_devotion',
+        label: 'Consistent prayer time, personal devotion and study of God’s word',
+        type: 'rating',
+      },
+      {
+        key: 'eval_private_life_in_order',
+        label: 'Private life is in order (free from addictions, uses resources wisely)',
+        type: 'rating',
+      },
+      {
+        key: 'eval_scripture_priorities',
+        label: 'Makes decisions and sets priorities based on Scripture',
+        type: 'rating',
+      },
+      { key: 'eval_shares_gospel', label: 'Shares the gospel consistently', type: 'rating' },
+      {
+        key: 'eval_submits_to_authority',
+        label: 'Submits to God-given authorities',
+        type: 'rating',
+      },
+      {
+        key: 'eval_listens_to_counsel',
+        label: 'Listens to corrections and counsel',
+        type: 'rating',
+      },
+      {
+        key: 'eval_treats_people_with_respect',
+        label: 'Treats difficult people with respect and dignity',
+        type: 'rating',
+      },
+      {
+        key: 'eval_no_gossip',
+        label: 'Does not criticize, judge, badmouth, or gossip',
+        type: 'rating',
+      },
+      {
+        key: 'eval_consistent_small_group',
+        label: 'Consistently leads and/or attends a small group',
+        type: 'rating',
+      },
+      {
+        key: 'eval_serves_others',
+        label: 'Serves others even when inconvenient',
+        type: 'rating',
+      },
+      {
+        key: 'eval_family_relationships',
+        label: 'Maintains good family relationships',
+        type: 'rating',
+      },
+      {
+        key: 'eval_quality_family_time',
+        label: 'Spends quality time with family',
+        type: 'rating',
+      },
+    ],
+  },
+  {
+    id: 'growth_assessment',
+    title: '3. Disciple Growth & Assessment',
+    description: 'Observed strengths, weaknesses, and growth opportunities.',
+    questions: [
+      { key: 'disciple_strengths', label: 'Observed Strengths', type: 'textarea' },
+      { key: 'disciple_weaknesses', label: 'Observed Weaknesses', type: 'textarea' },
+      { key: 'disciple_improvements', label: 'Areas for Improvement', type: 'textarea' },
+    ],
+  },
+  {
+    id: 'credibility_concerns',
+    title: '4. Ministry Credibility & Concerns',
+    description: 'Potential concerns regarding ministry effectiveness and credibility.',
+    questions: [
+      { key: 'credibility_concerns', label: 'Disclosed Concerns', type: 'list' },
+      { key: 'credibility_concerns_details', label: 'Concern Details', type: 'textarea' },
+    ],
+  },
+  {
+    id: 'recommendation_attestation',
+    title: '5. Attestation & Recommendation',
+    description: 'Formal ministry recommendation and leader attestation commitment.',
+    questions: [
+      { key: 'recommendation_decision', label: 'Ministry Recommendation', type: 'badge' },
+      { key: 'recommendation_comments', label: 'Recommendation Comments', type: 'textarea' },
+      {
+        key: 'leader_attestation_statement',
+        label: 'Leader Attestation Commitment',
+        type: 'badge',
+      },
+      { key: 'attestation_comments', label: 'Attestation Comments', type: 'textarea' },
+    ],
+  },
+];
+
+function renderEndorsementAnswerValue(item: EndorsementQuestionDef, value: unknown) {
+  if (value === undefined || value === null || value === '') {
+    return <span className="italic text-muted">—</span>;
+  }
+
+  if (item.type === 'rating') {
+    const score = Number(value);
+    const desc = RATING_SCORE_DESCRIPTIONS[score];
+    return (
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-primary/10 px-1.5 text-xs font-bold text-primary">
+          {score || String(value)}
+        </span>
+        {desc && <span className="text-xs text-muted">({desc})</span>}
+      </div>
+    );
+  }
+
+  if (item.type === 'badge') {
+    const strVal = String(value);
+    const isAttested = strVal === 'I attest' || strVal === 'Yes';
+    const isDeclined = strVal === 'I DO NOT attest' || strVal.startsWith('No');
+    const isReservation = strVal.includes('reservations');
+    const variant = isAttested
+      ? 'default'
+      : isDeclined
+        ? 'destructive'
+        : isReservation
+          ? 'accent'
+          : 'outline';
+    return <Badge variant={variant}>{strVal}</Badge>;
+  }
+
+  if (item.type === 'list') {
+    if (Array.isArray(value) && value.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((v, i) => (
+            <Badge key={i} variant="outline" className="text-xs">
+              {String(v)}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+    return <span className="italic text-muted">{String(value || 'None reported')}</span>;
+  }
+
+  if (item.type === 'textarea') {
+    return (
+      <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-background p-2.5 text-xs text-text">
+        {String(value)}
+      </p>
+    );
+  }
+
+  return <span className="font-semibold text-text">{String(value)}</span>;
+}
+
 function getApprovalEntityTypeLabel(entityType: ApprovalEntityType, isMobile = false): string {
   switch (entityType) {
     case 'form_submission':
@@ -99,6 +289,22 @@ export function AdminApprovalsPage() {
   const { data: slodUsers = [], isLoading: isLoadingSlod } = useSlodUsersQuery();
   const { mutate: delegateApproval, isPending: isDelegating } = useDelegateApprovalMutation();
   const { mutate: submitDecision, isPending: isSubmitting } = useSubmitApprovalDecisionMutation();
+
+  const attestationAnswers = useMemo(() => {
+    if (!inspectingRequest?.metadata?.attestation_answers) return null;
+    const raw = inspectingRequest.metadata.attestation_answers;
+    if (typeof raw === 'object' && raw !== null) {
+      return raw as Record<string, unknown>;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [inspectingRequest?.metadata?.attestation_answers]);
 
   const openInspectRequest = (req: ApprovalRequest) => {
     setInspectingRequest(req);
@@ -518,7 +724,7 @@ export function AdminApprovalsPage() {
       </AdminPageShell.Content>
 
       {/* Review & Decide Modal */}
-      <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="xl">
+      <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="4xl">
         <Dialog.Header>
           <div className="flex items-center gap-2">
             <Dialog.Title className="flex flex-wrap items-center gap-2.5 text-lg font-heading font-bold text-text">
@@ -649,6 +855,7 @@ export function AdminApprovalsPage() {
           {/* Metadata overview */}
           {inspectingRequest?.metadata &&
             (() => {
+              const isEndorsement = inspectingRequest.entity_type === 'recruitment_endorsement';
               const displayEntries = Object.entries(inspectingRequest.metadata).filter(
                 ([key, val]) =>
                   ![
@@ -657,6 +864,7 @@ export function AdminApprovalsPage() {
                     'access_token',
                     'token_expires_at',
                     'token',
+                    ...(isEndorsement ? ['attestation_answers'] : []),
                   ].includes(key) &&
                   val != null &&
                   val !== '',
@@ -703,6 +911,102 @@ export function AdminApprovalsPage() {
                 </div>
               );
             })()}
+
+          {/* Endorsement Questionnaire Results Grouped by Approval Sequence */}
+          {inspectingRequest?.entity_type === 'recruitment_endorsement' && attestationAnswers && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2 pt-1">
+                <div>
+                  <h4 className="font-heading text-sm font-bold text-text">
+                    DGroup Leader Endorsement Questionnaire
+                  </h4>
+                  <p className="text-xs text-muted">
+                    Observations submitted by the DGroup Leader grouped by the endorsement sequence.
+                  </p>
+                </div>
+                <Badge variant="outline">5 Sections</Badge>
+              </div>
+
+              {ENDORSEMENT_GROUPS.map((group) => {
+                const groupEntries = group.questions
+                  .map((q) => ({ ...q, value: attestationAnswers[q.key] }))
+                  .filter((q) => q.value !== undefined && q.value !== null && q.value !== '');
+
+                if (groupEntries.length === 0) return null;
+
+                return (
+                  <div
+                    key={group.id}
+                    className="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3"
+                  >
+                    <div>
+                      <h5 className="font-heading text-sm font-semibold text-text">
+                        {group.title}
+                      </h5>
+                      {group.description && (
+                        <p className="mt-0.5 text-xs text-muted">{group.description}</p>
+                      )}
+                    </div>
+
+                    <div className="divide-y divide-border/60">
+                      {groupEntries.map((item) => (
+                        <div key={item.key} className="py-2.5 first:pt-0 last:pb-0">
+                          {item.type === 'textarea' ? (
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-muted">{item.label}</span>
+                              {renderEndorsementAnswerValue(item, item.value)}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                              <span className="text-xs font-medium text-muted sm:max-w-[65%]">
+                                {item.label}
+                              </span>
+                              <div className="sm:text-right">
+                                {renderEndorsementAnswerValue(item, item.value)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Fallback for any unmapped answers */}
+              {(() => {
+                const mappedKeys = new Set(
+                  ENDORSEMENT_GROUPS.flatMap((g) => g.questions.map((q) => q.key)),
+                );
+                const extraEntries = Object.entries(attestationAnswers).filter(
+                  ([k, v]) => !mappedKeys.has(k) && v != null && v !== '',
+                );
+                if (extraEntries.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
+                    <h5 className="font-heading text-sm font-semibold text-text">
+                      Additional Observations
+                    </h5>
+                    <div className="divide-y divide-border/60">
+                      {extraEntries.map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5"
+                        >
+                          <span className="text-xs font-medium text-muted capitalize">
+                            {k.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-xs font-semibold text-text sm:text-right break-words">
+                            {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Decision Record */}
           {inspectingRequest?.status !== 'pending' && (

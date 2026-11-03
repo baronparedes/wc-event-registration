@@ -517,4 +517,64 @@ describe('AdminApprovalsPage', () => {
       expect.objectContaining({ entity_type: 'recruitment_endorsement' }),
     );
   });
+
+  it('inspects an endorsement request to view the 5 grouped questionnaire sections', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement-details',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'app-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Daniel G Paredes',
+          summary: 'Please review volunteer application.',
+          requester_user_id: 'user-1',
+          requester_name: 'Bryan Daniel G Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            application_id: 'fcb9479b-1335-46c0-989c-885ff09d51a4',
+            attestation_answers: {
+              leader_full_name: 'Baron Paredes',
+              disciple_dgroup_since: '2024 Oct',
+              is_disciple_dgroup_leader: 'No',
+              eval_prayer_and_devotion: 3,
+              eval_no_gossip: 3,
+              disciple_strengths: 'Consistent prayer warrior',
+              recommendation_decision: 'Yes',
+              leader_attestation_statement: 'I attest',
+            },
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify 5 grouped sections header and content
+    expect(screen.getByText('DGroup Leader Endorsement Questionnaire')).toBeInTheDocument();
+    expect(screen.getByText('1. Leader & DGroup Relationship')).toBeInTheDocument();
+    expect(screen.getByText('Baron Paredes')).toBeInTheDocument();
+    expect(screen.getByText('2. Spiritual Maturity & Character Evaluation')).toBeInTheDocument();
+    expect(screen.getByText(/Consistent prayer warrior/i)).toBeInTheDocument();
+    expect(screen.getByText('I attest')).toBeInTheDocument();
+  });
 });
