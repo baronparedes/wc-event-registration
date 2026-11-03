@@ -124,13 +124,13 @@ describe('RatingFieldRenderer', () => {
     render(<TestHarness field={fieldWithHelpText} defaultValue={2} variant="segmented" />);
 
     expect(screen.getByRole('radiogroup', { name: 'Rate your experience' })).toBeInTheDocument();
-    const notObserved = screen.getByRole('radio', { name: 'Not Observed' });
-    const someTime = screen.getByRole('radio', { name: 'Observed Some of the time' });
-    const mostTime = screen.getByRole('radio', { name: 'Observed Most of the time' });
+    const notObserved = screen.getByRole('radio', { name: /1: Not Observed/i });
+    const someTime = screen.getByRole('radio', { name: /2: Observed Some of the time/i });
+    const mostTime = screen.getByRole('radio', { name: /3: Observed Most of the time/i });
 
-    expect(notObserved).toBeInTheDocument();
-    expect(someTime).toBeInTheDocument();
-    expect(mostTime).toBeInTheDocument();
+    expect(notObserved).toHaveTextContent('1');
+    expect(someTime).toHaveTextContent('2');
+    expect(mostTime).toHaveTextContent('3');
     expect(someTime).toHaveAttribute('aria-checked', 'true');
     expect(notObserved).toHaveAttribute('aria-checked', 'false');
 

@@ -143,13 +143,10 @@ function displayAnswer(
     if (!Number.isNaN(numeric) && numeric > 0) {
       const labels = parseRatingLabels(question.help_text);
       const meaning = labels[numeric];
-      const rules = (question.validation_rules ?? {}) as Record<string, unknown>;
-      const max = typeof rules.max === 'number' ? rules.max : 3;
-      const stars = '★'.repeat(numeric) + '☆'.repeat(Math.max(0, max - numeric));
       if (meaning) {
-        return `${stars} (${numeric}) — ${meaning}`;
+        return `${numeric} — ${meaning}`;
       }
-      return `${stars} (${numeric})`;
+      return String(numeric);
     }
   }
 
@@ -195,18 +192,24 @@ function groupQuestions(questions: RecruitmentEndorsementReviewDetails['endorsem
 function RatingScaleLegend() {
   return (
     <div className="mb-4 rounded-xl border border-border bg-background p-3.5 text-xs text-muted">
-      <div className="mb-2 font-semibold text-text">Rating Scale Legend (Scores 1 to 3):</div>
+      <div className="mb-2 font-semibold text-text">Rating Scale Legend (1 to 3):</div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
-          <span className="font-bold text-amber-500">★ 1:</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            1
+          </span>
           <span className="font-medium text-text">Not Observed</span>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
-          <span className="font-bold text-amber-500">★★ 2:</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            2
+          </span>
           <span className="font-medium text-text">Observed Some of the time</span>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
-          <span className="font-bold text-amber-500">★★★ 3:</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            3
+          </span>
           <span className="font-medium text-text">Observed Most of the time</span>
         </div>
       </div>
@@ -576,7 +579,7 @@ function RecruitmentEndorsementReviewForm({
                               <DynamicFieldRenderer
                                 field={question}
                                 dynamicForm={form}
-                                showRatingText={false}
+                                ratingVariant="segmented"
                               />
                             )}
                             {error && <p className="text-sm text-danger">{String(error)}</p>}

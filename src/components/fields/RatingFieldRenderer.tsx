@@ -38,24 +38,12 @@ export function RatingFieldRenderer({
   const activeMeaning = ratingLabels[activeRating];
 
   if (variant === 'segmented') {
-    const gridCols =
-      ratingOptions.length === 2
-        ? 'sm:grid-cols-2'
-        : ratingOptions.length === 3
-          ? 'sm:grid-cols-3'
-          : ratingOptions.length === 4
-            ? 'sm:grid-cols-4'
-            : 'sm:grid-cols-5';
-
     return (
-      <div
-        role="radiogroup"
-        aria-label={field.label}
-        className={`grid grid-cols-1 gap-2 ${gridCols}`}
-      >
+      <div role="radiogroup" aria-label={field.label} className="flex flex-wrap items-center gap-2">
         {ratingOptions.map((rating) => {
-          const meaning = ratingLabels[rating] || `${rating} of ${maxRating}`;
+          const meaning = ratingLabels[rating];
           const isSelected = numericValue === rating;
+          const buttonAriaLabel = meaning ? `${rating}: ${meaning}` : `Score ${rating}`;
 
           return (
             <button
@@ -63,6 +51,8 @@ export function RatingFieldRenderer({
               type="button"
               role="radio"
               aria-checked={isSelected}
+              aria-label={buttonAriaLabel}
+              title={buttonAriaLabel}
               onClick={() => {
                 const isRequired = field.is_required || rules.min !== undefined;
                 const nextValue = isSelected ? (isRequired ? rating : undefined) : rating;
@@ -71,13 +61,13 @@ export function RatingFieldRenderer({
                   shouldValidate: true,
                 });
               }}
-              className={`flex items-center justify-center rounded-lg border px-3.5 py-2.5 text-center text-xs font-medium transition-all sm:text-sm ${
+              className={`flex h-11 w-14 items-center justify-center rounded-lg border text-base font-semibold transition-all sm:w-16 ${
                 isSelected
-                  ? 'border-primary bg-primary font-semibold text-white shadow-2xs'
+                  ? 'border-primary bg-primary font-bold text-white shadow-2xs ring-2 ring-primary/20'
                   : 'border-border bg-surface text-text hover:border-primary/50 hover:bg-surface/80'
               }`}
             >
-              {meaning}
+              {rating}
             </button>
           );
         })}

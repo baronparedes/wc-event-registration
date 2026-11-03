@@ -915,7 +915,7 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('I attest')).toBeInTheDocument();
   });
 
-  it('renders rating scale legend for scores and renders stars without of 3 text', () => {
+  it('renders rating scale legend and segmented buttons (1, 2, 3) without of 3 text', () => {
     mockUseApprovalReviewQuery.mockReturnValue({
       data: {
         ...mockReviewData,
@@ -956,12 +956,22 @@ describe('ApprovalReviewPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
 
     // Legend is present
-    expect(screen.getByText(/Rating Scale Legend \(Scores 1 to 3\):/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rating Scale Legend \(1 to 3\):/i)).toBeInTheDocument();
     expect(screen.getByText('Not Observed')).toBeInTheDocument();
     expect(screen.getByText('Observed Some of the time')).toBeInTheDocument();
     expect(screen.getByText('Observed Most of the time')).toBeInTheDocument();
 
-    // Stars rendered without "of 3" text
+    // Segmented buttons 1, 2, 3 rendered
+    const button1 = screen.getByRole('radio', { name: /1: Not Observed|Score 1/i });
+    const button2 = screen.getByRole('radio', { name: /2: Observed Some of the time|Score 2/i });
+    const button3 = screen.getByRole('radio', { name: /3: Observed Most of the time|Score 3/i });
+
+    expect(button1).toHaveTextContent('1');
+    expect(button2).toHaveTextContent('2');
+    expect(button3).toHaveTextContent('3');
+    expect(button3).toHaveAttribute('aria-checked', 'true');
+
+    // No "of 3" text
     expect(screen.queryByText(/of 3/i)).not.toBeInTheDocument();
   });
 });
