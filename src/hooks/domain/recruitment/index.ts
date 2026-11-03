@@ -7,3 +7,4 @@ export * from './queries/useAdminRecruitmentApplicationsInfiniteQuery';
 export * from './queries/useMyRecruitmentApplicationQuery';
 export * from './queries/usePublicRecruitmentConfigQuery';
 export * from './queries/useRecruitmentSettingsQuery';
+export * from './queries/useReviewerUsersQuery';
