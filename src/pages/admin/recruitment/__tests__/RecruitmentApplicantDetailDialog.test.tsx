@@ -97,14 +97,12 @@ const mockTransaction: RecruitmentPipelineTransaction = {
   created_at: '2026-11-02T10:00:00+08:00',
 };
 
+const { mockDetailQuery } = vi.hoisted(() => ({
+  mockDetailQuery: vi.fn(),
+}));
+
 vi.mock('@/hooks/domain/recruitment', () => ({
-  useAdminRecruitmentApplicationDetailQuery: () => ({
-    data: {
-      application: mockApplication,
-      transactions: [mockTransaction],
-    },
-    isLoading: false,
-  }),
+  useAdminRecruitmentApplicationDetailQuery: () => mockDetailQuery(),
   useUpdateRecruitmentStageMutation: () => ({
     mutate: vi.fn(),
     isPending: false,
@@ -152,6 +150,13 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
   });
 
   it('renders modal with applicant name, role, and step', () => {
@@ -191,9 +196,8 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByRole('button', { name: /repeat observation/i })).toBeInTheDocument();
   });
 
-  it('displays confirmed ministry role badge on Step 4 and shows role selector on Step 2', async () => {
-    const user = userEvent.setup();
-    renderDialog(
+  it('displays confirmed ministry role badge on Step 4 and shows role selector when Step 2 is active', () => {
+    const { unmount } = renderDialog(
       <RecruitmentApplicantDetailDialog
         application={mockApplication}
         isOpen={true}
@@ -204,10 +208,50 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // On Step 4, Final Ministry Role badge is shown, selector is not in the active step
     expect(screen.getByText('Final Ministry Role:')).toBeInTheDocument();
     expect(screen.queryByText('Confirmed Ministry Role')).not.toBeInTheDocument();
+    unmount();
 
-    // Click on Step 2 button to jump to Interview
-    await user.click(screen.getByRole('button', { name: /^interview$/i }));
+    // When candidate is at Step 2 (Interview), the role selector is present
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
     expect(screen.getByText('Confirmed Ministry Role')).toBeInTheDocument();
+  });
+
+  it('locks scheduling and actions on future steps', async () => {
+    const user = userEvent.setup();
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Click on Step 5 (Evaluation) while candidate is at Step 2
+    await user.click(screen.getByRole('button', { name: /eval/i }));
+
+    // Verify it displays the Step Locked card
+    expect(screen.getByText('Step 5 is Locked')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /complete step 5/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /schedule session/i })).not.toBeInTheDocument();
   });
 
   it('switches to Biblical Survey tab and displays score breakdown', async () => {
