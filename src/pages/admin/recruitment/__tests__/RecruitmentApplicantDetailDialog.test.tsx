@@ -422,6 +422,74 @@ describe('RecruitmentApplicantDetailDialog', () => {
     );
   });
 
+  it('displays recorded details in read-only mode when viewing an already completed step', async () => {
+    const user = userEvent.setup();
+    const mockStep2CompletedTx: RecruitmentPipelineTransaction = {
+      id: 'tx-step2',
+      application_id: 'app-123',
+      step_number: 2,
+      step_key: 'interview',
+      attempt_number: 1,
+      transaction_type: 'completed',
+      from_step: 1,
+      to_step: 2,
+      status: 'completed',
+      assigned_reviewer_id: 'user-pastor',
+      assigned_reviewer_name: 'Test Pastor Dave',
+      scheduled_at: '2026-11-02T10:00:00+08:00',
+      completed_at: '2026-11-02T11:00:00+08:00',
+      rubric_data: {},
+      notes: 'Candidate showed great heart for welcoming guests and solid doctrine.',
+      applicant_visible_notes: 'Great meeting you! Looking forward to your orientation.',
+      created_by_user_id: 'user-pastor',
+      created_at: '2026-11-02T11:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockStep2CompletedTx, mockTransaction],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Switch to completed Step 2 (Interview)
+    const step2Tab = screen.getByRole('tab', { name: /interview/i });
+    await user.click(step2Tab);
+
+    // Verify CompletedStepCard is present
+    expect(screen.getByText('Step 2 Completed')).toBeInTheDocument();
+
+    // Verify recorded reviewer and notes are visible
+    expect(screen.getByText('Test Pastor Dave')).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(
+        'Candidate showed great heart for welcoming guests and solid doctrine.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue('Great meeting you! Looking forward to your orientation.'),
+    ).toBeInTheDocument();
+
+    // Verify inputs are disabled/readOnly
+    const notesInput = screen.getByDisplayValue(
+      'Candidate showed great heart for welcoming guests and solid doctrine.',
+    );
+    expect(notesInput).toBeDisabled();
+
+    // Verify action buttons are hidden since step is already completed
+    expect(screen.queryByRole('button', { name: /complete step 2/i })).not.toBeInTheDocument();
+  });
+
   it('calls onClose when Close button is clicked', async () => {
     const user = userEvent.setup();
     renderDialog(
