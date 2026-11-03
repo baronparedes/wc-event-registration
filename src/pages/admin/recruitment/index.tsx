@@ -7,12 +7,13 @@ import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import {
   Badge,
   Button,
-  ButtonGroup,
-  type ButtonGroupOption,
   EmptyState,
   FormSelectField,
   SearchInputField,
   Spinner,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
@@ -34,7 +35,7 @@ import {
 
 type StatusFilterOption = RecruitmentApplicationStatus | 'all';
 
-const STATUS_OPTIONS: ButtonGroupOption<StatusFilterOption>[] = [
+const STATUS_OPTIONS: Array<{ value: StatusFilterOption; label: string }> = [
   { value: 'active', label: 'Active' },
   { value: 'on_hold', label: 'On Hold' },
   { value: 'deployed', label: 'Deployed' },
@@ -134,14 +135,18 @@ export function AdminRecruitmentPage() {
 
       <AdminPageShell.Filters>
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <ButtonGroup<StatusFilterOption>
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(val as StatusFilterOption)}
-              options={STATUS_OPTIONS}
-              size="sm"
-            />
-          </div>
+          <Tabs
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as StatusFilterOption)}
+          >
+            <TabsList containerClassName="justify-start" className="w-auto">
+              {STATUS_OPTIONS.map((opt) => (
+                <TabsTrigger key={opt.value} value={opt.value}>
+                  {opt.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <SearchInputField

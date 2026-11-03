@@ -170,4 +170,19 @@ describe('AdminRecruitmentPage', () => {
     expect(screen.getByRole('button', { name: /biblical survey/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /applicant profile/i })).toBeInTheDocument();
   });
+
+  it('renders status filter tabs and switches tab on click', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<AdminRecruitmentPage />);
+
+    const activeTab = screen.getByRole('tab', { name: /^active$/i });
+    const deployedTab = screen.getByRole('tab', { name: /^deployed$/i });
+
+    expect(activeTab).toHaveAttribute('aria-selected', 'true');
+    expect(deployedTab).toHaveAttribute('aria-selected', 'false');
+
+    await user.click(deployedTab);
+    expect(deployedTab).toHaveAttribute('aria-selected', 'true');
+    expect(activeTab).toHaveAttribute('aria-selected', 'false');
+  });
 });
