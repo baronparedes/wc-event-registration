@@ -668,17 +668,114 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
 
 ## 3. Verification & Testing Strategy
 
+### 3.1 Automated Verification
+
 Every phase must pass `npm run precommit` before completion:
 
 1. **Edge Function Deno Tests (`npm run test:edge`)**:
    - Unit and handler tests for `submit-recruitment-application`, `update-recruitment-stage`, `deploy-recruitment-applicant`, and `process-approval-decision`.
    - Verify 20-question survey auto-scoring, DGroup Leader email queueing, endorsement gate enforcement before starting Step 4 (Observation), automatic Step 6 skip for non-Prayer Coach roles, and atomic `public.users` promotion at Step 9.
-
-- Database integration coverage for the atomic Step 7 RPC is in `supabase/tests/complete_recruitment_vmt_registration.test.sql` and runs with `supabase test db` when the local Supabase/Docker environment is available.
-
-1. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
+   - Database integration coverage for the atomic Step 7 RPC is in `supabase/tests/complete_recruitment_vmt_registration.test.sql` and runs with `supabase test db` when the local Supabase/Docker environment is available.
+2. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
    - Schema validation tests (`src/lib/domain/recruitment/__tests__/schemas.test.ts`).
    - Applicant Registration Wizard & 9-Step Portal tests (`src/pages/recruitment/__tests__/`).
    - Admin Recruitment Pipeline & Detail Dialog tests (`src/pages/admin/recruitment/__tests__/`).
-2. **Static Analysis & Formatting (`npm run precommit`)**:
+3. **Static Analysis & Formatting (`npm run precommit`)**:
    - Zero TypeScript errors, zero ESLint warnings, zero `any` types, and strict adherence to semantic theme tokens (no `dark:` modifiers).
+
+### 3.2 Manual End-to-End Test Cases (Application -> DGroup Endorsement & Attestation)
+
+#### Prerequisites & Browser Setup
+
+1. **Window A (Authorized Kiosk / Staff Intake)**: Sign in at `/login` with an `admin`, `super_admin`, `kiosk`, or `vmt` account.
+2. **Window B (Applicant Personal Phone / Incognito)**: Use a Google account email you can sign in with via Google OAuth (e.g., `your.applicant.email@gmail.com`).
+
+#### Retrieving DGroup Leader Magic-Link Tokens Locally (When Email Is Disabled)
+
+When email delivery is disabled in local development, the DGroup Leader endorsement token is persisted directly on `public.approval_requests.access_token` when Step 1 is submitted (and rotated whenever **"Resend Endorsement Email"** is clicked):
+
+- **Option 1: Supabase Studio SQL Editor** (`http://127.0.0.1:54323`):
+
+  ```sql
+  select
+    ar.requester_name as applicant_name,
+    ar.assigned_to_email as dgroup_leader_email,
+    ar.status,
+    ar.access_token,
+    'http://localhost:5173/approvals/review/' || ar.access_token as local_review_url,
+    ar.token_expires_at,
+    ar.created_at
+  from
+    public.approval_requests ar
+  where
+    ar.entity_type = 'recruitment_endorsement'
+  order by
+    ar.created_at desc
+  limit
+    5;
+  ```
+
+- **Option 2: Terminal One-Liner (Local Supabase Docker)**:
+
+  ```bash
+  docker exec supabase_db_wc-event-registration psql -U postgres -d postgres -t -A -c \
+    "SELECT 'http://localhost:5173/approvals/review/' || access_token FROM public.approval_requests WHERE entity_type = 'recruitment_endorsement' ORDER BY created_at DESC LIMIT 1;"
+  ```
+
+- **Option 3: Supabase Studio Table Editor**:
+  1. Open **Table Editor -> `approval_requests`**.
+  2. Filter by `entity_type = recruitment_endorsement` (ordered by `created_at` descending).
+  3. Copy `access_token` and open `http://localhost:5173/approvals/review/<access_token>`.
+
+> **Note**: Clicking **"Resend Endorsement Email"** on `/recruitment` rotates `access_token` and resets its 14-day expiry; re-run the query above to fetch the latest token if you test resending.
+
+#### Step-by-Step Test Cases
+
+1. **Test Case 1 — WelcomeHub Banner & Intake Route Guard (`/`, `/recruitment/apply`)**:
+   - In **Window B** (signed out), open `/` and verify the **"Join the Welcome Center Team"** banner is hidden from unauthenticated visitors.
+   - Navigate directly to `/recruitment/apply` while signed out (or signed in as a non-intake role such as a regular member or `slod`) and verify access is blocked (`/login` redirect or **"Authorized device required"**).
+   - In **Window A** (signed in as `admin`, `super_admin`, `kiosk`, or `vmt`), open `/`, verify the **"Join the Welcome Center Team"** banner appears at the bottom of the Hub, and click **"Join Now"** to open `/recruitment/apply`.
+
+2. **Test Case 2 — 4 Pre-Qualification Gates (`/recruitment/apply`)**:
+   - **Gate 1 (Roles & GLC Level 1)**: Verify role descriptions are shown for `Prayer Coach`, `Usher`, `VMT Support`, and `IMT Support` (`Backroom Support` is hidden). Click **Continue** without checking the boxes to verify required errors, then check both confirmations and continue.
+   - **Gate 2 (Data Privacy & Liability Waiver)**: Click **"Read the privacy policy"** to verify the embedded Privacy Policy modal opens and closes cleanly. Check _"I agree."_ and click **Continue**.
+   - **Gate 3 (DGroup Eligibility)**: Select **`No`** and click **Continue** to verify progression is blocked, then select **`Yes`** and click **Continue**.
+   - **Gate 4 (Demographics)**: Open **Select demographics**, verify `46 to 59 years old (currently closed)` and `60 years old and up (currently closed)` are disabled, select **`18 to 45 years old`**, and click **Continue to application**.
+
+3. **Test Case 3 — 5-Section Application Wizard (`/recruitment/apply`)**:
+   - **Section 1 (Personal, Emergency Contact & Application History)**:
+     - Verify `Backroom Support` is disabled in **Desired Role**; select **`Prayer Coach`** (or **`Usher`**).
+     - Test an ineligible **Date of Birth** (`< 18` or `> 45` years old) to confirm validation, then enter a valid DOB (e.g., `1995-05-15`) and confirm live `Age: X` rendering.
+     - Toggle **Life Stage** to **`Married`** to verify **Wedding Anniversary** appears and is required.
+     - Enter the Google email you will use in Window B, valid PH mobile numbers (`0917...`), **Occupation**, and **Emergency Contact** fields.
+     - Toggle _"I have applied in the Welcome Center before."_ to verify _"What happened to your previous application?"_ is conditionally required, then click **Continue**.
+   - **Section 2 (Spiritual Background & DGroup)**:
+     - Set **CCF Member Since** and verify live tenure text.
+     - Test **GLC 1 Course Status** = `Ongoing` (blocked), then change to `Completed` and verify **GLC 2 Course Status** appears and is required.
+     - Set **Constant DGroup Attendee** = `Yes`. Test **DGroup Member Since** at `< 6` months ago (blocked with _"DGroup attendance must be at least 6 months."_), then set to $\ge 6$ months ago.
+     - Enter **Name of DGroup Leader**, **Email of DGroup Leader**, and **Mobile Number of DGroup Leader**, then click **Continue**.
+   - **Section 3 (Biblical Survey)**:
+     - Verify the answered counter (`0 / 20 answered`), try continuing with missing answers to confirm validation, then answer all 20 statements (`True` / `False`) and click **Continue**.
+   - **Section 4 (Applicant Attestation)**:
+     - Review the 12-point attestation, check _"I agree."_, and click **Continue to Verification**.
+   - **Section 5 (Verification & Kiosk Reset)**:
+     - Verify all 5 summary sections display your entered values and survey answers, then click **Submit Application**.
+     - Confirm the submission toast, countdown timer (`This kiosk will reset in Xs.`), and **"Start New Application"** reset button.
+
+4. **Test Case 4 — Applicant Own-Phone Progress Portal (`/recruitment`)**:
+   - In **Window B**, open `/recruitment` while signed out and click **"Continue with Google"**.
+   - **Unmatched Email Check**: Sign in with a Google account that does not match any application — verify **"No application found"** displays the thank-you and VMT contact message with **no links**.
+   - **Matched Email Check**: Sign in with the Google account matching the email entered in Section 1:
+     - Verify header summary (`Avatar`, full name, `active` badge, target role, `22%` progress bar).
+     - Verify **Step 1 (`Register`)** shows **`Pending DGroup Leader Review`** and **"Resend Endorsement Email"**.
+     - Verify **Step 6 (`Prayer Coach Onboarding`)** shows `Upcoming` while prior steps are in progress (and once reached, shows `Skipped (Not Required for {role})` for non-Prayer Coach roles or Usher onboarding instructions for `Prayer Coach`).
+     - Click **"Resend Endorsement Email"** and confirm the success toast.
+
+5. **Test Case 5 — DGroup Leader Magic-Link Endorsement & 25-Field Attestation (`/approvals/review/:token`)**:
+   - Retrieve the latest `access_token` using **Option 1, 2, or 3** above and open `http://localhost:5173/approvals/review/<access_token>` in an incognito window.
+   - Verify the top header displays **`DGroup Leader Endorsement`** alongside `PENDING`, and the applicant card shows the applicant's name, email, and desired role badge.
+   - Verify Question 1 (_"What is your full name?"_) is pre-filled with the DGroup Leader's name.
+   - Toggle Question 3 (_"Is your disciple already a DGroup Leader?"_) between **`Yes`** and **`No`** to confirm Question 4 (_"Please enter when your disciple started his/her own DGroup (YYYY MMM)"_) conditionally shows and hides.
+   - Click **Endorse Applicant** with blank fields to verify inline required-field validation, and click **Decline** with empty **Notes / Feedback for Applicant** to verify a decline reason is required.
+   - Complete all required fields (Questions 1–3, ratings 5–16, textareas 17–19, 21, recommendation 22, and attestation 24 = `I attest`) and click **Endorse Applicant**.
+   - Verify the page transitions to the read-only approved summary state, then refresh `/recruitment` in **Window B** and confirm Step 1 now badges **`Endorsed by {Leader Name}`** without the resend button.
