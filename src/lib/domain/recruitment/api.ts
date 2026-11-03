@@ -1,5 +1,6 @@
 import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
+import type { RecruitmentCsvRecord } from './csv';
 import {
   type AdminUpdateStageInput,
   type RecruitmentSettingsInput,
@@ -130,8 +131,10 @@ export async function fetchAdminRecruitmentApplicationsPage(params: {
   pageSize: number;
   searchTerm?: string;
   status?: RecruitmentApplication['status'];
+  currentStep?: number;
+  role?: string;
 }): Promise<{ rows: RecruitmentApplication[]; count: number | null }> {
-  const { offset, pageSize, searchTerm, status } = params;
+  const { offset, pageSize, searchTerm, status, currentStep, role } = params;
   let query = supabase
     .from('recruitment_applications')
     .select('*', { count: 'exact' })
@@ -140,6 +143,10 @@ export async function fetchAdminRecruitmentApplicationsPage(params: {
     .range(offset, offset + pageSize - 1);
 
   if (status) query = query.eq('status', status);
+  if (currentStep) query = query.eq('current_step', currentStep);
+  if (role) {
+    query = query.or(`desired_role.eq.${role},confirmed_role.eq.${role}`);
+  }
   if (searchTerm?.trim()) {
     const term = escapeOrFilterValue(searchTerm.trim());
     query = query.or(
@@ -157,6 +164,69 @@ export async function fetchAdminRecruitmentApplicationsPage(params: {
   });
 
   return { rows, count };
+}
+
+export async function fetchAdminRecruitmentApplicationsForExport(params?: {
+  searchTerm?: string;
+  status?: RecruitmentApplication['status'];
+  currentStep?: number;
+  role?: string;
+}): Promise<RecruitmentCsvRecord[]> {
+  let query = supabase
+    .from('recruitment_applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (params?.status) query = query.eq('status', params.status);
+  if (params?.currentStep) query = query.eq('current_step', params.currentStep);
+  if (params?.role) {
+    query = query.or(`desired_role.eq.${params.role},confirmed_role.eq.${params.role}`);
+  }
+  if (params?.searchTerm?.trim()) {
+    const term = escapeOrFilterValue(params.searchTerm.trim());
+    query = query.or(
+      `full_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%,desired_role.ilike.%${term}%`,
+    );
+  }
+
+  const [appsResult, schedulesResult] = await Promise.all([
+    query,
+    supabase.from('recruitment_application_latest_schedules_view').select('*'),
+  ]);
+
+  if (appsResult.error) {
+    throw new Error(
+      `Failed to fetch recruitment applications for export: ${appsResult.error.message}`,
+    );
+  }
+
+  const schedulesMap = new Map<
+    string,
+    {
+      scheduled_interview_on?: string | null;
+      scheduled_orientation_on?: string | null;
+      scheduled_observation_on?: string | null;
+      scheduled_evaluation_on?: string | null;
+      scheduled_operations_onboarding_on?: string | null;
+    }
+  >();
+
+  if (schedulesResult.data) {
+    for (const item of schedulesResult.data) {
+      if (item.application_id) {
+        schedulesMap.set(item.application_id, item);
+      }
+    }
+  }
+
+  return (appsResult.data ?? []).map((row) => {
+    const parsed = recruitmentApplicationRecordSchema.safeParse(row);
+    if (!parsed.success) throw new Error('Recruitment application record is invalid');
+    return {
+      ...parsed.data,
+      latest_schedules: schedulesMap.get(parsed.data.id) ?? null,
+    };
+  });
 }
 
 export async function fetchAdminRecruitmentApplicationDetail(

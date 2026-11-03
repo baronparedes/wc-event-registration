@@ -490,5 +490,5 @@ export const recruitmentPipelineTransactionSchema = z.object({
 export type RecruitmentStep1Input = z.infer<typeof recruitmentStep1Schema>;
 export type DgroupEndorsementDecisionInput = z.infer<typeof dgroupEndorsementDecisionSchema>;
 export type ApplicantCommitmentsInput = z.infer<typeof applicantCommitmentsSchema>;
-export type AdminUpdateStageInput = z.infer<typeof adminUpdateStageSchema>;
+export type AdminUpdateStageInput = z.input<typeof adminUpdateStageSchema>;
 export type RecruitmentSettingsInput = z.infer<typeof recruitmentSettingsSchema>;

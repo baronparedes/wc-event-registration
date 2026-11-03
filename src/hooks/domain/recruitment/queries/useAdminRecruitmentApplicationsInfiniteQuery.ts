@@ -9,6 +9,8 @@ type AdminRecruitmentApplicationsParams = {
   pageSize?: number;
   searchTerm?: string;
   status?: RecruitmentApplication['status'];
+  currentStep?: number;
+  role?: string;
 };
 
 export type AdminRecruitmentApplicationsPage = {
@@ -23,12 +25,16 @@ export function adminRecruitmentApplicationsInfiniteQueryKey(
   pageSize: number,
   searchTerm: string,
   status: RecruitmentApplication['status'] | undefined,
+  currentStep?: number,
+  role?: string,
 ) {
   return [
     ...QUERY_KEYS.adminRecruitmentApplications(),
     pageSize,
     searchTerm,
     status ?? 'all',
+    currentStep ?? 'all',
+    role ?? 'all',
   ] as const;
 }
 
@@ -38,9 +44,17 @@ export function useAdminRecruitmentApplicationsInfiniteQuery(
   const pageSize = params?.pageSize ?? PAGINATION_DEFAULTS.adminRegistrationsPageSize;
   const searchTerm = params?.searchTerm?.trim() ?? '';
   const status = params?.status;
+  const currentStep = params?.currentStep;
+  const role = params?.role;
 
   return useInfiniteQuery<AdminRecruitmentApplicationsPage, Error>({
-    queryKey: adminRecruitmentApplicationsInfiniteQueryKey(pageSize, searchTerm, status),
+    queryKey: adminRecruitmentApplicationsInfiniteQueryKey(
+      pageSize,
+      searchTerm,
+      status,
+      currentStep,
+      role,
+    ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     queryFn: async ({ pageParam }): Promise<AdminRecruitmentApplicationsPage> => {
@@ -50,6 +64,8 @@ export function useAdminRecruitmentApplicationsInfiniteQuery(
         pageSize,
         searchTerm,
         status,
+        currentStep,
+        role,
       });
       const totalCount = count ?? 0;
       const hasMore = offset + rows.length < totalCount;

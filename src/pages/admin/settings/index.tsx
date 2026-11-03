@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { BarChart3, Bell, Calendar, Mail, Shield } from 'lucide-react';
+import { BarChart3, Bell, Calendar, Mail, Shield, UserCheck } from 'lucide-react';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, SearchInputField } from '@/components/ui';
@@ -84,6 +84,18 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     tagVariant: 'secondary',
     actionLabel: 'Configure Roles',
     requiredPermission: 'canManageAdminRoles',
+  },
+  {
+    id: 'volunteer-recruitment',
+    category: 'System Configuration',
+    title: 'Volunteer Recruitment',
+    description:
+      'Configure recruitment pipeline preferences, eligibility gates, 20-question doctrinal survey, and DGroup Leader attestation prompts.',
+    to: ROUTE_PATHS.adminSettingsRecruitment,
+    icon: UserCheck,
+    tag: 'Pipeline & Questions',
+    actionLabel: 'Configure Pipeline',
+    requiredPermission: 'canWriteAdminData',
   },
 ];
 
