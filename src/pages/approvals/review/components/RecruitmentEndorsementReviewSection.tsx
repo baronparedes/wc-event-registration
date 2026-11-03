@@ -143,12 +143,13 @@ function displayAnswer(
     if (!Number.isNaN(numeric) && numeric > 0) {
       const labels = parseRatingLabels(question.help_text);
       const meaning = labels[numeric];
-      if (meaning) {
-        return meaning;
-      }
       const rules = (question.validation_rules ?? {}) as Record<string, unknown>;
       const max = typeof rules.max === 'number' ? rules.max : 3;
-      return `${numeric} of ${max}`;
+      const stars = '★'.repeat(numeric) + '☆'.repeat(Math.max(0, max - numeric));
+      if (meaning) {
+        return `${stars} (${numeric}) — ${meaning}`;
+      }
+      return `${stars} (${numeric})`;
     }
   }
 
@@ -189,6 +190,28 @@ function groupQuestions(questions: RecruitmentEndorsementReviewDetails['endorsem
   }
 
   return groups;
+}
+
+function RatingScaleLegend() {
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-background p-3.5 text-xs text-muted">
+      <div className="mb-2 font-semibold text-text">Rating Scale Legend (Scores 1 to 3):</div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★ 1:</span>
+          <span className="font-medium text-text">Not Observed</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★★ 2:</span>
+          <span className="font-medium text-text">Observed Some of the time</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★★★ 3:</span>
+          <span className="font-medium text-text">Observed Most of the time</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function RecruitmentEndorsementReviewSection({
@@ -343,6 +366,7 @@ function RecruitmentEndorsementReviewForm({
               }
               subtitle={group.description}
             >
+              {group.id === 'spiritual_character' && <RatingScaleLegend />}
               <div className="divide-y divide-border">
                 {grpQuestions.map((question) => {
                   if (question.field_key === 'leader_attestation_statement') {
@@ -463,6 +487,7 @@ function RecruitmentEndorsementReviewForm({
                     }
                     subtitle={group.description}
                   >
+                    {group.id === 'spiritual_character' && <RatingScaleLegend />}
                     <div className="space-y-5">
                       {visibleGrpQuestions.map((question) => {
                         const error = form.formState.errors[question.field_key]?.message;
@@ -551,7 +576,7 @@ function RecruitmentEndorsementReviewForm({
                               <DynamicFieldRenderer
                                 field={question}
                                 dynamicForm={form}
-                                ratingVariant="segmented"
+                                showRatingText={false}
                               />
                             )}
                             {error && <p className="text-sm text-danger">{String(error)}</p>}

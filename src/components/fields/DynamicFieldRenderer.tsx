@@ -30,6 +30,7 @@ export interface DynamicFieldRendererProps {
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
   radioOptionsLayout?: 'stacked' | 'responsive-row';
   ratingVariant?: 'stars' | 'segmented';
+  showRatingText?: boolean;
 }
 
 /**
@@ -44,6 +45,7 @@ export function DynamicFieldRenderer({
   remainingSlotsByRoleByOption,
   radioOptionsLayout,
   ratingVariant,
+  showRatingText,
 }: DynamicFieldRendererProps) {
   switch (field.field_type) {
     case 'text':
@@ -56,7 +58,12 @@ export function DynamicFieldRenderer({
       return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'rating':
       return (
-        <RatingFieldRenderer field={field} dynamicForm={dynamicForm} variant={ratingVariant} />
+        <RatingFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          variant={ratingVariant}
+          showRatingText={showRatingText}
+        />
       );
     case 'textarea':
       return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;

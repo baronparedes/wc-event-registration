@@ -914,4 +914,54 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText(/Leader Attestation Commitment:/i)).toBeInTheDocument();
     expect(screen.getByText('I attest')).toBeInTheDocument();
   });
+
+  it('renders rating scale legend for scores and renders stars without of 3 text', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'eval_prayer_and_devotion',
+              label: 'Has consistent prayer time, personal devotion and study of Gods word',
+              field_type: 'rating',
+              is_required: true,
+              is_active: true,
+              validation_rules: { min: 1, max: 3 },
+            },
+          ],
+          attestation_answers: {
+            eval_prayer_and_devotion: 3,
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Legend is present
+    expect(screen.getByText(/Rating Scale Legend \(Scores 1 to 3\):/i)).toBeInTheDocument();
+    expect(screen.getByText('Not Observed')).toBeInTheDocument();
+    expect(screen.getByText('Observed Some of the time')).toBeInTheDocument();
+    expect(screen.getByText('Observed Most of the time')).toBeInTheDocument();
+
+    // Stars rendered without "of 3" text
+    expect(screen.queryByText(/of 3/i)).not.toBeInTheDocument();
+  });
 });

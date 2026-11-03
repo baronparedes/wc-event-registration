@@ -9,12 +9,14 @@ type RatingFieldRendererProps = {
   field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
   variant?: 'stars' | 'segmented';
+  showRatingText?: boolean;
 };
 
 export function RatingFieldRenderer({
   field,
   dynamicForm,
   variant = 'stars',
+  showRatingText = true,
 }: RatingFieldRendererProps) {
   // Extract max value from validation rules, default to 5 if not provided (capped between 1 and 10)
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
@@ -96,9 +98,13 @@ export function RatingFieldRenderer({
             const isFilled =
               hoveredRating !== null ? rating <= hoveredRating : rating <= numericValue;
             const meaning = ratingLabels[rating];
-            const starTitle = meaning
-              ? `${rating} star${rating > 1 ? 's' : ''}: ${meaning}`
-              : `${rating} of ${maxRating} stars`;
+            const starTitle = showRatingText
+              ? meaning
+                ? `${rating} star${rating > 1 ? 's' : ''}: ${meaning}`
+                : `${rating} of ${maxRating} stars`
+              : meaning
+                ? `${rating} star${rating > 1 ? 's' : ''}: ${meaning}`
+                : `${rating} star${rating > 1 ? 's' : ''}`;
 
             return (
               <label
@@ -148,18 +154,18 @@ export function RatingFieldRenderer({
           })}
         </div>
 
-        {activeMeaning ? (
+        {showRatingText && activeMeaning ? (
           <span className="rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-text shadow-2xs">
             {activeRating} — {activeMeaning}
           </span>
-        ) : activeRating > 0 ? (
+        ) : showRatingText && activeRating > 0 ? (
           <span className="text-xs text-muted">
             {activeRating} of {maxRating} stars
           </span>
         ) : null}
       </div>
 
-      {Object.keys(ratingLabels).length > 0 && (
+      {showRatingText && Object.keys(ratingLabels).length > 0 && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
           {Object.entries(ratingLabels).map(([score, desc]) => (
             <span
