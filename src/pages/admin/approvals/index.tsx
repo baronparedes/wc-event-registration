@@ -4,6 +4,7 @@ import {
   AlertCircle,
   Calendar,
   CheckCircle2,
+  ClipboardList,
   Clock,
   FileText,
   Inbox,
@@ -297,6 +298,177 @@ function extractServicesList(servicesVal: unknown): string[] {
     return Object.values(servicesVal).map(String);
   }
   return [];
+}
+
+interface FormResponseEntry {
+  key: string;
+  label: string;
+  value: unknown;
+}
+
+function formatFormLabel(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function extractFormSubmissionResponses(metadata?: Record<string, unknown> | null): {
+  targetFieldLabel?: string;
+  formSlug?: string;
+  responses: FormResponseEntry[];
+} {
+  if (!metadata) return { responses: [] };
+
+  const targetFieldLabel =
+    typeof metadata.field_label === 'string' && metadata.field_label.trim()
+      ? metadata.field_label.trim()
+      : undefined;
+  const formSlug =
+    typeof metadata.form_slug === 'string' && metadata.form_slug.trim()
+      ? metadata.form_slug.trim()
+      : undefined;
+
+  const internalKeys = new Set([
+    'form_slug',
+    'field_key',
+    'field_label',
+    'form_field_id',
+    'access_token',
+    'token_expires_at',
+    'token',
+    'responses',
+  ]);
+
+  const responses: FormResponseEntry[] = [];
+
+  // 1. If metadata.responses exists, unpack it first
+  if (typeof metadata.responses === 'object' && metadata.responses !== null) {
+    for (const [key, val] of Object.entries(metadata.responses as Record<string, unknown>)) {
+      if (val != null && val !== '') {
+        responses.push({
+          key: `response_${key}`,
+          label: formatFormLabel(key),
+          value: val,
+        });
+      }
+    }
+  }
+
+  // 2. Unpack other non-internal keys in metadata
+  for (const [key, val] of Object.entries(metadata)) {
+    if (!internalKeys.has(key) && val != null && val !== '') {
+      responses.push({
+        key,
+        label: formatFormLabel(key),
+        value: val,
+      });
+    }
+  }
+
+  return { targetFieldLabel, formSlug, responses };
+}
+
+function renderFormResponseRow(entry: FormResponseEntry) {
+  const { key, label, value } = entry;
+
+  if (Array.isArray(value)) {
+    return (
+      <div
+        key={key}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-2.5 first:pt-0 last:pb-0"
+      >
+        <span className="text-xs font-medium text-muted sm:max-w-[60%]">{label}:</span>
+        <div className="flex flex-wrap gap-1.5 sm:justify-end">
+          {value.length > 0 ? (
+            value.map((item, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs">
+                {String(item)}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-xs italic text-muted">None</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    return (
+      <div key={key} className="py-2.5 first:pt-0 last:pb-0 space-y-1.5">
+        <span className="text-xs font-medium text-muted">{label}</span>
+        <div className="rounded-lg border border-border bg-background p-2.5 text-xs space-y-1.5">
+          {Object.entries(value as Record<string, unknown>).map(([subK, subV]) => (
+            <div
+              key={subK}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 border-b border-border/50 pb-1.5 last:border-b-0 last:pb-0"
+            >
+              <span className="text-muted capitalize shrink-0">{formatFormLabel(subK)}:</span>
+              <span className="font-semibold text-text break-words sm:text-right">
+                {typeof subV === 'object' ? JSON.stringify(subV) : String(subV ?? '—')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const strVal = String(value ?? '');
+  const isStatus = ['approved', 'rejected', 'declined', 'pending'].includes(strVal.toLowerCase());
+  if (isStatus) {
+    const variant =
+      strVal.toLowerCase() === 'approved'
+        ? 'default'
+        : strVal.toLowerCase() === 'pending'
+          ? 'secondary'
+          : 'destructive';
+    return (
+      <div
+        key={key}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-2.5 first:pt-0 last:pb-0"
+      >
+        <span className="text-xs font-medium text-muted sm:max-w-[60%]">{label}:</span>
+        <Badge variant={variant} className="capitalize">
+          {strVal}
+        </Badge>
+      </div>
+    );
+  }
+
+  if (typeof value === 'boolean') {
+    return (
+      <div
+        key={key}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-2.5 first:pt-0 last:pb-0"
+      >
+        <span className="text-xs font-medium text-muted sm:max-w-[60%]">{label}:</span>
+        <Badge variant={value ? 'default' : 'outline'}>{value ? 'Yes' : 'No'}</Badge>
+      </div>
+    );
+  }
+
+  if (strVal.length > 60 || strVal.includes('\n')) {
+    return (
+      <div key={key} className="py-2.5 first:pt-0 last:pb-0 space-y-1">
+        <span className="text-xs font-medium text-muted">{label}</span>
+        <p className="whitespace-pre-wrap rounded-lg border border-border/60 bg-background p-2.5 text-xs text-text leading-relaxed">
+          {strVal}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      key={key}
+      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 py-2.5 first:pt-0 last:pb-0"
+    >
+      <span className="text-xs font-medium text-muted sm:max-w-[60%]">{label}:</span>
+      <span className="text-xs font-semibold text-text sm:text-right break-words">{strVal}</span>
+    </div>
+  );
 }
 
 export function AdminApprovalsPage() {
@@ -1034,9 +1206,105 @@ export function AdminApprovalsPage() {
               );
             })()}
 
-          {/* Generic Metadata overview (Forms & other non-Long-Leave / non-Endorsement requests) */}
+          {/* Form Registration Details Grouped by Category */}
+          {inspectingRequest?.entity_type === 'form_submission' &&
+            (() => {
+              const { targetFieldLabel, formSlug, responses } = extractFormSubmissionResponses(
+                inspectingRequest.metadata,
+              );
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-border pb-2 pt-1">
+                    <div>
+                      <h4 className="font-heading text-sm font-bold text-text">
+                        Form Registration Details
+                      </h4>
+                      <p className="text-xs text-muted">
+                        Registration responses and applicant submission details.
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {targetFieldLabel ? 'Targeted Sign-off' : 'Form Registration'}
+                    </Badge>
+                  </div>
+
+                  {/* Section 1: Form & Sign-off Target */}
+                  {(targetFieldLabel || formSlug || inspectingRequest.summary) && (
+                    <div className="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                        <h5 className="font-heading text-sm font-semibold text-text">
+                          Form & Sign-off Target
+                        </h5>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        {targetFieldLabel && (
+                          <div>
+                            <span className="text-xs font-medium text-muted block">
+                              Approval Requirement
+                            </span>
+                            <div className="mt-1">
+                              <Badge variant="outline" className="text-xs font-medium">
+                                {targetFieldLabel}
+                              </Badge>
+                            </div>
+                          </div>
+                        )}
+                        {formSlug && (
+                          <div>
+                            <span className="text-xs font-medium text-muted block">
+                              Form Identifier
+                            </span>
+                            <span className="mt-1 inline-block font-mono text-xs text-text font-semibold">
+                              {formSlug}
+                            </span>
+                          </div>
+                        )}
+                        {inspectingRequest.summary && (
+                          <div className="col-span-full">
+                            <span className="text-xs font-medium text-muted block">Summary</span>
+                            <p className="mt-0.5 text-xs text-text font-medium">
+                              {inspectingRequest.summary}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section 2: Submission Responses */}
+                  <div className="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                        <h5 className="font-heading text-sm font-semibold text-text">
+                          Submission Responses
+                        </h5>
+                      </div>
+                      <Badge variant="outline">
+                        {responses.length} {responses.length === 1 ? 'Answer' : 'Answers'}
+                      </Badge>
+                    </div>
+
+                    {responses.length > 0 ? (
+                      <div className="divide-y divide-border/60">
+                        {responses.map((entry) => renderFormResponseRow(entry))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted italic py-2">
+                        No submission answers recorded.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* Generic Metadata overview (Endorsements Application ID & any unhandled entities) */}
           {inspectingRequest?.metadata &&
             inspectingRequest.entity_type !== 'service_excuse' &&
+            inspectingRequest.entity_type !== 'form_submission' &&
             (() => {
               const isEndorsement = inspectingRequest.entity_type === 'recruitment_endorsement';
               const displayEntries = Object.entries(inspectingRequest.metadata).filter(

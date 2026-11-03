@@ -215,6 +215,10 @@ Handles submission of single-Sunday and multi-week Long Leave requests.
 - **Review & Decide Dialog**:
   - Configured with `size="4xl"` for ample workspace when reviewing detailed questionnaires.
   - Displays requester avatar, email, and metadata breakdown.
+  - **Structured Inspection for Form Registrations**:
+    - Replaces raw JSON metadata with categorized registration sections:
+      1. _Form & Sign-off Target_: Displays the specific approval requirement badge (e.g. `Leader Sign-off`, `Camp Director Approval`), form identifier, and submission summary.
+      2. _Submission Responses_: Organizes all submitted answers into a divided, formatted list with human-readable labels, tags for multi-select choices, structured cards for complex objects, and clean paragraph blocks for open-ended text responses.
   - **Structured Inspection for Long Leave Requests**:
     - Replaces raw key-value dumps with organized, domain-specific sections:
       1. _Leave Schedule & Services_: Formatted start/end Sunday dates, computed leave duration (e.g. `6 Sundays (36 days)`), and excused Sunday service timeslots rendered as clean `Badge` pills.

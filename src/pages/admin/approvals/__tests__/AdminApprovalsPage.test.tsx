@@ -644,4 +644,78 @@ describe('AdminApprovalsPage', () => {
     // Verify reason rendered cleanly
     expect(screen.getByText('Trip to US to attend to her sick mother.')).toBeInTheDocument();
   });
+
+  it('inspects a form registration request to view grouped form target and submission responses', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-form-grouped',
+          entity_type: 'form_submission',
+          entity_id: 'sub-20',
+          status: 'pending',
+          title: 'Youth Summer Camp – Pastoral Sign-off',
+          summary: 'Pastoral Sign-off for Youth Summer Camp by John Doe',
+          requester_user_id: 'user-20',
+          requester_name: 'John Doe',
+          requester_email: 'john.doe@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-form',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            form_slug: 'youth-summer-camp-2026',
+            field_label: 'Pastoral Sign-off',
+            responses: {
+              cabin_preference: 'Cabin Alpha',
+              tshirt_size: 'L',
+            },
+            dietary_restrictions: 'Vegetarian',
+            emergency_contact: {
+              name: 'Jane Doe',
+              phone: '09171234567',
+            },
+          },
+          created_at: '2026-10-22T10:00:00Z',
+          updated_at: '2026-10-22T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify grouped Form Registration headers and content
+    expect(screen.getByText('Form Registration Details')).toBeInTheDocument();
+    expect(screen.getByText('Form & Sign-off Target')).toBeInTheDocument();
+    expect(screen.getByText('Submission Responses')).toBeInTheDocument();
+
+    // Verify form target items
+    expect(screen.getByText('Pastoral Sign-off')).toBeInTheDocument();
+    expect(screen.getByText('youth-summer-camp-2026')).toBeInTheDocument();
+    expect(screen.getAllByText('Pastoral Sign-off for Youth Summer Camp by John Doe')).toHaveLength(
+      2,
+    );
+
+    // Verify submission responses (unpacked from responses and flat keys)
+    expect(screen.getByText('Cabin Preference:')).toBeInTheDocument();
+    expect(screen.getByText('Cabin Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Tshirt Size:')).toBeInTheDocument();
+    expect(screen.getByText('L')).toBeInTheDocument();
+    expect(screen.getByText('Dietary Restrictions:')).toBeInTheDocument();
+    expect(screen.getByText('Vegetarian')).toBeInTheDocument();
+    expect(screen.getByText('Emergency Contact')).toBeInTheDocument();
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+  });
 });
