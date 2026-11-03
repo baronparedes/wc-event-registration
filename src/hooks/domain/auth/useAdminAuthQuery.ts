@@ -11,11 +11,12 @@ import {
   fetchAdminAuthState,
 } from '@/lib/domain/auth';
 
-export function useAdminAuthQuery() {
+export function useAdminAuthQuery(enabled = true) {
   const query = useQuery<AdminAuthState>({
     queryKey: ADMIN_AUTH_QUERY_KEY,
     queryFn: fetchAdminAuthState,
     staleTime: QUERY_STALE_TIME_MS.detail,
+    enabled,
   });
 
   const permissionSet = useMemo<ReadonlySet<AdminPermissionKey>>(

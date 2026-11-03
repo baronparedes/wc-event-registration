@@ -82,19 +82,22 @@ async function withEnv(run: () => Promise<void>) {
   }
 }
 
-function createRequest(body: unknown) {
+function createRequest(body: unknown, authenticated = true) {
+  const headers: Record<string, string> = {
+    origin: ORIGIN,
+    'content-type': 'application/json',
+    'x-forwarded-for': `203.0.113.${++requestNumber}`,
+  };
+  if (authenticated) headers.authorization = 'Bearer test-user-token';
+
   return new Request('https://example.functions/submit-recruitment-application', {
     method: 'POST',
-    headers: {
-      origin: ORIGIN,
-      'content-type': 'application/json',
-      'x-forwarded-for': `203.0.113.${++requestNumber}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 }
 
-function mockFetch(options: { settings?: unknown; failRequest?: string } = {}) {
+function mockFetch(options: { settings?: unknown; failRequest?: string; role?: string } = {}) {
   const originalFetch = globalThis.fetch;
   const calls: Array<{ path: string; method: string; body: unknown }> = [];
 
@@ -106,6 +109,25 @@ function mockFetch(options: { settings?: unknown; failRequest?: string } = {}) {
 
     if (options.failRequest === `${method} ${url.pathname}`) {
       return Promise.resolve(Response.json({ message: 'request failed' }, { status: 500 }));
+    }
+
+    if (url.pathname === '/auth/v1/user') {
+      return Promise.resolve(
+        Response.json({
+          id: 'auth-user-1',
+          aud: 'authenticated',
+          role: 'authenticated',
+          email: 'operator@example.com',
+          app_metadata: { provider: 'google', providers: ['google'] },
+          user_metadata: {},
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        }),
+      );
+    }
+
+    if (url.pathname === '/rest/v1/admins') {
+      return Promise.resolve(Response.json({ id: 'admin-row-1', role: options.role ?? 'admin' }));
     }
 
     if (url.pathname === '/rest/v1/recruitment_settings') {
@@ -143,7 +165,7 @@ function mockFetch(options: { settings?: unknown; failRequest?: string } = {}) {
 }
 
 Deno.test(
-  'submit-recruitment-application accepts public submission and scores configured answers',
+  'submit-recruitment-application accepts an authorized admin submission and scores configured answers',
   async () => {
     await withEnv(async () => {
       const mock = mockFetch();
@@ -183,6 +205,71 @@ Deno.test(
         );
       } finally {
         mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('submit-recruitment-application rejects unauthenticated callers', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch();
+    try {
+      const response = await handleSubmitRecruitmentApplication(
+        createRequest(applicationRequest, false),
+      );
+
+      assertEquals(response.status, 401);
+      assertEquals(
+        mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+        false,
+      );
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('submit-recruitment-application rejects other authenticated admin roles', async () => {
+  await withEnv(async () => {
+    for (const role of ['slod', 'imt']) {
+      const mock = mockFetch({ role });
+      try {
+        const response = await handleSubmitRecruitmentApplication(
+          createRequest(applicationRequest),
+        );
+
+        assertEquals(response.status, 401);
+        assertEquals(
+          mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+          false,
+        );
+      } finally {
+        mock.restore();
+      }
+    }
+  });
+});
+
+Deno.test(
+  'submit-recruitment-application accepts kiosk and VMT roles but honors the closed setting',
+  async () => {
+    await withEnv(async () => {
+      for (const role of ['kiosk', 'vmt']) {
+        const mock = mockFetch({
+          role,
+          settings: { ...recruitmentSettings, is_recruitment_open: false },
+        });
+        try {
+          const response = await handleSubmitRecruitmentApplication(
+            createRequest(applicationRequest),
+          );
+
+          assertEquals(response.status, 403);
+          const result = await response.json();
+          assertEquals(result.error_code, 'RECRUITMENT_CLOSED');
+        } finally {
+          mock.restore();
+        }
       }
     });
   },

@@ -52,20 +52,29 @@ export function StepIndicator({
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         {categoryLabel ?? (labels ? 'Registration steps' : `Step ${currentStep} of ${totalSteps}`)}
       </p>
-      <div className="mt-2 flex items-center gap-2 text-sm">
+      <div className="mt-2 flex min-w-0 items-start gap-1 text-sm sm:items-center sm:gap-2">
         {elements.map((element, i) => {
           if (element.type === 'line') {
-            return <div key={`line-${i}`} className="h-px flex-1 bg-border" aria-hidden="true" />;
+            return (
+              <div
+                key={`line-${i}`}
+                className="mt-3.5 h-px min-w-0 flex-1 bg-border sm:mt-0"
+                aria-hidden="true"
+              />
+            );
           }
 
           const stepNumber = element.stepNumber!;
           const index = element.index!;
 
           return (
-            <div key={`step-${stepNumber}`} className="flex items-center gap-1.5">
+            <div
+              key={`step-${stepNumber}`}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 sm:flex-none sm:flex-row sm:gap-1.5"
+            >
               <span
                 className={cx(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition-colors',
+                  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors',
                   getBadgeClassName(stepNumber),
                 )}
               >
@@ -74,8 +83,8 @@ export function StepIndicator({
               {labels && (
                 <span
                   className={cx(
-                    'text-xs font-medium',
-                    currentStep === stepNumber ? 'text-primary' : 'text-text',
+                    'max-w-full break-words text-center text-[10px] font-medium leading-tight sm:text-left sm:text-xs',
+                    currentStep === stepNumber ? 'text-primary' : 'hidden text-text sm:inline',
                   )}
                 >
                   {labels[index]}

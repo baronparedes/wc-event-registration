@@ -20,6 +20,8 @@ import {
   useSubmitApprovalDecisionMutation,
 } from '@/hooks/domain/approvals';
 
+import { RecruitmentEndorsementReviewSection } from './components/RecruitmentEndorsementReviewSection';
+
 export function ApprovalReviewPage() {
   const { token } = useParams<{ token: string }>();
   const [decisionNotes, setDecisionNotes] = useState('');
@@ -29,7 +31,10 @@ export function ApprovalReviewPage() {
 
   const { mutate: submitDecision, isPending: isSubmitting } = useSubmitApprovalDecisionMutation();
 
-  const handleDecision = (decision: 'approved' | 'rejected') => {
+  const handleDecision = (
+    decision: 'approved' | 'rejected',
+    attestationAnswers?: Record<string, unknown>,
+  ) => {
     if (!token) return;
 
     if (decision === 'rejected' && !decisionNotes.trim()) {
@@ -43,6 +48,7 @@ export function ApprovalReviewPage() {
         token,
         decision,
         notes: decisionNotes.trim() || null,
+        attestation_answers: attestationAnswers,
       },
       {
         onSuccess: (data) => {
@@ -209,7 +215,9 @@ export function ApprovalReviewPage() {
           )}
           {approval.entity_type === 'form_submission'
             ? 'Submission Responses'
-            : 'Leave Schedule & Reason'}
+            : approval.entity_type === 'service_excuse'
+              ? 'Leave Schedule & Reason'
+              : 'DGroup Leader Endorsement'}
         </h2>
 
         {approval.entity_type === 'form_submission' && entity_details && (
@@ -305,10 +313,21 @@ export function ApprovalReviewPage() {
             </div>
           </div>
         )}
+
+        {approval.entity_type === 'recruitment_endorsement' && entity_details && (
+          <RecruitmentEndorsementReviewSection
+            entityDetails={entity_details}
+            canDecide={isPending}
+            isSubmitting={isSubmitting}
+            decisionNotes={decisionNotes}
+            onDecisionNotesChange={(event) => setDecisionNotes(event.target.value)}
+            onDecision={handleDecision}
+          />
+        )}
       </div>
 
       {/* Decision Action Area (When pending and valid) */}
-      {isPending && (
+      {isPending && approval.entity_type !== 'recruitment_endorsement' && (
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
           <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text">
             <MessageSquare className="h-4 w-4" />

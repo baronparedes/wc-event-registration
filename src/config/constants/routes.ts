@@ -65,6 +65,8 @@ export const ROUTE_PATHS = {
   adminSettingsEmailTemplates: '/admin/settings/email-templates',
   adminApprovals: '/admin/approvals',
   approvalReviewPattern: '/approvals/review/:token',
+  recruitment: '/recruitment',
+  recruitmentApply: '/recruitment/apply',
 } as const;
 export type AppRouteKey =
   | 'home'
@@ -124,7 +126,9 @@ export type AppRouteKey =
   | 'adminSettings'
   | 'adminSettingsEmailTemplates'
   | 'adminApprovals'
-  | 'approvalReview';
+  | 'approvalReview'
+  | 'recruitment'
+  | 'recruitmentApply';
 
 export type AppRouteDefinition = {
   key: AppRouteKey;
@@ -152,6 +156,8 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     requiredPermission: 'canManageServices',
   },
   { key: 'home', path: ROUTE_PATHS.home, layout: 'shell' },
+  { key: 'recruitment', path: ROUTE_PATHS.recruitment, layout: 'shell' },
+  { key: 'recruitmentApply', path: ROUTE_PATHS.recruitmentApply, layout: 'shell' },
   { key: 'hello', path: ROUTE_PATHS.hello, layout: 'standalone' },
   { key: 'privacy', path: ROUTE_PATHS.privacy, layout: 'shell' },
   { key: 'privacyPolicy', path: ROUTE_PATHS.privacyPolicy, layout: 'shell' },
@@ -422,6 +428,7 @@ const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.formSubmitPattern,
   ROUTE_PATHS.excuseRequest,
   ROUTE_PATHS.longLeaveRequest,
+  ROUTE_PATHS.recruitmentApply,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
   ROUTE_PATHS.hello,
 ] as const;

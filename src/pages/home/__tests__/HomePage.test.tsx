@@ -59,6 +59,7 @@ vi.mock('@/pages/home/components', () => ({
     return <div>{`Past Events List: ${props.events.length}`}</div>;
   },
   WelcomeHelloBanner: () => <div data-testid="welcome-hello-banner">Welcome Hello Banner</div>,
+  RecruitmentHubBanner: () => <div data-testid="recruitment-hub-banner">Recruitment</div>,
 }));
 
 describe('HomePage', () => {
@@ -171,6 +172,23 @@ describe('HomePage', () => {
     expect(mockHubSection).not.toHaveBeenCalled();
     expect(mockPastEventList).not.toHaveBeenCalled();
     expect(screen.queryByText(/Available Now/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('recruitment-hub-banner')).not.toBeInTheDocument();
+  });
+
+  it('renders the join banner after the Hub event and past event sections', () => {
+    mockUsePublicEventListingQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+
+    renderHomePage();
+
+    const pastEvents = screen.getByText('Past Events List: 0');
+    const joinBanner = screen.getByTestId('recruitment-hub-banner');
+    expect(
+      pastEvents.compareDocumentPosition(joinBanner) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('renders error state when listing query fails', () => {

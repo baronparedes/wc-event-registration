@@ -176,6 +176,7 @@ export type ApplicantRecruitmentView = Pick<
   | 'service_commitments'
 > & {
   dgroup_approval_status: string | null;
+  dgroup_leader_name: string;
   transactions: ApplicantRecruitmentTimelineItem[];
 };
 
@@ -204,4 +205,14 @@ export type PublicRecruitmentConfig = {
   vmt_registration_url: string;
   orientation_instructions: string;
   survey_questions: DynamicFieldLike[];
+};
+
+export type RecruitmentEndorsementReviewDetails = {
+  id: string;
+  full_name: string;
+  nickname: string;
+  desired_role: RecruitmentRole;
+  created_at: string;
+  endorsement_questions: EndorsementQuestionItem[];
+  attestation_answers: Record<string, unknown>;
 };

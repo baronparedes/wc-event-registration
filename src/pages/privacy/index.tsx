@@ -1,12 +1,20 @@
 import { LEGAL_CONFIG } from '@/config/constants/legal';
 
-export function PrivacyPolicyPage() {
+export function PrivacyPolicyPage({ embedded = false }: { embedded?: boolean } = {}) {
   return (
-    <div className="mx-auto max-w-4xl space-y-8 rounded-2xl border border-border bg-surface p-6 shadow-xs sm:p-10">
+    <div
+      className={
+        embedded
+          ? 'space-y-6 text-text leading-relaxed'
+          : 'mx-auto max-w-4xl space-y-8 rounded-2xl border border-border bg-surface p-6 shadow-xs sm:p-10'
+      }
+    >
       <header className="space-y-2 border-b border-border pb-6">
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-text sm:text-4xl">
-          Privacy Policy
-        </h1>
+        {!embedded && (
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-text sm:text-4xl">
+            Privacy Policy
+          </h1>
+        )}
         <p className="text-sm text-muted">
           Last updated: {LEGAL_CONFIG.lastUpdated} | Effective date: {LEGAL_CONFIG.effectiveDate}
         </p>

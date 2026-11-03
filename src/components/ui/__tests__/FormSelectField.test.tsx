@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useForm, useWatch } from 'react-hook-form';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { FormSelectField } from '@/components/ui/FormSelectField';
 
@@ -61,6 +61,26 @@ describe('FormSelectField', () => {
 
     expect(screen.getByRole('option', { name: 'Draft' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Published' })).toBeInTheDocument();
+  });
+
+  it('selects the first matching option when a character is typed on the focused trigger', () => {
+    const handleChange = vi.fn();
+    render(
+      <FormSelectField
+        id="gender"
+        label="Gender"
+        value=""
+        onChange={handleChange}
+        options={[
+          { value: 'male', label: 'Male' },
+          { value: 'female', label: 'Female' },
+        ]}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText('Gender'), { key: 'm' });
+
+    expect(handleChange).toHaveBeenCalledWith('male');
   });
 
   it('filters options when searchable mode is enabled', () => {

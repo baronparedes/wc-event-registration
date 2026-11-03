@@ -309,7 +309,7 @@ verify_jwt = false
 import_map = "./functions/deno.json"
 
 [functions.submit-recruitment-application]
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/deno.json"
 
 [functions.submit-registration]

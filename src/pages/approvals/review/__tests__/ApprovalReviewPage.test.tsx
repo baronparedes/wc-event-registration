@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -468,5 +468,58 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('Finance Approval')).toBeInTheDocument();
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
     expect(screen.queryByText('pending_approval')).not.toBeInTheDocument();
+  });
+
+  it('submits validated DGroup attestation answers with a recruitment endorsement decision', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation',
+              label: 'How long have you known the applicant?',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+              placeholder: 'Enter your response',
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(screen.getByText('Test Taylor Member')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Enter your response'), {
+      target: { value: 'I have known them for three years.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { leader_attestation: 'I have known them for three years.' },
+        }),
+        expect.any(Object),
+      );
+    });
   });
 });

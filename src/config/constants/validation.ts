@@ -4,5 +4,5 @@ export const VALIDATION_PATTERNS = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   dateYyyyMmDd: /^\d{4}-\d{2}-\d{2}$/,
   datetimeYyyyMmDdThhMm: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
-  phone: /^(?:\+63[\s-]?|0)?9[\d\s-]{8,}$/,
+  phone: /^(?:\+63[\s-]?|0)?9(?:[\s-]?\d){8,9}$/,
 } as const;

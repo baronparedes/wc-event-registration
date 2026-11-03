@@ -28,6 +28,7 @@ export interface DynamicFieldRendererProps {
   memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
+  radioOptionsLayout?: 'stacked' | 'responsive-row';
 }
 
 /**
@@ -40,6 +41,7 @@ export function DynamicFieldRenderer({
   memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
+  radioOptionsLayout,
 }: DynamicFieldRendererProps) {
   switch (field.field_type) {
     case 'text':
@@ -76,6 +78,7 @@ export function DynamicFieldRenderer({
           memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+          radioOptionsLayout={radioOptionsLayout}
         />
       );
     case 'multi_select':

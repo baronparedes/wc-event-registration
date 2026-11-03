@@ -56,4 +56,11 @@ describe('useAdminAuthQuery', () => {
 
     expect(result.current.error).toBeInstanceOf(Error);
   });
+
+  it('does not fetch admin auth state when disabled', () => {
+    const { result } = renderHookWithClient(() => useAdminAuthQuery(false));
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(mockFetchAdminAuthState).not.toHaveBeenCalled();
+  });
 });
