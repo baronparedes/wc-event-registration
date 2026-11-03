@@ -1,15 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   AlertCircle,
-  Calendar,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Clock,
   History,
   Lock,
-  MessageSquare,
   RotateCcw,
   UserPlus,
 } from 'lucide-react';
@@ -109,9 +107,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const deployMutation = useDeployRecruitmentApplicantMutation();
 
-  // Collapsible drawers for secondary details
-  const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  // Collapsible history state
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
   // Find latest transaction for selected step if any
@@ -149,6 +145,52 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const canOverrideGate =
     authState?.adminRole === 'admin' || authState?.adminRole === 'super_admin';
   const isDGroupEndorsed = Boolean(application.dgroup_approval_id);
+
+  const missingStepDetails = useMemo(() => {
+    if (selectedStep >= 2 && selectedStep <= 6) {
+      const missing: string[] = [];
+      if (!reviewerId?.trim()) missing.push('Assigned Reviewer / Coach');
+      if (!scheduledAtLocal?.trim() && !latestStepTransaction?.scheduled_at) {
+        missing.push('Session Date & Time');
+      }
+      if (selectedStep === 2 && !confirmedRole) {
+        missing.push('Confirmed Ministry Role');
+      }
+      if (selectedStep === 4 && !isDGroupEndorsed && !canOverrideGate) {
+        missing.push('DGroup Leader Endorsement');
+      }
+      if (!notes?.trim()) {
+        missing.push('Leadership Notes / Feedback');
+      }
+      return missing;
+    }
+    if (selectedStep === 7) {
+      const missing: string[] = [];
+      if (!ccfVmtId?.trim()) missing.push('CCF VMT ID');
+      if (!ccfVmtDate?.trim()) missing.push('CCF VMT Registration Date');
+      return missing;
+    }
+    if (selectedStep === 8) {
+      const missing: string[] = [];
+      if (!rfidTag?.trim()) missing.push('Assigned Physical RFID Tag');
+      return missing;
+    }
+    return [];
+  }, [
+    selectedStep,
+    reviewerId,
+    scheduledAtLocal,
+    latestStepTransaction?.scheduled_at,
+    confirmedRole,
+    isDGroupEndorsed,
+    canOverrideGate,
+    notes,
+    ccfVmtId,
+    ccfVmtDate,
+    rfidTag,
+  ]);
+
+  const canCompleteCurrentStep = missingStepDetails.length === 0;
 
   const canDeploy =
     isActionableStep &&
@@ -451,132 +493,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </div>
             ) : (
               <>
-                {/* Session Schedule Status Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-border bg-background p-3 text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Clock className="h-4 w-4 text-primary shrink-0" />
-                    <div className="truncate">
-                      <span className="text-muted">Session: </span>
-                      {latestStepTransaction?.scheduled_at ? (
-                        <span className="font-semibold text-text">
-                          {formatDateTime(latestStepTransaction.scheduled_at)}
-                        </span>
-                      ) : (
-                        <span className="text-muted italic">Not scheduled yet</span>
-                      )}
-                      {latestStepTransaction?.assigned_reviewer_name && (
-                        <span className="text-muted">
-                          {' '}
-                          · Coach:{' '}
-                          <strong className="text-text">
-                            {latestStepTransaction.assigned_reviewer_name}
-                          </strong>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => setIsSchedulingOpen((prev) => !prev)}
-                    className="text-primary hover:underline text-xs shrink-0 self-start sm:self-auto"
-                  >
-                    <Calendar className="mr-1 h-3.5 w-3.5" />
-                    {latestStepTransaction?.scheduled_at
-                      ? 'Reschedule Session'
-                      : 'Schedule Session'}
-                    {isSchedulingOpen ? (
-                      <ChevronUp className="ml-1 h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-
-                {/* Expandable Session Scheduler */}
-                {isSchedulingOpen && (
-                  <div className="space-y-3 rounded-xl border border-border bg-background p-3.5">
-                    <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      Schedule Coaching Session
-                    </h4>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <FormSelectField
-                        label="Assigned Reviewer / Coach"
-                        placeholder=""
-                        value={reviewerId}
-                        onChange={(val) => setReviewerId(val)}
-                        options={[{ label: 'Unassigned', value: '' }, ...approverOptions]}
-                      />
-
-                      <FormInputField
-                        label="Session Date & Time"
-                        type="datetime-local"
-                        value={scheduledAtLocal}
-                        onChange={(event) => setScheduledAtLocal(event.target.value)}
-                      />
-                    </div>
-
-                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1 [&>button]:w-full sm:[&>button]:w-auto">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => setIsSchedulingOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        size="xs"
-                        onClick={() => {
-                          handleUpdateStage('scheduled');
-                          setIsSchedulingOpen(false);
-                        }}
-                        disabled={updateStageMutation.isPending || !scheduledAtLocal}
-                      >
-                        <Clock className="mr-1 h-3.5 w-3.5" />
-                        Schedule Session
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2 Interview: Final Ministry Role Assignment */}
-                {selectedStep === 2 && (
-                  <div className="rounded-xl border border-border bg-background p-3.5 space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <h4 className="text-xs font-semibold text-text">
-                        Final Ministry Role Assignment
-                      </h4>
-                      <span className="text-[11px] text-muted">
-                        Desired role from application:{' '}
-                        <strong className="text-text">{application.desired_role}</strong>
-                      </span>
-                    </div>
-                    <FormSelectField
-                      label="Confirmed Ministry Role"
-                      placeholder=""
-                      value={confirmedRole}
-                      onChange={(val) => setConfirmedRole(val)}
-                      options={roleOptions}
-                      helperText="Finalized during Step 2 Interview. Once completed, this ministry role is locked for all subsequent pipeline steps."
-                    />
-                  </div>
-                )}
-
-                {/* Steps 3+: Show Read-Only Confirmed Role Badge */}
-                {selectedStep > 2 && (
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs">
-                    <span className="text-muted">Final Ministry Role:</span>
-                    <Badge variant="default" className="font-semibold text-xs">
-                      {application.confirmed_role || confirmedRole}
-                    </Badge>
-                  </div>
-                )}
-
                 {/* Step 4 DGroup Endorsement Gate Warning */}
                 {selectedStep === 4 && !isDGroupEndorsed && (
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-text space-y-1">
@@ -594,7 +510,115 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
                 )}
 
-                {/* Primary Action Button Bar: 100% Mobile Friendly */}
+                {/* Session & Evaluation Details Card */}
+                <div className="rounded-xl border border-border bg-background p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
+                      Session & Evaluation Details
+                    </h4>
+                    {latestStepTransaction?.status && (
+                      <Badge
+                        variant={
+                          latestStepTransaction.status === 'scheduled' ? 'accent' : 'secondary'
+                        }
+                        className="text-[10px] capitalize font-mono"
+                      >
+                        {latestStepTransaction.status}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormSelectField
+                      label="Assigned Reviewer / Coach *"
+                      placeholder=""
+                      value={reviewerId}
+                      onChange={(val) => setReviewerId(val)}
+                      options={[{ label: 'Select a reviewer...', value: '' }, ...approverOptions]}
+                    />
+
+                    <FormInputField
+                      label="Session Date & Time *"
+                      type="datetime-local"
+                      value={scheduledAtLocal}
+                      onChange={(event) => setScheduledAtLocal(event.target.value)}
+                    />
+                  </div>
+
+                  {/* Step 2 Interview: Final Ministry Role Assignment */}
+                  {selectedStep === 2 && (
+                    <div className="border-t border-border/80 pt-3 space-y-1.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="text-xs font-semibold text-text">
+                          Confirmed Ministry Role *
+                        </span>
+                        <span className="text-[11px] text-muted">
+                          Desired role from application:{' '}
+                          <strong className="text-text">{application.desired_role}</strong>
+                        </span>
+                      </div>
+                      <FormSelectField
+                        placeholder=""
+                        value={confirmedRole}
+                        onChange={(val) => setConfirmedRole(val)}
+                        options={roleOptions}
+                        helperText="Finalized during Step 2 Interview. Once completed, this ministry role is locked for all subsequent pipeline steps."
+                      />
+                    </div>
+                  )}
+
+                  {/* Steps 3+: Show Read-Only Confirmed Role Badge */}
+                  {selectedStep > 2 && (
+                    <div className="flex items-center justify-between gap-2 border-t border-border/80 pt-2 text-xs">
+                      <span className="text-muted">Final Ministry Role:</span>
+                      <Badge variant="default" className="font-semibold text-xs">
+                        {application.confirmed_role || confirmedRole}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Leadership Notes & Instructions */}
+                  <div className="border-t border-border/80 pt-3 space-y-3">
+                    <FormTextareaField
+                      label="Internal Leadership Notes *"
+                      placeholder="Enter evaluation feedback, candidate observations, and notes for ministry leadership..."
+                      rows={2}
+                      textareaClassName="resize-none"
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                      helperText="Required before completing this step. Saved to candidate pipeline history."
+                    />
+
+                    <FormTextareaField
+                      label="Applicant-Visible Instructions (Optional)"
+                      placeholder="Instructions shown to the applicant on their progress portal..."
+                      rows={2}
+                      textareaClassName="resize-none"
+                      value={applicantNotes}
+                      onChange={(event) => setApplicantNotes(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Missing Details Checklist Notice */}
+                {!canCompleteCurrentStep && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="font-semibold">
+                        Required before completing Step {selectedStep}:
+                      </span>
+                      <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
+                        {missingStepDetails.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Primary Action Button Bar */}
                 <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
                   <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
                     Stage Action
@@ -605,14 +629,23 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       type="button"
                       size="sm"
                       onClick={() => handleUpdateStage('completed')}
-                      disabled={
-                        updateStageMutation.isPending ||
-                        (selectedStep === 4 && !isDGroupEndorsed && !canOverrideGate)
-                      }
+                      disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                       className="font-semibold"
                     >
                       <CheckCircle2 className="mr-1.5 h-4 w-4" />
                       Complete Step {selectedStep}
+                    </Button>
+
+                    {/* Schedule / Reschedule ahead of time button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStage('scheduled')}
+                      disabled={updateStageMutation.isPending || !scheduledAtLocal || !reviewerId}
+                    >
+                      <Clock className="mr-1.5 h-3.5 w-3.5" />
+                      {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Schedule Session'}
                     </Button>
 
                     {/* Repeatable observation controls */}
@@ -622,7 +655,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                         variant="secondary"
                         size="sm"
                         onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
-                        disabled={updateStageMutation.isPending}
+                        disabled={updateStageMutation.isPending || !scheduledAtLocal}
                       >
                         <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                         Repeat Observation (Step 4)
@@ -637,7 +670,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           variant="secondary"
                           size="sm"
                           onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
-                          disabled={updateStageMutation.isPending}
+                          disabled={updateStageMutation.isPending || !scheduledAtLocal}
                         >
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                           Repeat Evaluation (Step 5)
@@ -656,45 +689,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       </>
                     )}
                   </div>
-                </div>
-
-                {/* Collapsible Coaching Notes Drawer */}
-                <div className="border-t border-border pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsNotesOpen((prev) => !prev)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-text cursor-pointer"
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    <span>Coaching Notes & Instructions</span>
-                    {isNotesOpen ? (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-
-                  {isNotesOpen && (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <FormTextareaField
-                        label="Internal Leadership Notes"
-                        placeholder="Private evaluation feedback and notes for ministry leadership..."
-                        rows={2}
-                        textareaClassName="resize-none"
-                        value={notes}
-                        onChange={(event) => setNotes(event.target.value)}
-                      />
-
-                      <FormTextareaField
-                        label="Applicant-Visible Instructions"
-                        placeholder="Instructions shown to the applicant on their progress portal..."
-                        rows={2}
-                        textareaClassName="resize-none"
-                        value={applicantNotes}
-                        onChange={(event) => setApplicantNotes(event.target.value)}
-                      />
-                    </div>
-                  )}
                 </div>
               </>
             )}
@@ -739,19 +733,33 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormInputField
-                    label="CCF VMT ID"
+                    label="CCF VMT ID *"
                     placeholder="e.g. VMT-12345"
                     value={ccfVmtId}
                     onChange={(event) => setCcfVmtId(event.target.value)}
                   />
 
                   <FormInputField
-                    label="CCF VMT Registration Date"
+                    label="CCF VMT Registration Date *"
                     type="date"
                     value={ccfVmtDate}
                     onChange={(event) => setCcfVmtDate(event.target.value)}
                   />
                 </div>
+
+                {!canCompleteCurrentStep && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="font-semibold">Required before completing Step 7:</span>
+                      <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
+                        {missingStepDetails.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
                 <div className="pt-1">
                   <Button
@@ -759,7 +767,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     size="sm"
                     className="w-full sm:w-auto"
                     onClick={() => handleUpdateStage('completed')}
-                    disabled={updateStageMutation.isPending || !ccfVmtId.trim()}
+                    disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                   >
                     <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                     Verify & Complete Step 7
@@ -806,12 +814,26 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 </div>
 
                 <FormInputField
-                  label="Assigned Physical RFID Tag (Member ID)"
+                  label="Assigned Physical RFID Tag (Member ID) *"
                   placeholder="e.g. 1000123"
                   value={rfidTag}
                   onChange={(event) => setRfidTag(event.target.value)}
                   helperText="Physical RFID tag number scanned or assigned to this volunteer."
                 />
+
+                {!canCompleteCurrentStep && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="font-semibold">Required before completing Step 8:</span>
+                      <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
+                        {missingStepDetails.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
                 <div className="pt-1">
                   <Button
@@ -819,7 +841,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     size="sm"
                     className="w-full sm:w-auto"
                     onClick={() => handleUpdateStage('completed')}
-                    disabled={updateStageMutation.isPending || !rfidTag.trim()}
+                    disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                   >
                     <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                     Assign RFID & Complete Step 8
