@@ -189,7 +189,7 @@ export function DateFieldRenderer({ field, dynamicForm }: DateFieldRendererProps
         onClick={() => setIsOpen((open) => !open)}
       >
         <span className="truncate">{value && value.length > 0 ? value : 'Select date'}</span>
-        <Calendar className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+        <Calendar className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" focusable="false" />
       </button>
       {isOpen && (
         <div className={calendarPopoverClassName}>
@@ -273,7 +273,7 @@ export function DatetimeFieldRenderer({ field, dynamicForm }: DateFieldRendererP
           onClick={() => setIsOpen((open) => !open)}
         >
           <span className="truncate">{datePart.length > 0 ? datePart : 'Select date'}</span>
-          <Calendar className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+          <Calendar className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" focusable="false" />
         </button>
         {isOpen && (
           <div className={calendarPopoverClassName}>

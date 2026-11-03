@@ -10,6 +10,7 @@ type SelectFieldRendererProps = {
   memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
+  radioOptionsLayout?: 'stacked' | 'responsive-row';
 };
 
 function normalizeRole(role: string | undefined): string | null {
@@ -247,12 +248,19 @@ export function RadioFieldRenderer({
   memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
+  radioOptionsLayout = 'stacked',
 }: SelectFieldRendererProps) {
   const selectedValue = useWatch({ control: dynamicForm.control, name: field.field_key });
   const options = field.options ?? [];
 
   return (
-    <div className="space-y-2">
+    <div
+      className={
+        radioOptionsLayout === 'responsive-row'
+          ? 'space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'
+          : 'space-y-2'
+      }
+    >
       {options.map((option) => {
         const isUnavailable = isOptionUnavailableForRole(
           field,

@@ -13,7 +13,7 @@ This document defines the architectural blueprint, database schema, backend work
 | **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                    | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC | ✅ Complete |
 | **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ✅ Complete |
 | **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`            | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                     | ✅ Complete |
-| **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`     | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ⬜ Not Done |
+| **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`     | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ✅ Complete |
 | **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/recruitment/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 9-step review & coaching modal (repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy), & `DynamicFieldLike` question bank editor                                                           | ⬜ Not Done |
 
 ### Phase Checklist
@@ -33,52 +33,11 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Create `constants.ts`, `types.ts`, `schemas.ts`, `api.ts`, and barrel `index.ts` in `src/lib/domain/recruitment/` + Vitest schema tests
   - [x] Add admin-only `update-recruitment-settings` Edge Function and Deno tests to preserve the Edge-Functions-only write rule
   - [x] Create single-file React Query hooks in `src/hooks/domain/recruitment/`
-- [ ] **Phase 4: Applicant Self-Service Portal (`/recruitment`) & DGroup Leader Review UI**
-  - [ ] Add `RecruitmentHubBanner` to WelcomeHub home page (`src/pages/home/`)
-  - [ ] Build Kiosk-friendly `/recruitment/apply` (4 Pre-Qualification Gates + 5-Section Step 1 Wizard + Kiosk Auto-Reset Screen)
-  - [ ] Build Own-Phone `/recruitment` 9-Step Progress Tracker (Google OAuth matched by email, Step 7 VMT self-attestation, Step 8 Sunday Commitment Picker)
-  - [ ] Build `RecruitmentEndorsementReviewSection` in `/approvals/review/:token` using `DynamicFieldRenderer` + Vitest component tests
-- [ ] **Phase 5: Admin, SLOD & VMT Recruitment Pipeline (`/admin/recruitment`) & Settings**
-  - [ ] Build `AdminRecruitmentPage` (`/admin/recruitment`) with `AdminPageShell`, `ListTable`, `MobileCard`, `useInfiniteScrollTrigger`, & 42-column CSV export
-  - [ ] Build `RecruitmentApplicantDetailDialog` (9-Step Pipeline & Transaction History, Repeatable Step 4/5 controls, Step 7 VMT ID/Date, Step 8 RFID, Step 9 Deployment, & Doctrinal Survey Breakdown)
-  - [ ] Build `AdminRecruitmentSettingsPage` (`/admin/recruitment/settings`) + Vitest component tests
-
----
-
-## Phase Summary & Progress Tracker
-
-> **Status Legend**: `⬜ Not Done` · `🔄 In Progress` · `✅ Complete`
-
-| Phase                                                                                         | Milestone                                                                         | Target Layer / Surface                                                    | Key Deliverables                                                                                                                                                                                                                                                                         |   Status    |
-| :-------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
-| **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                    | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC | ✅ Complete |
-| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                     | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ✅ Complete |
-| **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`            | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                     | ✅ Complete |
-| **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`     | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ⬜ Not Done |
-| **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/recruitment/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 9-step review & coaching modal (repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy), & `DynamicFieldLike` question bank editor                                                           | ⬜ Not Done |
-
-### Phase Checklist
-
-- [x] **Phase 1: Database Schema, Seeded 20-Question Survey & Approval Extension**
-  - [x] Add `'vmt'` role to `public.admins` check constraint & create `public.is_recruitment_reviewer()` / `public.is_admin_or_slod()` helpers
-  - [x] Create `public.recruitment_settings` seeded with 20 Doctrinal Survey & 25 DGroup Endorsement `DynamicFieldLike` questions + `public.get_public_recruitment_config()` RPC
-  - [x] Create `public.recruitment_applications`, `public.recruitment_pipeline_transactions`, & `public.recruitment_application_latest_schedules_view` (`security_invoker = true`) with strict RLS
-  - [x] Extend `public.approval_entity_type` with `'recruitment_endorsement'` and create `public.get_my_recruitment_application()` & `public.deploy_recruitment_applicant()` RPCs
-- [x] **Phase 2: Backend Edge Functions & Deno Unit Tests**
-  - [x] Implement `submit-recruitment-application` Edge Function + Deno unit tests
-  - [x] Implement `update-recruitment-stage` Edge Function + Deno unit tests
-  - [x] Implement `deploy-recruitment-applicant` Edge Function + Deno unit tests
-  - [x] Extend `process-approval-decision` Edge Function for `recruitment_endorsement` + Deno unit tests
-- [x] **Phase 3: Domain Layer (`src/lib/domain/recruitment/`) & Hooks (`src/hooks/domain/recruitment/`)**
-  - [x] Extend `AdminRole` with `'vmt'` in `src/lib/domain/auth/types.ts` and role management UI
-  - [x] Create `constants.ts`, `types.ts`, `schemas.ts`, `api.ts`, and barrel `index.ts` in `src/lib/domain/recruitment/` + Vitest schema tests
-  - [x] Add admin-only `update-recruitment-settings` Edge Function and Deno tests to preserve the Edge-Functions-only write rule
-  - [x] Create single-file React Query hooks in `src/hooks/domain/recruitment/`
-- [ ] **Phase 4: Applicant Self-Service Portal (`/recruitment`) & DGroup Leader Review UI**
-  - [ ] Add `RecruitmentHubBanner` to WelcomeHub home page (`src/pages/home/`)
-  - [ ] Build Kiosk-friendly `/recruitment/apply` (4 Pre-Qualification Gates + 5-Section Step 1 Wizard + Kiosk Auto-Reset Screen)
-  - [ ] Build Own-Phone `/recruitment` 9-Step Progress Tracker (Google OAuth matched by email, Step 7 VMT self-attestation, Step 8 Sunday Commitment Picker)
-  - [ ] Build `RecruitmentEndorsementReviewSection` in `/approvals/review/:token` using `DynamicFieldRenderer` + Vitest component tests
+- [x] **Phase 4: Applicant Self-Service Portal (`/recruitment`) & DGroup Leader Review UI**
+  - [x] Add `RecruitmentHubBanner` to WelcomeHub home page (`src/pages/home/`)
+  - [x] Build Kiosk-friendly `/recruitment/apply` (4 Pre-Qualification Gates + 5-Section Step 1 Wizard + Kiosk Auto-Reset Screen)
+  - [x] Build Own-Phone `/recruitment` 9-Step Progress Tracker (Google OAuth matched by email, Step 7 VMT self-attestation, Step 8 Sunday Commitment Picker)
+  - [x] Build `RecruitmentEndorsementReviewSection` in `/approvals/review/:token` using `DynamicFieldRenderer` + Vitest component tests
 - [ ] **Phase 5: Admin, SLOD & VMT Recruitment Pipeline (`/admin/recruitment`) & Settings**
   - [ ] Build `AdminRecruitmentPage` (`/admin/recruitment`) with `AdminPageShell`, `ListTable`, `MobileCard`, `useInfiniteScrollTrigger`, & 42-column CSV export
   - [ ] Build `RecruitmentApplicantDetailDialog` (9-Step Pipeline & Transaction History, Repeatable Step 4/5 controls, Step 7 VMT ID/Date, Step 8 RFID, Step 9 Deployment, & Doctrinal Survey Breakdown)
@@ -114,42 +73,42 @@ flowchart TD
 
 ### 1.2 Core Business Rules & Design Decisions
 
-1. **Kiosk-First Public Application & Email-Matched Progress Portal**:
-   - **No Sign-In Required to Apply (`/recruitment/apply`)**: Designed to work seamlessly on an on-premise **Welcome Center Kiosk** as well as personal devices. Prospective applicants first pass a 4-part **Pre-Qualification Gate (`RecruitmentPreGateWizard`)**:
-     - **Gate 1 — Role Descriptions & Acknowledgment**: Displays available Welcome Center roles (`Prayer Coach`, `Usher`, `VMT Support`, `IMT Support`, `Backroom Support`) with their responsibilities and requirements, and requires agreeing to _"I have read and understood the roles available at the Welcome Center"_.
-     - **Gate 2 — Data Privacy & Waiver**: Displays the CCF WC Ministry data privacy and liability waiver notice and requires _"I agree"_.
-     - **Gate 3 — DGroup Attendance (> 6 Months)**: Asks _"I am a part of a DGroup and constantly attending for more than 6 months."_ (`Yes` / `No`). Requires `Yes` to proceed.
-     - **Gate 4 — GLC Level 1 Completion & Demographics (18–45 Years Old)**:
-       - **GLC Level 1 (Book 1 to 4)**: All roles strictly require completion of CCF's GLC Level 1 course.
-       - **Demographics (`18 to 45 years old`, `46 to 59 years old`, `60 years old and up`)**: Currently, only **`18 to 45 years old`** is open for recruitment (configurable in `recruitment_settings.eligibility_rules`).
-       - Selecting an ineligible option displays a warm pastoral message explaining the current eligibility criteria.
-   - Passing all 4 pre-gates proceeds **directly into Step 1 (Registration & 20-Question Biblical Survey)** without requiring Google Sign-In. After submitting on a Kiosk, a completion card displays a QR code / link for the applicant and a **"Start New Application"** reset for the next walk-in volunteer.
-   - **Check Progress on Their Own Phone (`/recruitment`)**: Whenever an applicant wants to view their live 9-step progress (or complete Step 7 VMT confirmation / Step 8 Sunday commitments) on their personal phone, they sign in via Google OAuth using the **same email address** entered in Step 1 (`lower(email) = lower(auth.jwt() ->> 'email')`), which automatically links `auth_user_id` to their application.
-   - Step 1 form validation and `submit-recruitment-application` enforce `18 <= Age <= 45` (derived from `DOB`), `GLC 1 Course Status === 'Completed'`, and `DGroup Member Since` $\ge 6$ months.
-2. **Personal, Emergency, Spiritual, GLC & DGroup Background (40-Field Canonical Schema)**:
+1. **Authorized Kiosk Application & Email-Matched Progress Portal**:
+
+- **Staff-Authenticated Application Intake (`/recruitment/apply`)**: The route and submit Edge Function require a valid JWT and an account with the `admin`, `super_admin`, `kiosk`, or `vmt` role. Applicants do not need their own account, but intake must run on a device signed in to one of these authorized roles. `supabase/config.toml` sets `verify_jwt = true` for the submit function. Prospective applicants first pass a 4-part **Pre-Qualification Gate (`RecruitmentPreGateWizard`)**:
+  - **Gate 1 — Role Descriptions, GLC Level 1 & Acknowledgment**: Displays available Welcome Center roles (`Prayer Coach`, `Usher`, `VMT Support`, `IMT Support`, `Backroom Support`) with their responsibilities, then requires separate confirmations that the applicant understands the roles and has completed GLC Level 1 (Book 1 to 4).
+  - **Gate 2 — Data Privacy & Waiver**: Displays the CCF WC Ministry data privacy and liability waiver notice and requires _"I agree"_.
+  - **Gate 3 — DGroup Attendance (> 6 Months)**: Asks _"I am a part of a DGroup and constantly attending for more than 6 months."_ (`Yes` / `No`). Requires `Yes` to proceed.
+  - **Gate 4 — Demographics (18–45 Years Old)**:
+    - **Age range (`18 to 45 years old`, `46 to 59 years old (currently closed)`, `60 years old and up (currently closed)`)**: Currently, only **`18 to 45 years old`** is open for recruitment; closed age brackets are rendered disabled in the dropdown.
+- Passing all 4 pre-gates proceeds **directly into Step 1 (Registration & 20-Question Biblical Survey)** without requiring the applicant's personal Google Sign-In. After submitting on an authorized kiosk, a completion card displays a link for the applicant and a **"Start New Application"** reset for the next walk-in volunteer.
+- **Check Progress on Their Own Phone (`/recruitment`)**: Whenever an applicant wants to view their live 9-step progress (or complete Step 7 VMT confirmation / Step 8 Sunday commitments) on their personal phone, they sign in via Google OAuth using the **same email address** entered in Step 1 (`lower(email) = lower(auth.jwt() ->> 'email')`), which automatically links `auth_user_id` to their application.
+- Step 1 form validation and `submit-recruitment-application` enforce `18 <= Age <= 45` (derived from `DOB`), `GLC 1 Course Status === 'Completed'`, and `DGroup Member Since` $\ge 6$ months.
+
+1. **Personal, Emergency, Spiritual, GLC & DGroup Background (40-Field Canonical Schema)**:
    - Captures the full Welcome Center recruitment dataset:
      - **Identity & Demographics**: `First Name`, `Middle Name`, `Last Name`, `Nickname`, `DOB`, `Age` (derived from `DOB`), `Mobile Number`, `Email`, `Gender`, `Life Stage`, `Wedding Anniversary` (conditional on `Married`), `Occupation`, `Company Name`.
      - **Emergency Contact**: `Emergency Contact Name`, `Emergency Contact Number`, `Relation to the Applicant`.
-     - **CCF, GLC & Application History**: `CCF Member Since (YYYY MMM)` (with derived tenure in years), `Other Ministries`, `GLC 1 Course Status`, `GLC 2 Course Status`, `Is this your first time to apply in the Welcome Center?`, and `What happened to previous application?` (conditional when not a first-time applicant).
-     - **DGroup Membership & Leadership**: `Constant DGroup Attendee?`, `DGroup Member Since (YYYY MMM)` (with derived tenure in years), `Name of DGroup Leader`, `Email of DGroup Leader`, `Mobile of DGroup Leader`, `Is a DGroup Leader?`, `DGroup Leader Since (YYYY MMM)` (conditional when applicant is a DGroup Leader, with derived tenure in years), and `How many members do you have?` (conditional when applicant is a DGroup Leader).
-     - **Pipeline & Schedule Tracking (Transactional History Table)**: `Role`, `Status`, `Attestation`, `Endorsement Info`, `Started On`, `Scheduled Interview On`, `Scheduled Orientation On`, `Scheduled Observation On`, `Scheduled Evaluation On`, and `Scheduled Operations Onboarding On`. All step schedules, coaching sessions, and back-and-forth transitions (e.g., repeating Step 4 Observation and Step 5 Evaluation as many times as needed) are stored in a dedicated transaction table (`public.recruitment_pipeline_transactions`).
-3. **20-Question True/False Biblical Survey**:
+   - **CCF, GLC & Application History**: `CCF Member Since (YYYY MMM)` (with derived tenure in years), `Other Ministries`, `GLC 1 Course Status`, and `GLC 2 Course Status` (shown and required only when GLC 1 is completed), `I have applied in the Welcome Center before`, and `What happened to previous application?` (conditional when checked).
+   - **DGroup Membership & Leadership**: `Constant DGroup Attendee?`, `DGroup Member Since (YYYY MMM)` (with derived tenure in years), `Name of DGroup Leader`, `Email of DGroup Leader`, `Mobile of DGroup Leader`, optional `DGroup Leader Since (YYYY MMM)` (with derived tenure in years), and optional `How many members do you have?`. Providing Leader Since derives the internal `is_dgroup_leader` flag.
+   - **Pipeline & Schedule Tracking (Transactional History Table)**: `Role`, `Status`, `Attestation`, `Endorsement Info`, `Started On`, `Scheduled Interview On`, `Scheduled Orientation On`, `Scheduled Observation On`, `Scheduled Evaluation On`, and `Scheduled Operations Onboarding On`. All step schedules, coaching sessions, and back-and-forth transitions (e.g., repeating Step 4 Observation and Step 5 Evaluation as many times as needed) are stored in a dedicated transaction table (`public.recruitment_pipeline_transactions`).
+2. **20-Question True/False Biblical Survey**:
    - Seeded in `public.recruitment_settings` and editable by Admins in `/admin/recruitment/settings`.
    - Automatically scored upon submission and displayed to Interviewers as a reference/discussion guide during Step 2 (does not auto-reject applicants).
-4. **DGroup Leader Endorsement & Attestation (Soft Gate)**:
+3. **DGroup Leader Endorsement & Attestation (Soft Gate)**:
    - Submitting Step 1 creates an `approval_requests` record (`entity_type: 'recruitment_endorsement'`) and dispatches a tokenized magic-link email to `dgroup_info.leader_email`.
    - The DGroup Leader completes the attestation questionnaire and approves/declines at `/approvals/review/:token` without requiring an account.
    - **Endorsement Gate Before Step 4**: Steps 2 (Interview) and 3 (Orientation) can proceed in parallel while endorsement is pending, but the DGroup Leader Endorsement and Attestation must be `approved` before the applicant can start **Step 4 (Observation)**.
-5. **Role Determination & Conditional Step 6 (Onboarding)**:
+4. **Role Determination & Conditional Step 6 (Onboarding)**:
    - Applicants select a `desired_role` in Step 1 from `RECRUITMENT_ROLES` (`Prayer Coach`, `Usher`, `Backroom Support`, `IMT Support`, `VMT Support` — strictly excluding `OIC`), which Interviewers/Evaluators can adjust or finalize (`confirmed_role`) up to Step 5 (Evaluation).
    - **Step 6 (Onboarding — Serve 1 Sunday Service as Usher)** is required **only** when `confirmed_role === 'Prayer Coach'`. For all other roles, Step 6 is automatically marked `skipped` and the applicant advances directly from Step 5 to Step 7.
-6. **External CCF VMT Registration (Step 7)**:
+5. **External CCF VMT Registration (Step 7)**:
    - Applicants click the external CCF VMT Database registration link on their `/recruitment` portal and self-attest completion (`vmt_registered = true`).
    - Admins/SLODs can record and verify the applicant's external VMT registration details by filling out `ccf_vmt_id` and `ccf_vmt_date` in Step 7.
-7. **RFID Releasing & Sunday Service Commitments (Step 8)**:
+6. **RFID Releasing & Sunday Service Commitments (Step 8)**:
    - Applicants select their recurring Sunday Service commitments (`1st Sunday` through `5th Sunday` across `9AM`, `12NN`, `3PM`) directly in their `/recruitment` portal.
    - Admins/SLODs review the commitments and assign the physical RFID tag (`assigned_rfid_member_id`) during RFID releasing.
-8. **Automated Member Promotion at Deployment (Step 9)**:
+7. **Automated Member Promotion at Deployment (Step 9)**:
    - Finalizing Step 9 atomically creates/activates the volunteer's record in `public.users` with `member_id = assigned_rfid_member_id`, `role = confirmed_role`, `category`, and `metadata` (`first_sunday`–`fifth_sunday`), automatically triggering `users_snapshot_commitment_metadata` into `public.user_commitment_history`.
 
 ### 1.3 Administrative Role Permissions Matrix (RBAC)
@@ -158,7 +117,7 @@ We introduce a dedicated **`vmt`** auth role (`AdminRole`: `'admin' | 'super_adm
 
 | Capability / Surface                                                                               | `super_admin` & `admin` |      `slod`       |          `vmt`           |     `kiosk`     | `imt` | Applicant (Own Phone)  |
 | :------------------------------------------------------------------------------------------------- | :---------------------: | :---------------: | :----------------------: | :-------------: | :---: | :--------------------: |
-| **On-Premise / Public Application Form (`/recruitment/apply`)**                                    |           ✅            |        ✅         |            ✅            | ✅ (Kiosk Mode) |  ❌   |           ✅           |
+| **Authorized Application Intake (`/recruitment/apply`)**                                           |           ✅            |        ❌         |            ✅            | ✅ (Kiosk Mode) |  ❌   |           ❌           |
 | **Personal 9-Step Progress Tracker (`/recruitment`)**                                              |           ✅            |        ✅         |            ✅            |       ❌        |  ❌   | ✅ (Matched by Email)  |
 | **View Recruitment Pipeline & 42-Column Table (`/admin/recruitment`)**                             |           ✅            |        ✅         |            ✅            |       ❌        |  ❌   |           ❌           |
 | **View 20-Question Biblical Survey Score & Answers**                                               |           ✅            |        ✅         |            ✅            |       ❌        |  ❌   | ❌ _(Hidden via RLS)_  |
@@ -311,7 +270,7 @@ erDiagram
 | 19  | `Started On`                                              | `timestamptz`                                     | `created_at`                                                            | Timestamp when Step 1 was submitted                       |
 | 20  | `Constant DGroup Attendee?`                               | `boolean`                                         | `dgroup_info.is_constant_attendee`                                      | Step 1 — DGroup Details (`Yes` / `No`)                    |
 | 21  | `GLC 1 Course Status`                                     | `text`                                            | `spiritual_background.glc1_status`                                      | Step 1 — Spiritual & GLC (`Completed`, `Ongoing`, `None`) |
-| 22  | `GLC 2 Course Status`                                     | `text`                                            | `spiritual_background.glc2_status`                                      | Step 1 — Spiritual & GLC (`Completed`, `Ongoing`, `None`) |
+| 22  | `GLC 2 Course Status`                                     | `text` (Conditional)                              | `spiritual_background.glc2_status`                                      | Required only when GLC 1 is `Completed`                   |
 | 23  | `Is this your first time to apply in the Welcome Center?` | `boolean`                                         | `application_history.is_first_time_applicant`                           | Step 1 — Application History (`Yes` / `No`)               |
 | 24  | `What happened to previous application?`                  | `text` (Conditional)                              | `application_history.previous_application_notes`                        | Required when `is_first_time_applicant === false`         |
 | 25  | `Life Stage`                                              | `text` (Required)                                 | `life_stage` (maps to `users.category` on deploy)                       | Step 1 — Personal Details                                 |
@@ -327,9 +286,9 @@ erDiagram
 | 35  | `Name of DGroup Leader`                                   | `text` (Required)                                 | `dgroup_info.leader_name`                                               | Step 1 — DGroup Details                                   |
 | 36  | `Email of DGroup Leader`                                  | `text` (Required)                                 | `dgroup_info.leader_email`                                              | Step 1 — DGroup Details (magic-link recipient)            |
 | 37  | `Mobile of DGroup Leader`                                 | `text` (Required)                                 | `dgroup_info.leader_phone`                                              | Step 1 — DGroup Details                                   |
-| 38  | `Is a DGroup Leader?`                                     | `boolean`                                         | `dgroup_info.is_dgroup_leader`                                          | Step 1 — DGroup Details (`Yes` / `No`)                    |
-| 39  | `DGroup Leader Since (YYYY MMM)`                          | `text` (`YYYY-MM` + derived yrs)                  | `dgroup_info.leader_since`                                              | Required when `is_dgroup_leader === true`                 |
-| 40  | `How many members do you have?`                           | `number` (Conditional)                            | `dgroup_info.dgroup_member_count`                                       | Required when `is_dgroup_leader === true`                 |
+| 38  | `DGroup Leader Status`                                    | `boolean` (Derived)                               | `dgroup_info.is_dgroup_leader`                                          | `true` when `leader_since` is provided                    |
+| 39  | `DGroup Leader Since (YYYY MMM)`                          | `text` (`YYYY-MM` + derived yrs, Optional)        | `dgroup_info.leader_since`                                              | Step 1 — DGroup Details                                   |
+| 40  | `How many members do you have?`                           | `number` (Optional)                               | `dgroup_info.dgroup_member_count`                                       | Step 1 — DGroup Details                                   |
 | 41  | `CCF VMT ID`                                              | `text` (Admin Input)                              | `ccf_vmt_id`                                                            | Step 7 — External CCF VMT Registration                    |
 | 42  | `CCF VMT Date`                                            | `date` (Admin Input)                              | `ccf_vmt_date`                                                          | Step 7 — External CCF VMT Registration                    |
 
@@ -521,7 +480,7 @@ sequenceDiagram
 
 1. **`submit-recruitment-application`**:
 
-- Public/Kiosk endpoint with no authenticated-session requirement. It inserts `auth_user_id = null`; own-phone sign-in links the application later by matching the normalized session email.
+- Requires `verify_jwt = true` and a valid `admin`, `super_admin`, `kiosk`, or `vmt` role. It inserts `auth_user_id = null`; own-phone sign-in links the application later by matching the normalized session email.
 - Validates personal details, spiritual background, DGroup leader info, and all required active survey answers via Zod. Unknown survey keys are rejected; optional active questions may be omitted.
 - Scores the 20 answers against `recruitment_settings.survey_questions`.
 - Creates the `recruitment_applications` record (`current_step = 2`, Step 1 marked `'completed'`, Step 2 marked `'pending'`, Step 6 marked `'pending'` if `desired_role === 'Prayer Coach'` else `'skipped'`).
@@ -617,10 +576,13 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 
 1. **WelcomeHub Home Integration (`src/pages/home/`)**:
    - `RecruitmentHubBanner.tsx`:
-     - Rendered on the Hub page when `recruitment_settings.is_recruitment_open` is `true` (or when the signed-in user already has an active application).
-     - Shows **"Join the Welcome Center Team — Apply Now"** for prospective applicants, or **"Recruitment In Progress: Step X of 9 — View Status"** with a progress bar for active applicants.
-2. **Pre-Qualification Gates & Step 1 Registration Wizard (`src/pages/recruitment/apply/index.tsx`)**:
-   - **Public / Kiosk Accessible (No Sign-In Required)**:
+   - Rendered at the bottom of the Hub after event/form sections when the signed-in user has an active/on-hold application, or when applications are open and the signed-in role is `admin`, `super_admin`, `kiosk`, or `vmt`. Hidden when applications are closed unless the signed-in user has an active/on-hold application.
+   - For active/on-hold applicants, shows **"Your Application: Step X of 9 — View Status"** with a progress bar linking to `/recruitment`.
+   - For authorized intake staff (`admin`, `super_admin`, `kiosk`, `vmt`) without an active application while applications are open, shows **"Join the Welcome Center Team — Join Now"** linking to `/recruitment/apply`.
+
+1. **Pre-Qualification Gates & Step 1 Registration Wizard (`src/pages/recruitment/apply/index.tsx`)**:
+   - **Staff-Authenticated / Kiosk-Only Intake**:
+     - `/recruitment/apply` and `submit-recruitment-application` require an authenticated `admin`, `super_admin`, `kiosk`, or `vmt` account. Applicants do not use their own credentials on the kiosk.
      - `RecruitmentPreGateSection.tsx`:
        - **Roles Overview & Agreement**: Role cards (`Prayer Coach`, `Usher`, `VMT Support`, `IMT Support`, `Backroom Support`) highlighting responsibilities and mandatory GLC Level 1 (Book 1 to 4) completion + _"I have read and understood the roles available at the Welcome Center"_ agreement.
        - **Data Privacy & Liability Waiver**: CCF WC Ministry privacy notice + _"I agree"_ confirmation.
@@ -628,13 +590,13 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
        - **GLC 1 & Demographics Check**: Confirms GLC Level 1 completion and demographic selection (`18 to 45 years old` [open], `46 to 59 years old` [closed], `60 years old and up` [closed]).
        - Advances directly to the Step 1 form once all 4 pre-gates are satisfied.
    - 5-Section progressive form using React Hook Form (`useForm`, `useWatch`):
-     - `PersonalAndWorkSection.tsx`: First Name, Middle Name, Last Name, Nickname, Email (used later to match their Google account when checking progress on their own phone), Mobile Number, DOB (validated for `18 <= Age <= 45` with live derived Age display), Gender (`FormSelectField`), Life Stage (`FormSelectField`), Wedding Anniversary (conditionally shown when `Life Stage === 'Married'`), Occupation, Company Name, Desired Role (`FormSelectField`), First-Time Applicant toggle (`Is this your first time to apply in the Welcome Center?`), and conditional `What happened to previous application?`.
-     - `EmergencyContactSection.tsx`: Emergency Contact Name, Emergency Contact Number, Relation to the Applicant.
-     - `SpiritualAndDGroupSection.tsx`: CCF Member Since (`YYYY MMM` month/year selector with live derived years display), Other Ministries, GLC 1 Course Status (`Completed` required for all roles), GLC 2 Course Status (`FormSelectField`), Constant DGroup Attendee (`Yes`/`No`), DGroup Member Since (`YYYY MMM` month/year selector validated for $> 6$ months tenure), Name of DGroup Leader, Email of DGroup Leader, Mobile of DGroup Leader, `Is a DGroup Leader?` toggle, and conditional fields (`DGroup Leader Since (YYYY MMM)` and `How many members do you have?`).
+   - `PersonalAndWorkSection.tsx`: First Name, Middle Name, Last Name, Nickname, Email (used later to match their Google account when checking progress on their own phone), Mobile Number, DOB (validated for `18 <= Age <= 45` with live derived Age display), Gender (`FormSelectField`), Life Stage (`FormSelectField`), Wedding Anniversary (conditionally shown when `Life Stage === 'Married'`), Occupation, Company Name, Desired Role (`FormSelectField`), an **"I have applied in the Welcome Center before"** checkbox, and conditional `What happened to previous application?` details.
+   - `EmergencyContactSection.tsx`: Emergency Contact Name, Emergency Contact Number, Relation to the Applicant.
+   - `SpiritualAndDGroupSection.tsx`: CCF Member Since (`YYYY MMM` month/year selector with live derived years display), Other Ministries, GLC 1 Course Status (`Completed` required for all roles), GLC 2 Course Status (visible and required only when GLC 1 is `Completed`), Constant DGroup Attendee (`Yes`/`No`), DGroup Member Since (`YYYY MMM` month/year selector validated for $> 6$ months tenure), Name of DGroup Leader, Email of DGroup Leader, Mobile of DGroup Leader, and optional `DGroup Leader Since (YYYY MMM)` and `How many members do you have?` fields. Leader status is derived from Leader Since.
    - `BiblicalSurveySection.tsx`: Renders the active `survey_questions` (`DynamicFieldLike[]`) directly using `DynamicFieldRenderer` (`RadioFieldRenderer` for `True` / `False` options) and `buildDynamicFieldResponseSchema` with a progress counter (`X / active question count answered`); do not hard-code the denominator because settings allow the active question count to change.
    - `ApplicantAttestationSection.tsx`: Commitment & data privacy attestation (`Attestation`) + Submit button.
    - **Kiosk Submission Completion Card**: After submitting, displays a confirmation screen instructing the applicant that they can check their progress on their own phone at `/recruitment` by signing in with Google using the email address they entered, plus a **"Start New Application"** button to reset the kiosk for the next person.
-3. **Applicant 9-Step Progress Portal on Personal Phone (`src/pages/recruitment/index.tsx`)**:
+1. **Applicant 9-Step Progress Portal on Personal Phone (`src/pages/recruitment/index.tsx`)**:
 
 - Prompts the applicant to sign in with Google on their personal phone and matches their application via `lower(email) = lower(auth.jwt() ->> 'email')`. Use `useAuthSessionQuery` for the general signed-in session and user ID; do not gate applicants with `useAdminAuthQuery().isAuthenticated` or an admin-only route guard.
 - Displays the applicant's header summary (`Avatar`, Name, Target Role `Badge`, Overall Progress bar) and a vertical 9-Step interactive timeline (`RecruitmentTimelineStep.tsx`):
@@ -647,10 +609,20 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 
 1. **DGroup Leader Magic-Link Endorsement (`src/pages/approvals/`)**:
 
-- `RecruitmentEndorsementReviewSection.tsx`: Integrated into `ReviewApprovalPage` when `approval.entity_type === 'recruitment_endorsement'`; the shared approval domain includes this entity type.
-- Displays applicant details and renders the DGroup Leader Attestation questions (`endorsement_questions` as `DynamicFieldLike[]`) directly using `DynamicFieldRenderer` and `buildDynamicFieldResponseSchema` (supporting `visibility_rule` dependencies, `radio`, `rating`, `textarea`, etc.) with **Endorse Applicant** and **Decline** buttons. Submit answers through `submitApprovalDecision` as `attestation_answers` so the Edge Function can validate and persist them with the decision.
+- `RecruitmentEndorsementReviewSection.tsx`: Integrated into `ReviewApprovalPage` (`/approvals/review/:token`) when `approval.entity_type === 'recruitment_endorsement'`; the shared approval domain fully includes this entity type.
+- **3-Step Review Flow**:
+  - **Step 1 (Overview)**: Displays applicant profile, CCF tenure, and desired ministry role.
+  - **Step 2 (Attestation)**: Renders the DGroup Leader Attestation questions (`endorsement_questions` as `DynamicFieldLike[]`) using `DynamicFieldRenderer` and `buildDynamicFieldResponseSchema`. Form fields are separated by clean divider lines (`divide-y divide-border`) to save vertical space. Rating questions use full-width segmented buttons (`1`, `2`, `3`) with an explanatory rating scale legend banner.
+  - **Step 3 (Confirmation & Decision)**: Summary review card of all answers with **Endorse Applicant** (`variant="default"` primary teal) and **Decline** (`variant="destructive"`) action buttons.
+- Submit answers through `submitApprovalDecision` as `attestation_answers` so the Edge Function validates and persists them with the decision.
+- **Admin Approvals Inbox (`/admin/approvals`) Integration**:
+  - Filter dropdown includes "Endorsements" alongside Forms and Long Leave.
+  - Table badges display "Endorsement" (`variant="outline"`).
+  - Inspection modal opens in `size="4xl"` with responses structured into 5 sequential sections (_Leader & DGroup Relationship_, _Spiritual Maturity & Character Evaluation_ with score scale banner, _Disciple Growth & Assessment_, _Ministry Credibility & Concerns_, _Attestation & Recommendation_) and standard `primaryOutline` close button.
 
 ---
+
+> **Phase 4 owner follow-up:** Obtain approved Backroom Support responsibilities in `src/pages/recruitment/apply/copy.ts` before opening recruitment.
 
 ### Phase 5: Admin, SLOD & VMT Recruitment Pipeline (`/admin/recruitment`) & Settings
 
@@ -704,17 +676,114 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
 
 ## 3. Verification & Testing Strategy
 
+### 3.1 Automated Verification
+
 Every phase must pass `npm run precommit` before completion:
 
 1. **Edge Function Deno Tests (`npm run test:edge`)**:
    - Unit and handler tests for `submit-recruitment-application`, `update-recruitment-stage`, `deploy-recruitment-applicant`, and `process-approval-decision`.
    - Verify 20-question survey auto-scoring, DGroup Leader email queueing, endorsement gate enforcement before starting Step 4 (Observation), automatic Step 6 skip for non-Prayer Coach roles, and atomic `public.users` promotion at Step 9.
-
-- Database integration coverage for the atomic Step 7 RPC is in `supabase/tests/complete_recruitment_vmt_registration.test.sql` and runs with `supabase test db` when the local Supabase/Docker environment is available.
-
-1. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
+   - Database integration coverage for the atomic Step 7 RPC is in `supabase/tests/complete_recruitment_vmt_registration.test.sql` and runs with `supabase test db` when the local Supabase/Docker environment is available.
+2. **Frontend Vitest Unit & Component Tests (`npm run test:unit`)**:
    - Schema validation tests (`src/lib/domain/recruitment/__tests__/schemas.test.ts`).
    - Applicant Registration Wizard & 9-Step Portal tests (`src/pages/recruitment/__tests__/`).
    - Admin Recruitment Pipeline & Detail Dialog tests (`src/pages/admin/recruitment/__tests__/`).
-2. **Static Analysis & Formatting (`npm run precommit`)**:
+3. **Static Analysis & Formatting (`npm run precommit`)**:
    - Zero TypeScript errors, zero ESLint warnings, zero `any` types, and strict adherence to semantic theme tokens (no `dark:` modifiers).
+
+### 3.2 Manual End-to-End Test Cases (Application -> DGroup Endorsement & Attestation)
+
+#### Prerequisites & Browser Setup
+
+1. **Window A (Authorized Kiosk / Staff Intake)**: Sign in at `/login` with an `admin`, `super_admin`, `kiosk`, or `vmt` account.
+2. **Window B (Applicant Personal Phone / Incognito)**: Use a Google account email you can sign in with via Google OAuth (e.g., `your.applicant.email@gmail.com`).
+
+#### Retrieving DGroup Leader Magic-Link Tokens Locally (When Email Is Disabled)
+
+When email delivery is disabled in local development, the DGroup Leader endorsement token is persisted directly on `public.approval_requests.access_token` when Step 1 is submitted (and rotated whenever **"Resend Endorsement Email"** is clicked):
+
+- **Option 1: Supabase Studio SQL Editor** (`http://127.0.0.1:54323`):
+
+  ```sql
+  select
+    ar.requester_name as applicant_name,
+    ar.assigned_to_email as dgroup_leader_email,
+    ar.status,
+    ar.access_token,
+    'http://localhost:5173/approvals/review/' || ar.access_token as local_review_url,
+    ar.token_expires_at,
+    ar.created_at
+  from
+    public.approval_requests ar
+  where
+    ar.entity_type = 'recruitment_endorsement'
+  order by
+    ar.created_at desc
+  limit
+    5;
+  ```
+
+- **Option 2: Terminal One-Liner (Local Supabase Docker)**:
+
+  ```bash
+  docker exec supabase_db_wc-event-registration psql -U postgres -d postgres -t -A -c \
+    "SELECT 'http://localhost:5173/approvals/review/' || access_token FROM public.approval_requests WHERE entity_type = 'recruitment_endorsement' ORDER BY created_at DESC LIMIT 1;"
+  ```
+
+- **Option 3: Supabase Studio Table Editor**:
+  1. Open **Table Editor -> `approval_requests`**.
+  2. Filter by `entity_type = recruitment_endorsement` (ordered by `created_at` descending).
+  3. Copy `access_token` and open `http://localhost:5173/approvals/review/<access_token>`.
+
+> **Note**: Clicking **"Resend Endorsement Email"** on `/recruitment` rotates `access_token` and resets its 14-day expiry; re-run the query above to fetch the latest token if you test resending.
+
+#### Step-by-Step Test Cases
+
+1. **Test Case 1 — WelcomeHub Banner & Intake Route Guard (`/`, `/recruitment/apply`)**:
+   - In **Window B** (signed out), open `/` and verify the **"Join the Welcome Center Team"** banner is hidden from unauthenticated visitors.
+   - Navigate directly to `/recruitment/apply` while signed out (or signed in as a non-intake role such as a regular member or `slod`) and verify access is blocked (`/login` redirect or **"Authorized device required"**).
+   - In **Window A** (signed in as `admin`, `super_admin`, `kiosk`, or `vmt`), open `/`, verify the **"Join the Welcome Center Team"** banner appears at the bottom of the Hub, and click **"Join Now"** to open `/recruitment/apply`.
+
+2. **Test Case 2 — 4 Pre-Qualification Gates (`/recruitment/apply`)**:
+   - **Gate 1 (Roles & GLC Level 1)**: Verify role descriptions are shown for `Prayer Coach`, `Usher`, `VMT Support`, and `IMT Support` (`Backroom Support` is hidden). Click **Continue** without checking the boxes to verify required errors, then check both confirmations and continue.
+   - **Gate 2 (Data Privacy & Liability Waiver)**: Click **"Read the privacy policy"** to verify the embedded Privacy Policy modal opens and closes cleanly. Check _"I agree."_ and click **Continue**.
+   - **Gate 3 (DGroup Eligibility)**: Select **`No`** and click **Continue** to verify progression is blocked, then select **`Yes`** and click **Continue**.
+   - **Gate 4 (Demographics)**: Open **Select demographics**, verify `46 to 59 years old (currently closed)` and `60 years old and up (currently closed)` are disabled, select **`18 to 45 years old`**, and click **Continue to application**.
+
+3. **Test Case 3 — 5-Section Application Wizard (`/recruitment/apply`)**:
+   - **Section 1 (Personal, Emergency Contact & Application History)**:
+     - Verify `Backroom Support` is disabled in **Desired Role**; select **`Prayer Coach`** (or **`Usher`**).
+     - Test an ineligible **Date of Birth** (`< 18` or `> 45` years old) to confirm validation, then enter a valid DOB (e.g., `1995-05-15`) and confirm live `Age: X` rendering.
+     - Toggle **Life Stage** to **`Married`** to verify **Wedding Anniversary** appears and is required.
+     - Enter the Google email you will use in Window B, valid PH mobile numbers (`0917...`), **Occupation**, and **Emergency Contact** fields.
+     - Toggle _"I have applied in the Welcome Center before."_ to verify _"What happened to your previous application?"_ is conditionally required, then click **Continue**.
+   - **Section 2 (Spiritual Background & DGroup)**:
+     - Set **CCF Member Since** and verify live tenure text.
+     - Test **GLC 1 Course Status** = `Ongoing` (blocked), then change to `Completed` and verify **GLC 2 Course Status** appears and is required.
+     - Set **Constant DGroup Attendee** = `Yes`. Test **DGroup Member Since** at `< 6` months ago (blocked with _"DGroup attendance must be at least 6 months."_), then set to $\ge 6$ months ago.
+     - Enter **Name of DGroup Leader**, **Email of DGroup Leader**, and **Mobile Number of DGroup Leader**, then click **Continue**.
+   - **Section 3 (Biblical Survey)**:
+     - Verify the answered counter (`0 / 20 answered`), try continuing with missing answers to confirm validation, then answer all 20 statements (`True` / `False`) and click **Continue**.
+   - **Section 4 (Applicant Attestation)**:
+     - Review the 12-point attestation, check _"I agree."_, and click **Continue to Verification**.
+   - **Section 5 (Verification & Kiosk Reset)**:
+     - Verify all 5 summary sections display your entered values and survey answers, then click **Submit Application**.
+     - Confirm the submission toast, countdown timer (`This kiosk will reset in Xs.`), and **"Start New Application"** reset button.
+
+4. **Test Case 4 — Applicant Own-Phone Progress Portal (`/recruitment`)**:
+   - In **Window B**, open `/recruitment` while signed out and click **"Continue with Google"**.
+   - **Unmatched Email Check**: Sign in with a Google account that does not match any application — verify **"No application found"** displays the thank-you and VMT contact message with **no links**.
+   - **Matched Email Check**: Sign in with the Google account matching the email entered in Section 1:
+     - Verify header summary (`Avatar`, full name, `active` badge, target role, `22%` progress bar).
+     - Verify **Step 1 (`Register`)** shows **`Pending DGroup Leader Review`** and **"Resend Endorsement Email"**.
+     - Verify **Step 6 (`Prayer Coach Onboarding`)** shows `Upcoming` while prior steps are in progress (and once reached, shows `Skipped (Not Required for {role})` for non-Prayer Coach roles or Usher onboarding instructions for `Prayer Coach`).
+     - Click **"Resend Endorsement Email"** and confirm the success toast.
+
+5. **Test Case 5 — DGroup Leader Magic-Link Endorsement & 25-Field Attestation (`/approvals/review/:token`)**:
+   - Retrieve the latest `access_token` using **Option 1, 2, or 3** above and open `http://localhost:5173/approvals/review/<access_token>` in an incognito window.
+   - Verify the top header displays **`DGroup Leader Endorsement`** alongside `PENDING`, and the applicant card shows the applicant's name, email, and desired role badge.
+   - Verify Question 1 (_"What is your full name?"_) is pre-filled with the DGroup Leader's name.
+   - Toggle Question 3 (_"Is your disciple already a DGroup Leader?"_) between **`Yes`** and **`No`** to confirm Question 4 (_"Please enter when your disciple started his/her own DGroup (YYYY MMM)"_) conditionally shows and hides.
+   - Click **Endorse Applicant** with blank fields to verify inline required-field validation, and click **Decline** with empty **Notes / Feedback for Applicant** to verify a decline reason is required.
+   - Complete all required fields (Questions 1–3, ratings 5–16, textareas 17–19, 21, recommendation 22, and attestation 24 = `I attest`) and click **Endorse Applicant**.
+   - Verify the page transitions to the read-only approved summary state, then refresh `/recruitment` in **Window B** and confirm Step 1 now badges **`Endorsed by {Leader Name}`** without the resend button.

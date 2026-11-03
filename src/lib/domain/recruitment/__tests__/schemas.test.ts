@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { RECRUITMENT_ROLES } from '../constants';
 import {
   applicantCommitmentsSchema,
+  applicantRecruitmentViewSchema,
   recruitmentApplicationRecordSchema,
   recruitmentSettingsSchema,
   recruitmentStep1Schema,
@@ -96,6 +97,29 @@ describe('recruitment schemas', () => {
     expect(recruitmentStep1Schema.safeParse(validApplication).success).toBe(true);
   });
 
+  it('requires GLC 2 status only when GLC 1 is completed', () => {
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        spiritual_background: {
+          ...validApplication.spiritual_background,
+          glc1_status: 'Ongoing',
+          glc2_status: undefined,
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        spiritual_background: {
+          ...validApplication.spiritual_background,
+          glc1_status: 'Completed',
+          glc2_status: undefined,
+        },
+      }).success,
+    ).toBe(false);
+  });
+
   it('rejects OIC and requires returning-applicant details', () => {
     expect(RECRUITMENT_ROLES).not.toContain('OIC');
     expect(
@@ -106,6 +130,65 @@ describe('recruitment schemas', () => {
           is_first_time_applicant: false,
           previous_application_notes: '  ',
         },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('accepts optional DGroup leader details and requires a date when flagged as a leader', () => {
+    const leaderSinceOnly = recruitmentStep1Schema.safeParse({
+      ...validApplication,
+      dgroup_info: {
+        ...validApplication.dgroup_info,
+        is_dgroup_leader: true,
+        leader_since: '2020 Jan',
+        dgroup_member_count: null,
+      },
+    });
+    expect(leaderSinceOnly.success).toBe(true);
+
+    const missingLeaderSince = recruitmentStep1Schema.safeParse({
+      ...validApplication,
+      dgroup_info: {
+        ...validApplication.dgroup_info,
+        is_dgroup_leader: true,
+        leader_since: null,
+        dgroup_member_count: null,
+      },
+    });
+    expect(missingLeaderSince.success).toBe(false);
+  });
+
+  it('accepts standard mobile formats but rejects overlong contact numbers', () => {
+    expect(recruitmentStep1Schema.safeParse(validApplication).success).toBe(true);
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        phone: '+63 917 123 4567',
+      }).success,
+    ).toBe(true);
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        phone: '099999999991',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('requires Philippine mobile number format for all contact numbers', () => {
+    expect(recruitmentStep1Schema.safeParse(validApplication).success).toBe(true);
+    expect(
+      recruitmentStep1Schema.safeParse({ ...validApplication, phone: '555-1234' }).success,
+    ).toBe(false);
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        emergency_contact: { ...validApplication.emergency_contact, phone: 'not-a-number' },
+      }).success,
+    ).toBe(false);
+    expect(
+      recruitmentStep1Schema.safeParse({
+        ...validApplication,
+        dgroup_info: { ...validApplication.dgroup_info, leader_phone: '+1 555 123 4567' },
       }).success,
     ).toBe(false);
   });
@@ -123,6 +206,31 @@ describe('recruitment schemas', () => {
         service_commitments: { first_sunday: ['11AM'] },
       }).success,
     ).toBe(false);
+  });
+
+  it('validates the self-service application view including its DGroup leader name', () => {
+    const result = applicantRecruitmentViewSchema.safeParse({
+      id: '22222222-2222-4222-8222-222222222222',
+      email: 'applicant@example.com',
+      first_name: 'Test Taylor',
+      last_name: 'Test Member',
+      full_name: 'Test Taylor Test Member',
+      nickname: 'Test Tay',
+      avatar_object_key: null,
+      desired_role: 'Usher',
+      confirmed_role: null,
+      current_step: 1,
+      status: 'active',
+      dgroup_approval_status: 'approved',
+      dgroup_leader_name: 'Test Casey Leader',
+      vmt_registered: false,
+      service_commitments: {},
+      assigned_rfid_member_id: null,
+      deployed_at: null,
+      transactions: [],
+    });
+
+    expect(result.success).toBe(true);
   });
 
   it('preserves toggle metadata and requires active question banks', () => {

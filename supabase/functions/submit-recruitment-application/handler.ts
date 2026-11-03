@@ -53,6 +53,8 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
     req,
     functionName: 'submit-recruitment-application',
     method: 'POST',
+    requireAdmin: true,
+    allowedRoles: ['admin', 'super_admin', 'kiosk', 'vmt'],
     schema: submitRecruitmentApplicationSchema,
     publicRateLimit: {
       scope: 'submit-recruitment-application',

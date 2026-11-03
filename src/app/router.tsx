@@ -154,6 +154,16 @@ const ApprovalReviewPage = lazy(() =>
     default: module.ApprovalReviewPage,
   })),
 );
+const RecruitmentProgressPage = lazy(() =>
+  import('../pages/recruitment').then((module) => ({
+    default: module.RecruitmentProgressPage,
+  })),
+);
+const RecruitmentApplyPage = lazy(() =>
+  import('../pages/recruitment/apply').then((module) => ({
+    default: module.RecruitmentApplyPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -374,6 +384,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
   adminApprovals: AdminApprovalsPage,
   approvalReview: ApprovalReviewPage,
+  recruitment: RecruitmentProgressPage,
+  recruitmentApply: RecruitmentApplyPage,
 };
 
 function OfflineNavigationFallback({ onGoBack }: { onGoBack: () => void }) {

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -152,8 +152,16 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('Audio / Tech')).toBeInTheDocument();
     expect(screen.getByText('Field')).toBeInTheDocument(); // fallback label
     expect(screen.getByText('—')).toBeInTheDocument(); // fallback answer
+    expect(screen.getByRole('button', { name: /Continue to Decision/i })).toBeInTheDocument();
+
+    // Advance to Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Decline Request/i })).toBeInTheDocument();
+
+    // Navigate back to Step 1
+    fireEvent.click(screen.getByRole('button', { name: /Back to Details/i }));
+    expect(screen.getByRole('button', { name: /Continue to Decision/i })).toBeInTheDocument();
   });
 
   it('renders empty answers note when form answers are empty or null', () => {
@@ -188,6 +196,7 @@ describe('ApprovalReviewPage', () => {
 
     renderWithClient();
 
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
     const approveButton = screen.getByRole('button', { name: /Approve Request/i });
     fireEvent.click(approveButton);
 
@@ -206,20 +215,28 @@ describe('ApprovalReviewPage', () => {
     };
 
     // Test onSuccess
-    callbacks.onSuccess({ message: 'Approved successfully' });
+    act(() => {
+      callbacks.onSuccess({ message: 'Approved successfully' });
+    });
     expect(toast.success).toHaveBeenCalledWith('Approved successfully');
     expect(mockRefetch).toHaveBeenCalled();
 
     // Test fallback success message
-    callbacks.onSuccess({});
+    act(() => {
+      callbacks.onSuccess({});
+    });
     expect(toast.success).toHaveBeenCalledWith('Request approved successfully');
 
     // Test onError
-    callbacks.onError({ message: 'Submission failed' });
+    act(() => {
+      callbacks.onError({ message: 'Submission failed' });
+    });
     expect(toast.error).toHaveBeenCalledWith('Submission failed');
 
     // Test fallback error message
-    callbacks.onError({});
+    act(() => {
+      callbacks.onError({});
+    });
     expect(toast.error).toHaveBeenCalledWith('Failed to submit decision');
   });
 
@@ -233,6 +250,7 @@ describe('ApprovalReviewPage', () => {
 
     renderWithClient();
 
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
     const declineButton = screen.getByRole('button', { name: /Decline Request/i });
 
     // Click without notes
@@ -426,6 +444,7 @@ describe('ApprovalReviewPage', () => {
     });
 
     renderWithClient();
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
     expect(screen.getByRole('button', { name: /Approve Request/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Decline Request/i })).toBeDisabled();
   });
@@ -468,5 +487,491 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('Finance Approval')).toBeInTheDocument();
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
     expect(screen.queryByText('pending_approval')).not.toBeInTheDocument();
+  });
+
+  it('submits validated DGroup attestation answers with a recruitment endorsement decision', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation',
+              label: 'How long have you known the applicant?',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+              placeholder: 'Enter your response',
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(screen.getAllByText('DGroup Leader Endorsement').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('Long Leave Request')).not.toBeInTheDocument();
+    expect(screen.getByText('Test Taylor Member')).toBeInTheDocument();
+
+    // Step 1: Advance to attestation
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Step 2: Fill attestation input and proceed to decision
+    fireEvent.change(screen.getByPlaceholderText('Enter your response'), {
+      target: { value: 'I have known them for three years.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // Step 3: Back to attestation and then re-continue
+    expect(screen.getByRole('button', { name: 'Endorse Applicant' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Back to Attestation/i }));
+    expect(screen.getByPlaceholderText('Enter your response')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // Step 3: Submit Endorse
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { leader_attestation: 'I have known them for three years.' },
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it('blocks advancing to Step 3 and shows validation error when required endorsement questions are unanswered', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation',
+              label: 'How long have you known the applicant?',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+              placeholder: 'Enter your response',
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Try to continue without filling required field
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // Should remain on Step 2 and show error
+    expect(screen.queryByRole('button', { name: 'Endorse Applicant' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continue to Decision/i })).toBeInTheDocument();
+    expect(screen.getByText(/This field is required|Required/i)).toBeInTheDocument();
+  });
+
+  it('requires decision notes when declining recruitment endorsement on Step 3', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation',
+              label: 'How long have you known the applicant?',
+              field_type: 'text',
+              is_required: false,
+              is_active: true,
+              placeholder: 'Enter your response',
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Step 2 -> Step 3
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // On Step 3, click Decline without notes
+    const declineButton = screen.getByRole('button', { name: 'Decline' });
+    fireEvent.click(declineButton);
+
+    expect(toast.error).toHaveBeenCalledWith(
+      'Please provide a reason or note when declining an applicant.',
+    );
+    expect(mockMutate).not.toHaveBeenCalled();
+
+    // Fill notes and click Decline
+    const notesInput = screen.getByLabelText(/Notes \/ Feedback for Applicant/i);
+    fireEvent.change(notesInput, {
+      target: { value: 'Applicant needs further spiritual grounding.' },
+    });
+    fireEvent.click(declineButton);
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        token: 'token-123',
+        decision: 'rejected',
+        notes: 'Applicant needs further spiritual grounding.',
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('renders read-only completed attestation answers for recruitment endorsement when already decided', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          status: 'approved',
+          title: 'DGroup Leader Endorsement',
+          decided_by_email: 'leader@example.com',
+          decided_at: '2026-10-19T10:00:00Z',
+          decision_notes: 'Fully endorsed.',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_full_name',
+              label: 'What is your full name?',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+            },
+          ],
+          attestation_answers: {
+            leader_full_name: 'Pastor Robert',
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(
+      screen.getByText(/This request was approved by leader@example.com/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Fully endorsed.')).toBeInTheDocument();
+    expect(screen.getByText('Pastor Robert')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Endorse Applicant' })).not.toBeInTheDocument();
+  });
+
+  it('renders month-year picker for disciple tenure and normalizes to YYYY Mmm', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'disciple_dgroup_since',
+              label: 'Please enter when your disciple started in your DGroup (YYYY MMM)',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+              validation_rules: {
+                pattern: '^\\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$',
+              },
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    const monthInput = document.querySelector('input[type="month"]');
+    expect(monthInput).toBeInTheDocument();
+
+    fireEvent.change(monthInput!, { target: { value: '2025-01' } });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // Advance to Step 3
+    expect(screen.getByRole('button', { name: 'Endorse Applicant' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { disciple_dgroup_since: '2025 Jan' },
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it('renders leader attestation statement as Markdown in Step 2 and submits selection', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation_statement',
+              label: 'The following statements are for your disciple.',
+              field_type: 'radio',
+              is_required: true,
+              is_active: true,
+              options: [
+                { label: 'I attest', value: 'I attest' },
+                { label: 'I DO NOT attest', value: 'I DO NOT attest' },
+              ],
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Verify Markdown content rendered
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'The following statements are for your disciple',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Is a committed member of my DGroup/i)).toBeInTheDocument();
+    expect(screen.getByText(/Saved by grace through faith in Jesus/i)).toBeInTheDocument();
+    expect(screen.getByText(/Knows by heart CCF’s mission and vision/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/I commit to supporting my disciple by regularly praying for/i),
+    ).toBeInTheDocument();
+
+    // Select "I attest"
+    const radioAttest = screen.getByRole('radio', { name: /I attest/i });
+    expect(radioAttest).toBeInTheDocument();
+    fireEvent.click(radioAttest);
+
+    // Continue to Step 3
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    expect(screen.getByRole('button', { name: 'Endorse Applicant' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { leader_attestation_statement: 'I attest' },
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it('renders leader attestation statement as Markdown in read-only completed view', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          status: 'approved',
+          title: 'DGroup Leader Endorsement',
+          decided_by_email: 'leader@example.com',
+          decided_at: '2026-10-19T10:00:00Z',
+          decision_notes: 'Highly recommended.',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation_statement',
+              label: 'The following statements are for your disciple.',
+              field_type: 'radio',
+              is_required: true,
+              is_active: true,
+              options: [
+                { label: 'I attest', value: 'I attest' },
+                { label: 'I DO NOT attest', value: 'I DO NOT attest' },
+              ],
+            },
+          ],
+          attestation_answers: {
+            leader_attestation_statement: 'I attest',
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'The following statements are for your disciple',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Is a committed member of my DGroup/i)).toBeInTheDocument();
+    expect(screen.getByText(/Leader Attestation Commitment:/i)).toBeInTheDocument();
+    expect(screen.getByText('I attest')).toBeInTheDocument();
+  });
+
+  it('renders rating scale legend and segmented buttons (1, 2, 3) without of 3 text', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'eval_prayer_and_devotion',
+              label: 'Has consistent prayer time, personal devotion and study of Gods word',
+              field_type: 'rating',
+              is_required: true,
+              is_active: true,
+              validation_rules: { min: 1, max: 3 },
+            },
+          ],
+          attestation_answers: {
+            eval_prayer_and_devotion: 3,
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Legend is present
+    expect(screen.getByText(/Rating Scale Legend \(1 to 3\):/i)).toBeInTheDocument();
+    expect(screen.getByText('Not Observed')).toBeInTheDocument();
+    expect(screen.getByText('Observed Some of the time')).toBeInTheDocument();
+    expect(screen.getByText('Observed Most of the time')).toBeInTheDocument();
+
+    // Segmented buttons 1, 2, 3 rendered
+    const button1 = screen.getByRole('radio', { name: /1: Not Observed|Score 1/i });
+    const button2 = screen.getByRole('radio', { name: /2: Observed Some of the time|Score 2/i });
+    const button3 = screen.getByRole('radio', { name: /3: Observed Most of the time|Score 3/i });
+
+    expect(button1).toHaveTextContent('1');
+    expect(button2).toHaveTextContent('2');
+    expect(button3).toHaveTextContent('3');
+    expect(button3).toHaveAttribute('aria-checked', 'true');
+
+    // No "of 3" text
+    expect(screen.queryByText(/of 3/i)).not.toBeInTheDocument();
   });
 });

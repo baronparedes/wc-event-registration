@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { VALIDATION_PATTERNS } from '@/config/constants';
+
 import { RECRUITMENT_ROLES, RECRUITMENT_SERVICE_SLOTS } from './constants';
 
 const monthYearPattern = /^\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
@@ -22,6 +24,12 @@ const dateSchema = z
 const monthYearSchema = z
   .string()
   .regex(monthYearPattern, 'Month and year must use YYYY MMM format');
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(5)
+  .max(30)
+  .regex(VALIDATION_PATTERNS.phone, 'Invalid Philippine mobile number');
 
 const dynamicFieldOptionSchema = z.object({
   label: z.string(),
@@ -154,7 +162,7 @@ export const recruitmentStep1Schema = z
     middle_name: z.string().trim().max(100).optional().nullable(),
     last_name: z.string().trim().min(1).max(100),
     nickname: z.string().trim().min(1).max(100),
-    phone: z.string().trim().min(5).max(30),
+    phone: phoneSchema,
     date_of_birth: dateSchema,
     gender: z.enum(['Male', 'Female']),
     life_stage: z.string().trim().min(1).max(100),
@@ -166,7 +174,7 @@ export const recruitmentStep1Schema = z
     }),
     emergency_contact: z.object({
       name: z.string().trim().min(1).max(150),
-      phone: z.string().trim().min(5).max(30),
+      phone: phoneSchema,
       relation: z.string().trim().min(1).max(100),
     }),
     application_history: z.object({
@@ -177,14 +185,14 @@ export const recruitmentStep1Schema = z
       ccf_member_since: monthYearSchema,
       other_ministries: z.string().trim().max(1000).optional().nullable(),
       glc1_status: z.enum(['Completed', 'Ongoing', 'None']),
-      glc2_status: z.enum(['Completed', 'Ongoing', 'None']),
+      glc2_status: z.enum(['Completed', 'Ongoing', 'None']).optional(),
     }),
     dgroup_info: z.object({
       is_constant_attendee: z.boolean(),
       member_since: monthYearSchema,
       leader_name: z.string().trim().min(1).max(150),
       leader_email: z.string().trim().email().toLowerCase(),
-      leader_phone: z.string().trim().min(5).max(30),
+      leader_phone: phoneSchema,
       is_dgroup_leader: z.boolean(),
       leader_since: monthYearSchema.optional().nullable(),
       dgroup_member_count: z.number().int().positive().optional().nullable(),
@@ -212,14 +220,22 @@ export const recruitmentStep1Schema = z
       });
     }
 
+    if (application.dgroup_info.is_dgroup_leader && !application.dgroup_info.leader_since) {
+      context.addIssue({
+        code: 'custom',
+        message: 'DGroup Leader Since is required when the applicant is a DGroup leader.',
+        path: ['dgroup_info', 'leader_since'],
+      });
+    }
+
     if (
-      application.dgroup_info.is_dgroup_leader &&
-      (!application.dgroup_info.leader_since || !application.dgroup_info.dgroup_member_count)
+      application.spiritual_background.glc1_status === 'Completed' &&
+      !application.spiritual_background.glc2_status
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'DGroup leader tenure and group size are required for DGroup leaders',
-        path: ['dgroup_info'],
+        message: 'GLC 2 Course Status is required when GLC 1 is completed.',
+        path: ['spiritual_background', 'glc2_status'],
       });
     }
   });
@@ -236,6 +252,7 @@ export const applicantCommitmentsSchema = z
   .object(commitmentsShapeSchema.shape)
   .refine((commitments) => Object.values(commitments).some((slots) => (slots?.length ?? 0) > 0), {
     message: 'Select at least one Sunday service slot',
+    path: ['root'],
   });
 
 export const adminUpdateStageSchema = z
@@ -316,6 +333,16 @@ export const publicRecruitmentConfigSchema = z.object({
   survey_questions: publicSurveyQuestionBankSchema,
 });
 
+export const recruitmentEndorsementReviewDetailsSchema = z.object({
+  id: z.string().uuid(),
+  full_name: z.string(),
+  nickname: z.string(),
+  desired_role: z.enum(RECRUITMENT_ROLES),
+  created_at: timestampSchema,
+  endorsement_questions: z.array(dynamicFieldSchema).min(1),
+  attestation_answers: z.record(z.string(), z.unknown()),
+});
+
 const applicantRecruitmentTimelineItemSchema = z.object({
   step_number: recruitmentStepNumberSchema,
   step_key: recruitmentStepKeySchema,
@@ -351,6 +378,7 @@ export const applicantRecruitmentViewSchema = z.object({
   current_step: recruitmentStepNumberSchema,
   status: recruitmentApplicationStatusSchema,
   dgroup_approval_status: z.string().nullable(),
+  dgroup_leader_name: z.string(),
   vmt_registered: z.boolean(),
   service_commitments: commitmentsShapeSchema,
   assigned_rfid_member_id: z.string().nullable(),

@@ -28,6 +28,9 @@ export interface DynamicFieldRendererProps {
   memberRole?: string;
   remainingSlotsByOption?: Record<string, number>;
   remainingSlotsByRoleByOption?: Record<string, Record<string, number>>;
+  radioOptionsLayout?: 'stacked' | 'responsive-row';
+  ratingVariant?: 'stars' | 'segmented';
+  showRatingText?: boolean;
 }
 
 /**
@@ -40,6 +43,9 @@ export function DynamicFieldRenderer({
   memberRole,
   remainingSlotsByOption,
   remainingSlotsByRoleByOption,
+  radioOptionsLayout,
+  ratingVariant,
+  showRatingText,
 }: DynamicFieldRendererProps) {
   switch (field.field_type) {
     case 'text':
@@ -51,7 +57,14 @@ export function DynamicFieldRenderer({
     case 'number':
       return <NumberFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'rating':
-      return <RatingFieldRenderer field={field} dynamicForm={dynamicForm} />;
+      return (
+        <RatingFieldRenderer
+          field={field}
+          dynamicForm={dynamicForm}
+          variant={ratingVariant}
+          showRatingText={showRatingText}
+        />
+      );
     case 'textarea':
       return <TextareaFieldRenderer field={field} dynamicForm={dynamicForm} />;
     case 'date':
@@ -76,6 +89,7 @@ export function DynamicFieldRenderer({
           memberRole={memberRole}
           remainingSlotsByOption={remainingSlotsByOption}
           remainingSlotsByRoleByOption={remainingSlotsByRoleByOption}
+          radioOptionsLayout={radioOptionsLayout}
         />
       );
     case 'multi_select':

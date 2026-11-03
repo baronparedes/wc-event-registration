@@ -5,11 +5,14 @@ export type FieldVisibilityRule = {
 
 export type FieldWithVisibility = {
   field_key: string;
-  validation_rules?: {
-    visibility_rule?: FieldVisibilityRule | null;
-    [key: string]: unknown;
-  } | null;
+  validation_rules?: Record<string, unknown> | null;
 };
+
+function isFieldVisibilityRule(value: unknown): value is FieldVisibilityRule {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.depends_on_field_key === 'string' && typeof record.equals_value === 'string';
+}
 
 /**
  * Checks if a field is visible based on its visibility dependency rule and current form values.
@@ -29,12 +32,12 @@ export function isFieldVisible<T extends FieldWithVisibility>(
   }
   visitedKeys.add(field.field_key);
 
-  const rule = field.validation_rules?.visibility_rule;
-  if (!rule || !rule.depends_on_field_key || rule.depends_on_field_key.trim().length === 0) {
+  const rawRule = field.validation_rules?.visibility_rule;
+  if (!isFieldVisibilityRule(rawRule) || rawRule.depends_on_field_key.trim().length === 0) {
     return true;
   }
 
-  const parentKey = rule.depends_on_field_key.trim();
+  const parentKey = rawRule.depends_on_field_key.trim();
   const parentField = allFields.find((f) => f.field_key === parentKey);
 
   // If parent field exists in the fields list, ensure the parent field itself is visible
@@ -43,7 +46,7 @@ export function isFieldVisible<T extends FieldWithVisibility>(
   }
 
   const parentValue = formValues[parentKey];
-  const targetValue = rule.equals_value.trim().toLowerCase();
+  const targetValue = rawRule.equals_value.trim().toLowerCase();
 
   if (parentValue === undefined || parentValue === null) {
     return targetValue === '';

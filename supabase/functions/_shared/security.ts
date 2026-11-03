@@ -63,7 +63,7 @@ export interface AdminGuardOptions {
   requiredPermission?: AdminPermissionKey | readonly AdminPermissionKey[];
 }
 
-export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk';
+export type AdminAccountRole = 'admin' | 'super_admin' | 'slod' | 'imt' | 'kiosk' | 'vmt';
 
 export type AdminPermissionKey =
   | 'canWriteAdminData'

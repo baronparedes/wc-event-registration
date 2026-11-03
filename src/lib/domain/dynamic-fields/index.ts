@@ -40,3 +40,5 @@ export {
   parseMultiSelectToggleAnswer,
   formatAnswerValue,
 } from './parsing';
+
+export { parseRatingLabels } from './ratings';

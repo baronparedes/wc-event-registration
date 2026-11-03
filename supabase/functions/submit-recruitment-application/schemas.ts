@@ -2,6 +2,7 @@ import { z } from '../_shared/validation.ts';
 
 const monthYearPattern = /^\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const phonePattern = /^(?:\+63[\s-]?|0)?9(?:[\s-]?\d){8,9}$/;
 
 const dateSchema = z
   .string()
@@ -27,7 +28,7 @@ export const submitRecruitmentApplicationSchema = z
     middle_name: z.string().trim().max(100).optional().nullable(),
     last_name: z.string().trim().min(1).max(100),
     nickname: z.string().trim().min(1).max(100),
-    phone: z.string().trim().min(5).max(30),
+    phone: z.string().trim().min(5).max(30).regex(phonePattern, 'Invalid Philippine mobile number'),
     date_of_birth: dateSchema,
     gender: z.enum(['Male', 'Female']),
     life_stage: z.string().trim().min(1).max(100),
@@ -45,7 +46,12 @@ export const submitRecruitmentApplicationSchema = z
     }),
     emergency_contact: z.object({
       name: z.string().trim().min(1).max(150),
-      phone: z.string().trim().min(5).max(30),
+      phone: z
+        .string()
+        .trim()
+        .min(5)
+        .max(30)
+        .regex(phonePattern, 'Invalid Philippine mobile number'),
       relation: z.string().trim().min(1).max(100),
     }),
     application_history: z.object({
@@ -56,14 +62,19 @@ export const submitRecruitmentApplicationSchema = z
       ccf_member_since: monthYearSchema,
       other_ministries: z.string().trim().max(1000).optional().nullable(),
       glc1_status: z.enum(['Completed', 'Ongoing', 'None']),
-      glc2_status: z.enum(['Completed', 'Ongoing', 'None']),
+      glc2_status: z.enum(['Completed', 'Ongoing', 'None']).optional(),
     }),
     dgroup_info: z.object({
       is_constant_attendee: z.boolean(),
       member_since: monthYearSchema,
       leader_name: z.string().trim().min(1).max(150),
       leader_email: z.string().trim().email().toLowerCase(),
-      leader_phone: z.string().trim().min(5).max(30),
+      leader_phone: z
+        .string()
+        .trim()
+        .min(5)
+        .max(30)
+        .regex(phonePattern, 'Invalid Philippine mobile number'),
       is_dgroup_leader: z.boolean(),
       leader_since: monthYearSchema.optional().nullable(),
       dgroup_member_count: z.number().int().positive().optional().nullable(),
@@ -91,14 +102,22 @@ export const submitRecruitmentApplicationSchema = z
       });
     }
 
+    if (application.dgroup_info.is_dgroup_leader && !application.dgroup_info.leader_since) {
+      context.addIssue({
+        code: 'custom',
+        message: 'DGroup Leader Since is required when the applicant is a DGroup leader.',
+        path: ['dgroup_info', 'leader_since'],
+      });
+    }
+
     if (
-      application.dgroup_info.is_dgroup_leader &&
-      (!application.dgroup_info.leader_since || !application.dgroup_info.dgroup_member_count)
+      application.spiritual_background.glc1_status === 'Completed' &&
+      !application.spiritual_background.glc2_status
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'DGroup leader tenure and group size are required for DGroup leaders',
-        path: ['dgroup_info'],
+        message: 'GLC 2 Course Status is required when GLC 1 is completed.',
+        path: ['spiritual_background', 'glc2_status'],
       });
     }
   });

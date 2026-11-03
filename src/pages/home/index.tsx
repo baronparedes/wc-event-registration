@@ -5,7 +5,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { usePublicEventListingQuery } from '@/hooks/domain/events';
 import { usePublicFormsQuery } from '@/hooks/domain/forms';
 import { useCurrentProfileQuery } from '@/hooks/domain/members';
-import { HubSection, PastEventList, WelcomeHelloBanner } from '@/pages/home/components';
+import {
+  HubSection,
+  PastEventList,
+  RecruitmentHubBanner,
+  WelcomeHelloBanner,
+} from '@/pages/home/components';
 import { CommunityWelcome } from '@/pages/home/components/CommunityWelcome';
 import type { HubItem } from '@/pages/home/components/HubSection';
 
@@ -127,6 +132,7 @@ export function HomePage() {
             <HubSection items={availableItems} title="Available Now" />
             <HubSection items={upcomingItems} title="Upcoming Events" />
             <PastEventList events={filteredPastEvents} />
+            <RecruitmentHubBanner />
           </>
         )}
       </section>

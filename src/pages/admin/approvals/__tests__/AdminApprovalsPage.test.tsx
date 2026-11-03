@@ -465,4 +465,379 @@ describe('AdminApprovalsPage', () => {
     fireEvent.click(mobileReviewButtons[0]);
     expect(screen.getByText(/Review request details/i)).toBeInTheDocument();
   });
+
+  it('renders Endorsement badge and handles Endorsements entity filter', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'app-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Daniel G Paredes',
+          summary: 'Please review volunteer application.',
+          requester_user_id: 'user-1',
+          requester_name: 'Bryan Daniel G Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {},
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    expect(screen.getByText('Endorsement')).toBeInTheDocument();
+    expect(
+      screen.getByText('Welcome Center endorsement for Bryan Daniel G Paredes'),
+    ).toBeInTheDocument();
+
+    const selectTrigger = screen.getByLabelText(/Request Type/i);
+    fireEvent.click(selectTrigger);
+
+    const endorsementOption = screen.getByRole('option', { name: /^Endorsements$/i });
+    fireEvent.click(endorsementOption);
+
+    expect(mockUseApprovalRequestsQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ entity_type: 'recruitment_endorsement' }),
+    );
+  });
+
+  it('inspects an endorsement request to view the 5 grouped questionnaire sections', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement-details',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'app-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Daniel G Paredes',
+          summary: 'Please review volunteer application.',
+          requester_user_id: 'user-1',
+          requester_name: 'Bryan Daniel G Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            application_id: 'fcb9479b-1335-46c0-989c-885ff09d51a4',
+            attestation_answers: {
+              leader_full_name: 'Baron Paredes',
+              disciple_dgroup_since: '2024 Oct',
+              is_disciple_dgroup_leader: 'No',
+              eval_prayer_and_devotion: 3,
+              eval_no_gossip: 3,
+              disciple_strengths: 'Consistent prayer warrior',
+              recommendation_decision: 'Yes',
+              leader_attestation_statement: 'I attest',
+            },
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify 5 grouped sections header and content
+    expect(screen.getByText('DGroup Leader Endorsement Questionnaire')).toBeInTheDocument();
+    expect(screen.getByText('1. Leader & DGroup Relationship')).toBeInTheDocument();
+    expect(screen.getByText('Baron Paredes')).toBeInTheDocument();
+    expect(screen.getByText('2. Spiritual Maturity & Character Evaluation')).toBeInTheDocument();
+    expect(screen.getByText(/Consistent prayer warrior/i)).toBeInTheDocument();
+    expect(screen.getByText('I attest')).toBeInTheDocument();
+  });
+
+  it('handles stringified and malformed JSON attestation answers in endorsement request', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement-json-string',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-str-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Paredes',
+          summary: 'Please review endorsement',
+          requester_user_id: 'user-30',
+          requester_name: 'Bryan Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement-str',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: JSON.stringify({
+              leader_full_name: 'Baron Paredes (JSON String)',
+            }),
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+        {
+          id: 'req-endorsement-bad-json',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-bad-1',
+          status: 'approved',
+          title: 'Malformed JSON Endorsement',
+          summary: 'Summary with malformed answers',
+          requester_user_id: 'user-31',
+          requester_name: 'Test Requester',
+          requester_email: 'test@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: 'admin@example.com',
+          decided_at: '2026-11-03T10:00:00Z',
+          decision_notes: null,
+          access_token: 'token-bad',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: '{malformed-json-here',
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+        {
+          id: 'req-endorsement-number-answers',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-num-1',
+          status: 'rejected',
+          title: 'Numeric Answers Endorsement',
+          summary: 'Summary with numeric answers',
+          requester_user_id: 'user-32',
+          requester_name: 'Num Requester',
+          requester_email: 'num@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: 'admin@example.com',
+          decided_at: '2026-11-03T10:00:00Z',
+          decision_notes: null,
+          access_token: 'token-num',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: 12345,
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    // Inspect first request (stringified JSON)
+    const reviewBtn = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewBtn);
+    expect(screen.getByText('Baron Paredes (JSON String)')).toBeInTheDocument();
+
+    // Close modal
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    // Switch to approved tab and inspect malformed request
+    const approvedTab = screen.getByRole('button', { name: /Approved/i });
+    fireEvent.click(approvedTab);
+
+    const detailsBtn = screen.getByRole('button', { name: /Details/i });
+    fireEvent.click(detailsBtn);
+    expect(screen.getAllByText('Malformed JSON Endorsement')).toHaveLength(2);
+
+    // Close modal
+    const closeBtn2 = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn2);
+
+    // Switch to declined tab and inspect numeric answers request
+    const declinedTab = screen.getByRole('button', { name: /Declined/i });
+    fireEvent.click(declinedTab);
+
+    const detailsBtn2 = screen.getByRole('button', { name: /Details/i });
+    fireEvent.click(detailsBtn2);
+    expect(screen.getAllByText('Numeric Answers Endorsement')).toHaveLength(2);
+  });
+
+  it('inspects a long leave request to view grouped schedule, duration, services, and reason', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-long-leave-grouped',
+          entity_type: 'service_excuse',
+          entity_id: 'excuse-10',
+          status: 'pending',
+          title: 'Long Leave Request',
+          summary: 'Leave from 2026-10-25 to 2026-11-29 (9AM, 12NN, 3PM)',
+          requester_user_id: 'user-10',
+          requester_name: 'Josepina Ramirez',
+          requester_email: 'jjay.ramirez27@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-long-leave',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            start_date: '2026-10-25',
+            end_date: '2026-11-29',
+            services: ['9AM', '12NN', '3PM'],
+            reason: 'Trip to US to attend to her sick mother.',
+          },
+          created_at: '2026-10-20T10:00:00Z',
+          updated_at: '2026-10-20T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify grouped Long Leave headers and content
+    expect(screen.getByText('Volunteer Long Leave Details')).toBeInTheDocument();
+    expect(screen.getByText('Leave Schedule & Services')).toBeInTheDocument();
+    expect(screen.getByText('Reason for Leave')).toBeInTheDocument();
+
+    // Verify schedule details & duration
+    expect(screen.getByText('Start Date (Sunday)')).toBeInTheDocument();
+    expect(screen.getByText('(2026-10-25)')).toBeInTheDocument();
+    expect(screen.getByText('End Date (Sunday)')).toBeInTheDocument();
+    expect(screen.getByText('(2026-11-29)')).toBeInTheDocument();
+    expect(screen.getByText('6 Sundays')).toBeInTheDocument();
+    expect(screen.getByText('(36 days)')).toBeInTheDocument();
+
+    // Verify services rendered as badges rather than raw key-values (no "0:", "1:", "2:")
+    expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('12NN')).toBeInTheDocument();
+    expect(screen.getByText('3PM')).toBeInTheDocument();
+    expect(screen.queryByText('0:')).not.toBeInTheDocument();
+
+    // Verify reason rendered cleanly
+    expect(screen.getByText('Trip to US to attend to her sick mother.')).toBeInTheDocument();
+  });
+
+  it('inspects a form registration request to view grouped form target and submission responses', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-form-grouped',
+          entity_type: 'form_submission',
+          entity_id: 'sub-20',
+          status: 'pending',
+          title: 'Youth Summer Camp – Pastoral Sign-off',
+          summary: 'Pastoral Sign-off for Youth Summer Camp by John Doe',
+          requester_user_id: 'user-20',
+          requester_name: 'John Doe',
+          requester_email: 'john.doe@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-form',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            form_slug: 'youth-summer-camp-2026',
+            field_label: 'Pastoral Sign-off',
+            responses: {
+              cabin_preference: 'Cabin Alpha',
+              tshirt_size: 'L',
+            },
+            dietary_restrictions: 'Vegetarian',
+            emergency_contact: {
+              name: 'Jane Doe',
+              phone: '09171234567',
+            },
+          },
+          created_at: '2026-10-22T10:00:00Z',
+          updated_at: '2026-10-22T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify grouped Form Registration headers and content
+    expect(screen.getByText('Form Registration Details')).toBeInTheDocument();
+    expect(screen.getByText('Form & Sign-off Target')).toBeInTheDocument();
+    expect(screen.getByText('Submission Responses')).toBeInTheDocument();
+
+    // Verify form target items
+    expect(screen.getByText('Pastoral Sign-off')).toBeInTheDocument();
+    expect(screen.getByText('youth-summer-camp-2026')).toBeInTheDocument();
+    expect(screen.getAllByText('Pastoral Sign-off for Youth Summer Camp by John Doe')).toHaveLength(
+      2,
+    );
+
+    // Verify submission responses (unpacked from responses and flat keys)
+    expect(screen.getByText('Cabin Preference:')).toBeInTheDocument();
+    expect(screen.getByText('Cabin Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Tshirt Size:')).toBeInTheDocument();
+    expect(screen.getByText('L')).toBeInTheDocument();
+    expect(screen.getByText('Dietary Restrictions:')).toBeInTheDocument();
+    expect(screen.getByText('Vegetarian')).toBeInTheDocument();
+    expect(screen.getByText('Emergency Contact')).toBeInTheDocument();
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+  });
 });

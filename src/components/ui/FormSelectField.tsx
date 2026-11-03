@@ -145,6 +145,29 @@ export function FormSelectField(props: FormSelectFieldProps) {
             }
             setIsOpen((prev) => !prev);
           }}
+          onKeyDown={(event) => {
+            if (
+              event.key.length !== 1 ||
+              event.key.trim() === '' ||
+              event.altKey ||
+              event.ctrlKey ||
+              event.metaKey
+            ) {
+              return;
+            }
+
+            const matchingOption = options.find(
+              (option) =>
+                !option.isGroupHeader &&
+                !option.disabled &&
+                option.label.toLocaleLowerCase().startsWith(event.key.toLocaleLowerCase()),
+            );
+
+            if (matchingOption) {
+              event.preventDefault();
+              handleSelect(matchingOption.value);
+            }
+          }}
           className={`flex w-full items-center justify-between rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
             error
               ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30 focus:shadow-lg focus:shadow-red-500/20'

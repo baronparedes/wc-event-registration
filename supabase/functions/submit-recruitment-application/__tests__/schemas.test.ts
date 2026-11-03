@@ -56,6 +56,28 @@ Deno.test('recruitment application schema normalizes email and accepts valid dat
   }
 });
 
+Deno.test('GLC 2 status is required only when GLC 1 is completed', () => {
+  const withoutGlc2 = submitRecruitmentApplicationSchema.safeParse({
+    ...validApplication,
+    spiritual_background: {
+      ...validApplication.spiritual_background,
+      glc1_status: 'Ongoing',
+      glc2_status: undefined,
+    },
+  });
+  assert(withoutGlc2.success);
+
+  const completedGlc1WithoutGlc2 = submitRecruitmentApplicationSchema.safeParse({
+    ...validApplication,
+    spiritual_background: {
+      ...validApplication.spiritual_background,
+      glc1_status: 'Completed',
+      glc2_status: undefined,
+    },
+  });
+  assert(!completedGlc1WithoutGlc2.success);
+});
+
 Deno.test('recruitment application schema requires returning applicant details', () => {
   const result = submitRecruitmentApplicationSchema.safeParse({
     ...validApplication,
@@ -66,6 +88,27 @@ Deno.test('recruitment application schema requires returning applicant details',
   });
 
   assert(!result.success);
+});
+
+Deno.test('recruitment application schema validates Philippine mobile numbers', () => {
+  const result = submitRecruitmentApplicationSchema.safeParse({
+    ...validApplication,
+    phone: '555-1234',
+  });
+
+  assert(!result.success);
+
+  const overlongNumber = submitRecruitmentApplicationSchema.safeParse({
+    ...validApplication,
+    phone: '099999999991',
+  });
+  assert(!overlongNumber.success);
+
+  const formattedNumber = submitRecruitmentApplicationSchema.safeParse({
+    ...validApplication,
+    phone: '+63 917 123 4567',
+  });
+  assert(formattedNumber.success);
 });
 
 Deno.test('recruitment application schema requires conditional married and leader fields', () => {
@@ -80,6 +123,23 @@ Deno.test('recruitment application schema requires conditional married and leade
 
   assert(!result.success);
 });
+
+Deno.test(
+  'recruitment application schema allows optional member count when leader tenure is provided',
+  () => {
+    const result = submitRecruitmentApplicationSchema.safeParse({
+      ...validApplication,
+      dgroup_info: {
+        ...validApplication.dgroup_info,
+        is_dgroup_leader: true,
+        leader_since: '2019 Jan',
+        dgroup_member_count: null,
+      },
+    });
+
+    assert(result.success);
+  },
+);
 
 Deno.test('calculateAge accounts for whether the birthday has occurred this year', () => {
   const today = new Date('2026-11-02T12:00:00.000Z');
