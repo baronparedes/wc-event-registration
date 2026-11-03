@@ -77,7 +77,7 @@ export function ApprovalReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         <Skeleton className="h-10 w-2/3" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
@@ -122,7 +122,7 @@ export function ApprovalReviewPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
       {/* Top Banner / Request Identification */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

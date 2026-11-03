@@ -429,6 +429,7 @@ const MINIMIZED_APP_SHELL_PATTERNS = [
   ROUTE_PATHS.excuseRequest,
   ROUTE_PATHS.longLeaveRequest,
   ROUTE_PATHS.recruitmentApply,
+  ROUTE_PATHS.approvalReviewPattern,
   ROUTE_PATHS.adminEventAttendanceCheckInPattern,
   ROUTE_PATHS.hello,
 ] as const;
