@@ -19,7 +19,7 @@ export function RecruitmentHubBanner() {
   const isRecruitmentOpen = config?.is_recruitment_open === true;
   const hasActiveApplication =
     application?.status === 'active' || application?.status === 'on_hold';
-  const shouldCheckAdminRole = Boolean(userId && !hasActiveApplication);
+  const shouldCheckAdminRole = Boolean(userId && !hasActiveApplication && isRecruitmentOpen);
   const { data: adminAuth, isLoading: isAdminAuthLoading } =
     useAdminAuthQuery(shouldCheckAdminRole);
   const isRecruitmentStaff = ['admin', 'super_admin', 'kiosk', 'vmt'].includes(
@@ -28,7 +28,7 @@ export function RecruitmentHubBanner() {
 
   if (isSessionLoading || isConfigLoading || (userId && isApplicationLoading)) return null;
   if (shouldCheckAdminRole && isAdminAuthLoading) return null;
-  if (!hasActiveApplication && !isRecruitmentStaff) return null;
+  if (!hasActiveApplication && (!isRecruitmentOpen || !isRecruitmentStaff)) return null;
 
   const progress = hasActiveApplication ? Math.round((application.current_step / 9) * 100) : null;
 
@@ -45,9 +45,7 @@ export function RecruitmentHubBanner() {
           <h2 className="text-lg font-semibold text-text">
             {hasActiveApplication
               ? `Your Application: Step ${application.current_step} of 9`
-              : isRecruitmentOpen
-                ? 'Join the Welcome Center Team'
-                : 'Welcome Center Team'}
+              : 'Join the Welcome Center Team'}
           </h2>
           {hasActiveApplication ? (
             <div
@@ -65,9 +63,7 @@ export function RecruitmentHubBanner() {
             </div>
           ) : (
             <p className="mt-1 text-sm text-muted">
-              {isRecruitmentOpen
-                ? 'Applications are open to join the Welcome Center team.'
-                : 'Applications are currently closed.'}
+              Applications are open to join the Welcome Center team.
             </p>
           )}
         </div>
@@ -76,7 +72,7 @@ export function RecruitmentHubBanner() {
         className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         to={hasActiveApplication ? ROUTE_PATHS.recruitment : ROUTE_PATHS.recruitmentApply}
       >
-        {hasActiveApplication ? 'View Status' : isRecruitmentOpen ? 'Join Now' : 'View Application'}
+        {hasActiveApplication ? 'View Status' : 'Join Now'}
         <ArrowRight aria-hidden="true" className="h-4 w-4" />
       </Link>
     </section>

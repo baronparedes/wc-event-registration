@@ -576,9 +576,9 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 
 1. **WelcomeHub Home Integration (`src/pages/home/`)**:
    - `RecruitmentHubBanner.tsx`:
-   - Rendered at the bottom of the Hub after event/form sections when the signed-in user has an active/on-hold application, or when the signed-in role is `admin`, `super_admin`, `kiosk`, or `vmt`.
+   - Rendered at the bottom of the Hub after event/form sections when the signed-in user has an active/on-hold application, or when applications are open and the signed-in role is `admin`, `super_admin`, `kiosk`, or `vmt`. Hidden when applications are closed unless the signed-in user has an active/on-hold application.
    - For active/on-hold applicants, shows **"Your Application: Step X of 9 — View Status"** with a progress bar linking to `/recruitment`.
-   - For authorized intake staff (`admin`, `super_admin`, `kiosk`, `vmt`) without an active application, shows **"Join the Welcome Center Team — Join Now"** when applications are open, or **"Welcome Center Team"** with the closed status and a **"View Application"** link when applications are closed.
+   - For authorized intake staff (`admin`, `super_admin`, `kiosk`, `vmt`) without an active application while applications are open, shows **"Join the Welcome Center Team — Join Now"** linking to `/recruitment/apply`.
 
 1. **Pre-Qualification Gates & Step 1 Registration Wizard (`src/pages/recruitment/apply/index.tsx`)**:
    - **Staff-Authenticated / Kiosk-Only Intake**:

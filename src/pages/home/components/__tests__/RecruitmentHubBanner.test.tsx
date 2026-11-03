@@ -113,8 +113,8 @@ describe('RecruitmentHubBanner', () => {
     expect(screen.queryByRole('region', { name: 'Welcome Center team' })).toBeNull();
   });
 
-  it.each(['admin', 'super_admin', 'kiosk', 'vmt'] as const)(
-    'shows the closed-state banner to %s users',
+  it.each(['admin', 'super_admin', 'kiosk', 'vmt', 'slod'] as const)(
+    'hides the banner when recruitment is closed even for %s users without an active application',
     (role) => {
       mockUseAuthSessionQuery.mockReturnValue({
         data: { user: { id: 'auth-user-1' } },
@@ -129,30 +129,8 @@ describe('RecruitmentHubBanner', () => {
 
       renderBanner();
 
-      expect(screen.getByRole('heading', { name: 'Welcome Center Team' })).toBeVisible();
-      expect(screen.getByText('Applications are currently closed.')).toBeVisible();
-      expect(screen.getByRole('link', { name: 'View Application' })).toHaveAttribute(
-        'href',
-        '/recruitment/apply',
-      );
-      expect(mockUseAdminAuthQuery).toHaveBeenCalledWith(true);
+      expect(screen.queryByRole('region', { name: 'Welcome Center team' })).toBeNull();
+      expect(mockUseAdminAuthQuery).toHaveBeenCalledWith(false);
     },
   );
-
-  it('does not expose the closed-state banner to other admin roles', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
-    mockUsePublicRecruitmentConfigQuery.mockReturnValue({
-      data: { is_recruitment_open: false },
-      isLoading: false,
-    });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({ data: null, isLoading: false });
-    mockUseAdminAuthQuery.mockReturnValue({ data: { adminRole: 'slod' }, isLoading: false });
-
-    renderBanner();
-
-    expect(screen.queryByRole('region', { name: 'Welcome Center team' })).toBeNull();
-  });
 });
