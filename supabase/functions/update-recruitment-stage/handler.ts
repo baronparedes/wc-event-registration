@@ -29,6 +29,7 @@ const updateRecruitmentStageSchema = z
       'update_stage',
       'repeat_step',
       'return_to_observation',
+      'return_to_interview',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(2).max(8).optional(),
@@ -60,12 +61,20 @@ const updateRecruitmentStageSchema = z
     }
     if (
       request.action === 'repeat_step' &&
+      request.step_number !== 2 &&
       request.step_number !== 4 &&
       request.step_number !== 5
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Only observation and evaluation can be repeated',
+        message: 'Only interview, observation, and evaluation can be repeated',
+        path: ['step_number'],
+      });
+    }
+    if (request.action === 'return_to_interview' && request.step_number !== 3) {
+      context.addIssue({
+        code: 'custom',
+        message: 'return_to_interview must reference orientation step 3',
         path: ['step_number'],
       });
     }
@@ -85,6 +94,8 @@ type RecruitmentTransactionUpdate =
   Database['public']['Tables']['recruitment_pipeline_transactions']['Update'];
 type RecruitmentApplicationUpdate =
   Database['public']['Tables']['recruitment_applications']['Update'];
+type RecruitmentRole =
+  Database['public']['Tables']['recruitment_applications']['Row']['confirmed_role'];
 
 const dgroupInfoSchema = z.object({ leader_email: z.string().email() });
 const completeVmtResultSchema = z.object({
@@ -129,7 +140,7 @@ async function findLatestTransaction(
 ) {
   const { data, error } = await supabase
     .from('recruitment_pipeline_transactions')
-    .select('id, attempt_number, status')
+    .select('id, attempt_number, status, notes, applicant_visible_notes, rubric_data')
     .eq('application_id', applicationId)
     .eq('step_number', stepNumber)
     .order('attempt_number', { ascending: false })
@@ -500,7 +511,11 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
     return response(403, { success: false, error: 'Reviewer access required' }, guard.corsHeaders);
   }
 
-  if (action === 'repeat_step' || action === 'return_to_observation') {
+  if (
+    action === 'repeat_step' ||
+    action === 'return_to_observation' ||
+    action === 'return_to_interview'
+  ) {
     const stepNumber = guard.data.step_number;
     if (!stepNumber)
       return response(400, { success: false, error: 'step_number is required' }, guard.corsHeaders);
@@ -545,9 +560,18 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       status: 'completed',
       completed_at: new Date().toISOString(),
       transaction_type:
-        action === 'return_to_observation' ? 'returned_to_observation' : 'completed',
-      notes: guard.data.notes ?? null,
-      rubric_data: asJson(guard.data.rubric_data),
+        action === 'return_to_observation'
+          ? 'returned_to_observation'
+          : action === 'return_to_interview'
+            ? 'returned_to_interview'
+            : 'repeated_step',
+      notes:
+        guard.data.notes !== undefined ? (guard.data.notes ?? null) : currentTransaction.data.notes,
+      applicant_visible_notes:
+        guard.data.applicant_visible_notes !== undefined
+          ? (guard.data.applicant_visible_notes ?? null)
+          : currentTransaction.data.applicant_visible_notes,
+      rubric_data: asJson(guard.data.rubric_data) ?? currentTransaction.data.rubric_data,
     };
     const { error: completeError } = await supabase
       .from('recruitment_pipeline_transactions')
@@ -561,15 +585,17 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       );
     }
 
-    const repeatStepNumber = action === 'return_to_observation' ? 4 : stepNumber;
-    const repeatStepKey = repeatStepNumber === 4 ? 'observation' : 'evaluation';
+    const repeatStepNumber =
+      action === 'return_to_interview' ? 2 : action === 'return_to_observation' ? 4 : stepNumber;
+    const repeatStepKey =
+      repeatStepNumber === 2 ? 'interview' : repeatStepNumber === 4 ? 'observation' : 'evaluation';
     let nextAttempt = currentTransaction.data.attempt_number + 1;
     if (repeatStepNumber !== stepNumber) {
       const latestRepeat = await findLatestTransaction(supabase, application.id, repeatStepNumber);
       if (latestRepeat.error) {
         return response(
           500,
-          { success: false, error: 'Failed to read observation history' },
+          { success: false, error: 'Failed to read previous step history' },
           guard.corsHeaders,
         );
       }
@@ -581,7 +607,11 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       step_key: repeatStepKey,
       attempt_number: nextAttempt,
       transaction_type:
-        action === 'return_to_observation' ? 'returned_to_observation' : 'repeated_step',
+        action === 'return_to_observation'
+          ? 'returned_to_observation'
+          : action === 'return_to_interview'
+            ? 'returned_to_interview'
+            : 'repeated_step',
       from_step: stepNumber,
       to_step: repeatStepNumber,
       status: 'scheduled',
@@ -598,10 +628,17 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       );
     }
 
-    const nextStep = action === 'return_to_observation' ? 4 : stepNumber;
+    const nextStep =
+      action === 'return_to_interview' ? 2 : action === 'return_to_observation' ? 4 : stepNumber;
+    const appUpdate: { current_step: number; confirmed_role?: RecruitmentRole } = {
+      current_step: nextStep,
+    };
+    if (guard.data.confirmed_role) {
+      appUpdate.confirmed_role = guard.data.confirmed_role;
+    }
     const { error: applicationUpdateError } = await supabase
       .from('recruitment_applications')
-      .update({ current_step: nextStep })
+      .update(appUpdate)
       .eq('id', application.id);
     if (applicationUpdateError) {
       return response(
@@ -616,7 +653,9 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       userId,
       action === 'return_to_observation'
         ? 'Additional observation scheduled'
-        : 'Another session scheduled',
+        : action === 'return_to_interview'
+          ? 'Additional interview scheduled'
+          : 'Another session scheduled',
       guard.data.applicant_visible_notes ?? 'A new recruitment session has been scheduled.',
     );
     return response(200, { success: true, current_step: nextStep }, guard.corsHeaders);

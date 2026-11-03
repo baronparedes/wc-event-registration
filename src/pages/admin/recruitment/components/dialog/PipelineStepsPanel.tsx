@@ -110,10 +110,15 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   // Collapsible history state
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
-  // Find latest transaction for selected step if any
-  const latestStepTransaction = [...transactions]
-    .reverse()
-    .find((tx) => tx.step_number === selectedStep);
+  // Find transactions for selected step, sorted newest first
+  const stepTransactions = useMemo(() => {
+    return transactions
+      .filter((t) => t.step_number === selectedStep)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [transactions, selectedStep]);
+
+  const latestStepTransaction = stepTransactions[0];
+  const previousStepAttempts = stepTransactions.slice(1);
 
   // Form states for stage action
   const [reviewerId, setReviewerId] = useState<string>(
@@ -230,7 +235,11 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
   const handleUpdateStage = (
     status: 'scheduled' | 'completed' | 'in_progress',
-    action: 'update_stage' | 'repeat_step' | 'return_to_observation' = 'update_stage',
+    action:
+      | 'update_stage'
+      | 'repeat_step'
+      | 'return_to_observation'
+      | 'return_to_interview' = 'update_stage',
   ) => {
     const isoScheduledAt = scheduledAtLocal?.trim()
       ? localDateTimeToUTC8ISO(scheduledAtLocal)
@@ -270,7 +279,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               ? `Scheduled another session for Step ${selectedStep}`
               : action === 'return_to_observation'
                 ? 'Returned candidate to Observation for another session'
-                : `Step ${selectedStep} updated successfully`,
+                : action === 'return_to_interview'
+                  ? 'Returned candidate to Interview (Step 2) for another session'
+                  : `Step ${selectedStep} updated successfully`,
           );
         },
         onError: (err) => {
@@ -303,6 +314,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         return `Repeat Session Scheduled for Step ${tx.step_number}`;
       case 'returned_to_observation':
         return 'Returned to Observation (Step 4)';
+      case 'returned_to_interview':
+        return 'Returned to Interview (Step 2)';
       default:
         return `Step ${tx.step_number} Activity`;
     }
@@ -491,6 +504,80 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
                 )}
 
+                {/* Previous attempts history for this step (kept intact) */}
+                {previousStepAttempts.length > 0 && (
+                  <div className="rounded-xl border border-border/80 bg-surface/60 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                        <h4 className="font-semibold text-xs text-text">
+                          Previous {selectedStep === 2 ? 'Interview' : stepMeta?.shortLabel}{' '}
+                          Attempts ({previousStepAttempts.length})
+                        </h4>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px]">
+                        Recorded History Intact
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      {previousStepAttempts.map((tx) => (
+                        <div
+                          key={tx.id}
+                          className="rounded-lg border border-border/60 bg-background p-2.5 text-xs space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="font-semibold text-text">
+                              Attempt #{tx.attempt_number}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] capitalize py-0 px-1.5 font-mono"
+                              >
+                                {tx.status}
+                              </Badge>
+                              <span className="text-[10px] text-muted font-mono">
+                                {formatDateTime(tx.completed_at || tx.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2 text-[11px] text-muted">
+                            <div>
+                              <span>Coach: </span>
+                              <strong className="text-text">
+                                {tx.assigned_reviewer_name || 'None'}
+                              </strong>
+                            </div>
+                            <div>
+                              <span>Session Date: </span>
+                              <strong className="text-text">
+                                {tx.scheduled_at ? formatDateTime(tx.scheduled_at) : 'N/A'}
+                              </strong>
+                            </div>
+                          </div>
+                          {tx.notes && (
+                            <div className="mt-1 rounded-md bg-surface p-2 text-[11px] text-text border border-border/40">
+                              <span className="font-medium text-muted block mb-0.5">
+                                Leadership Notes:
+                              </span>
+                              <p className="whitespace-pre-wrap">{tx.notes}</p>
+                            </div>
+                          )}
+                          {tx.applicant_visible_notes && (
+                            <div className="mt-1 rounded-md bg-surface p-2 text-[11px] text-text border border-border/40">
+                              <span className="font-medium text-muted block mb-0.5">
+                                Applicant Instructions:
+                              </span>
+                              <p className="whitespace-pre-wrap">{tx.applicant_visible_notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Session & Evaluation Details Card */}
                 <div className="rounded-xl border border-border bg-background p-3.5 space-y-3">
                   <div className="flex items-center justify-between">
@@ -499,6 +586,15 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       {isCompletedStep
                         ? 'Recorded Session & Evaluation Details'
                         : 'Session & Evaluation Details'}
+                      {latestStepTransaction?.attempt_number &&
+                        latestStepTransaction.attempt_number > 1 && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-mono py-0 px-1.5 border-primary/40 text-primary"
+                          >
+                            Attempt #{latestStepTransaction.attempt_number}
+                          </Badge>
+                        )}
                     </h4>
                     {latestStepTransaction?.status && (
                       <Badge
@@ -684,6 +780,38 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           ? 'Update Schedule'
                           : 'Schedule Session'}
                       </Button>
+
+                      {/* Repeatable interview controls */}
+                      {selectedStep === 2 && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                          disabled={
+                            updateStageMutation.isPending ||
+                            !scheduledAtLocal ||
+                            (!reviewerId && !reviewerName)
+                          }
+                        >
+                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                          Repeat Interview (Step 2)
+                        </Button>
+                      )}
+
+                      {/* Return to Step 2 from Step 3 Orientation */}
+                      {selectedStep === 3 && (
+                        <Button
+                          type="button"
+                          variant="primaryOutline"
+                          size="sm"
+                          onClick={() => handleUpdateStage('scheduled', 'return_to_interview')}
+                          disabled={updateStageMutation.isPending}
+                        >
+                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                          Needs Another Interview (Return to Step 2)
+                        </Button>
+                      )}
 
                       {/* Repeatable observation controls */}
                       {selectedStep === 4 && (

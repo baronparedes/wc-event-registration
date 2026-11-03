@@ -91,6 +91,7 @@ function mockFetch(
     approvalStatus?: string;
     authUserEmail?: string | null;
     failVmtRpc?: boolean;
+    transactions?: unknown;
   } = {},
 ) {
   const originalFetch = globalThis.fetch;
@@ -142,7 +143,13 @@ function mockFetch(
       if (method === 'POST' || method === 'PATCH') {
         return Promise.resolve(Response.json({ id: 'tx-mock-1' }));
       }
-      return Promise.resolve(Response.json([]));
+      return Promise.resolve(
+        Response.json(
+          options.transactions ?? [
+            { id: 'tx-1', attempt_number: 1, status: 'scheduled', notes: null },
+          ],
+        ),
+      );
     }
     if (url.pathname === '/rest/v1/app_notifications') {
       return Promise.resolve(Response.json({ id: 'mock-notif-1' }));
@@ -559,6 +566,70 @@ Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', 
   });
 });
 
+Deno.test('update-recruitment-stage supports repeat_step on step 2 (Interview)', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 2 },
+      transactions: [
+        { id: 'tx-int-1', attempt_number: 1, status: 'scheduled', notes: 'First round done' },
+      ],
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'repeat_step',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          scheduled_at: '2026-11-15T10:00:00+08:00',
+          notes: 'Candidate needs additional pastoral alignment',
+          confirmed_role: 'Usher',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.current_step, 2);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'update-recruitment-stage supports return_to_interview from step 3 (Orientation)',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 3 },
+        transactions: [
+          { id: 'tx-int-1', attempt_number: 1, status: 'completed', notes: 'Initial interview' },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'return_to_interview',
+            application_id: APPLICATION_ID,
+            step_number: 3,
+            scheduled_at: '2026-11-16T14:00:00+08:00',
+            notes: 'Returned before orientation for re-interview',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.current_step, 2);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
 Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
@@ -585,3 +656,67 @@ Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', 
     }
   });
 });
+
+Deno.test('update-recruitment-stage supports repeat_step on step 2 (Interview)', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 2 },
+      transactions: [
+        { id: 'tx-int-1', attempt_number: 1, status: 'scheduled', notes: 'First round done' },
+      ],
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'repeat_step',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          scheduled_at: '2026-11-15T10:00:00+08:00',
+          notes: 'Candidate needs additional pastoral alignment',
+          confirmed_role: 'Usher',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.current_step, 2);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'update-recruitment-stage supports return_to_interview from step 3 (Orientation)',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 3 },
+        transactions: [
+          { id: 'tx-int-1', attempt_number: 1, status: 'completed', notes: 'Initial interview' },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'return_to_interview',
+            application_id: APPLICATION_ID,
+            step_number: 3,
+            scheduled_at: '2026-11-16T14:00:00+08:00',
+            notes: 'Returned before orientation for re-interview',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.current_step, 2);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
