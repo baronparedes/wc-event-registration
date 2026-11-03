@@ -4,11 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   CheckCircle2,
   ClipboardCheck,
   HeartHandshake,
   ShieldAlert,
-  Sparkles,
   UserCheck,
   XCircle,
 } from 'lucide-react';
@@ -32,6 +32,7 @@ import {
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
   formatAnswerValue,
+  parseRatingLabels,
 } from '@/lib/domain/dynamic-fields';
 import { filterVisibleFieldValues, isFieldVisible } from '@/lib/domain/field-visibility';
 import {
@@ -75,7 +76,7 @@ const THEMATIC_GROUPS: ThematicGroup[] = [
     id: 'spiritual_character',
     title: 'Spiritual Maturity & Character Evaluation',
     description: 'Evaluate spiritual disciplines, private life, and walk with God.',
-    icon: <Sparkles className="h-4 w-4 text-primary" />,
+    icon: <BookOpen className="h-4 w-4 text-primary" />,
     match: (key) => key.startsWith('eval_'),
   },
   {
@@ -118,6 +119,21 @@ function displayAnswer(
   question: RecruitmentEndorsementReviewDetails['endorsement_questions'][number],
   value: unknown,
 ) {
+  if (question.field_type === 'rating' && value != null && value !== '') {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isNaN(numeric) && numeric > 0) {
+      const labels = parseRatingLabels(question.help_text);
+      const meaning = labels[numeric];
+      const rules = (question.validation_rules ?? {}) as Record<string, unknown>;
+      const max = typeof rules.max === 'number' ? rules.max : 3;
+      const stars = '★'.repeat(numeric) + '☆'.repeat(Math.max(0, max - numeric));
+      if (meaning) {
+        return `${stars} (${numeric}/${max}) — ${meaning}`;
+      }
+      return `${stars} (${numeric}/${max})`;
+    }
+  }
+
   return formatAnswerValue(
     question.field_type,
     { answer_json: value },
@@ -155,6 +171,28 @@ function groupQuestions(questions: RecruitmentEndorsementReviewDetails['endorsem
   }
 
   return groups;
+}
+
+function RatingScaleLegend() {
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-background p-3.5 text-xs text-muted">
+      <div className="mb-2 font-semibold text-text">Rating Scale Legend (1 to 3 Stars):</div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★ 1:</span>
+          <span className="font-medium text-text">Not Observed</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★★ 2:</span>
+          <span className="font-medium text-text">Observed Some of the time</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-surface px-3 py-2">
+          <span className="font-bold text-amber-500">★★★ 3:</span>
+          <span className="font-medium text-text">Observed Most of the time</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function RecruitmentEndorsementReviewSection({
@@ -309,6 +347,7 @@ function RecruitmentEndorsementReviewForm({
               }
               subtitle={group.description}
             >
+              {group.id === 'spiritual_character' && <RatingScaleLegend />}
               <div className="divide-y divide-border">
                 {grpQuestions.map((question) => (
                   <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
@@ -405,6 +444,7 @@ function RecruitmentEndorsementReviewForm({
                     }
                     subtitle={group.description}
                   >
+                    {group.id === 'spiritual_character' && <RatingScaleLegend />}
                     <div className="space-y-5">
                       {visibleGrpQuestions.map((question) => {
                         const error = form.formState.errors[question.field_key]?.message;

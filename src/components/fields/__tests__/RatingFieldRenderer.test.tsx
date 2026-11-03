@@ -96,4 +96,19 @@ describe('RatingFieldRenderer', () => {
     const star4 = screen.getByRole('radio', { name: /4 of 5 stars/i });
     expect(star4).not.toBeChecked();
   });
+
+  it('renders rating scale labels and dynamic meaning badge when help_text defines meanings', () => {
+    const fieldWithHelpText: DynamicFieldLike = {
+      ...baseField,
+      validation_rules: { min: 1, max: 3 },
+      help_text: '1 = Not Observed; 2 = Observed Some of the time; 3 = Observed Most of the time',
+    };
+
+    render(<TestHarness field={fieldWithHelpText} defaultValue={2} />);
+
+    expect(screen.getByText('2 — Observed Some of the time')).toBeInTheDocument();
+    expect(screen.getByText(/1 = Not Observed/)).toBeInTheDocument();
+    expect(screen.getByText(/2 = Observed Some of the time/)).toBeInTheDocument();
+    expect(screen.getByText(/3 = Observed Most of the time/)).toBeInTheDocument();
+  });
 });
