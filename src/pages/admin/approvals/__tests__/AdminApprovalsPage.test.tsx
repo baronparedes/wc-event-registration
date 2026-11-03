@@ -578,6 +578,128 @@ describe('AdminApprovalsPage', () => {
     expect(screen.getByText('I attest')).toBeInTheDocument();
   });
 
+  it('handles stringified and malformed JSON attestation answers in endorsement request', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-endorsement-json-string',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-str-1',
+          status: 'pending',
+          title: 'Welcome Center endorsement for Bryan Paredes',
+          summary: 'Please review endorsement',
+          requester_user_id: 'user-30',
+          requester_name: 'Bryan Paredes',
+          requester_email: 'bryan@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-endorsement-str',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: JSON.stringify({
+              leader_full_name: 'Baron Paredes (JSON String)',
+            }),
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+        {
+          id: 'req-endorsement-bad-json',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-bad-1',
+          status: 'approved',
+          title: 'Malformed JSON Endorsement',
+          summary: 'Summary with malformed answers',
+          requester_user_id: 'user-31',
+          requester_name: 'Test Requester',
+          requester_email: 'test@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: 'admin@example.com',
+          decided_at: '2026-11-03T10:00:00Z',
+          decision_notes: null,
+          access_token: 'token-bad',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: '{malformed-json-here',
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+        {
+          id: 'req-endorsement-number-answers',
+          entity_type: 'recruitment_endorsement',
+          entity_id: 'rec-num-1',
+          status: 'rejected',
+          title: 'Numeric Answers Endorsement',
+          summary: 'Summary with numeric answers',
+          requester_user_id: 'user-32',
+          requester_name: 'Num Requester',
+          requester_email: 'num@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: 'admin@example.com',
+          decided_at: '2026-11-03T10:00:00Z',
+          decision_notes: null,
+          access_token: 'token-num',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            attestation_answers: 12345,
+          },
+          created_at: '2026-11-03T10:00:00Z',
+          updated_at: '2026-11-03T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    // Inspect first request (stringified JSON)
+    const reviewBtn = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewBtn);
+    expect(screen.getByText('Baron Paredes (JSON String)')).toBeInTheDocument();
+
+    // Close modal
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    // Switch to approved tab and inspect malformed request
+    const approvedTab = screen.getByRole('button', { name: /Approved/i });
+    fireEvent.click(approvedTab);
+
+    const detailsBtn = screen.getByRole('button', { name: /Details/i });
+    fireEvent.click(detailsBtn);
+    expect(screen.getAllByText('Malformed JSON Endorsement')).toHaveLength(2);
+
+    // Close modal
+    const closeBtn2 = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn2);
+
+    // Switch to declined tab and inspect numeric answers request
+    const declinedTab = screen.getByRole('button', { name: /Declined/i });
+    fireEvent.click(declinedTab);
+
+    const detailsBtn2 = screen.getByRole('button', { name: /Details/i });
+    fireEvent.click(detailsBtn2);
+    expect(screen.getAllByText('Numeric Answers Endorsement')).toHaveLength(2);
+  });
+
   it('inspects a long leave request to view grouped schedule, duration, services, and reason', () => {
     mockUseApprovalRequestsQuery.mockReturnValue({
       data: [
