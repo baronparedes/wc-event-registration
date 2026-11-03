@@ -1,7 +1,9 @@
+import { useState } from 'react';
+
 import { RefreshCw, ShieldCheck, User } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Avatar, Badge, Button, Spinner } from '@/components/ui';
+import { Avatar, Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment';
 import type { RecruitmentApplication } from '@/lib/domain/recruitment';
 import { calculateAge } from '@/pages/recruitment/apply/utils';
@@ -11,6 +13,7 @@ interface ApplicantProfilePanelProps {
 }
 
 export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProps) {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const age = calculateAge(application.date_of_birth);
 
@@ -22,11 +25,13 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
       },
       {
         onSuccess: () => {
+          setIsConfirmOpen(false);
           toast.success(
             `Resent endorsement magic-link email to ${application.dgroup_info.leader_email}`,
           );
         },
         onError: (err) => {
+          setIsConfirmOpen(false);
           toast.error(err.message || 'Failed to resend endorsement email');
         },
       },
@@ -191,12 +196,13 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="flex justify-end pt-2">
           <Button
             type="button"
             variant="primaryOutline"
             size="sm"
-            onClick={handleResendEndorsement}
+            className="w-full sm:w-auto"
+            onClick={() => setIsConfirmOpen(true)}
             disabled={updateStageMutation.isPending}
           >
             {updateStageMutation.isPending ? (
@@ -208,6 +214,25 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Resend Endorsement Magic-Link Email"
+        description={
+          <>
+            Are you sure you want to resend the endorsement email to{' '}
+            <strong className="text-text">{application.dgroup_info.leader_name}</strong> at{' '}
+            <strong className="text-text">{application.dgroup_info.leader_email}</strong>? This will
+            dispatch a fresh magic link to their inbox.
+          </>
+        }
+        confirmLabel="Resend Email"
+        confirmLoadingLabel="Resending..."
+        confirmVariant="default"
+        isPending={updateStageMutation.isPending}
+        onConfirm={handleResendEndorsement}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
     </div>
   );
 }

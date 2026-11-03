@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -97,14 +97,15 @@ const mockTransaction: RecruitmentPipelineTransaction = {
   created_at: '2026-11-02T10:00:00+08:00',
 };
 
-const { mockDetailQuery } = vi.hoisted(() => ({
+const { mockDetailQuery, mockUpdateStageMutate } = vi.hoisted(() => ({
   mockDetailQuery: vi.fn(),
+  mockUpdateStageMutate: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/recruitment', () => ({
   useAdminRecruitmentApplicationDetailQuery: () => mockDetailQuery(),
   useUpdateRecruitmentStageMutation: () => ({
-    mutate: vi.fn(),
+    mutate: mockUpdateStageMutate,
     isPending: false,
   }),
   useDeployRecruitmentApplicantMutation: () => ({
@@ -290,6 +291,45 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText('Spiritual Background & GLC')).toBeInTheDocument();
     expect(screen.getByText('DGroup & Leader Attestation')).toBeInTheDocument();
     expect(screen.getByText('Test Paul Mentor')).toBeInTheDocument();
+  });
+
+  it('shows confirmation dialog before resending endorsement magic-link email in profile tab', async () => {
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
+
+    const resendBtn = screen.getByRole('button', { name: /resend endorsement magic-link email/i });
+    expect(resendBtn).toHaveClass('w-full', 'sm:w-auto');
+
+    // Click button to open confirmation dialog
+    await user.click(resendBtn);
+
+    // Verify confirmation dialog appears with leader details
+    const alertDialog = screen.getByRole('alertdialog');
+    expect(
+      within(alertDialog).getByRole('heading', { name: 'Resend Endorsement Magic-Link Email' }),
+    ).toBeInTheDocument();
+    expect(within(alertDialog).getByText(/Test Paul Mentor/i)).toBeInTheDocument();
+    expect(within(alertDialog).getByText(/paul@example.com/i)).toBeInTheDocument();
+
+    // Confirm resending
+    const confirmBtn = within(alertDialog).getByRole('button', { name: 'Resend Email' });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      {
+        action: 'resend_endorsement',
+        application_id: 'app-123',
+      },
+      expect.any(Object),
+    );
   });
 
   it('calls onClose when Close button is clicked', async () => {
