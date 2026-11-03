@@ -537,7 +537,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     />
 
                     <FormInputField
-                      label="Session Date & Time *"
+                      id="sessionDateTime"
+                      label="Session Date & Time"
+                      required
                       type="datetime-local"
                       value={scheduledAtLocal}
                       onChange={(event) => setScheduledAtLocal(event.target.value)}

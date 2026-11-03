@@ -143,14 +143,15 @@ export function ReviewerUserPicker({
   return (
     <div className="space-y-1.5" ref={containerRef}>
       {label && (
-        <label htmlFor={id} className="block text-xs font-semibold text-muted">
-          {label} {required && <span className="text-danger">*</span>}
+        <label htmlFor={id} className="block text-sm font-semibold text-text">
+          {label}
+          {required && <span className="text-red-500"> *</span>}
         </label>
       )}
 
       {(value || reviewerName) && effectiveSelectedUser ? (
-        <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/[0.04] p-3 shadow-xs transition-all">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/[0.04] p-2.5 min-h-[46px] shadow-xs transition-all">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Avatar
               name={effectiveSelectedUser.name || effectiveSelectedUser.full_name}
               avatarObjectKey={effectiveSelectedUser.avatar_object_key}
@@ -218,7 +219,7 @@ export function ReviewerUserPicker({
                 setSelectedIndex(0);
               }}
               onKeyDown={handleKeyDown}
-              className={`w-full rounded-xl border bg-background pl-10 pr-4 py-2.5 text-sm text-text placeholder:text-muted/60 transition focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+              className={`w-full rounded-md border bg-background pl-10 pr-4 py-2.5 text-sm leading-6 text-text placeholder:text-muted/60 transition focus:outline-none focus:ring-2 focus:ring-primary/20 ${
                 error ? 'border-danger focus:border-danger' : 'border-border focus:border-primary'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             />

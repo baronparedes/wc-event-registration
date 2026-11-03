@@ -276,7 +276,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Verify required notice is displayed
     expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
     expect(screen.getAllByText('Assigned Reviewer / Coach').length).toBeGreaterThan(0);
-    expect(screen.getByText('Session Date & Time')).toBeInTheDocument();
+    expect(screen.getAllByText('Session Date & Time').length).toBeGreaterThan(0);
     expect(screen.getByText('Leadership Notes / Feedback')).toBeInTheDocument();
 
     // Verify Complete Step button is disabled
