@@ -13,7 +13,7 @@ interface BiblicalSurveyReviewPanelProps {
 type SurveyFilter = 'all' | 'incorrect';
 
 export function BiblicalSurveyReviewPanel({ application }: BiblicalSurveyReviewPanelProps) {
-  const [filter, setFilter] = useState<SurveyFilter>('all');
+  const [filter, setFilter] = useState<SurveyFilter>('incorrect');
   const { data: settings } = useRecruitmentSettingsQuery();
 
   const questions = settings?.survey_questions ?? [];

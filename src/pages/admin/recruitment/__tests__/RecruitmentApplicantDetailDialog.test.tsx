@@ -297,6 +297,13 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     expect(screen.getByText('20 / 20')).toBeInTheDocument();
     expect(screen.getByText('100% Accuracy')).toBeInTheDocument();
+    // Default filter is 'incorrect' - for 100% applicant, shows all correct notice
+    expect(
+      screen.getByText('Candidate answered all surveyed questions correctly!'),
+    ).toBeInTheDocument();
+
+    // Switching to All Questions shows the question list
+    await user.click(screen.getByRole('tab', { name: /all questions/i }));
     expect(screen.getByText('Jesus Christ is God.')).toBeInTheDocument();
     expect(screen.getByText('Scripture Guide:')).toBeInTheDocument();
   });
@@ -319,6 +326,13 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText('Doctrinal Survey Score')).toBeInTheDocument();
     expect(screen.getByText('20 / 20')).toBeInTheDocument();
     expect(screen.getByText('100% Accuracy')).toBeInTheDocument();
+    // Default filter is 'incorrect'
+    expect(
+      screen.getByText('Candidate answered all surveyed questions correctly!'),
+    ).toBeInTheDocument();
+
+    // Switching to All Questions shows the question list
+    await user.click(screen.getByRole('tab', { name: /all questions/i }));
     expect(screen.getByText('Jesus Christ is God.')).toBeInTheDocument();
   });
 
