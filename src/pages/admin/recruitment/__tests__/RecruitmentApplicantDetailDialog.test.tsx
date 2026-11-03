@@ -226,7 +226,35 @@ describe('RecruitmentApplicantDetailDialog', () => {
         onClose={onClose}
       />,
     );
-    expect(screen.getByText('Confirmed Ministry Role')).toBeInTheDocument();
+    expect(screen.getByText(/Confirmed Ministry Role/i)).toBeInTheDocument();
+  });
+
+  it('requires all step details before enabling Complete Step button', () => {
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        // Step 2 has no transaction yet (empty reviewer, date, notes)
+        transactions: [],
+      },
+      isLoading: false,
+    });
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Verify required notice is displayed
+    expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
+    expect(screen.getByText('Assigned Reviewer / Coach')).toBeInTheDocument();
+    expect(screen.getByText('Session Date & Time')).toBeInTheDocument();
+    expect(screen.getByText('Leadership Notes / Feedback')).toBeInTheDocument();
+
+    // Verify Complete Step button is disabled
+    const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
+    expect(completeBtn).toBeDisabled();
   });
 
   it('locks scheduling and actions on future steps', async () => {
