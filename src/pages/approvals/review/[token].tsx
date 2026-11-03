@@ -418,10 +418,10 @@ export function ApprovalReviewPage() {
                       <div className="flex flex-col-reverse gap-3 sm:flex-row">
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="destructive"
                           disabled={isSubmitting}
                           onClick={() => handleDecision('rejected')}
-                          className="w-full sm:w-auto border-rose-300 text-rose-700 hover:bg-rose-50"
+                          className="w-full sm:w-auto"
                         >
                           <XCircle className="mr-1.5 h-4 w-4" />
                           {isSubmitting && selectedAction === 'rejected'
@@ -430,9 +430,10 @@ export function ApprovalReviewPage() {
                         </Button>
                         <Button
                           type="button"
+                          variant="default"
                           disabled={isSubmitting}
                           onClick={() => handleDecision('approved')}
-                          className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700"
+                          className="w-full sm:w-auto"
                         >
                           <CheckCircle2 className="mr-1.5 h-4 w-4" />
                           {isSubmitting && selectedAction === 'approved'
