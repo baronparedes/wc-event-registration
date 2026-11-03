@@ -246,7 +246,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     );
 
     // Click on Step 5 (Evaluation) while candidate is at Step 2
-    await user.click(screen.getByRole('button', { name: /eval/i }));
+    await user.click(screen.getByRole('tab', { name: /eval/i }));
 
     // Verify it displays the Step Locked card
     expect(screen.getByText('Step 5 is Locked')).toBeInTheDocument();
