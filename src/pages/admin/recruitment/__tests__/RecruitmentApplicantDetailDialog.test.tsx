@@ -173,9 +173,9 @@ describe('RecruitmentApplicantDetailDialog', () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText('Usher').length).toBeGreaterThan(0);
     expect(screen.getByText('Step 4: Observation')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /9-step pipeline/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /biblical survey/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /applicant profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /9-step pipeline/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /biblical survey/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /applicant profile/i })).toBeInTheDocument();
   });
 
   it('renders Step 4 Observation controls and history in Pipeline tab', () => {
@@ -264,7 +264,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /biblical survey/i }));
+    await user.click(screen.getByRole('tab', { name: /biblical survey/i }));
 
     expect(screen.getByText('20 / 20')).toBeInTheDocument();
     expect(screen.getByText('100% Accuracy')).toBeInTheDocument();
@@ -282,7 +282,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /applicant profile/i }));
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
 
     expect(screen.getByText('Demographics & Work')).toBeInTheDocument();
     expect(screen.getByText('Emergency Contact')).toBeInTheDocument();

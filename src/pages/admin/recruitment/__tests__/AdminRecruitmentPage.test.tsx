@@ -166,9 +166,9 @@ describe('AdminRecruitmentPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Test Maria Santos (Test Mars)' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /9-step pipeline/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /biblical survey/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /applicant profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /9-step pipeline/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /biblical survey/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /applicant profile/i })).toBeInTheDocument();
   });
 
   it('renders status filter tabs and switches tab on click', async () => {
