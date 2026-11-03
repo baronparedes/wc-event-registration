@@ -100,6 +100,7 @@ describe('RecruitmentProgressPage', () => {
     renderPage();
 
     expect(screen.getByText('Endorsed by Test Casey Leader')).toBeInTheDocument();
+    expect(screen.getByText('Skipped (Not Required for Usher)')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'CCF VMT Registration' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'I Have Completed CCF VMT Registration' }));
 
@@ -146,10 +147,12 @@ describe('RecruitmentProgressPage', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { name: 'No application found' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Go to the application form/ })).toHaveAttribute(
-      'href',
-      '/recruitment/apply',
-    );
+    expect(
+      screen.getByText(
+        /There is no email linked to a current application for this Google account\. Thank you for your interest in serving—please contact the Welcome Center VMT team if you need assistance\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('shows a useful error when the application query fails without a message', () => {

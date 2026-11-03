@@ -26,10 +26,10 @@ export function createApplicantFormSchema(eligibilityRules: RecruitmentEligibili
     }
 
     const dgroupMonths = monthsSinceMonthYear(application.dgroup_info.member_since);
-    if (dgroupMonths === null || dgroupMonths <= eligibilityRules.min_dgroup_months) {
+    if (dgroupMonths === null || dgroupMonths < eligibilityRules.min_dgroup_months) {
       context.addIssue({
         code: 'custom',
-        message: `DGroup attendance must exceed ${eligibilityRules.min_dgroup_months} months.`,
+        message: `DGroup attendance must be at least ${eligibilityRules.min_dgroup_months} months.`,
         path: ['dgroup_info', 'member_since'],
       });
     }

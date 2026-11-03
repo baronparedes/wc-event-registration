@@ -13,6 +13,7 @@ type RecruitmentTimelineStepProps = {
   title: string;
   description: string;
   status: TimelineStatus;
+  statusLabel?: string;
   transaction?: ApplicantRecruitmentTimelineItem;
   isCurrent: boolean;
   children?: ReactNode;
@@ -48,6 +49,7 @@ export function RecruitmentTimelineStep({
   title,
   description,
   status,
+  statusLabel,
   transaction,
   isCurrent,
   children,
@@ -65,7 +67,7 @@ export function RecruitmentTimelineStep({
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="font-semibold text-text">{title}</h3>
-          <Badge variant={getBadgeVariant(status)}>{STATUS_LABELS[status]}</Badge>
+          <Badge variant={getBadgeVariant(status)}>{statusLabel ?? STATUS_LABELS[status]}</Badge>
         </div>
         <p className="text-sm text-muted">{description}</p>
         {transaction?.scheduled_at && (

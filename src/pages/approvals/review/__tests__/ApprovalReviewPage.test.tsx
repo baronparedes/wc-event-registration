@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -206,20 +206,28 @@ describe('ApprovalReviewPage', () => {
     };
 
     // Test onSuccess
-    callbacks.onSuccess({ message: 'Approved successfully' });
+    act(() => {
+      callbacks.onSuccess({ message: 'Approved successfully' });
+    });
     expect(toast.success).toHaveBeenCalledWith('Approved successfully');
     expect(mockRefetch).toHaveBeenCalled();
 
     // Test fallback success message
-    callbacks.onSuccess({});
+    act(() => {
+      callbacks.onSuccess({});
+    });
     expect(toast.success).toHaveBeenCalledWith('Request approved successfully');
 
     // Test onError
-    callbacks.onError({ message: 'Submission failed' });
+    act(() => {
+      callbacks.onError({ message: 'Submission failed' });
+    });
     expect(toast.error).toHaveBeenCalledWith('Submission failed');
 
     // Test fallback error message
-    callbacks.onError({});
+    act(() => {
+      callbacks.onError({});
+    });
     expect(toast.error).toHaveBeenCalledWith('Failed to submit decision');
   });
 
@@ -505,6 +513,8 @@ describe('ApprovalReviewPage', () => {
 
     renderWithClient();
 
+    expect(screen.getAllByText('DGroup Leader Endorsement').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('Long Leave Request')).not.toBeInTheDocument();
     expect(screen.getByText('Test Taylor Member')).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('Enter your response'), {
       target: { value: 'I have known them for three years.' },

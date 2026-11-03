@@ -70,18 +70,43 @@ describe('createApplicantFormSchema', () => {
     ).toBe(true);
   });
 
-  it('rejects invalid and insufficient DGroup tenure', () => {
+  it('accepts exact minimum DGroup tenure and rejects invalid or insufficient tenure', () => {
     const schema = createApplicantFormSchema(eligibilityRules);
+    const now = new Date();
+    const sixMonthsAgoDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    const fiveMonthsAgoDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ] as const;
+    const sixMonthsAgo = `${sixMonthsAgoDate.getFullYear()} ${monthNames[sixMonthsAgoDate.getMonth()]}`;
+    const fiveMonthsAgo = `${fiveMonthsAgoDate.getFullYear()} ${monthNames[fiveMonthsAgoDate.getMonth()]}`;
+
     const invalidMonth = schema.safeParse({
       ...validApplication,
       dgroup_info: { ...validApplication.dgroup_info, member_since: 'not a month' },
     });
+    const exactSixMonthsTenure = schema.safeParse({
+      ...validApplication,
+      dgroup_info: { ...validApplication.dgroup_info, member_since: sixMonthsAgo },
+    });
     const insufficientTenure = schema.safeParse({
       ...validApplication,
-      dgroup_info: { ...validApplication.dgroup_info, member_since: '2026 Sep' },
+      dgroup_info: { ...validApplication.dgroup_info, member_since: fiveMonthsAgo },
     });
 
     expect(invalidMonth.success).toBe(false);
+    expect(exactSixMonthsTenure.success).toBe(true);
     expect(insufficientTenure.success).toBe(false);
   });
 });

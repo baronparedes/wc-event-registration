@@ -120,7 +120,9 @@ export function ApprovalReviewPage() {
             <span className="text-xs text-muted">
               {approval.entity_type === 'form_submission'
                 ? 'Form Registration'
-                : 'Long Leave Request'}
+                : approval.entity_type === 'service_excuse'
+                  ? 'Long Leave Request'
+                  : 'DGroup Leader Endorsement'}
             </span>
           </div>
           <h1 className="mt-1 text-2xl font-bold text-text sm:text-3xl">{approval.title}</h1>

@@ -30,12 +30,12 @@ function getApplicationStatusVariant(status: string) {
 function getStepStatus(
   stepNumber: RecruitmentStepNumber,
   currentStep: RecruitmentStepNumber,
-  confirmedRole: string | null,
+  targetRole: string,
   transactions: Partial<Record<RecruitmentStepNumber, ApplicantRecruitmentTimelineItem>>,
 ) {
   if (stepNumber === 1) return 'completed' as const;
   if (stepNumber > currentStep) return 'locked' as const;
-  if (stepNumber === 6 && confirmedRole !== 'Prayer Coach') return 'skipped' as const;
+  if (stepNumber === 6 && targetRole !== 'Prayer Coach') return 'skipped' as const;
   return transactions[stepNumber]?.status ?? (stepNumber < currentStep ? 'completed' : 'pending');
 }
 
@@ -173,15 +173,10 @@ export function RecruitmentProgressPage() {
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold text-text">No application found</h1>
         <p className="text-sm text-muted">
-          This Google account does not match an application. Sign in with the email address you
-          entered when applying.
+          There is no email linked to a current application for this Google account. Thank you for
+          your interest in serving—please contact the Welcome Center VMT team if you need
+          assistance.
         </p>
-        <Link
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
-          to={ROUTE_PATHS.recruitmentApply}
-        >
-          Go to the application form <ArrowRight aria-hidden="true" className="h-4 w-4" />
-        </Link>
       </main>
     );
   }
@@ -191,6 +186,7 @@ export function RecruitmentProgressPage() {
     transactions[transaction.step_number] = transaction;
   }
 
+  const targetRole = application.confirmed_role ?? application.desired_role;
   const progress =
     application.status === 'deployed' ? 100 : Math.round((application.current_step / 9) * 100);
   const commitmentLabels = formatCommitments(application.service_commitments);
@@ -272,9 +268,13 @@ export function RecruitmentProgressPage() {
             const status = getStepStatus(
               step.stepNumber,
               application.current_step,
-              application.confirmed_role,
+              targetRole,
               transactions,
             );
+            const statusLabel =
+              step.stepNumber === 6 && status === 'skipped'
+                ? `Skipped (Not Required for ${targetRole})`
+                : undefined;
 
             return (
               <RecruitmentTimelineStep
@@ -283,6 +283,7 @@ export function RecruitmentProgressPage() {
                 title={step.title}
                 description={step.description}
                 status={status}
+                statusLabel={statusLabel}
                 transaction={transaction}
                 isCurrent={step.stepNumber === application.current_step}
               >
@@ -321,7 +322,7 @@ export function RecruitmentProgressPage() {
                   <p className="text-sm text-text">{config.orientation_instructions}</p>
                 )}
 
-                {step.stepNumber === 6 && application.confirmed_role === 'Prayer Coach' && (
+                {step.stepNumber === 6 && targetRole === 'Prayer Coach' && (
                   <p className="text-sm text-text">
                     Serve one Sunday service as an Usher before Prayer Coach service.
                   </p>
