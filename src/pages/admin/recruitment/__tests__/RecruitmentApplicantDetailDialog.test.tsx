@@ -277,6 +277,8 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
     expect(screen.getAllByText('Assigned Reviewer / Coach').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Session Date & Time').length).toBeGreaterThan(0);
+    expect(screen.getByText('Select Sunday date')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /session time/i })).toBeInTheDocument();
     expect(screen.getByText('Leadership Notes / Feedback')).toBeInTheDocument();
 
     // Verify Complete Step button is disabled

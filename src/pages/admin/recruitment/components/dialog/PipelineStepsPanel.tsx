@@ -20,6 +20,7 @@ import {
   FormSelectField,
   FormTextareaField,
   Spinner,
+  SundayDateTimePicker,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -626,7 +627,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       }}
                     />
 
-                    <FormInputField
+                    <SundayDateTimePicker
                       id="sessionDateTime"
                       label={
                         isCompletedStep ? 'Session / Completion Date & Time' : 'Session Date & Time'
@@ -634,9 +635,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       required={!isCompletedStep}
                       disabled={isCompletedStep}
                       readOnly={isCompletedStep}
-                      type="datetime-local"
                       value={scheduledAtLocal}
-                      onChange={(event) => setScheduledAtLocal(event.target.value)}
+                      onChange={(value) => setScheduledAtLocal(value)}
+                      maxPastDays={null}
                     />
                   </div>
 

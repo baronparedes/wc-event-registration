@@ -173,4 +173,11 @@ export {
 } from './ContactButtons';
 export { StatCard, type StatCardProps, type StatCardVariant } from './StatCard';
 export { SundayCalendarPicker, type SundayCalendarPickerProps } from './SundayCalendarPicker';
+export { SundayDateTimePicker, type SundayDateTimePickerProps } from './SundayDateTimePicker';
+export {
+  DEFAULT_SUNDAY_TIME_SLOTS,
+  formatDisplayDateTime,
+  formatTime12Hour,
+  parseDateTimeParts,
+} from './sundayDateTimeUtils';
 export { ApproverSelectField, type ApproverSelectFieldProps } from './ApproverSelectField';

@@ -33,9 +33,12 @@ function formatDateOnly(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatSundayDisplay(dateString: string | undefined): string {
+function formatSundayDisplay(
+  dateString: string | undefined,
+  placeholder = 'Select Sunday date',
+): string {
   const parsed = parseDateOnly(dateString);
-  if (!parsed) return 'Select Sunday date';
+  if (!parsed) return placeholder;
   return parsed.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -49,7 +52,7 @@ const baseInputClassName =
 
 const calendarContainerClassName = 'relative [container-type:inline-size]';
 const calendarPopoverClassName =
-  'absolute z-20 mt-2 max-w-full rounded-xl border border-border bg-surface p-3.5 shadow-xl';
+  'absolute z-30 mt-2 max-w-full rounded-xl border border-border bg-surface p-3.5 shadow-xl';
 const calendarDayPickerClassName =
   '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
 
@@ -57,11 +60,14 @@ export type SundayCalendarPickerProps = {
   id?: string;
   value: string;
   onChange: (value: string) => void;
-  maxPastDays?: number; // default: 3
+  maxPastDays?: number | null; // default: 3. Pass null to disable past-date restriction.
   monthsInFuture?: number; // default: 6
   allowedWeekdays?: number[]; // default: [0] (Sunday)
   minDate?: Date;
   maxDate?: Date;
+  disabled?: boolean;
+  className?: string;
+  placeholder?: string;
 };
 
 export function SundayCalendarPicker({
@@ -73,6 +79,9 @@ export function SundayCalendarPicker({
   allowedWeekdays = [0],
   minDate,
   maxDate,
+  disabled = false,
+  className = '',
+  placeholder,
 }: SundayCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -148,13 +157,17 @@ export function SundayCalendarPicker({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? popoverId : undefined}
+        disabled={disabled}
         className={`${baseInputClassName} flex items-center justify-between gap-3 text-left ${
           isOpen ? 'border-primary ring-2 ring-primary/20' : ''
-        }`}
-        onClick={() => setIsOpen((open) => !open)}
+        } ${disabled ? 'opacity-60 cursor-not-allowed bg-surface/50' : ''} ${className}`}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((open) => !open);
+        }}
       >
         <span className={`truncate font-medium ${!value ? 'text-muted' : 'text-text'}`}>
-          {formatSundayDisplay(value)}
+          {formatSundayDisplay(value, placeholder)}
         </span>
         <Calendar
           className={`h-4 w-4 shrink-0 transition-colors ${isOpen ? 'text-primary' : 'text-muted'}`}
