@@ -41,6 +41,8 @@ import {
 } from '@/lib/domain/recruitment';
 import { formatDateTime, localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
+import { BiblicalSurveyReviewPanel } from './BiblicalSurveyReviewPanel';
+
 function LockedStepCard({
   stepNumber,
   currentStep,
@@ -381,24 +383,36 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
           </Badge>
         </div>
 
-        {/* Step 1: Intake & DGroup summary */}
+        {/* Step 1: Intake, Survey & DGroup summary */}
         {selectedStep === 1 && (
-          <div className="space-y-2.5 text-xs text-text rounded-xl border border-border bg-background p-3.5">
-            <p>
-              <strong>Application Submitted:</strong> {formatDateTime(application.created_at)}
-            </p>
-            <p>
-              <strong>DGroup Leader:</strong> {application.dgroup_info.leader_name} (
-              {application.dgroup_info.leader_email})
-            </p>
-            <p>
-              <strong>DGroup Endorsement Status:</strong>{' '}
-              {application.dgroup_approval_id ? (
-                <span className="text-primary font-semibold">Endorsed</span>
-              ) : (
-                <span className="text-muted font-semibold">Pending Leader Endorsement</span>
-              )}
-            </p>
+          <div className="space-y-4">
+            <div className="space-y-2.5 text-xs text-text rounded-xl border border-border bg-background p-3.5">
+              <p>
+                <strong>Application Submitted:</strong> {formatDateTime(application.created_at)}
+              </p>
+              <p>
+                <strong>DGroup Leader:</strong> {application.dgroup_info.leader_name} (
+                {application.dgroup_info.leader_email})
+              </p>
+              <p>
+                <strong>DGroup Endorsement Status:</strong>{' '}
+                {application.dgroup_approval_id ? (
+                  <span className="text-primary font-semibold">Endorsed</span>
+                ) : (
+                  <span className="text-muted font-semibold">Pending Leader Endorsement</span>
+                )}
+              </p>
+            </div>
+
+            {/* Biblical Survey Results */}
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center gap-2 border-b border-border pb-2">
+                <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-text">
+                  Biblical Survey Results
+                </h4>
+              </div>
+              <BiblicalSurveyReviewPanel application={application} />
+            </div>
           </div>
         )}
 

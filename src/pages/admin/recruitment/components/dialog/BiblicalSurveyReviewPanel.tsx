@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 
-import { Badge, ButtonGroup, type ButtonGroupOption } from '@/components/ui';
+import { Badge, Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { useRecruitmentSettingsQuery } from '@/hooks/domain/recruitment';
 import type { RecruitmentApplication } from '@/lib/domain/recruitment';
 
@@ -11,11 +11,6 @@ interface BiblicalSurveyReviewPanelProps {
 }
 
 type SurveyFilter = 'all' | 'incorrect';
-
-const FILTER_OPTIONS: ButtonGroupOption<SurveyFilter>[] = [
-  { value: 'all', label: 'All Questions' },
-  { value: 'incorrect', label: 'Incorrect Only' },
-];
 
 export function BiblicalSurveyReviewPanel({ application }: BiblicalSurveyReviewPanelProps) {
   const [filter, setFilter] = useState<SurveyFilter>('all');
@@ -52,12 +47,16 @@ export function BiblicalSurveyReviewPanel({ application }: BiblicalSurveyReviewP
           </p>
         </div>
 
-        <ButtonGroup<SurveyFilter>
-          value={filter}
-          onChange={(val) => setFilter(val as SurveyFilter)}
-          options={FILTER_OPTIONS}
-          size="sm"
-        />
+        <Tabs value={filter} onValueChange={(val) => setFilter(val as SurveyFilter)}>
+          <TabsList containerClassName="w-auto" className="w-auto">
+            <TabsTrigger value="all" className="px-3 py-1.5 text-xs">
+              All Questions
+            </TabsTrigger>
+            <TabsTrigger value="incorrect" className="px-3 py-1.5 text-xs">
+              Incorrect Only
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Questions Breakdown List */}

@@ -273,6 +273,27 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText('Scripture Guide:')).toBeInTheDocument();
   });
 
+  it('displays survey results when viewing Step 1 in Pipeline tab', async () => {
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Click on Step 1: Register in the stepper
+    await user.click(screen.getByRole('tab', { name: /register/i }));
+
+    // Verify Step 1 renders survey results
+    expect(screen.getByText('Biblical Survey Results')).toBeInTheDocument();
+    expect(screen.getByText('Doctrinal Survey Score')).toBeInTheDocument();
+    expect(screen.getByText('20 / 20')).toBeInTheDocument();
+    expect(screen.getByText('100% Accuracy')).toBeInTheDocument();
+    expect(screen.getByText('Jesus Christ is God.')).toBeInTheDocument();
+  });
+
   it('switches to Applicant Profile tab and displays 40-field details', async () => {
     const user = userEvent.setup();
     renderDialog(
