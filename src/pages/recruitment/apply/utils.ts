@@ -27,12 +27,13 @@ export function calculateAge(dateOfBirth: string, today = new Date()): number | 
 export function toMonthInput(value: string | undefined): string {
   if (!value) return '';
   const [year, monthLabel] = value.split(' ');
-  const month = MONTH_LABELS.indexOf(monthLabel as (typeof MONTH_LABELS)[number]) + 1;
+  const month = MONTH_LABELS.findIndex((m) => m.toLowerCase() === monthLabel?.toLowerCase()) + 1;
   if (!year || month < 1) return '';
   return `${year}-${String(month).padStart(2, '0')}`;
 }
 
 export function fromMonthInput(value: string): string {
+  if (!value) return '';
   const [year, month] = value.split('-');
   const monthIndex = Number(month) - 1;
   const label = MONTH_LABELS[monthIndex];
@@ -42,7 +43,7 @@ export function fromMonthInput(value: string): string {
 export function monthsSinceMonthYear(value: string, today = new Date()): number | null {
   const [yearText, monthLabel] = value.split(' ');
   const year = Number(yearText);
-  const monthIndex = MONTH_LABELS.indexOf(monthLabel as (typeof MONTH_LABELS)[number]);
+  const monthIndex = MONTH_LABELS.findIndex((m) => m.toLowerCase() === monthLabel?.toLowerCase());
   if (!Number.isInteger(year) || monthIndex < 0) return null;
   return (today.getFullYear() - year) * 12 + today.getMonth() - monthIndex;
 }

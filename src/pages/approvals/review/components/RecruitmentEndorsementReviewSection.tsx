@@ -12,7 +12,7 @@ import {
   UserCheck,
   XCircle,
 } from 'lucide-react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -38,6 +38,7 @@ import {
   type RecruitmentEndorsementReviewDetails,
   recruitmentEndorsementReviewDetailsSchema,
 } from '@/lib/domain/recruitment';
+import { fromMonthInput, toMonthInput } from '@/pages/recruitment/apply/utils';
 
 type RecruitmentEndorsementReviewSectionProps = {
   entityDetails: Record<string, unknown>;
@@ -212,9 +213,31 @@ function RecruitmentEndorsementReviewForm({
 
   const groupedQuestions = useMemo(() => groupQuestions(questions), [questions]);
 
+  const isMonthYearField = (q: (typeof questions)[number]) => {
+    if (q.field_key === 'disciple_dgroup_since' || q.field_key === 'disciple_led_dgroup_since') {
+      return true;
+    }
+    const pattern = (q.validation_rules as Record<string, unknown> | undefined)?.pattern;
+    return typeof pattern === 'string' && pattern.includes('Jan|Feb|Mar');
+  };
+
   const validateVisibleAnswers = (): Record<string, unknown> | null => {
     form.clearErrors();
     const visibleValues = filterVisibleFieldValues(visibleQuestions, form.getValues());
+    // Normalize any month-year string values to Title Case (e.g. 2025 JAN -> 2025 Jan)
+    for (const key of Object.keys(visibleValues)) {
+      const val = visibleValues[key];
+      if (typeof val === 'string') {
+        const monthInput = toMonthInput(val);
+        if (monthInput) {
+          const formatted = fromMonthInput(monthInput);
+          if (formatted) {
+            visibleValues[key] = formatted;
+            form.setValue(key, formatted, { shouldValidate: false });
+          }
+        }
+      }
+    }
     const result = buildDynamicFieldResponseSchema(visibleQuestions).safeParse(visibleValues);
     if (!result.success) {
       for (const issue of result.error.issues) {
@@ -397,7 +420,34 @@ function RecruitmentEndorsementReviewForm({
                             {question.help_text && (
                               <p className="text-xs text-muted">{question.help_text}</p>
                             )}
-                            <DynamicFieldRenderer field={question} dynamicForm={form} />
+                            {isMonthYearField(question) ? (
+                              <Controller
+                                control={form.control}
+                                name={question.field_key}
+                                render={({ field }) => (
+                                  <input
+                                    id={`field-${question.field_key}`}
+                                    type="month"
+                                    className={`block w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text focus:outline-none focus:ring-2 ${
+                                      error
+                                        ? 'border-danger focus:ring-danger/30'
+                                        : 'border-border focus:border-primary focus:ring-primary/30'
+                                    }`}
+                                    value={toMonthInput(
+                                      typeof field.value === 'string' ? field.value : undefined,
+                                    )}
+                                    onBlur={field.onBlur}
+                                    onChange={(event) => {
+                                      const val = fromMonthInput(event.target.value);
+                                      field.onChange(question.is_required ? val : val || null);
+                                    }}
+                                    ref={field.ref}
+                                  />
+                                )}
+                              />
+                            ) : (
+                              <DynamicFieldRenderer field={question} dynamicForm={form} />
+                            )}
                             {error && <p className="text-sm text-danger">{String(error)}</p>}
                           </div>
                         );

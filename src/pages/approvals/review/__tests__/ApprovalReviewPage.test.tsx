@@ -719,4 +719,66 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('Pastor Robert')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Endorse Applicant' })).not.toBeInTheDocument();
   });
+
+  it('renders month-year picker for disciple tenure and normalizes to YYYY Mmm', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'disciple_dgroup_since',
+              label: 'Please enter when your disciple started in your DGroup (YYYY MMM)',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+              validation_rules: {
+                pattern: '^\\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$',
+              },
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    const monthInput = document.querySelector('input[type="month"]');
+    expect(monthInput).toBeInTheDocument();
+
+    fireEvent.change(monthInput!, { target: { value: '2025-01' } });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    // Advance to Step 3
+    expect(screen.getByRole('button', { name: 'Endorse Applicant' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { disciple_dgroup_since: '2025 Jan' },
+        }),
+        expect.any(Object),
+      );
+    });
+  });
 });
