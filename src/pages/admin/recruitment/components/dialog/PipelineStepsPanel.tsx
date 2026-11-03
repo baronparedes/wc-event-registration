@@ -123,7 +123,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     latestStepTransaction?.assigned_reviewer_name ?? '',
   );
   const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
-    toDatetimeLocal(latestStepTransaction?.scheduled_at),
+    toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
   );
   const [confirmedRole, setConfirmedRole] = useState<string>(
     application.confirmed_role ?? application.desired_role,
@@ -211,12 +211,21 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
   const handleStepSelect = (stepNum: RecruitmentStepNumber) => {
     setSelectedStep(stepNum);
-    const tx = [...transactions].reverse().find((t) => t.step_number === stepNum);
+    const tx = [...transactions]
+      .filter((t) => t.step_number === stepNum)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
     setReviewerId(tx?.assigned_reviewer_id ?? '');
     setReviewerName(tx?.assigned_reviewer_name ?? '');
-    setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
+    setScheduledAtLocal(toDatetimeLocal(tx?.completed_at ?? tx?.scheduled_at));
     setNotes(tx?.notes ?? '');
     setApplicantNotes(tx?.applicant_visible_notes ?? '');
+    if (stepNum === 7) {
+      setCcfVmtId(application.ccf_vmt_id ?? '');
+      setCcfVmtDate(application.ccf_vmt_date ?? '');
+    }
+    if (stepNum === 8) {
+      setRfidTag(application.assigned_rfid_member_id ?? '');
+    }
   };
 
   const handleUpdateStage = (
@@ -461,34 +470,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 currentStep={application.current_step}
                 onJump={() => handleStepSelect(application.current_step)}
               />
-            ) : isCompletedStep ? (
-              <div className="space-y-3">
-                <CompletedStepCard stepNumber={selectedStep} />
-
-                {selectedStep === 2 && (
-                  <div className="rounded-xl border border-border bg-background p-3.5 space-y-1">
-                    <span className="text-xs font-semibold text-text">Assigned Ministry Role</span>
-                    <p className="text-xs text-muted">
-                      Confirmed Role:{' '}
-                      <strong className="text-text">
-                        {application.confirmed_role || confirmedRole}
-                      </strong>
-                    </p>
-                  </div>
-                )}
-                {selectedStep > 2 && (
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs">
-                    <span className="text-muted">Final Ministry Role:</span>
-                    <Badge variant="default" className="font-semibold text-xs">
-                      {application.confirmed_role || confirmedRole}
-                    </Badge>
-                  </div>
-                )}
-              </div>
             ) : (
               <>
+                {isCompletedStep && <CompletedStepCard stepNumber={selectedStep} />}
+
                 {/* Step 4 DGroup Endorsement Gate Warning */}
-                {selectedStep === 4 && !isDGroupEndorsed && (
+                {!isCompletedStep && selectedStep === 4 && !isDGroupEndorsed && (
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-text space-y-1">
                     <p className="font-semibold text-amber-700 flex items-center gap-1.5">
                       <AlertCircle className="h-4 w-4 shrink-0" />
@@ -509,12 +496,18 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-primary" />
-                      Session & Evaluation Details
+                      {isCompletedStep
+                        ? 'Recorded Session & Evaluation Details'
+                        : 'Session & Evaluation Details'}
                     </h4>
                     {latestStepTransaction?.status && (
                       <Badge
                         variant={
-                          latestStepTransaction.status === 'scheduled' ? 'accent' : 'secondary'
+                          latestStepTransaction.status === 'completed'
+                            ? 'default'
+                            : latestStepTransaction.status === 'scheduled'
+                              ? 'accent'
+                              : 'secondary'
                         }
                         className="text-[10px] capitalize font-mono"
                       >
@@ -527,7 +520,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     <ReviewerUserPicker
                       id="assignedReviewer"
                       label="Assigned Reviewer / Coach"
-                      required
+                      required={!isCompletedStep}
+                      disabled={isCompletedStep}
                       value={reviewerId}
                       reviewerName={reviewerName}
                       onChange={(id, user) => {
@@ -538,8 +532,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
                     <FormInputField
                       id="sessionDateTime"
-                      label="Session Date & Time"
-                      required
+                      label={
+                        isCompletedStep ? 'Session / Completion Date & Time' : 'Session Date & Time'
+                      }
+                      required={!isCompletedStep}
+                      disabled={isCompletedStep}
+                      readOnly={isCompletedStep}
                       type="datetime-local"
                       value={scheduledAtLocal}
                       onChange={(event) => setScheduledAtLocal(event.target.value)}
@@ -551,20 +549,30 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     <div className="border-t border-border/80 pt-3 space-y-1.5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                         <span className="text-xs font-semibold text-text">
-                          Confirmed Ministry Role *
+                          Confirmed Ministry Role{isCompletedStep ? '' : ' *'}
                         </span>
-                        <span className="text-[11px] text-muted">
-                          Desired role from application:{' '}
-                          <strong className="text-text">{application.desired_role}</strong>
-                        </span>
+                        {!isCompletedStep && (
+                          <span className="text-[11px] text-muted">
+                            Desired role from application:{' '}
+                            <strong className="text-text">{application.desired_role}</strong>
+                          </span>
+                        )}
                       </div>
-                      <FormSelectField
-                        placeholder=""
-                        value={confirmedRole}
-                        onChange={(val) => setConfirmedRole(val)}
-                        options={roleOptions}
-                        helperText="Finalized during Step 2 Interview. Once completed, this ministry role is locked for all subsequent pipeline steps."
-                      />
+                      {isCompletedStep ? (
+                        <div>
+                          <Badge variant="default" className="font-semibold text-xs">
+                            {application.confirmed_role || confirmedRole}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <FormSelectField
+                          placeholder=""
+                          value={confirmedRole}
+                          onChange={(val) => setConfirmedRole(val)}
+                          options={roleOptions}
+                          helperText="Finalized during Step 2 Interview. Once completed, this ministry role is locked for all subsequent pipeline steps."
+                        />
+                      )}
                     </div>
                   )}
 
@@ -581,28 +589,50 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   {/* Leadership Notes & Instructions */}
                   <div className="border-t border-border/80 pt-3 space-y-3">
                     <FormTextareaField
-                      label="Internal Leadership Notes *"
-                      placeholder="Enter evaluation feedback, candidate observations, and notes for ministry leadership..."
+                      label={
+                        isCompletedStep
+                          ? 'Internal Leadership Notes'
+                          : 'Internal Leadership Notes *'
+                      }
+                      placeholder={
+                        isCompletedStep
+                          ? 'No internal leadership notes recorded'
+                          : 'Enter evaluation feedback, candidate observations, and notes for ministry leadership...'
+                      }
                       rows={2}
+                      disabled={isCompletedStep}
+                      readOnly={isCompletedStep}
                       textareaClassName="resize-none"
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
-                      helperText="Required before completing this step. Saved to candidate pipeline history."
+                      helperText={
+                        isCompletedStep
+                          ? undefined
+                          : 'Required before completing this step. Saved to candidate pipeline history.'
+                      }
                     />
 
-                    <FormTextareaField
-                      label="Applicant-Visible Instructions (Optional)"
-                      placeholder="Instructions shown to the applicant on their progress portal..."
-                      rows={2}
-                      textareaClassName="resize-none"
-                      value={applicantNotes}
-                      onChange={(event) => setApplicantNotes(event.target.value)}
-                    />
+                    {(applicantNotes || !isCompletedStep) && (
+                      <FormTextareaField
+                        label="Applicant-Visible Instructions (Optional)"
+                        placeholder={
+                          isCompletedStep
+                            ? 'None provided'
+                            : 'Instructions shown to the applicant on their progress portal...'
+                        }
+                        rows={2}
+                        disabled={isCompletedStep}
+                        readOnly={isCompletedStep}
+                        textareaClassName="resize-none"
+                        value={applicantNotes}
+                        onChange={(event) => setApplicantNotes(event.target.value)}
+                      />
+                    )}
                   </div>
                 </div>
 
                 {/* Missing Details Checklist Notice */}
-                {!canCompleteCurrentStep && (
+                {!isCompletedStep && !canCompleteCurrentStep && (
                   <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
                     <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
                     <div>
@@ -619,56 +649,44 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 )}
 
                 {/* Primary Action Button Bar */}
-                <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
-                  <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
-                    Stage Action
-                  </div>
+                {!isCompletedStep && (
+                  <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
+                    <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
+                      Stage Action
+                    </div>
 
-                  <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => handleUpdateStage('completed')}
-                      disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
-                      className="font-semibold"
-                    >
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                      Complete Step {selectedStep}
-                    </Button>
-
-                    {/* Schedule / Reschedule ahead of time button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUpdateStage('scheduled')}
-                      disabled={
-                        updateStageMutation.isPending ||
-                        !scheduledAtLocal ||
-                        (!reviewerId && !reviewerName)
-                      }
-                    >
-                      <Clock className="mr-1.5 h-3.5 w-3.5" />
-                      {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Schedule Session'}
-                    </Button>
-
-                    {/* Repeatable observation controls */}
-                    {selectedStep === 4 && (
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
                       <Button
                         type="button"
-                        variant="secondary"
                         size="sm"
-                        onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
-                        disabled={updateStageMutation.isPending || !scheduledAtLocal}
+                        onClick={() => handleUpdateStage('completed')}
+                        disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
+                        className="font-semibold"
                       >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Repeat Observation (Step 4)
+                        <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                        Complete Step {selectedStep}
                       </Button>
-                    )}
 
-                    {/* Repeatable evaluation controls */}
-                    {selectedStep === 5 && (
-                      <>
+                      {/* Schedule / Reschedule ahead of time button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUpdateStage('scheduled')}
+                        disabled={
+                          updateStageMutation.isPending ||
+                          !scheduledAtLocal ||
+                          (!reviewerId && !reviewerName)
+                        }
+                      >
+                        <Clock className="mr-1.5 h-3.5 w-3.5" />
+                        {latestStepTransaction?.scheduled_at
+                          ? 'Update Schedule'
+                          : 'Schedule Session'}
+                      </Button>
+
+                      {/* Repeatable observation controls */}
+                      {selectedStep === 4 && (
                         <Button
                           type="button"
                           variant="secondary"
@@ -677,23 +695,39 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           disabled={updateStageMutation.isPending || !scheduledAtLocal}
                         >
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                          Repeat Evaluation (Step 5)
+                          Repeat Observation (Step 4)
                         </Button>
+                      )}
 
-                        <Button
-                          type="button"
-                          variant="primaryOutline"
-                          size="sm"
-                          onClick={() => handleUpdateStage('scheduled', 'return_to_observation')}
-                          disabled={updateStageMutation.isPending}
-                        >
-                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                          Needs Another Observation (Return to Step 4)
-                        </Button>
-                      </>
-                    )}
+                      {/* Repeatable evaluation controls */}
+                      {selectedStep === 5 && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                            disabled={updateStageMutation.isPending || !scheduledAtLocal}
+                          >
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                            Repeat Evaluation (Step 5)
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="primaryOutline"
+                            size="sm"
+                            onClick={() => handleUpdateStage('scheduled', 'return_to_observation')}
+                            disabled={updateStageMutation.isPending}
+                          >
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                            Needs Another Observation (Return to Step 4)
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
           </div>
@@ -708,20 +742,10 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 currentStep={application.current_step}
                 onJump={() => handleStepSelect(application.current_step)}
               />
-            ) : isCompletedStep ? (
-              <div className="space-y-3">
-                <CompletedStepCard stepNumber={7} />
-                <div className="rounded-xl border border-border bg-background p-3 text-xs space-y-1">
-                  <p>
-                    <strong>CCF VMT ID:</strong> {application.ccf_vmt_id || 'Verified'}
-                  </p>
-                  <p>
-                    <strong>VMT Registered:</strong> {formatDateTime(application.vmt_registered_at)}
-                  </p>
-                </div>
-              </div>
             ) : (
               <>
+                {isCompletedStep && <CompletedStepCard stepNumber={7} />}
+
                 <div className="rounded-xl border border-border bg-background p-3 text-xs">
                   <p>
                     <strong>Applicant Self-Attestation:</strong>{' '}
@@ -737,21 +761,27 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormInputField
-                    label="CCF VMT ID *"
+                    label={isCompletedStep ? 'CCF VMT ID' : 'CCF VMT ID *'}
                     placeholder="e.g. VMT-12345"
-                    value={ccfVmtId}
+                    disabled={isCompletedStep}
+                    readOnly={isCompletedStep}
+                    value={ccfVmtId || application.ccf_vmt_id || ''}
                     onChange={(event) => setCcfVmtId(event.target.value)}
                   />
 
                   <FormInputField
-                    label="CCF VMT Registration Date *"
+                    label={
+                      isCompletedStep ? 'CCF VMT Registration Date' : 'CCF VMT Registration Date *'
+                    }
                     type="date"
-                    value={ccfVmtDate}
+                    disabled={isCompletedStep}
+                    readOnly={isCompletedStep}
+                    value={ccfVmtDate || application.ccf_vmt_date || ''}
                     onChange={(event) => setCcfVmtDate(event.target.value)}
                   />
                 </div>
 
-                {!canCompleteCurrentStep && (
+                {!isCompletedStep && !canCompleteCurrentStep && (
                   <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
                     <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
                     <div>
@@ -765,18 +795,20 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
                 )}
 
-                <div className="pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    onClick={() => handleUpdateStage('completed')}
-                    disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                    Verify & Complete Step 7
-                  </Button>
-                </div>
+                {!isCompletedStep && (
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => handleUpdateStage('completed')}
+                      disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
+                    >
+                      <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                      Verify & Complete Step 7
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -791,18 +823,10 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 currentStep={application.current_step}
                 onJump={() => handleStepSelect(application.current_step)}
               />
-            ) : isCompletedStep ? (
-              <div className="space-y-3">
-                <CompletedStepCard stepNumber={8} />
-                <div className="rounded-xl border border-border bg-background p-3 text-xs space-y-1">
-                  <p>
-                    <strong>Assigned RFID / Member ID:</strong>{' '}
-                    {application.assigned_rfid_member_id || 'Assigned'}
-                  </p>
-                </div>
-              </div>
             ) : (
               <>
+                {isCompletedStep && <CompletedStepCard stepNumber={8} />}
+
                 <div className="rounded-xl border border-border bg-background p-3 text-xs">
                   <h4 className="font-semibold text-text">Selected Sunday Commitments:</h4>
                   <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
@@ -818,14 +842,24 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 </div>
 
                 <FormInputField
-                  label="Assigned Physical RFID Tag (Member ID) *"
+                  label={
+                    isCompletedStep
+                      ? 'Assigned Physical RFID Tag (Member ID)'
+                      : 'Assigned Physical RFID Tag (Member ID) *'
+                  }
                   placeholder="e.g. 1000123"
-                  value={rfidTag}
+                  disabled={isCompletedStep}
+                  readOnly={isCompletedStep}
+                  value={rfidTag || application.assigned_rfid_member_id || ''}
                   onChange={(event) => setRfidTag(event.target.value)}
-                  helperText="Physical RFID tag number scanned or assigned to this volunteer."
+                  helperText={
+                    isCompletedStep
+                      ? undefined
+                      : 'Physical RFID tag number scanned or assigned to this volunteer.'
+                  }
                 />
 
-                {!canCompleteCurrentStep && (
+                {!isCompletedStep && !canCompleteCurrentStep && (
                   <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
                     <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
                     <div>
@@ -839,18 +873,20 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
                 )}
 
-                <div className="pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    onClick={() => handleUpdateStage('completed')}
-                    disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                    Assign RFID & Complete Step 8
-                  </Button>
-                </div>
+                {!isCompletedStep && (
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => handleUpdateStage('completed')}
+                      disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
+                    >
+                      <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                      Assign RFID & Complete Step 8
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>
