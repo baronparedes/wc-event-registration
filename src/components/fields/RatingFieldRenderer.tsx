@@ -39,7 +39,7 @@ export function RatingFieldRenderer({
 
   if (variant === 'segmented') {
     return (
-      <div role="radiogroup" aria-label={field.label} className="flex flex-wrap items-center gap-2">
+      <div role="radiogroup" aria-label={field.label} className="flex w-full items-center gap-2">
         {ratingOptions.map((rating) => {
           const meaning = ratingLabels[rating];
           const isSelected = numericValue === rating;
@@ -61,7 +61,7 @@ export function RatingFieldRenderer({
                   shouldValidate: true,
                 });
               }}
-              className={`flex h-11 w-14 items-center justify-center rounded-lg border text-base font-semibold transition-all sm:w-16 ${
+              className={`flex h-11 flex-1 items-center justify-center rounded-lg border text-base font-semibold transition-all ${
                 isSelected
                   ? 'border-primary bg-primary font-bold text-white shadow-2xs ring-2 ring-primary/20'
                   : 'border-border bg-surface text-text hover:border-primary/50 hover:bg-surface/80'
