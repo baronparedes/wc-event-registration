@@ -93,3 +93,9 @@ expect(result.current).toBe(false);
 **Challenge:** Writing tests for a component `LongLeaveRequestPage` which relies on `useWatch` inside a deeply nested child component, but we are using a mocked logic hook `useLongLeaveRequestPageState` to drive the page states in isolation, bypassing the real `useForm` initialization.
 **Learning:** `useWatch` internally calls methods like `_subscribe` and `_getWatch` on the `control` object from the injected form instance. Supplying a partially mocked `control` object (e.g., just passing empty objects) results in runtime `TypeError` errors (`_subscribe is not a function`).
 **Pattern:** To fully test rendering logic while driving the parent via a mocked state hook, wrap the component under test in a custom `<TestWrapper>` component. Inside `<TestWrapper>`, initialize real instances of `useForm()` and manually inject them into the mock state override before rendering the component. This allows child components to safely consume real react-hook-form contexts while the overall state is artificially controlled.
+
+## 2024-05-30 - Unit Testing Hooks
+
+**Challenge:** Components lacked coverage or hooks lacked coverage
+**Learning:** Testing hooks directly provides confidence that state transitions operate correctly without relying on internal UI details.
+**Pattern:** Provide a valid `createWrapper` using QueryClientProvider when testing hooks that leverage react-query to prevent context errors during testing.
