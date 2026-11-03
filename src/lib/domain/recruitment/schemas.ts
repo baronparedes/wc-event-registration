@@ -270,7 +270,7 @@ export const adminUpdateStageSchema = z
     status: z
       .enum(['pending', 'scheduled', 'in_progress', 'completed', 'skipped', 'declined', 'on_hold'])
       .optional(),
-    scheduled_at: z.string().datetime().optional().nullable(),
+    scheduled_at: z.string().datetime({ offset: true }).optional().nullable(),
     assigned_reviewer_id: z.string().uuid().optional().nullable(),
     assigned_reviewer_name: z.string().trim().max(150).optional().nullable(),
     rubric_data: z.record(z.string(), z.unknown()).optional(),
