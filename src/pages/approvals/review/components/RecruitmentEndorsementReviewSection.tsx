@@ -373,20 +373,19 @@ function RecruitmentEndorsementReviewForm({
                     const answer = details.attestation_answers[question.field_key];
                     const isAttested = answer === 'I attest';
                     return (
-                      <div key={question.field_key} className="space-y-3 py-3 first:pt-0 last:pb-0">
-                        <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
-                          <MarkdownRenderer
-                            content={LEADER_ATTESTATION_MARKDOWN}
-                            className="prose-h1:mt-0 prose-h1:text-base sm:prose-h1:text-lg prose-h1:font-bold prose-headings:text-text prose-p:text-text prose-li:text-text prose-strong:text-text"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-muted">
-                            Leader Attestation:
-                          </span>
-                          <Badge variant={isAttested ? 'default' : 'destructive'}>
-                            {String(answer || '—')}
-                          </Badge>
+                      <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
+                        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+                          <div className="bg-background p-4 sm:p-6">
+                            <MarkdownRenderer content={LEADER_ATTESTATION_MARKDOWN} />
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3 sm:px-6">
+                            <span className="text-xs font-semibold text-text">
+                              Leader Attestation Commitment:
+                            </span>
+                            <Badge variant={isAttested ? 'default' : 'destructive'}>
+                              {String(answer || '—')}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     );
@@ -495,26 +494,42 @@ function RecruitmentEndorsementReviewForm({
 
                         if (question.field_key === 'leader_attestation_statement') {
                           return (
-                            <div key={question.field_key} className="space-y-4 pt-1">
-                              <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
-                                <MarkdownRenderer
-                                  content={LEADER_ATTESTATION_MARKDOWN}
-                                  className="prose-h1:mt-0 prose-h1:text-base sm:prose-h1:text-lg prose-h1:font-bold prose-headings:text-text prose-p:text-text prose-li:text-text prose-strong:text-text"
-                                />
+                            <div
+                              key={question.field_key}
+                              className={`overflow-hidden rounded-xl border bg-surface transition-all ${
+                                error ? 'border-danger ring-1 ring-danger/30' : 'border-border'
+                              }`}
+                            >
+                              <div className="bg-background p-4 sm:p-6">
+                                <MarkdownRenderer content={LEADER_ATTESTATION_MARKDOWN} />
                               </div>
-                              <div className="space-y-2">
-                                <label
-                                  className="block text-sm font-medium text-text"
-                                  htmlFor={`field-${question.field_key}`}
-                                >
-                                  {question.label ===
-                                  'The following statements are for your disciple.'
-                                    ? 'Attestation Confirmation'
-                                    : question.label}
-                                  {question.is_required && <span className="text-danger"> *</span>}
-                                </label>
-                                <DynamicFieldRenderer field={question} dynamicForm={form} />
-                                {error && <p className="text-sm text-danger">{String(error)}</p>}
+
+                              <div className="border-t border-border bg-surface p-4 sm:p-5">
+                                <div className="mb-3 space-y-0.5">
+                                  <label
+                                    className="block text-sm font-semibold text-text"
+                                    htmlFor={`field-${question.field_key}`}
+                                  >
+                                    As their DGroup Leader, do you attest to the statements above?
+                                    {question.is_required && (
+                                      <span className="text-danger"> *</span>
+                                    )}
+                                  </label>
+                                  <p className="text-xs text-muted">
+                                    Please select your attestation commitment before continuing to
+                                    the decision.
+                                  </p>
+                                </div>
+
+                                <DynamicFieldRenderer
+                                  field={question}
+                                  dynamicForm={form}
+                                  radioOptionsLayout="responsive-row"
+                                />
+
+                                {error && (
+                                  <p className="mt-2 text-sm text-danger">{String(error)}</p>
+                                )}
                               </div>
                             </div>
                           );

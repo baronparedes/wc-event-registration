@@ -911,7 +911,7 @@ describe('ApprovalReviewPage', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Is a committed member of my DGroup/i)).toBeInTheDocument();
-    expect(screen.getByText('Leader Attestation:')).toBeInTheDocument();
+    expect(screen.getByText(/Leader Attestation Commitment:/i)).toBeInTheDocument();
     expect(screen.getByText('I attest')).toBeInTheDocument();
   });
 });
