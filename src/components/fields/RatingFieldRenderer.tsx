@@ -8,9 +8,14 @@ import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 type RatingFieldRendererProps = {
   field: DynamicFieldLike;
   dynamicForm: UseFormReturn<DynamicFieldResponseValues>;
+  variant?: 'stars' | 'segmented';
 };
 
-export function RatingFieldRenderer({ field, dynamicForm }: RatingFieldRendererProps) {
+export function RatingFieldRenderer({
+  field,
+  dynamicForm,
+  variant = 'stars',
+}: RatingFieldRendererProps) {
   // Extract max value from validation rules, default to 5 if not provided (capped between 1 and 10)
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
   const rawMax = typeof rules.max === 'number' ? rules.max : 5;
@@ -29,6 +34,54 @@ export function RatingFieldRenderer({ field, dynamicForm }: RatingFieldRendererP
   const numericValue = typeof currentValue === 'number' ? currentValue : Number(currentValue) || 0;
   const activeRating = hoveredRating !== null ? hoveredRating : numericValue;
   const activeMeaning = ratingLabels[activeRating];
+
+  if (variant === 'segmented') {
+    const gridCols =
+      ratingOptions.length === 2
+        ? 'sm:grid-cols-2'
+        : ratingOptions.length === 3
+          ? 'sm:grid-cols-3'
+          : ratingOptions.length === 4
+            ? 'sm:grid-cols-4'
+            : 'sm:grid-cols-5';
+
+    return (
+      <div
+        role="radiogroup"
+        aria-label={field.label}
+        className={`grid grid-cols-1 gap-2 ${gridCols}`}
+      >
+        {ratingOptions.map((rating) => {
+          const meaning = ratingLabels[rating] || `${rating} of ${maxRating}`;
+          const isSelected = numericValue === rating;
+
+          return (
+            <button
+              key={`${field.field_key}-${rating}`}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => {
+                const isRequired = field.is_required || rules.min !== undefined;
+                const nextValue = isSelected ? (isRequired ? rating : undefined) : rating;
+                dynamicForm.setValue(field.field_key, nextValue as never, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              className={`flex items-center justify-center rounded-lg border px-3.5 py-2.5 text-center text-xs font-medium transition-all sm:text-sm ${
+                isSelected
+                  ? 'border-primary bg-primary font-semibold text-white shadow-2xs'
+                  : 'border-border bg-surface text-text hover:border-primary/50 hover:bg-surface/80'
+              }`}
+            >
+              {meaning}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

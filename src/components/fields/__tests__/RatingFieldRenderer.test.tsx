@@ -9,15 +9,17 @@ import type { DynamicFieldResponseValues } from '@/lib/domain/event-fields';
 function TestHarness({
   field,
   defaultValue = 0,
+  variant,
 }: {
   field: DynamicFieldLike;
   defaultValue?: number;
+  variant?: 'stars' | 'segmented';
 }) {
   const form = useForm<DynamicFieldResponseValues>({
     defaultValues: { [field.field_key]: defaultValue },
   });
 
-  return <RatingFieldRenderer field={field} dynamicForm={form} />;
+  return <RatingFieldRenderer field={field} dynamicForm={form} variant={variant} />;
 }
 
 describe('RatingFieldRenderer', () => {
@@ -110,5 +112,31 @@ describe('RatingFieldRenderer', () => {
     expect(screen.getByText(/1 = Not Observed/)).toBeInTheDocument();
     expect(screen.getByText(/2 = Observed Some of the time/)).toBeInTheDocument();
     expect(screen.getByText(/3 = Observed Most of the time/)).toBeInTheDocument();
+  });
+
+  it('renders segmented option buttons when variant="segmented"', () => {
+    const fieldWithHelpText: DynamicFieldLike = {
+      ...baseField,
+      validation_rules: { min: 1, max: 3 },
+      help_text: '1 = Not Observed; 2 = Observed Some of the time; 3 = Observed Most of the time',
+    };
+
+    render(<TestHarness field={fieldWithHelpText} defaultValue={2} variant="segmented" />);
+
+    expect(screen.getByRole('radiogroup', { name: 'Rate your experience' })).toBeInTheDocument();
+    const notObserved = screen.getByRole('radio', { name: 'Not Observed' });
+    const someTime = screen.getByRole('radio', { name: 'Observed Some of the time' });
+    const mostTime = screen.getByRole('radio', { name: 'Observed Most of the time' });
+
+    expect(notObserved).toBeInTheDocument();
+    expect(someTime).toBeInTheDocument();
+    expect(mostTime).toBeInTheDocument();
+    expect(someTime).toHaveAttribute('aria-checked', 'true');
+    expect(notObserved).toHaveAttribute('aria-checked', 'false');
+
+    // Click 3rd button
+    fireEvent.click(mostTime);
+    expect(mostTime).toHaveAttribute('aria-checked', 'true');
+    expect(someTime).toHaveAttribute('aria-checked', 'false');
   });
 });
