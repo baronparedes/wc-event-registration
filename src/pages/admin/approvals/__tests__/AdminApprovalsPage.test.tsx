@@ -577,4 +577,71 @@ describe('AdminApprovalsPage', () => {
     expect(screen.getByText(/Consistent prayer warrior/i)).toBeInTheDocument();
     expect(screen.getByText('I attest')).toBeInTheDocument();
   });
+
+  it('inspects a long leave request to view grouped schedule, duration, services, and reason', () => {
+    mockUseApprovalRequestsQuery.mockReturnValue({
+      data: [
+        {
+          id: 'req-long-leave-grouped',
+          entity_type: 'service_excuse',
+          entity_id: 'excuse-10',
+          status: 'pending',
+          title: 'Long Leave Request',
+          summary: 'Leave from 2026-10-25 to 2026-11-29 (9AM, 12NN, 3PM)',
+          requester_user_id: 'user-10',
+          requester_name: 'Josepina Ramirez',
+          requester_email: 'jjay.ramirez27@example.com',
+          requester_avatar_object_key: null,
+          assigned_to_email: null,
+          assigned_to_user_id: null,
+          decided_by_user_id: null,
+          decided_by_email: null,
+          decided_at: null,
+          decision_notes: null,
+          access_token: 'token-long-leave',
+          token_expires_at: '2026-11-20T00:00:00Z',
+          token_used_at: null,
+          metadata: {
+            start_date: '2026-10-25',
+            end_date: '2026-11-29',
+            services: ['9AM', '12NN', '3PM'],
+            reason: 'Trip to US to attend to her sick mother.',
+          },
+          created_at: '2026-10-20T10:00:00Z',
+          updated_at: '2026-10-20T10:00:00Z',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient(<AdminApprovalsPage />);
+
+    const reviewButton = screen.getByRole('button', { name: /Review & Decide/i });
+    fireEvent.click(reviewButton);
+
+    // Verify grouped Long Leave headers and content
+    expect(screen.getByText('Volunteer Long Leave Details')).toBeInTheDocument();
+    expect(screen.getByText('Leave Schedule & Services')).toBeInTheDocument();
+    expect(screen.getByText('Reason for Leave')).toBeInTheDocument();
+
+    // Verify schedule details & duration
+    expect(screen.getByText('Start Date (Sunday)')).toBeInTheDocument();
+    expect(screen.getByText('(2026-10-25)')).toBeInTheDocument();
+    expect(screen.getByText('End Date (Sunday)')).toBeInTheDocument();
+    expect(screen.getByText('(2026-11-29)')).toBeInTheDocument();
+    expect(screen.getByText('6 Sundays')).toBeInTheDocument();
+    expect(screen.getByText('(36 days)')).toBeInTheDocument();
+
+    // Verify services rendered as badges rather than raw key-values (no "0:", "1:", "2:")
+    expect(screen.getByText('9AM')).toBeInTheDocument();
+    expect(screen.getByText('12NN')).toBeInTheDocument();
+    expect(screen.getByText('3PM')).toBeInTheDocument();
+    expect(screen.queryByText('0:')).not.toBeInTheDocument();
+
+    // Verify reason rendered cleanly
+    expect(screen.getByText('Trip to US to attend to her sick mother.')).toBeInTheDocument();
+  });
 });

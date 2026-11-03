@@ -215,6 +215,10 @@ Handles submission of single-Sunday and multi-week Long Leave requests.
 - **Review & Decide Dialog**:
   - Configured with `size="4xl"` for ample workspace when reviewing detailed questionnaires.
   - Displays requester avatar, email, and metadata breakdown.
+  - **Structured Inspection for Long Leave Requests**:
+    - Replaces raw key-value dumps with organized, domain-specific sections:
+      1. _Leave Schedule & Services_: Formatted start/end Sunday dates, computed leave duration (e.g. `6 Sundays (36 days)`), and excused Sunday service timeslots rendered as clean `Badge` pills.
+      2. _Reason for Leave_: Volunteer justification rendered in a clean, readable text container.
   - **Questionnaire Inspection for Recruitment Endorsements**:
     - Decodes and presents attestation answers formatted into 5 sequential stages matching the endorsement flow:
       1. _Leader & DGroup Relationship_: Leader identity and disciple involvement.
