@@ -129,6 +129,17 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
       ? localDateTimeToUTC8ISO(scheduledAtLocal)
       : null;
 
+    // Confirmed role is finalized during Step 2 (Interview).
+    // Only send on Step 2, or if not yet recorded on the application record.
+    const effectiveConfirmedRole =
+      selectedStep === 2
+        ? (confirmedRole as RecruitmentRole)
+        : application.confirmed_role
+          ? undefined
+          : confirmedRole
+            ? (confirmedRole as RecruitmentRole)
+            : undefined;
+
     updateStageMutation.mutate(
       {
         action,
@@ -138,7 +149,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         scheduled_at: isoScheduledAt,
         assigned_reviewer_id: reviewerId || null,
         assigned_reviewer_name: assignedReviewer?.name || null,
-        confirmed_role: confirmedRole ? (confirmedRole as RecruitmentRole) : undefined,
+        confirmed_role: effectiveConfirmedRole,
         notes: notes.trim() || null,
         applicant_visible_notes: applicantNotes.trim() || null,
         ccf_vmt_id: ccfVmtId.trim() || null,
@@ -410,6 +421,39 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </div>
             )}
 
+            {/* Step 2 Interview: Final Ministry Role Assignment */}
+            {selectedStep === 2 && (
+              <div className="rounded-xl border border-border bg-background p-3.5 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h4 className="text-xs font-semibold text-text">
+                    Final Ministry Role Assignment
+                  </h4>
+                  <span className="text-[11px] text-muted">
+                    Desired role from application:{' '}
+                    <strong className="text-text">{application.desired_role}</strong>
+                  </span>
+                </div>
+                <FormSelectField
+                  label="Confirmed Ministry Role"
+                  placeholder=""
+                  value={confirmedRole}
+                  onChange={(val) => setConfirmedRole(val)}
+                  options={roleOptions}
+                  helperText="Finalized during Step 2 Interview. Once completed, this ministry role is locked for all subsequent pipeline steps."
+                />
+              </div>
+            )}
+
+            {/* Steps 3+: Show Read-Only Confirmed Role Badge */}
+            {selectedStep > 2 && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs">
+                <span className="text-muted">Final Ministry Role:</span>
+                <Badge variant="default" className="font-semibold text-xs">
+                  {application.confirmed_role || confirmedRole}
+                </Badge>
+              </div>
+            )}
+
             {/* Primary Action Button Bar: 100% Mobile Friendly */}
             <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
               <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
@@ -488,34 +532,23 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               </button>
 
               {isNotesOpen && (
-                <div className="mt-3 space-y-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <FormSelectField
-                      label="Confirmed Ministry Role"
-                      placeholder=""
-                      value={confirmedRole}
-                      onChange={(val) => setConfirmedRole(val)}
-                      options={roleOptions}
-                      helperText="Prayer Coach role requires Step 6 Usher onboarding."
-                    />
-
-                    <FormTextareaField
-                      label="Applicant-Visible Instructions"
-                      placeholder="Instructions shown to the applicant on their progress portal..."
-                      rows={2}
-                      textareaClassName="resize-none"
-                      value={applicantNotes}
-                      onChange={(event) => setApplicantNotes(event.target.value)}
-                    />
-                  </div>
-
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <FormTextareaField
-                    label="Internal Leadership Notes & Rubric"
+                    label="Internal Leadership Notes"
                     placeholder="Private evaluation feedback and notes for ministry leadership..."
                     rows={2}
                     textareaClassName="resize-none"
                     value={notes}
                     onChange={(event) => setNotes(event.target.value)}
+                  />
+
+                  <FormTextareaField
+                    label="Applicant-Visible Instructions"
+                    placeholder="Instructions shown to the applicant on their progress portal..."
+                    rows={2}
+                    textareaClassName="resize-none"
+                    value={applicantNotes}
+                    onChange={(event) => setApplicantNotes(event.target.value)}
                   />
                 </div>
               )}
