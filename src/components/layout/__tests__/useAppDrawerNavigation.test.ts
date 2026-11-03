@@ -149,6 +149,7 @@ describe('useAppDrawerNavigation', () => {
     expect(result.current.adminNavItems.map((i) => i.label)).toEqual([
       'Hub Calendar',
       'Approvals',
+      'Recruitment',
       'Manage Events',
       'Manage Forms',
       'Manage Members',
@@ -226,6 +227,7 @@ describe('useAppDrawerNavigation', () => {
     expect(result.current.adminNavItems.map((i) => i.label)).toEqual([
       'Hub Calendar',
       'Approvals',
+      'Recruitment',
       'Manage Events',
       'Manage Forms',
       'Manage Members',
