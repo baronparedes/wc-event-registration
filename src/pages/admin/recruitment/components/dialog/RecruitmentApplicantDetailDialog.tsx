@@ -4,10 +4,11 @@ import {
   Avatar,
   Badge,
   Button,
-  ButtonGroup,
-  type ButtonGroupOption,
   Dialog,
   Spinner,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui';
 import { useAdminRecruitmentApplicationDetailQuery } from '@/hooks/domain/recruitment';
 import { RECRUITMENT_STEPS, type RecruitmentApplication } from '@/lib/domain/recruitment';
@@ -24,7 +25,7 @@ interface RecruitmentApplicantDetailDialogProps {
 
 type DialogTab = 'pipeline' | 'survey' | 'profile';
 
-const TAB_OPTIONS: ButtonGroupOption<DialogTab>[] = [
+const TAB_OPTIONS: Array<{ value: DialogTab; label: string }> = [
   { value: 'pipeline', label: '9-Step Pipeline' },
   { value: 'survey', label: 'Biblical Survey' },
   { value: 'profile', label: 'Applicant Profile' },
@@ -77,12 +78,15 @@ export function RecruitmentApplicantDetailDialog({
       </Dialog.Header>
 
       <div className="mt-4 border-b border-border pb-3">
-        <ButtonGroup<DialogTab>
-          value={activeTab}
-          onChange={(val) => setActiveTab(val as DialogTab)}
-          options={TAB_OPTIONS}
-          size="sm"
-        />
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as DialogTab)}>
+          <TabsList containerClassName="justify-start" className="w-auto">
+            {TAB_OPTIONS.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <Dialog.Body>
