@@ -518,7 +518,7 @@ export function AdminApprovalsPage() {
       </AdminPageShell.Content>
 
       {/* Review & Decide Modal */}
-      <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="lg">
+      <Dialog isOpen={Boolean(inspectingRequest)} onClose={closeInspectRequest} size="xl">
         <Dialog.Header>
           <div className="flex items-center gap-2">
             <Dialog.Title className="flex flex-wrap items-center gap-2.5 text-lg font-heading font-bold text-text">
@@ -665,15 +665,40 @@ export function AdminApprovalsPage() {
               return (
                 <div className="rounded-xl border border-border bg-background p-4 text-xs">
                   <div className="font-heading font-semibold text-text mb-2">Request Details</div>
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                    {displayEntries.map(([key, val]) => (
-                      <div key={key}>
-                        <dt className="text-muted capitalize">{key.replace(/_/g, ' ')}</dt>
-                        <dd className="font-medium text-text mt-0.5">
-                          {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                        </dd>
-                      </div>
-                    ))}
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                    {displayEntries.map(([key, val]) => {
+                      const isComplex = typeof val === 'object' && val !== null;
+                      return (
+                        <div key={key} className={isComplex ? 'col-span-full' : 'min-w-0'}>
+                          <dt className="text-muted capitalize">{key.replace(/_/g, ' ')}</dt>
+                          <dd className="font-medium text-text mt-0.5 min-w-0 break-words">
+                            {isComplex ? (
+                              <div className="mt-1 space-y-1.5 rounded-lg border border-border bg-surface p-2.5 text-xs">
+                                {Object.entries(val as Record<string, unknown>).map(
+                                  ([subKey, subVal]) => (
+                                    <div
+                                      key={subKey}
+                                      className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 border-b border-border/50 pb-1.5 last:border-b-0 last:pb-0"
+                                    >
+                                      <span className="text-muted capitalize shrink-0">
+                                        {subKey.replace(/_/g, ' ')}:
+                                      </span>
+                                      <span className="font-semibold text-text break-words sm:text-right">
+                                        {typeof subVal === 'object'
+                                          ? JSON.stringify(subVal)
+                                          : String(subVal ?? '—')}
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            ) : (
+                              <span className="break-all">{String(val)}</span>
+                            )}
+                          </dd>
+                        </div>
+                      );
+                    })}
                   </dl>
                 </div>
               );
