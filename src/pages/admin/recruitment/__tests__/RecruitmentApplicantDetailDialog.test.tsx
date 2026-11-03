@@ -191,6 +191,25 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByRole('button', { name: /repeat observation/i })).toBeInTheDocument();
   });
 
+  it('displays confirmed ministry role badge on Step 4 and shows role selector on Step 2', async () => {
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // On Step 4, Final Ministry Role badge is shown, selector is not in the active step
+    expect(screen.getByText('Final Ministry Role:')).toBeInTheDocument();
+    expect(screen.queryByText('Confirmed Ministry Role')).not.toBeInTheDocument();
+
+    // Click on Step 2 button to jump to Interview
+    await user.click(screen.getByRole('button', { name: /^interview$/i }));
+    expect(screen.getByText('Confirmed Ministry Role')).toBeInTheDocument();
+  });
+
   it('switches to Biblical Survey tab and displays score breakdown', async () => {
     const user = userEvent.setup();
     renderDialog(
