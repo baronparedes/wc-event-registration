@@ -53,6 +53,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   // Collapsible drawers for secondary details
   const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
   // Find latest transaction for selected step if any
   const latestStepTransaction = [...transactions]
@@ -664,81 +665,100 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         )}
       </div>
 
-      {/* Activity & Coaching History (Clear, Human-Centric Timeline) */}
-      <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs">
-        <div className="flex items-center justify-between gap-2 border-b border-border pb-2.5">
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-primary" />
-            <div>
-              <h4 className="font-heading text-sm font-bold text-text">
-                Pipeline Transaction History
-              </h4>
-              <p className="text-[11px] text-muted">
-                Activity & coaching log of scheduled sessions, attempts, and notes
+      {/* Activity & Coaching History (Compact Collapsible Feed) */}
+      <div className="rounded-xl border border-border bg-surface p-3 sm:p-3.5 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setIsHistoryOpen((prev) => !prev)}
+          className="flex w-full items-center justify-between gap-2 text-left cursor-pointer"
+          aria-expanded={isHistoryOpen}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <History className="h-4 w-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-heading text-xs font-bold text-text">
+                  Pipeline Transaction History
+                </h4>
+                <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                  {transactions.length}
+                </Badge>
+              </div>
+              <p className="text-[10px] text-muted truncate">
+                Activity log of scheduled sessions, attempts, and notes
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="font-mono text-xs">
-            {transactions.length}
-          </Badge>
-        </div>
+          <div className="text-muted hover:text-text shrink-0 p-1">
+            {isHistoryOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </div>
+        </button>
 
-        {transactions.length === 0 ? (
-          <p className="text-xs text-muted py-2">No activity recorded yet for this applicant.</p>
-        ) : (
-          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-            {[...transactions].reverse().map((tx) => (
-              <div
-                key={tx.id}
-                className="rounded-xl border border-border bg-background p-3 text-xs space-y-1.5"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-semibold text-text">{formatActivityTitle(tx)}</span>
-                    <span className="text-muted text-[10px] font-mono">
-                      Attempt #{tx.attempt_number} ({tx.transaction_type.replace('_', ' ')})
-                    </span>
+        {isHistoryOpen && (
+          <div className="mt-2.5 border-t border-border/70 pt-2">
+            {transactions.length === 0 ? (
+              <p className="text-xs text-muted py-1.5">
+                No activity recorded yet for this applicant.
+              </p>
+            ) : (
+              <div className="max-h-52 overflow-y-auto divide-y divide-border/60 pr-1">
+                {[...transactions].reverse().map((tx) => (
+                  <div key={tx.id} className="py-2 first:pt-0 last:pb-0 text-xs space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        <span className="font-medium text-text">{formatActivityTitle(tx)}</span>
+                        <span className="text-muted text-[10px] font-mono">
+                          Attempt #{tx.attempt_number} ({tx.transaction_type.replace('_', ' ')})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="secondary" className="capitalize text-[10px] px-1.5 py-0">
+                          {tx.status}
+                        </Badge>
+                        <span className="text-[10px] text-muted font-mono">
+                          {formatDateTime(tx.created_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(tx.scheduled_at || tx.assigned_reviewer_name) && (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted">
+                        {tx.scheduled_at && (
+                          <span>
+                            Scheduled:{' '}
+                            <strong className="text-text">{formatDateTime(tx.scheduled_at)}</strong>
+                          </span>
+                        )}
+                        {tx.assigned_reviewer_name && (
+                          <span>
+                            Coach:{' '}
+                            <strong className="text-text">{tx.assigned_reviewer_name}</strong>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {tx.notes && (
+                      <p className="text-[11px] text-muted italic bg-background rounded-md px-2 py-1 border border-border/50">
+                        <span className="font-medium not-italic text-text">Note: </span>
+                        {tx.notes}
+                      </p>
+                    )}
+
+                    {tx.applicant_visible_notes && (
+                      <p className="text-[11px] text-muted bg-background rounded-md px-2 py-1 border border-border/50">
+                        <span className="font-medium text-text">Applicant visible: </span>
+                        {tx.applicant_visible_notes}
+                      </p>
+                    )}
                   </div>
-                  <Badge variant="secondary" className="capitalize text-[10px]">
-                    {tx.status}
-                  </Badge>
-                </div>
-
-                <div className="text-muted space-y-0.5 text-[11px]">
-                  {tx.scheduled_at && (
-                    <p>
-                      Scheduled for:{' '}
-                      <strong className="text-text">{formatDateTime(tx.scheduled_at)}</strong>
-                    </p>
-                  )}
-                  {tx.assigned_reviewer_name && (
-                    <p>
-                      Coach: <strong className="text-text">{tx.assigned_reviewer_name}</strong>
-                    </p>
-                  )}
-                  {tx.notes && (
-                    <div className="mt-1 rounded-md bg-surface p-2 text-text border border-border/60">
-                      <span className="text-[10px] font-semibold text-muted block uppercase tracking-wider">
-                        Leadership Note
-                      </span>
-                      <p className="italic text-xs mt-0.5">{tx.notes}</p>
-                    </div>
-                  )}
-                  {tx.applicant_visible_notes && (
-                    <div className="mt-1 rounded-md bg-surface p-2 text-text border border-border/60">
-                      <span className="text-[10px] font-semibold text-muted block uppercase tracking-wider">
-                        Applicant Instruction
-                      </span>
-                      <p className="text-xs mt-0.5">{tx.applicant_visible_notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-[10px] text-muted text-right pt-0.5">
-                  Logged {formatDateTime(tx.created_at)}
-                </p>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
