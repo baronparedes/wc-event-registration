@@ -87,7 +87,7 @@ const mockTransaction: RecruitmentPipelineTransaction = {
   to_step: 4,
   status: 'scheduled',
   assigned_reviewer_id: 'user-1',
-  assigned_reviewer_name: 'Lead Usher',
+  assigned_reviewer_name: 'Test Lead Usher',
   scheduled_at: '2026-11-10T09:00:00+08:00',
   completed_at: null,
   rubric_data: {},
@@ -126,6 +126,33 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     },
     isLoading: false,
   }),
+  useReviewerUsersQuery: () => ({
+    data: [
+      {
+        id: 'user-1',
+        name: 'Test Lead Usher',
+        full_name: 'Test Lead Usher',
+        nickname: null,
+        email: 'usher@example.com',
+        role: 'OIC',
+        avatar_object_key: null,
+      },
+    ],
+    isLoading: false,
+    isFetching: false,
+  }),
+  useReviewerUserByIdQuery: () => ({
+    data: {
+      id: 'user-1',
+      name: 'Test Lead Usher',
+      full_name: 'Test Lead Usher',
+      nickname: null,
+      email: 'usher@example.com',
+      role: 'OIC',
+      avatar_object_key: null,
+    },
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({
@@ -135,7 +162,7 @@ vi.mock('@/hooks/domain/auth', () => ({
     user: { id: 'admin-1' },
   }),
   useApproverUsersQuery: () => ({
-    data: [{ id: 'user-1', name: 'Lead Usher', role: 'slod' }],
+    data: [{ id: 'user-1', name: 'Test Lead Usher', role: 'slod' }],
   }),
 }));
 
@@ -248,7 +275,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     // Verify required notice is displayed
     expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
-    expect(screen.getByText('Assigned Reviewer / Coach')).toBeInTheDocument();
+    expect(screen.getAllByText('Assigned Reviewer / Coach').length).toBeGreaterThan(0);
     expect(screen.getByText('Session Date & Time')).toBeInTheDocument();
     expect(screen.getByText('Leadership Notes / Feedback')).toBeInTheDocument();
 

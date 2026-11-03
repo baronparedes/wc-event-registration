@@ -24,7 +24,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
-import { useAdminAuthQuery, useApproverUsersQuery } from '@/hooks/domain/auth';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useDeployRecruitmentApplicantMutation,
   useUpdateRecruitmentStageMutation,
@@ -40,6 +40,7 @@ import {
 import { formatDateTime, localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
 import { BiblicalSurveyReviewPanel } from './BiblicalSurveyReviewPanel';
+import { ReviewerUserPicker } from './ReviewerUserPicker';
 
 function LockedStepCard({
   stepNumber,
@@ -100,7 +101,6 @@ interface PipelineStepsPanelProps {
 
 export function PipelineStepsPanel({ application, transactions }: PipelineStepsPanelProps) {
   const [selectedStep, setSelectedStep] = useState<RecruitmentStepNumber>(application.current_step);
-  const { data: approvers } = useApproverUsersQuery();
   const { data: authState, can } = useAdminAuthQuery();
   const canWrite = can('canWriteAdminData');
 
@@ -118,6 +118,9 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   // Form states for stage action
   const [reviewerId, setReviewerId] = useState<string>(
     latestStepTransaction?.assigned_reviewer_id ?? '',
+  );
+  const [reviewerName, setReviewerName] = useState<string>(
+    latestStepTransaction?.assigned_reviewer_name ?? '',
   );
   const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
     toDatetimeLocal(latestStepTransaction?.scheduled_at),
@@ -149,7 +152,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const missingStepDetails = useMemo(() => {
     if (selectedStep >= 2 && selectedStep <= 6) {
       const missing: string[] = [];
-      if (!reviewerId?.trim()) missing.push('Assigned Reviewer / Coach');
+      if (!reviewerId?.trim() && !reviewerName?.trim()) missing.push('Assigned Reviewer / Coach');
       if (!scheduledAtLocal?.trim() && !latestStepTransaction?.scheduled_at) {
         missing.push('Session Date & Time');
       }
@@ -179,6 +182,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   }, [
     selectedStep,
     reviewerId,
+    reviewerName,
     scheduledAtLocal,
     latestStepTransaction?.scheduled_at,
     confirmedRole,
@@ -200,11 +204,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
       authState?.adminRole === 'super_admin' ||
       authState?.adminRole === 'slod');
 
-  const approverOptions = (approvers ?? []).map((user) => ({
-    label: `${user.name} (${user.role})`,
-    value: user.auth_user_id,
-  }));
-
   const roleOptions = RECRUITMENT_ROLES.map((role) => ({
     label: role,
     value: role,
@@ -214,6 +213,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     setSelectedStep(stepNum);
     const tx = [...transactions].reverse().find((t) => t.step_number === stepNum);
     setReviewerId(tx?.assigned_reviewer_id ?? '');
+    setReviewerName(tx?.assigned_reviewer_name ?? '');
     setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
     setNotes(tx?.notes ?? '');
     setApplicantNotes(tx?.applicant_visible_notes ?? '');
@@ -223,7 +223,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     status: 'scheduled' | 'completed' | 'in_progress',
     action: 'update_stage' | 'repeat_step' | 'return_to_observation' = 'update_stage',
   ) => {
-    const assignedReviewer = approvers?.find((u) => u.auth_user_id === reviewerId);
     const isoScheduledAt = scheduledAtLocal?.trim()
       ? localDateTimeToUTC8ISO(scheduledAtLocal)
       : null;
@@ -247,7 +246,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         status,
         scheduled_at: isoScheduledAt,
         assigned_reviewer_id: reviewerId || null,
-        assigned_reviewer_name: assignedReviewer?.name || null,
+        assigned_reviewer_name: reviewerName || null,
         confirmed_role: effectiveConfirmedRole,
         notes: notes.trim() || null,
         applicant_visible_notes: applicantNotes.trim() || null,
@@ -525,12 +524,16 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <FormSelectField
-                      label="Assigned Reviewer / Coach *"
-                      placeholder=""
+                    <ReviewerUserPicker
+                      id="assignedReviewer"
+                      label="Assigned Reviewer / Coach"
+                      required
                       value={reviewerId}
-                      onChange={(val) => setReviewerId(val)}
-                      options={[{ label: 'Select a reviewer...', value: '' }, ...approverOptions]}
+                      reviewerName={reviewerName}
+                      onChange={(id, user) => {
+                        setReviewerId(id);
+                        setReviewerName(user?.name || user?.full_name || '');
+                      }}
                     />
 
                     <FormInputField
@@ -637,7 +640,11 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       variant="outline"
                       size="sm"
                       onClick={() => handleUpdateStage('scheduled')}
-                      disabled={updateStageMutation.isPending || !scheduledAtLocal || !reviewerId}
+                      disabled={
+                        updateStageMutation.isPending ||
+                        !scheduledAtLocal ||
+                        (!reviewerId && !reviewerName)
+                      }
                     >
                       <Clock className="mr-1.5 h-3.5 w-3.5" />
                       {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Schedule Session'}

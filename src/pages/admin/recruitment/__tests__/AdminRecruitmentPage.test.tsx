@@ -115,6 +115,33 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     },
     isLoading: false,
   }),
+  useReviewerUsersQuery: () => ({
+    data: [
+      {
+        id: 'user-1',
+        name: 'Test Pastor John',
+        full_name: 'Test Pastor John',
+        nickname: null,
+        email: 'john@example.com',
+        role: 'OIC',
+        avatar_object_key: null,
+      },
+    ],
+    isLoading: false,
+    isFetching: false,
+  }),
+  useReviewerUserByIdQuery: () => ({
+    data: {
+      id: 'user-1',
+      name: 'Test Pastor John',
+      full_name: 'Test Pastor John',
+      nickname: null,
+      email: 'john@example.com',
+      role: 'OIC',
+      avatar_object_key: null,
+    },
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@/hooks/domain/auth', () => ({

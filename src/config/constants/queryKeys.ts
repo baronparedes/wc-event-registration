@@ -8,6 +8,8 @@ export const QUERY_KEYS = {
   adminRecruitmentApplications: () => ['admin-recruitment-applications'] as const,
   adminRecruitmentApplication: (applicationId: string | undefined) =>
     ['admin-recruitment-application', applicationId] as const,
+  reviewerUsers: (searchTerm?: string) => ['reviewer-users', searchTerm ?? ''] as const,
+  reviewerUserById: (id?: string) => ['reviewer-user', id ?? ''] as const,
   publicEventBySlug: (slug: string | null | undefined) => ['public-event-by-slug', slug] as const,
   publicEventListing: () => ['public-event-listing'] as const,
   publicEventFields: (eventId: string | undefined, audience: 'members' | 'guests' | undefined) =>

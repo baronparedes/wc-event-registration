@@ -17,6 +17,7 @@ import type {
   RecruitmentApplication,
   RecruitmentApplicationDetail,
   RecruitmentSettings,
+  ReviewerUserItem,
 } from './types';
 
 type RecruitmentEdgeResponse = {
@@ -260,5 +261,58 @@ export async function fetchAdminRecruitmentApplicationDetail(
   return {
     application: application.data,
     transactions,
+  };
+}
+
+export async function fetchReviewerUsers(searchTerm = ''): Promise<ReviewerUserItem[]> {
+  const trimmed = searchTerm.trim();
+  let query = supabase
+    .from('users')
+    .select('id, full_name, nickname, email, role, avatar_object_key')
+    .eq('is_active', true)
+    .order('full_name', { ascending: true })
+    .limit(25);
+
+  if (trimmed) {
+    const term = escapeOrFilterValue(trimmed);
+    query = query.or(
+      `full_name.ilike.%${term}%,nickname.ilike.%${term}%,email.ilike.%${term}%,role.ilike.%${term}%`,
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch reviewer users: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.nickname ? `${row.full_name} (${row.nickname})` : row.full_name,
+    full_name: row.full_name,
+    nickname: row.nickname,
+    email: row.email,
+    role: row.role,
+    avatar_object_key: row.avatar_object_key,
+  }));
+}
+
+export async function fetchReviewerUserById(id: string): Promise<ReviewerUserItem | null> {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, full_name, nickname, email, role, avatar_object_key')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    name: data.nickname ? `${data.full_name} (${data.nickname})` : data.full_name,
+    full_name: data.full_name,
+    nickname: data.nickname,
+    email: data.email,
+    role: data.role,
+    avatar_object_key: data.avatar_object_key,
   };
 }

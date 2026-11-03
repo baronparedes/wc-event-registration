@@ -216,3 +216,13 @@ export type RecruitmentEndorsementReviewDetails = {
   endorsement_questions: EndorsementQuestionItem[];
   attestation_answers: Record<string, unknown>;
 };
+
+export type ReviewerUserItem = {
+  id: string;
+  name: string;
+  full_name: string;
+  nickname: string | null;
+  email: string | null;
+  role: string | null;
+  avatar_object_key: string | null;
+};
