@@ -1,6 +1,16 @@
 import { useState } from 'react';
 
-import { CheckCircle2, Clock, History, RotateCcw, UserPlus } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  History,
+  MessageSquare,
+  RotateCcw,
+  UserPlus,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -40,6 +50,10 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const deployMutation = useDeployRecruitmentApplicantMutation();
 
+  // Collapsible drawers for secondary details
+  const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+
   // Find latest transaction for selected step if any
   const latestStepTransaction = [...transactions]
     .reverse()
@@ -64,6 +78,10 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const [rfidTag, setRfidTag] = useState<string>(application.assigned_rfid_member_id ?? '');
 
   const stepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === selectedStep);
+  const isCurrentActiveStep = application.current_step === selectedStep;
+  const isCompletedStep =
+    application.current_step > selectedStep || application.status === 'deployed';
+
   const canDeploy =
     canWrite &&
     (authState?.adminRole === 'admin' ||
@@ -132,84 +150,114 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   };
 
   return (
-    <div className="space-y-6">
-      {/* Step Selector Pills */}
-      <div className="overflow-x-auto pb-2">
-        <div className="flex min-w-max items-center gap-1.5">
-          {RECRUITMENT_STEPS.map((s) => {
-            const isCurrent = application.current_step === s.stepNumber;
-            const isCompleted =
+    <div className="space-y-5">
+      {/* Visual Pipeline Progress Stepper */}
+      <div className="rounded-2xl border border-border bg-surface p-3 overflow-x-auto">
+        <div className="flex min-w-max items-center justify-between gap-1">
+          {RECRUITMENT_STEPS.map((s, idx) => {
+            const isStepCurrent = application.current_step === s.stepNumber;
+            const isStepCompleted =
               application.current_step > s.stepNumber || application.status === 'deployed';
-            const isSelected = selectedStep === s.stepNumber;
+            const isStepSelected = selectedStep === s.stepNumber;
 
             return (
-              <button
-                key={s.stepNumber}
-                type="button"
-                onClick={() => {
-                  setSelectedStep(s.stepNumber);
-                  const tx = [...transactions]
-                    .reverse()
-                    .find((t) => t.step_number === s.stepNumber);
-                  setReviewerId(tx?.assigned_reviewer_id ?? '');
-                  setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
-                  setNotes(tx?.notes ?? '');
-                  setApplicantNotes(tx?.applicant_visible_notes ?? '');
-                }}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
-                  isSelected
-                    ? 'bg-primary text-white shadow-sm'
-                    : isCompleted
-                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                      : isCurrent
-                        ? 'border border-primary text-text'
-                        : 'border border-border text-muted hover:text-text'
-                }`}
-              >
-                <span>{s.stepNumber}.</span>
-                <span>{s.shortLabel}</span>
-                {isCompleted && <CheckCircle2 className="h-3 w-3" />}
-              </button>
+              <div key={s.stepNumber} className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedStep(s.stepNumber);
+                    const tx = [...transactions]
+                      .reverse()
+                      .find((t) => t.step_number === s.stepNumber);
+                    setReviewerId(tx?.assigned_reviewer_id ?? '');
+                    setScheduledAtLocal(toDatetimeLocal(tx?.scheduled_at));
+                    setNotes(tx?.notes ?? '');
+                    setApplicantNotes(tx?.applicant_visible_notes ?? '');
+                  }}
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-all ${
+                    isStepSelected
+                      ? 'bg-primary text-white shadow-xs font-bold'
+                      : isStepCurrent
+                        ? 'border-2 border-primary text-primary bg-primary/5 font-semibold'
+                        : isStepCompleted
+                          ? 'bg-surface-hover/80 text-text font-medium'
+                          : 'text-muted hover:text-text'
+                  }`}
+                >
+                  {isStepCompleted ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  ) : (
+                    <span className="font-mono text-[11px] shrink-0">{s.stepNumber}.</span>
+                  )}
+                  <span className="truncate max-w-[85px]">{s.shortLabel}</span>
+                  {isStepCurrent && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shrink-0" />
+                  )}
+                </button>
+                {idx < RECRUITMENT_STEPS.length - 1 && (
+                  <div
+                    className={`mx-1 h-0.5 w-2 shrink-0 ${
+                      isStepCompleted ? 'bg-emerald-500/60' : 'bg-border'
+                    }`}
+                  />
+                )}
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Selected Step Header & Active Controls */}
-      <div className="space-y-5 rounded-2xl border border-border bg-surface p-5">
+      {/* Non-active step notice banner */}
+      {!isCurrentActiveStep && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 text-xs text-text">
+          <div>
+            <strong>
+              Viewing {isCompletedStep ? 'Completed' : 'Upcoming'} Step {selectedStep}:{' '}
+              {stepMeta?.title}
+            </strong>
+            <p className="text-muted text-[11px]">
+              {isCompletedStep
+                ? 'This step was previously passed. Active operations are performed on the current step.'
+                : `This step will unlock once Step ${application.current_step} is completed.`}
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="xs"
+            variant="primaryOutline"
+            onClick={() => setSelectedStep(application.current_step)}
+          >
+            Jump to Active Step ({application.current_step})
+          </Button>
+        </div>
+      )}
+
+      {/* Smart Action Card: Hero Container for Stage Progression */}
+      <div className="space-y-4 rounded-2xl border-2 border-primary/20 bg-surface p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="font-mono">
-                Step {selectedStep}
+              <Badge
+                variant={isCurrentActiveStep ? 'default' : 'secondary'}
+                className="font-mono text-xs uppercase"
+              >
+                {isCurrentActiveStep ? `Active Step ${selectedStep}` : `Step ${selectedStep}`}
               </Badge>
               <h3 className="font-heading text-base font-bold text-text">{stepMeta?.title}</h3>
             </div>
             <p className="mt-1 text-xs text-muted">{stepMeta?.description}</p>
           </div>
 
-          <Badge
-            variant={
-              application.current_step > selectedStep || application.status === 'deployed'
-                ? 'default'
-                : application.current_step === selectedStep
-                  ? 'accent'
-                  : 'outline'
-            }
-          >
-            {application.current_step > selectedStep || application.status === 'deployed'
-              ? 'Completed'
-              : application.current_step === selectedStep
-                ? 'Current Step'
-                : 'Upcoming'}
+          <Badge variant={isCompletedStep ? 'default' : isCurrentActiveStep ? 'accent' : 'outline'}>
+            {isCompletedStep ? 'Completed' : isCurrentActiveStep ? 'In Progress' : 'Upcoming'}
           </Badge>
         </div>
 
-        {/* Step-specific content */}
+        {/* Step 1: Intake & DGroup summary */}
         {selectedStep === 1 && (
           <div className="space-y-3 text-xs text-text">
             <p>
-              <strong>Started:</strong> {formatDateTime(application.created_at)}
+              <strong>Application Submitted:</strong> {formatDateTime(application.created_at)}
             </p>
             <p>
               <strong>DGroup Leader:</strong> {application.dgroup_info.leader_name} (
@@ -217,99 +265,129 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
             </p>
             <p>
               <strong>DGroup Endorsement Status:</strong>{' '}
-              {application.dgroup_approval_id ? 'Linked & Endorsed' : 'Pending Leader Review'}
+              {application.dgroup_approval_id ? (
+                <span className="text-emerald-600 font-semibold">Endorsed</span>
+              ) : (
+                <span className="text-amber-600 font-semibold">Pending Leader Endorsement</span>
+              )}
             </p>
           </div>
         )}
 
+        {/* Steps 2 through 6: Coaching, Observation & Evaluation sessions */}
         {selectedStep >= 2 && selectedStep <= 6 && (
           <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormSelectField
-                label="Assigned Reviewer / Coach"
-                placeholder=""
-                value={reviewerId}
-                onChange={(val) => setReviewerId(val)}
-                options={[{ label: 'Unassigned', value: '' }, ...approverOptions]}
-              />
-
-              <FormInputField
-                label="Scheduled Session Date & Time"
-                type="datetime-local"
-                value={scheduledAtLocal}
-                onChange={(event) => setScheduledAtLocal(event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormSelectField
-                label="Confirmed Ministry Role"
-                placeholder=""
-                value={confirmedRole}
-                onChange={(val) => setConfirmedRole(val)}
-                options={roleOptions}
-                helperText="Prayer Coach role requires Step 6 Usher onboarding; other roles advance directly to Step 7."
-              />
-
-              <FormTextareaField
-                label="Applicant-Visible Notes"
-                placeholder="Instructions or preparation notes shown to the applicant on their progress portal..."
-                rows={2}
-                textareaClassName="resize-none"
-                value={applicantNotes}
-                onChange={(event) => setApplicantNotes(event.target.value)}
-              />
-            </div>
-
-            <FormTextareaField
-              label="Internal Coaching Notes & Rubric"
-              placeholder="Private evaluation feedback and notes for ministry leadership..."
-              rows={3}
-              textareaClassName="resize-none"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-            />
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <Button
-                type="button"
-                variant="primaryOutline"
-                size="sm"
-                onClick={() => handleUpdateStage('scheduled')}
-                disabled={updateStageMutation.isPending}
-              >
-                <Clock className="mr-1.5 h-3.5 w-3.5" />
-                Schedule Session
-              </Button>
+            {/* Session Schedule Status Bar with Quick Toggle */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <span className="font-medium text-muted">Session Schedule: </span>
+                  {latestStepTransaction?.scheduled_at ? (
+                    <span className="font-semibold text-text">
+                      {formatDateTime(latestStepTransaction.scheduled_at)}
+                    </span>
+                  ) : (
+                    <span className="text-muted italic">No session scheduled yet</span>
+                  )}
+                  {latestStepTransaction?.assigned_reviewer_name && (
+                    <span className="text-muted">
+                      {' '}
+                      · Coach:{' '}
+                      <strong className="text-text">
+                        {latestStepTransaction.assigned_reviewer_name}
+                      </strong>
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <Button
                 type="button"
-                size="sm"
-                onClick={() => handleUpdateStage('completed')}
-                disabled={updateStageMutation.isPending}
+                variant="ghost"
+                size="xs"
+                onClick={() => setIsSchedulingOpen((prev) => !prev)}
+                className="text-primary hover:underline text-xs"
               >
-                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                Complete Step {selectedStep}
+                <Calendar className="mr-1 h-3.5 w-3.5" />
+                {latestStepTransaction?.scheduled_at ? 'Reschedule Session' : 'Schedule Session'}
+                {isSchedulingOpen ? (
+                  <ChevronUp className="ml-1 h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                )}
               </Button>
+            </div>
 
-              {/* Repeatable observation controls */}
-              {selectedStep === 4 && (
+            {/* Expandable Session Scheduler */}
+            {isSchedulingOpen && (
+              <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4 animate-in fade-in duration-150">
+                <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                  Schedule Coaching Session
+                </h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormSelectField
+                    label="Assigned Reviewer / Coach"
+                    placeholder=""
+                    value={reviewerId}
+                    onChange={(val) => setReviewerId(val)}
+                    options={[{ label: 'Unassigned', value: '' }, ...approverOptions]}
+                  />
+
+                  <FormInputField
+                    label="Session Date & Time"
+                    type="datetime-local"
+                    value={scheduledAtLocal}
+                    onChange={(event) => setScheduledAtLocal(event.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={() => setIsSchedulingOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    onClick={() => {
+                      handleUpdateStage('scheduled');
+                      setIsSchedulingOpen(false);
+                    }}
+                    disabled={updateStageMutation.isPending || !scheduledAtLocal}
+                  >
+                    <Clock className="mr-1 h-3.5 w-3.5" />
+                    Schedule Session
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Primary Action Button Bar */}
+            <div className="rounded-xl border border-border/80 bg-background/50 p-4 space-y-3">
+              <div className="text-[11px] font-semibold text-muted uppercase tracking-wider">
+                Stage Action
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
                 <Button
                   type="button"
-                  variant="secondary"
                   size="sm"
-                  onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                  onClick={() => handleUpdateStage('completed')}
                   disabled={updateStageMutation.isPending}
+                  className="font-semibold"
                 >
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                  Repeat Observation (Step 4)
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  Complete Step {selectedStep}
                 </Button>
-              )}
 
-              {/* Repeatable evaluation controls */}
-              {selectedStep === 5 && (
-                <>
+                {/* Repeatable observation controls */}
+                {selectedStep === 4 && (
                   <Button
                     type="button"
                     variant="secondary"
@@ -318,28 +396,95 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     disabled={updateStageMutation.isPending}
                   >
                     <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                    Repeat Evaluation (Step 5)
+                    Repeat Observation (Step 4)
                   </Button>
+                )}
 
-                  <Button
-                    type="button"
-                    variant="primaryOutline"
-                    size="sm"
-                    onClick={() => handleUpdateStage('scheduled', 'return_to_observation')}
-                    disabled={updateStageMutation.isPending}
-                  >
-                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                    Needs Another Observation (Return to Step 4)
-                  </Button>
-                </>
+                {/* Repeatable evaluation controls */}
+                {selectedStep === 5 && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                      disabled={updateStageMutation.isPending}
+                    >
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                      Repeat Evaluation (Step 5)
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="primaryOutline"
+                      size="sm"
+                      onClick={() => handleUpdateStage('scheduled', 'return_to_observation')}
+                      disabled={updateStageMutation.isPending}
+                    >
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                      Needs Another Observation (Return to Step 4)
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Collapsible Coaching Notes Drawer */}
+            <div className="border-t border-border/60 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsNotesOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-text"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Coaching Notes & Instructions</span>
+                {isNotesOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </button>
+
+              {isNotesOpen && (
+                <div className="mt-3 space-y-3 animate-in fade-in duration-150">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormSelectField
+                      label="Confirmed Ministry Role"
+                      placeholder=""
+                      value={confirmedRole}
+                      onChange={(val) => setConfirmedRole(val)}
+                      options={roleOptions}
+                      helperText="Prayer Coach role requires Step 6 Usher onboarding."
+                    />
+
+                    <FormTextareaField
+                      label="Applicant-Visible Instructions"
+                      placeholder="Instructions shown to the applicant on their progress portal..."
+                      rows={2}
+                      textareaClassName="resize-none"
+                      value={applicantNotes}
+                      onChange={(event) => setApplicantNotes(event.target.value)}
+                    />
+                  </div>
+
+                  <FormTextareaField
+                    label="Internal Leadership Notes & Rubric"
+                    placeholder="Private evaluation feedback and notes for ministry leadership..."
+                    rows={2}
+                    textareaClassName="resize-none"
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                  />
+                </div>
               )}
             </div>
           </div>
         )}
 
+        {/* Step 7: VMT Registration */}
         {selectedStep === 7 && (
           <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-background p-4 text-xs text-text">
+            <div className="rounded-xl border border-border bg-background p-4 text-xs">
               <p>
                 <strong>Applicant Self-Attestation:</strong>{' '}
                 {application.vmt_registered ? (
@@ -368,12 +513,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               />
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <Button
                 type="button"
                 size="sm"
                 onClick={() => handleUpdateStage('completed')}
-                disabled={updateStageMutation.isPending}
+                disabled={updateStageMutation.isPending || !ccfVmtId.trim()}
               >
                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                 Verify & Complete Step 7
@@ -382,6 +527,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
           </div>
         )}
 
+        {/* Step 8: RFID Releasing */}
         {selectedStep === 8 && (
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-background p-4 text-xs">
@@ -404,7 +550,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
               helperText="Physical RFID tag number scanned or assigned to this volunteer."
             />
 
-            <div className="pt-2">
+            <div className="pt-1">
               <Button
                 type="button"
                 size="sm"
@@ -418,6 +564,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
           </div>
         )}
 
+        {/* Step 9: Final Deployment */}
         {selectedStep === 9 && (
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-background p-4 text-xs space-y-2">
