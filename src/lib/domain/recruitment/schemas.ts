@@ -264,6 +264,7 @@ export const adminUpdateStageSchema = z
       'update_stage',
       'repeat_step',
       'return_to_observation',
+      'return_to_interview',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(2).max(8).optional(),
@@ -293,12 +294,20 @@ export const adminUpdateStageSchema = z
     }
     if (
       request.action === 'repeat_step' &&
+      request.step_number !== 2 &&
       request.step_number !== 4 &&
       request.step_number !== 5
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Only observation and evaluation can be repeated',
+        message: 'Only interview, observation, and evaluation can be repeated',
+        path: ['step_number'],
+      });
+    }
+    if (request.action === 'return_to_interview' && request.step_number !== 3) {
+      context.addIssue({
+        code: 'custom',
+        message: 'return_to_interview must reference orientation step 3',
         path: ['step_number'],
       });
     }
@@ -354,6 +363,7 @@ const applicantRecruitmentTimelineItemSchema = z.object({
     'completed',
     'repeated_step',
     'returned_to_observation',
+    'returned_to_interview',
     'skipped',
     'on_hold',
     'declined',
@@ -469,6 +479,7 @@ export const recruitmentPipelineTransactionSchema = z.object({
     'completed',
     'repeated_step',
     'returned_to_observation',
+    'returned_to_interview',
     'skipped',
     'on_hold',
     'declined',

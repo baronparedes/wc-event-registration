@@ -133,6 +133,7 @@ export type RecruitmentPipelineTransaction = {
     | 'completed'
     | 'repeated_step'
     | 'returned_to_observation'
+    | 'returned_to_interview'
     | 'skipped'
     | 'on_hold'
     | 'declined';

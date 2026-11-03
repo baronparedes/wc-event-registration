@@ -490,6 +490,153 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.queryByRole('button', { name: /complete step 2/i })).not.toBeInTheDocument();
   });
 
+  it('displays previous interview attempts intact when an interview is repeated', () => {
+    const mockStep2Attempt1Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-step2-att1',
+      application_id: 'app-123',
+      step_number: 2,
+      step_key: 'interview',
+      attempt_number: 1,
+      transaction_type: 'repeated_step',
+      from_step: 2,
+      to_step: 2,
+      status: 'completed',
+      assigned_reviewer_id: 'user-pastor',
+      assigned_reviewer_name: 'Test Pastor Dave',
+      scheduled_at: '2026-11-02T10:00:00+08:00',
+      completed_at: '2026-11-02T11:00:00+08:00',
+      rubric_data: {},
+      notes:
+        'Initial interview: Candidate requested more time to discuss availability with family.',
+      applicant_visible_notes: 'Follow-up interview scheduled for next week.',
+      created_by_user_id: 'user-pastor',
+      created_at: '2026-11-02T11:00:00+08:00',
+    };
+
+    const mockStep2Attempt2Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-step2-att2',
+      application_id: 'app-123',
+      step_number: 2,
+      step_key: 'interview',
+      attempt_number: 2,
+      transaction_type: 'scheduled',
+      from_step: 2,
+      to_step: 2,
+      status: 'scheduled',
+      assigned_reviewer_id: 'user-coach',
+      assigned_reviewer_name: 'Test Elder Mark',
+      scheduled_at: '2026-11-09T10:00:00+08:00',
+      completed_at: null,
+      rubric_data: {},
+      notes: null,
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-coach',
+      created_at: '2026-11-03T10:00:00+08:00',
+    };
+
+    const activeStep2Application = {
+      ...mockApplication,
+      current_step: 2 as const,
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep2Application,
+        transactions: [mockStep2Attempt1Tx, mockStep2Attempt2Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep2Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Verify Previous Interview Attempts card displays Attempt #1 data intact
+    expect(screen.getByText('Previous Interview Attempts (1)')).toBeInTheDocument();
+    expect(screen.getByText('Recorded History Intact')).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        'Initial interview: Candidate requested more time to discuss availability with family.',
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Test Pastor Dave').length).toBeGreaterThanOrEqual(1);
+
+    // Verify current session indicates Attempt #2
+    expect(screen.getByText('Attempt #2')).toBeInTheDocument();
+
+    // Verify Repeat Interview button is rendered on Step 2
+    const repeatButton = screen.getByRole('button', { name: /repeat interview \(step 2\)/i });
+    expect(repeatButton).toBeInTheDocument();
+  });
+
+  it('triggers return_to_interview when returning candidate from Step 3 to Step 2', async () => {
+    const user = userEvent.setup();
+    const activeStep3Application = {
+      ...mockApplication,
+      current_step: 3 as const,
+    };
+
+    const mockStep3Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-step3',
+      application_id: 'app-123',
+      step_number: 3,
+      step_key: 'orientation',
+      attempt_number: 1,
+      transaction_type: 'scheduled',
+      from_step: 2,
+      to_step: 3,
+      status: 'scheduled',
+      assigned_reviewer_id: 'user-1',
+      assigned_reviewer_name: 'Test Lead Usher',
+      scheduled_at: '2026-11-10T09:00:00+08:00',
+      completed_at: null,
+      rubric_data: {},
+      notes: null,
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-1',
+      created_at: '2026-11-03T10:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep3Application,
+        transactions: [mockStep3Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep3Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // On Step 3 Orientation, find "Needs Another Interview (Return to Step 2)" button
+    const returnButton = screen.getByRole('button', {
+      name: /needs another interview \(return to step 2\)/i,
+    });
+    expect(returnButton).toBeInTheDocument();
+
+    await user.click(returnButton);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'return_to_interview',
+        step_number: 3,
+        status: 'scheduled',
+      }),
+      expect.any(Object),
+    );
+  });
+
   it('calls onClose when Close button is clicked', async () => {
     const user = userEvent.setup();
     renderDialog(
