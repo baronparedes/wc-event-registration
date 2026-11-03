@@ -50,11 +50,11 @@ function formatSundayDisplay(
 const baseInputClassName =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20';
 
-const calendarContainerClassName = 'relative [container-type:inline-size]';
+const calendarContainerClassName = 'relative';
 const calendarPopoverClassName =
-  'absolute z-30 mt-2 max-w-full rounded-xl border border-border bg-surface p-3.5 shadow-xl';
+  'absolute z-30 mt-2 w-[288px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-3 shadow-xl';
 const calendarDayPickerClassName =
-  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:clamp(30px,12cqw,44px)] [--rdp-day_button-width:clamp(30px,12cqw,42px)]';
+  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:36px] [--rdp-day_button-width:34px] [--rdp-day_button-height:34px]';
 
 export type SundayCalendarPickerProps = {
   id?: string;
@@ -68,6 +68,8 @@ export type SundayCalendarPickerProps = {
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  align?: 'left' | 'right';
+  popoverClassName?: string;
 };
 
 export function SundayCalendarPicker({
@@ -82,6 +84,8 @@ export function SundayCalendarPicker({
   disabled = false,
   className = '',
   placeholder,
+  align = 'left',
+  popoverClassName = '',
 }: SundayCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -176,7 +180,12 @@ export function SundayCalendarPicker({
       </button>
 
       {isOpen && (
-        <div id={popoverId} className={calendarPopoverClassName} role="dialog" aria-modal="true">
+        <div
+          id={popoverId}
+          className={`${calendarPopoverClassName} ${align === 'right' ? 'right-0' : 'left-0'} ${popoverClassName}`}
+          role="dialog"
+          aria-modal="true"
+        >
           <DayPicker
             className={calendarDayPickerClassName}
             mode="single"
