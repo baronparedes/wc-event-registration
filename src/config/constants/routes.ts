@@ -65,6 +65,8 @@ export const ROUTE_PATHS = {
   adminSettingsEmailTemplates: '/admin/settings/email-templates',
   adminApprovals: '/admin/approvals',
   approvalReviewPattern: '/approvals/review/:token',
+  adminRecruitment: '/admin/recruitment',
+  adminSettingsRecruitment: '/admin/settings/recruitment',
   recruitment: '/recruitment',
   recruitmentApply: '/recruitment/apply',
 } as const;
@@ -127,6 +129,8 @@ export type AppRouteKey =
   | 'adminSettingsEmailTemplates'
   | 'adminApprovals'
   | 'approvalReview'
+  | 'adminRecruitment'
+  | 'adminSettingsRecruitment'
   | 'recruitment'
   | 'recruitmentApply';
 
@@ -141,6 +145,18 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminApprovals',
     path: ROUTE_PATHS.adminApprovals,
+    layout: 'shell',
+    requiredPermission: 'canWriteAdminData',
+  },
+  {
+    key: 'adminRecruitment',
+    path: ROUTE_PATHS.adminRecruitment,
+    layout: 'shell',
+    requiredPermission: 'canReadAdminData',
+  },
+  {
+    key: 'adminSettingsRecruitment',
+    path: ROUTE_PATHS.adminSettingsRecruitment,
     layout: 'shell',
     requiredPermission: 'canWriteAdminData',
   },

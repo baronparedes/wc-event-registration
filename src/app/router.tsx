@@ -164,6 +164,16 @@ const RecruitmentApplyPage = lazy(() =>
     default: module.RecruitmentApplyPage,
   })),
 );
+const AdminRecruitmentPage = lazy(() =>
+  import('../pages/admin/recruitment').then((module) => ({
+    default: module.AdminRecruitmentPage,
+  })),
+);
+const AdminRecruitmentSettingsPage = lazy(() =>
+  import('../pages/admin/settings/recruitment').then((module) => ({
+    default: module.AdminRecruitmentSettingsPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -384,6 +394,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
   adminApprovals: AdminApprovalsPage,
   approvalReview: ApprovalReviewPage,
+  adminRecruitment: AdminRecruitmentPage,
+  adminSettingsRecruitment: AdminRecruitmentSettingsPage,
   recruitment: RecruitmentProgressPage,
   recruitmentApply: RecruitmentApplyPage,
 };

@@ -17,6 +17,9 @@ export function AdminBaseNavigation() {
       {canReadAdminData && (
         <AdminSubNavLink to={ROUTE_PATHS.adminApprovals}>Approvals</AdminSubNavLink>
       )}
+      {canReadAdminData && (
+        <AdminSubNavLink to={ROUTE_PATHS.adminRecruitment}>Recruitment</AdminSubNavLink>
+      )}
       {canReadAdminMemberData && (
         <AdminSubNavLink to={ROUTE_PATHS.adminMembers}>Members</AdminSubNavLink>
       )}
