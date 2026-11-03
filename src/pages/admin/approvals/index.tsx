@@ -1047,10 +1047,10 @@ export function AdminApprovalsPage() {
           )}
         </Dialog.Body>
 
-        <Dialog.Footer className="flex-col-reverse gap-2 sm:flex-row sm:justify-end border-t border-border pt-3">
+        <Dialog.Footer>
           <Button
             type="button"
-            variant="ghost"
+            variant={inspectingRequest?.status === 'pending' ? 'outline' : 'primaryOutline'}
             disabled={isSubmitting}
             onClick={closeInspectRequest}
           >
