@@ -22,6 +22,7 @@ import {
   Badge,
   Button,
   FormTextareaField,
+  MarkdownRenderer,
   SectionCard,
   StepIndicator,
   WizardStep,
@@ -108,6 +109,24 @@ const THEMATIC_GROUPS: ThematicGroup[] = [
       ].includes(key),
   },
 ];
+
+const LEADER_ATTESTATION_MARKDOWN = `# The following statements are for your disciple
+
+**Is a committed member of my DGroup.**
+
+1. Saved by grace through faith in Jesus and experiencing life transformation.
+2. Pursues spiritual disciplines such as consistent prayer and quiet time.
+3. Does his/her best to honor God through a daily lifestyle that is above reproach and does not indulge in worldly pleasures or gossip.
+4. Practices sexual purity and forgiveness.
+5. Not involved in a romantic relationship with an unbeliever.
+6. Manages his/her finances well by minimizing debt and tithing regularly.
+7. Does his/her best to live a life of integrity in public, private, and social media.
+8. Has a teachable and humble heart, open to accountability and correction by his/her DGroup and ministry leader.
+9. Wants to be used by God to disciple others and help to disciple others.
+10. Finished GLC 1 and attended a True Life Retreat. If he/she has not attended True Life yet, He/she commits to attend True Life within the year and allows his/her Dleader or District Head to monitor his/her progress.
+11. Knows by heart CCF’s mission and vision.
+
+I commit to supporting my disciple by regularly praying for, mentoring, and checking up on him/her as he/she volunteers in the Welcome Center throughout the year. I also consent to be contacted by the Welcome Center leadership to discuss the growth and walk of my disciple as the need arises throughout the volunteer period.`;
 
 const responseRecordSchema = z.record(z.string(), z.unknown());
 
@@ -349,15 +368,40 @@ function RecruitmentEndorsementReviewForm({
             >
               {group.id === 'spiritual_character' && <RatingScaleLegend />}
               <div className="divide-y divide-border">
-                {grpQuestions.map((question) => (
-                  <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
-                    <p className="text-xs font-medium text-muted">{question.label}</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-text">
-                      {displayAnswer(question, details.attestation_answers[question.field_key]) ||
-                        '—'}
-                    </p>
-                  </div>
-                ))}
+                {grpQuestions.map((question) => {
+                  if (question.field_key === 'leader_attestation_statement') {
+                    const answer = details.attestation_answers[question.field_key];
+                    const isAttested = answer === 'I attest';
+                    return (
+                      <div key={question.field_key} className="space-y-3 py-3 first:pt-0 last:pb-0">
+                        <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+                          <MarkdownRenderer
+                            content={LEADER_ATTESTATION_MARKDOWN}
+                            className="prose-h1:mt-0 prose-h1:text-base sm:prose-h1:text-lg prose-h1:font-bold prose-headings:text-text prose-p:text-text prose-li:text-text prose-strong:text-text"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-muted">
+                            Leader Attestation:
+                          </span>
+                          <Badge variant={isAttested ? 'default' : 'destructive'}>
+                            {String(answer || '—')}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={question.field_key} className="py-3 first:pt-0 last:pb-0">
+                      <p className="text-xs font-medium text-muted">{question.label}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+                        {displayAnswer(question, details.attestation_answers[question.field_key]) ||
+                          '—'}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </SectionCard>
           ))}
@@ -448,6 +492,34 @@ function RecruitmentEndorsementReviewForm({
                     <div className="space-y-5">
                       {visibleGrpQuestions.map((question) => {
                         const error = form.formState.errors[question.field_key]?.message;
+
+                        if (question.field_key === 'leader_attestation_statement') {
+                          return (
+                            <div key={question.field_key} className="space-y-4 pt-1">
+                              <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+                                <MarkdownRenderer
+                                  content={LEADER_ATTESTATION_MARKDOWN}
+                                  className="prose-h1:mt-0 prose-h1:text-base sm:prose-h1:text-lg prose-h1:font-bold prose-headings:text-text prose-p:text-text prose-li:text-text prose-strong:text-text"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label
+                                  className="block text-sm font-medium text-text"
+                                  htmlFor={`field-${question.field_key}`}
+                                >
+                                  {question.label ===
+                                  'The following statements are for your disciple.'
+                                    ? 'Attestation Confirmation'
+                                    : question.label}
+                                  {question.is_required && <span className="text-danger"> *</span>}
+                                </label>
+                                <DynamicFieldRenderer field={question} dynamicForm={form} />
+                                {error && <p className="text-sm text-danger">{String(error)}</p>}
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div key={question.field_key} className="space-y-1.5">
                             <label

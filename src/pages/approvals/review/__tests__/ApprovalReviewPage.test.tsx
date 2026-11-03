@@ -781,4 +781,137 @@ describe('ApprovalReviewPage', () => {
       );
     });
   });
+
+  it('renders leader attestation statement as Markdown in Step 2 and submits selection', async () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation_statement',
+              label: 'The following statements are for your disciple.',
+              field_type: 'radio',
+              is_required: true,
+              is_active: true,
+              options: [
+                { label: 'I attest', value: 'I attest' },
+                { label: 'I DO NOT attest', value: 'I DO NOT attest' },
+              ],
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Attestation/i }));
+
+    // Verify Markdown content rendered
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'The following statements are for your disciple',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Is a committed member of my DGroup/i)).toBeInTheDocument();
+    expect(screen.getByText(/Saved by grace through faith in Jesus/i)).toBeInTheDocument();
+    expect(screen.getByText(/Knows by heart CCF’s mission and vision/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/I commit to supporting my disciple by regularly praying for/i),
+    ).toBeInTheDocument();
+
+    // Select "I attest"
+    const radioAttest = screen.getByRole('radio', { name: /I attest/i });
+    expect(radioAttest).toBeInTheDocument();
+    fireEvent.click(radioAttest);
+
+    // Continue to Step 3
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Decision/i }));
+
+    expect(screen.getByRole('button', { name: 'Endorse Applicant' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Endorse Applicant' }));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'token-123',
+          decision: 'approved',
+          attestation_answers: { leader_attestation_statement: 'I attest' },
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it('renders leader attestation statement as Markdown in read-only completed view', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          status: 'approved',
+          title: 'DGroup Leader Endorsement',
+          decided_by_email: 'leader@example.com',
+          decided_at: '2026-10-19T10:00:00Z',
+          decision_notes: 'Highly recommended.',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation_statement',
+              label: 'The following statements are for your disciple.',
+              field_type: 'radio',
+              is_required: true,
+              is_active: true,
+              options: [
+                { label: 'I attest', value: 'I attest' },
+                { label: 'I DO NOT attest', value: 'I DO NOT attest' },
+              ],
+            },
+          ],
+          attestation_answers: {
+            leader_attestation_statement: 'I attest',
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'The following statements are for your disciple',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Is a committed member of my DGroup/i)).toBeInTheDocument();
+    expect(screen.getByText('Leader Attestation:')).toBeInTheDocument();
+    expect(screen.getByText('I attest')).toBeInTheDocument();
+  });
 });
