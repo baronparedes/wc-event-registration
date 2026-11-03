@@ -12,6 +12,7 @@ As organizational operations scale, multiple entities require formal sign-off be
 
 - **Form Submissions**: Registrations or applications requiring leader verification.
 - **Volunteer Long Leave (Service Excuses)**: Extended leaves of absence (e.g. sabbaticals, maternity/paternity leave, work assignments) that exempt volunteers from Sunday commitments across multiple weeks.
+- **Recruitment Endorsements (DGroup Leader Attestations)**: Verification and recommendation questionnaires submitted by DGroup Leaders for Welcome Center volunteer applicants.
 
 Previously, approvals were handled informally or directly via ad-hoc database updates. Administrators had no centralized inbox to track pending requests, and volunteers had to manually communicate with individual service leaders (SLODs).
 
@@ -86,27 +87,27 @@ The system is powered by two migrations:
 
 The central registry for all workflow decisions:
 
-| Column                | Type              | Description                                                       |
-| --------------------- | ----------------- | ----------------------------------------------------------------- |
-| `id`                  | `uuid`            | Primary key (`gen_random_uuid()`).                                |
-| `entity_type`         | `text`            | Discriminator (`'form_submission'`, `'service_excuse'`).          |
-| `entity_id`           | `uuid`            | Foreign identifier of the underlying target record.               |
-| `title`               | `text`            | Display title for lists and cards.                                |
-| `summary`             | `text`            | Brief human-readable summary of the request.                      |
-| `requester_user_id`   | `uuid`            | Optional FK to `public.users(id)`.                                |
-| `requester_name`      | `text`            | Name of the person requesting sign-off.                           |
-| `requester_email`     | `text`            | Contact email of the requester.                                   |
-| `metadata`            | `jsonb`           | Entity-specific context (e.g. leave dates, dietary notes).        |
-| `status`              | `approval_status` | Enum: `'pending'`, `'approved'`, `'rejected'`.                    |
-| `assigned_to_email`   | `text`            | Optional email of delegated reviewer.                             |
-| `assigned_to_user_id` | `uuid`            | Optional FK to `auth.users(id)`.                                  |
-| `decided_by_user_id`  | `uuid`            | FK to `auth.users(id)` when decided by authenticated user.        |
-| `decided_by_email`    | `text`            | Email of the final decider.                                       |
-| `decided_at`          | `timestamptz`     | When the decision was finalized.                                  |
-| `decision_notes`      | `text`            | Optional administrator or reviewer guidance.                      |
-| `access_token`        | `text`            | Secure cryptographic token for unauthenticated magic-link review. |
-| `token_expires_at`    | `timestamptz`     | Token expiry timestamp.                                           |
-| `token_used_at`       | `timestamptz`     | Timestamp when the token was consumed.                            |
+| Column                | Type              | Description                                                                           |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------- |
+| `id`                  | `uuid`            | Primary key (`gen_random_uuid()`).                                                    |
+| `entity_type`         | `text`            | Discriminator (`'form_submission'`, `'service_excuse'`, `'recruitment_endorsement'`). |
+| `entity_id`           | `uuid`            | Foreign identifier of the underlying target record.                                   |
+| `title`               | `text`            | Display title for lists and cards.                                                    |
+| `summary`             | `text`            | Brief human-readable summary of the request.                                          |
+| `requester_user_id`   | `uuid`            | Optional FK to `public.users(id)`.                                                    |
+| `requester_name`      | `text`            | Name of the person requesting sign-off.                                               |
+| `requester_email`     | `text`            | Contact email of the requester.                                                       |
+| `metadata`            | `jsonb`           | Entity-specific context (e.g. leave dates, dietary notes).                            |
+| `status`              | `approval_status` | Enum: `'pending'`, `'approved'`, `'rejected'`.                                        |
+| `assigned_to_email`   | `text`            | Optional email of delegated reviewer.                                                 |
+| `assigned_to_user_id` | `uuid`            | Optional FK to `auth.users(id)`.                                                      |
+| `decided_by_user_id`  | `uuid`            | FK to `auth.users(id)` when decided by authenticated user.                            |
+| `decided_by_email`    | `text`            | Email of the final decider.                                                           |
+| `decided_at`          | `timestamptz`     | When the decision was finalized.                                                      |
+| `decision_notes`      | `text`            | Optional administrator or reviewer guidance.                                          |
+| `access_token`        | `text`            | Secure cryptographic token for unauthenticated magic-link review.                     |
+| `token_expires_at`    | `timestamptz`     | Token expiry timestamp.                                                               |
+| `token_used_at`       | `timestamptz`     | Timestamp when the token was consumed.                                                |
 
 ### 3.2 Database Views & RLS Policies
 
@@ -207,18 +208,43 @@ Handles submission of single-Sunday and multi-week Long Leave requests.
 
 ### 5.2 Admin Approvals Inbox (`/admin/approvals`)
 
-- **Layout**: Uses `AdminPageShell` with `ButtonGroup` status tabs (`Pending`, `Approved`, `Declined`, `All`) and request type filters (`All`, `Form Registrations`, `Long Leave Requests`).
+- **Layout**: Uses `AdminPageShell` with `ButtonGroup` status tabs (`Pending`, `Approved`, `Declined`, `All`) and request type filters (`All`, `Form Registrations`, `Long Leave Requests`, `Endorsements`).
 - **Responsive Views**:
-  - **Desktop**: `ListTable` showing Request title, Entity badge, Requester with `Avatar`, submission date, status badge, and assigned reviewer pill.
+  - **Desktop**: `ListTable` showing Request title, Entity badge (`Form`, `Long Leave`, or `Endorsement`), Requester with `Avatar`, submission date, status badge, and assigned reviewer pill.
   - **Mobile**: `MobileCard` with structured items and full touch-target review buttons.
 - **Review & Decide Dialog**:
+  - Configured with `size="4xl"` for ample workspace when reviewing detailed questionnaires.
   - Displays requester avatar, email, and metadata breakdown.
+  - **Questionnaire Inspection for Recruitment Endorsements**:
+    - Decodes and presents attestation answers formatted into 5 sequential stages matching the endorsement flow:
+      1. _Leader & DGroup Relationship_: Leader identity and disciple involvement.
+      2. _Spiritual Maturity & Character Evaluation_: Numeric ratings accompanied by an explanatory scale banner (`1 = Needs Growth`, `2 = Consistently Exhibits`, `3 = Exemplary`).
+      3. _Disciple Growth & Assessment_: Qualitative assessment of strengths, growth areas, and improvements.
+      4. _Ministry Credibility & Concerns_: Small group consistency, credibility considerations, or counsel notes.
+      5. _Attestation & Recommendation_: Leader attestation statement, recommendation decision, and additional notes.
   - **Assignment & Delegation Box**:
     - Displays current reviewer (`Assigned to: {name} ({email})` or `Unassigned (Open to all Admins)`).
     - Dropdown populated via `useSlodUsersQuery()`.
     - **Assign & Notify** button triggering `useDelegateApprovalMutation()`.
   - **Direct Decision Buttons**:
     - `Approve Request` and `Decline` buttons are always accessible to Administrators, guaranteeing that admins can decide directly at any time.
+    - Close button follows the standard `variant="primaryOutline"` modal dismissal pattern.
+
+### 5.3 DGroup Leader Magic-Link Endorsement Review Flow (`/approvals/review/:token`)
+
+- **Unauthenticated Magic-Link Access**:
+  - Leaders access reviews through secure one-time cryptographic tokens generated upon applicant submission.
+  - Responsive container layout seamlessly adapts between desktop and mobile viewports.
+- **3-Step Endorsement Wizard**:
+  1. **Applicant Overview**: Displays applicant demographics, desired ministry role, CCF tenure, and discipleship context.
+  2. **Attestation Questionnaire**:
+     - Form sections separated by clean divider lines (`divide-y divide-border`) to maximize visible space.
+     - Full-width segmented rating buttons (`1`, `2`, `3`) with an active score legend banner.
+     - Dynamic field validation powered by Zod and React Hook Form.
+  3. **Attestation & Recommendation Confirmation**:
+     - Summary view of completed evaluations.
+     - Action buttons styled with design system standard semantic tokens (`variant="default"` primary teal for _Endorse Applicant_ and `variant="destructive"` for _Decline_).
+     - Idempotent submission dispatches answers via `submitApprovalDecision` with immediate visual feedback.
 
 ---
 

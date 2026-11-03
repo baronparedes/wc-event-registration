@@ -609,8 +609,16 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 
 1. **DGroup Leader Magic-Link Endorsement (`src/pages/approvals/`)**:
 
-- `RecruitmentEndorsementReviewSection.tsx`: Integrated into `ReviewApprovalPage` when `approval.entity_type === 'recruitment_endorsement'`; the shared approval domain includes this entity type.
-- Displays applicant details and renders the DGroup Leader Attestation questions (`endorsement_questions` as `DynamicFieldLike[]`) directly using `DynamicFieldRenderer` and `buildDynamicFieldResponseSchema` (supporting `visibility_rule` dependencies, `radio`, `rating`, `textarea`, etc.) with **Endorse Applicant** and **Decline** buttons. Submit answers through `submitApprovalDecision` as `attestation_answers` so the Edge Function can validate and persist them with the decision.
+- `RecruitmentEndorsementReviewSection.tsx`: Integrated into `ReviewApprovalPage` (`/approvals/review/:token`) when `approval.entity_type === 'recruitment_endorsement'`; the shared approval domain fully includes this entity type.
+- **3-Step Review Flow**:
+  - **Step 1 (Overview)**: Displays applicant profile, CCF tenure, and desired ministry role.
+  - **Step 2 (Attestation)**: Renders the DGroup Leader Attestation questions (`endorsement_questions` as `DynamicFieldLike[]`) using `DynamicFieldRenderer` and `buildDynamicFieldResponseSchema`. Form fields are separated by clean divider lines (`divide-y divide-border`) to save vertical space. Rating questions use full-width segmented buttons (`1`, `2`, `3`) with an explanatory rating scale legend banner.
+  - **Step 3 (Confirmation & Decision)**: Summary review card of all answers with **Endorse Applicant** (`variant="default"` primary teal) and **Decline** (`variant="destructive"`) action buttons.
+- Submit answers through `submitApprovalDecision` as `attestation_answers` so the Edge Function validates and persists them with the decision.
+- **Admin Approvals Inbox (`/admin/approvals`) Integration**:
+  - Filter dropdown includes "Endorsements" alongside Forms and Long Leave.
+  - Table badges display "Endorsement" (`variant="outline"`).
+  - Inspection modal opens in `size="4xl"` with responses structured into 5 sequential sections (_Leader & DGroup Relationship_, _Spiritual Maturity & Character Evaluation_ with score scale banner, _Disciple Growth & Assessment_, _Ministry Credibility & Concerns_, _Attestation & Recommendation_) and standard `primaryOutline` close button.
 
 ---
 

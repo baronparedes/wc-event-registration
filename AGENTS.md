@@ -117,7 +117,7 @@ This file contains the core principles, architecture rules, and domain logic con
 ## 8. Domain Logic: Unified Approval Workflow & SLOD Delegation
 
 - **Unified Approval Requests (`/admin/approvals`)**:
-  - Centralizes review workflows across `form_submission` and `service_excuse` (Long Leave).
+  - Centralizes review workflows across `form_submission`, `service_excuse` (Long Leave), and `recruitment_endorsement` (DGroup Leader Endorsement).
   - Admins can inspect details, track review assignment status, delegate review to SLOD users (`list_slod_users`), or approve/decline directly at any time.
 - **Volunteer Long Leave (Service Excuses)**:
   - Members self-file from `/profile?tab=commitments` without entering reviewer emails.
