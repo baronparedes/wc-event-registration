@@ -1,12 +1,14 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { type ApprovalReviewData, fetchApprovalReviewByToken } from '@/lib/domain/approvals';
 
 import { useApprovalReviewQuery } from '../useApprovalReviewQuery';
-import { fetchApprovalReviewByToken, type ApprovalReviewData } from '@/lib/domain/approvals';
 
 vi.mock('@/lib/domain/approvals', () => ({
   fetchApprovalReviewByToken: vi.fn(),
@@ -18,7 +20,7 @@ const mockApprovalReviewData = {
     status: 'pending',
     entity_type: 'form_submission',
     title: 'Test',
-  }
+  },
 } as unknown as ApprovalReviewData;
 
 function createWrapper() {
@@ -33,7 +35,7 @@ function createWrapper() {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, { initialEntries: ['/'] }, children)
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
     );
   };
 }

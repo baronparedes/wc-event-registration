@@ -1,12 +1,14 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { type ApprovalRequest, fetchApprovalRequests } from '@/lib/domain/approvals';
 
 import { useApprovalRequestsQuery } from '../useApprovalRequestsQuery';
-import { fetchApprovalRequests, type ApprovalRequest } from '@/lib/domain/approvals';
 
 vi.mock('@/lib/domain/approvals', () => ({
   fetchApprovalRequests: vi.fn(),
@@ -29,7 +31,7 @@ function createWrapper() {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, { initialEntries: ['/'] }, children)
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
     );
   };
 }
@@ -57,7 +59,11 @@ describe('useApprovalRequestsQuery', () => {
   it('fetches approval requests successfully with filters', async () => {
     vi.mocked(fetchApprovalRequests).mockResolvedValue(mockApprovalRequests);
 
-    const filters = { status: 'pending' as const, entity_type: 'form_submission' as const, search: 'test' };
+    const filters = {
+      status: 'pending' as const,
+      entity_type: 'form_submission' as const,
+      search: 'test',
+    };
 
     const { result } = renderHook(() => useApprovalRequestsQuery(filters), {
       wrapper: createWrapper(),

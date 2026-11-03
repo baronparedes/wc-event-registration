@@ -1,32 +1,36 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useSubmitApprovalDecisionMutation } from '../useSubmitApprovalDecisionMutation';
-import { submitApprovalDecision, type ApprovalDecisionResponse } from '@/lib/domain/approvals';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { APPROVAL_REQUESTS_QUERY_KEY } from '@/hooks/domain/approvals/queries/useApprovalRequestsQuery';
 import { APPROVAL_REVIEW_QUERY_KEY } from '@/hooks/domain/approvals/queries/useApprovalReviewQuery';
+import { type ApprovalDecisionResponse, submitApprovalDecision } from '@/lib/domain/approvals';
+
+import { useSubmitApprovalDecisionMutation } from '../useSubmitApprovalDecisionMutation';
 
 vi.mock('@/lib/domain/approvals', () => ({
   submitApprovalDecision: vi.fn(),
 }));
 
 function createWrapper(customClient?: QueryClient) {
-  const queryClient = customClient || new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
+  const queryClient =
+    customClient ||
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
       },
-    },
-  });
+    });
   return function Wrapper({ children }: { children: ReactNode }) {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, { initialEntries: ['/'] }, children)
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
     );
   };
 }
@@ -37,7 +41,11 @@ describe('useSubmitApprovalDecisionMutation', () => {
   });
 
   it('submits approval decision successfully and invalidates queries', async () => {
-    const mockResponse: ApprovalDecisionResponse = { success: true, message: 'Done', status: 'approved' };
+    const mockResponse: ApprovalDecisionResponse = {
+      success: true,
+      message: 'Done',
+      status: 'approved',
+    };
     vi.mocked(submitApprovalDecision).mockResolvedValue(mockResponse);
 
     const queryClient = new QueryClient();
@@ -67,7 +75,11 @@ describe('useSubmitApprovalDecisionMutation', () => {
   });
 
   it('invalidates specific token review query when token is provided', async () => {
-    const mockResponse: ApprovalDecisionResponse = { success: true, message: 'Done', status: 'approved' };
+    const mockResponse: ApprovalDecisionResponse = {
+      success: true,
+      message: 'Done',
+      status: 'approved',
+    };
     vi.mocked(submitApprovalDecision).mockResolvedValue(mockResponse);
 
     const queryClient = new QueryClient();

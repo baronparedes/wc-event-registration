@@ -1,31 +1,35 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { APPROVAL_REQUESTS_QUERY_KEY } from '@/hooks/domain/approvals/queries/useApprovalRequestsQuery';
+import { type DelegateApprovalResponse, delegateApproval } from '@/lib/domain/approvals';
 
 import { useDelegateApprovalMutation } from '../useDelegateApprovalMutation';
-import { delegateApproval, type DelegateApprovalResponse } from '@/lib/domain/approvals';
-import { APPROVAL_REQUESTS_QUERY_KEY } from '@/hooks/domain/approvals/queries/useApprovalRequestsQuery';
 
 vi.mock('@/lib/domain/approvals', () => ({
   delegateApproval: vi.fn(),
 }));
 
 function createWrapper(customClient?: QueryClient) {
-  const queryClient = customClient || new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
+  const queryClient =
+    customClient ||
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
       },
-    },
-  });
+    });
   return function Wrapper({ children }: { children: ReactNode }) {
     return createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, { initialEntries: ['/'] }, children)
+      createElement(MemoryRouter, { initialEntries: ['/'] }, children),
     );
   };
 }
@@ -40,7 +44,7 @@ describe('useDelegateApprovalMutation', () => {
       success: true,
       message: 'Delegated',
       approval_id: 'req-1',
-      assigned_to_email: 'slod1@example.com'
+      assigned_to_email: 'slod1@example.com',
     };
     vi.mocked(delegateApproval).mockResolvedValue(mockResponse);
 
