@@ -90,4 +90,19 @@ describe('ApplicantVerificationSection', () => {
     expect(screen.getByText('Test survey item')).toBeInTheDocument();
     expect(screen.getByText('survey_q2')).toBeInTheDocument();
   });
+
+  it('renders applicant photo preview when avatar_image_base64 is provided', () => {
+    render(
+      <ApplicantVerificationSection
+        application={{
+          ...application,
+          avatar_image_base64: 'data:image/jpeg;base64,photo-preview-data',
+        }}
+        surveyAnswers={[]}
+      />,
+    );
+
+    expect(screen.getByAltText('Applicant photo preview')).toBeInTheDocument();
+    expect(screen.getByText('Applicant Photo')).toBeInTheDocument();
+  });
 });

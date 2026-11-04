@@ -81,6 +81,11 @@ export const submitRecruitmentApplicationSchema = z
     }),
     survey_answers: z.record(z.string(), z.enum(['true', 'false'])),
     applicant_attested: z.literal(true),
+    avatar_image_base64: z
+      .string()
+      .max(1_500_000, 'Image must be 1 MB or smaller')
+      .optional()
+      .nullable(),
   })
   .superRefine((application, context) => {
     if (

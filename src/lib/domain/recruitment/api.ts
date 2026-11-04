@@ -29,6 +29,7 @@ type RecruitmentEdgeResponse = {
   error?: string;
   error_code?: string;
   application_id?: string;
+  avatar_object_key?: string | null;
   current_step?: number;
   already_completed?: boolean;
   settings?: unknown;
@@ -173,6 +174,21 @@ export async function addRecruiterNote(
     throw new Error(response.error || 'Failed to add recruiter note');
   }
   return response;
+}
+
+export async function uploadRecruitmentApplicantAvatar(params: {
+  applicationId: string;
+  imageBase64: string;
+}): Promise<string> {
+  const response = await callUpdateRecruitmentStage({
+    action: 'upload_avatar',
+    application_id: params.applicationId,
+    image_base64: params.imageBase64,
+  });
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to upload applicant avatar');
+  }
+  return response.avatar_object_key || '';
 }
 
 export async function fetchAdminRecruitmentApplicationsPage(params: {

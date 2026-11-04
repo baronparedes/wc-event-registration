@@ -1,4 +1,4 @@
-import { assertEquals } from '@std/assert';
+import { assert, assertEquals } from '@std/assert';
 
 import { handleUpdateRecruitmentStage } from '../handler.ts';
 
@@ -100,7 +100,14 @@ function mockFetch(
   globalThis.fetch = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     const method = init?.method ?? 'GET';
-    const body = init?.body ? (JSON.parse(String(init.body)) as unknown) : null;
+    let body: unknown = null;
+    if (init?.body) {
+      try {
+        body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
+      } catch {
+        body = init.body;
+      }
+    }
     calls.push({ path: url.pathname, method, body });
 
     if (url.pathname === '/auth/v1/user') {
@@ -171,6 +178,11 @@ function mockFetch(
     }
     if (url.pathname === '/functions/v1/cron-process-email-queue') {
       return Promise.resolve(Response.json({ success: true }));
+    }
+    if (url.pathname.startsWith('/storage/v1/object/member_avatars/')) {
+      return Promise.resolve(
+        Response.json({ Key: url.pathname.slice('/storage/v1/object/'.length) }),
+      );
     }
     if (url.pathname === '/rest/v1/recruitment_step_notes') {
       return Promise.resolve(
@@ -994,6 +1006,57 @@ Deno.test('update-recruitment-stage rejects add_note from non-reviewers', async 
           application_id: APPLICATION_ID,
           step_number: 2,
           notes: 'Attempting to add note without reviewer role',
+        }),
+      );
+
+      assertEquals(response.status, 403);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage allows a reviewer to upload applicant avatar', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({ adminRole: 'admin' });
+    try {
+      const validBytes = new Uint8Array([0xff, 0xd8, 0x00, 0xff, 0xd9]);
+      const base64 = btoa(String.fromCharCode(...validBytes));
+      const validJpegDataUrl = `data:image/jpeg;base64,${base64}`;
+
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'upload_avatar',
+          application_id: APPLICATION_ID,
+          image_base64: validJpegDataUrl,
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const result = await response.json();
+      assertEquals(result.success, true);
+      assertEquals(result.avatar_object_key, `avatars/recruitment/${APPLICATION_ID}.jpg`);
+      assert(mock.calls.some((call) => call.path.startsWith('/storage/v1/object/member_avatars/')));
+      assert(
+        mock.calls.some(
+          (call) => call.path === '/rest/v1/recruitment_applications' && call.method === 'PATCH',
+        ),
+      );
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage rejects upload_avatar from non-reviewers', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({ adminRole: null });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'upload_avatar',
+          application_id: APPLICATION_ID,
+          image_base64: 'data:image/jpeg;base64,abcd',
         }),
       );
 

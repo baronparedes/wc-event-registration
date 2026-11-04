@@ -1,6 +1,7 @@
 import { createApprovalRequest, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import { AVATAR_BUCKET, MAX_IMAGE_BYTES, decodeJpegDataUrl } from '../_shared/image.ts';
 import { z } from '../_shared/validation.ts';
 import { calculateAge, hasMinimumTenure, submitRecruitmentApplicationSchema } from './schemas.ts';
 
@@ -41,10 +42,18 @@ async function removeIncompleteApplication(
     : never,
   applicationId: string,
   approvalId?: string,
+  avatarObjectKey?: string | null,
 ): Promise<void> {
   await supabase.from('recruitment_applications').delete().eq('id', applicationId);
   if (approvalId) {
     await supabase.from('approval_requests').delete().eq('id', approvalId);
+  }
+  if (avatarObjectKey) {
+    try {
+      await supabase.storage.from(AVATAR_BUCKET).remove([avatarObjectKey]);
+    } catch (err) {
+      console.warn('Failed to clean up avatar object on rollback:', err);
+    }
   }
 }
 
@@ -183,9 +192,50 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
     .join(' ');
   const now = new Date().toISOString();
 
+  const applicationId = crypto.randomUUID();
+  let avatarObjectKey: string | null = null;
+
+  if (application.avatar_image_base64?.trim()) {
+    const imageBytes = decodeJpegDataUrl(application.avatar_image_base64.trim());
+    if (!imageBytes || imageBytes.byteLength > MAX_IMAGE_BYTES) {
+      return jsonResponse(
+        400,
+        {
+          success: false,
+          error: 'Image must be a valid JPEG 1 MB or smaller',
+          error_code: 'INVALID_AVATAR_IMAGE',
+        },
+        guard.corsHeaders,
+      );
+    }
+
+    avatarObjectKey = `avatars/recruitment/${applicationId}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(avatarObjectKey, imageBytes, {
+        contentType: 'image/jpeg',
+        cacheControl: '0',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload applicant avatar:', uploadError);
+      return jsonResponse(
+        500,
+        {
+          success: false,
+          error: 'Failed to upload applicant photo',
+          error_code: 'AVATAR_UPLOAD_FAILED',
+        },
+        guard.corsHeaders,
+      );
+    }
+  }
+
   const { data: createdApplication, error: applicationError } = await supabase
     .from('recruitment_applications')
     .insert({
+      id: applicationId,
       auth_user_id: null,
       email: application.email,
       first_name: application.first_name,
@@ -197,6 +247,7 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
       date_of_birth: application.date_of_birth,
       gender: application.gender,
       life_stage: application.life_stage,
+      avatar_object_key: avatarObjectKey,
       desired_role: application.desired_role,
       personal_details: application.personal_details,
       emergency_contact: application.emergency_contact,
@@ -215,6 +266,9 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
 
   if (applicationError || !createdApplication) {
     console.error('Failed to create recruitment application:', applicationError);
+    if (avatarObjectKey) {
+      await supabase.storage.from(AVATAR_BUCKET).remove([avatarObjectKey]);
+    }
     return jsonResponse(
       500,
       {
@@ -265,7 +319,7 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
 
   if (transactionError) {
     console.error('Failed to create initial recruitment steps:', transactionError);
-    await removeIncompleteApplication(supabase, createdApplication.id);
+    await removeIncompleteApplication(supabase, createdApplication.id, undefined, avatarObjectKey);
     return jsonResponse(
       500,
       {
@@ -290,7 +344,7 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
 
   if (!approvalResult.success || !approvalResult.approval) {
     console.error('Failed to create DGroup endorsement request:', approvalResult.error);
-    await removeIncompleteApplication(supabase, createdApplication.id);
+    await removeIncompleteApplication(supabase, createdApplication.id, undefined, avatarObjectKey);
     return jsonResponse(
       500,
       {
@@ -309,7 +363,12 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
 
   if (linkError) {
     console.error('Failed to link DGroup endorsement request:', linkError);
-    await removeIncompleteApplication(supabase, createdApplication.id, approvalResult.approval.id);
+    await removeIncompleteApplication(
+      supabase,
+      createdApplication.id,
+      approvalResult.approval.id,
+      avatarObjectKey,
+    );
     return jsonResponse(
       500,
       {

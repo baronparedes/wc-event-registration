@@ -45,6 +45,8 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Build Confirmation Modals (`ScheduleSessionConfirmDialog`, `CompleteStepConfirmDialog`, `ArchiveApplicantConfirmDialog`) with theme-safe destructive/danger styling
   - [x] Mobile & Dialog Ergonomics: Single scrollbar architecture, sticky dialog headers/footers, 16px mobile gutters (`Dialog.tsx`), and full-width footer action buttons on mobile
   - [x] Synchronize DGroup Endorsement approval status across Step 1, Step 4 gate, Applicant Profile, and Endorsement Review tab
+  - [x] Collaborative Recruiter Notes: `public.recruitment_step_notes` multi-entry thread tracking author ID, reviewer name, role, avatar, and timestamp per step without overwriting notes history
+  - [x] Applicant Photo Upload & Migration: Device camera/file upload in registration Section 1 (`ApplicantAvatarPicker`), preview in Section 5 (`ApplicantVerificationSection`), reviewer photo editing in Applicant Profile (`EditableApplicantAvatar`), and automated migration of `avatar_object_key` to `public.users` in `deploy_recruitment_applicant`
   - [x] Integrate Recruitment Settings into `/admin/settings` Launchpad (`System Configuration` card) & build tabbed `AdminRecruitmentSettingsPage` (`/admin/settings/recruitment`) + Vitest component tests
 
 ---

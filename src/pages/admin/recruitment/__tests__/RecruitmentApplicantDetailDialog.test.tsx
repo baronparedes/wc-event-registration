@@ -117,6 +117,10 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     mutate: vi.fn(),
     isPending: false,
   }),
+  useUploadRecruitmentAvatarMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useRecruitmentSettingsQuery: () => ({
     data: {
       survey_questions: [
