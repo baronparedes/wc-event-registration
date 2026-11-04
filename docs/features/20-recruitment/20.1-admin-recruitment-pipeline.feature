@@ -88,3 +88,4 @@ Feature: Admin Recruitment Pipeline Management
     And I click "Deploy Volunteer" and confirm the deployment dialog
     Then the applicant is atomically promoted to an active WelcomeHub member
     And the application status transitions to "deployed"
+
