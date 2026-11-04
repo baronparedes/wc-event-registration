@@ -11,7 +11,6 @@ import {
   usePublicRecruitmentConfigQuery,
   useSubmitRecruitmentApplicationMutation,
 } from '@/hooks/domain/recruitment';
-import { NotFoundPage } from '@/pages/not-found';
 
 import { ApplicantApplicationWizard } from './components/ApplicantApplicationWizard';
 import { RecruitmentPreGateSection } from './components/RecruitmentPreGateSection';
@@ -54,7 +53,7 @@ export function RecruitmentApplyPage() {
   }
 
   if (!hasIntakeAccess) {
-    return <NotFoundPage />;
+    return <Navigate to={ROUTE_PATHS.notFound} replace />;
   }
 
   if (configQuery.isLoading) {

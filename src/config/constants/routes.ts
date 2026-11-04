@@ -8,7 +8,7 @@ export const ROUTE_PATHS = {
   privacyPolicy: '/privacy-policy',
   terms: '/terms',
   termsOfService: '/terms-of-service',
-  notFound: '*',
+  notFound: '/404',
   login: '/login',
   profile: '/profile',
   excuseRequest: '/excuse-request',
