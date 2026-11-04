@@ -704,9 +704,13 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       .single();
 
     if (noteError) {
+      console.error('[update-recruitment-stage] Failed to record recruiter note:', noteError);
       return response(
         500,
-        { success: false, error: 'Failed to record recruiter note' },
+        {
+          success: false,
+          error: `Failed to record recruiter note: ${noteError.message}`,
+        },
         guard.corsHeaders,
       );
     }

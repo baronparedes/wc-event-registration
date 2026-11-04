@@ -20,15 +20,23 @@ create table if not exists public.recruitment_step_notes (
 alter table public.recruitment_step_notes
 drop constraint if exists recruitment_step_notes_author_id_fkey;
 
+-- Drop foreign key constraint on author_id so notes can reference reviewers across auth.users or public.users
+alter table public.recruitment_step_notes
+drop constraint if exists recruitment_step_notes_author_id_fkey;
+
 create index if not exists idx_recruitment_step_notes_app_step on public.recruitment_step_notes (application_id, step_number, created_at asc);
 
 alter table public.recruitment_step_notes enable row level security;
 
 drop policy if exists "Reviewers can read recruitment step notes" on public.recruitment_step_notes;
 
+drop policy if exists "Reviewers can read recruitment step notes" on public.recruitment_step_notes;
+
 create policy "Reviewers can read recruitment step notes" on public.recruitment_step_notes for
 select
   to authenticated using (public.is_recruitment_reviewer ());
+
+drop policy if exists "Reviewers can insert recruitment step notes" on public.recruitment_step_notes;
 
 drop policy if exists "Reviewers can insert recruitment step notes" on public.recruitment_step_notes;
 
