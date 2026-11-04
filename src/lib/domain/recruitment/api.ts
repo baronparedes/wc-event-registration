@@ -292,7 +292,7 @@ export async function fetchAdminRecruitmentApplicationDetail(
   if (application.data.dgroup_approval_id) {
     const { data: approvalData } = await supabase
       .from('approval_requests')
-      .select('id, status, decision_notes, decision_at, decision_by_email, metadata')
+      .select('id, status, decision_notes, decided_at, decided_by_email, metadata')
       .eq('id', application.data.dgroup_approval_id)
       .maybeSingle();
 
@@ -316,8 +316,8 @@ export async function fetchAdminRecruitmentApplicationDetail(
         approval_id: approvalData.id,
         status: approvalData.status as 'pending' | 'approved' | 'rejected',
         decision_notes: approvalData.decision_notes,
-        decision_at: approvalData.decision_at,
-        decision_by_email: approvalData.decision_by_email,
+        decided_at: approvalData.decided_at,
+        decided_by_email: approvalData.decided_by_email,
         attestation_answers: attestationAnswers,
       };
     }
