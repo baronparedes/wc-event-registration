@@ -84,14 +84,12 @@ export function MissedCommitmentsMobileList({
                   {volunteer.phone ? (
                     <div className="flex items-center gap-2 pt-0.5">
                       <span className="text-[15px] font-medium text-text">{volunteer.phone}</span>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <ContactButtons
-                          phone={volunteer.phone}
-                          size="sm"
-                          variant="icon"
-                          showCopyFallback={false}
-                        />
-                      </div>
+                      <ContactButtons
+                        phone={volunteer.phone}
+                        size="sm"
+                        variant="icon"
+                        showCopyFallback={false}
+                      />
                     </div>
                   ) : undefined}
                 </MobileCardContentItem>

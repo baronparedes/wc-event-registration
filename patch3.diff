@@ -1,0 +1,20 @@
+--- src/components/ui/ContactButtons.tsx
++++ src/components/ui/ContactButtons.tsx
+@@ -154,7 +154,7 @@
+           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, smsClassName)}
+           onClick={(e) => {
+             e.stopPropagation();
+-            onSmsClick?.(e as unknown as React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>);
++            onSmsClick?.(e);
+           }}
+           aria-label={`SMS unavailable (invalid phone number)`}
+           title="SMS unavailable"
+@@ -191,7 +191,7 @@
+           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, viberClassName)}
+           onClick={(e) => {
+             e.stopPropagation();
+-            onViberClick?.(e as unknown as React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>);
++            onViberClick?.(e);
+           }}
+           aria-label={`Viber unavailable (invalid phone number)`}
+           title="Viber unavailable"

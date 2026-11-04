@@ -1,0 +1,60 @@
+--- src/components/ui/ContactButtons.tsx
++++ src/components/ui/ContactButtons.tsx
+@@ -95,7 +95,8 @@
+     return () => clearTimeout(timer);
+   }, [isCopied]);
+
+-  const handleCopy = async () => {
++  const handleCopy = async (e?: React.MouseEvent<HTMLButtonElement>) => {
++    e?.stopPropagation();
+     const targetNumber = formattedNumber || phone;
+     const success = await copyPhoneNumberToClipboard(targetNumber);
+     if (success) {
+@@ -134,7 +135,10 @@
+         >
+           <a
+             href={smsUri}
+-            onClick={onSmsClick}
++            onClick={(e) => {
++              e.stopPropagation();
++              onSmsClick?.(e);
++            }}
+             aria-label={`Send SMS to ${formattedNumber}`}
+             title="Send SMS"
+             data-testid="contact-sms-link"
+@@ -148,7 +152,10 @@
+           size={size}
+           fullWidth={isFullWidthInColumn}
+           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, smsClassName)}
+-          onClick={onSmsClick}
++          onClick={(e) => {
++            e.stopPropagation();
++            onSmsClick?.(e as unknown as React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>);
++          }}
+           aria-label={`SMS unavailable (invalid phone number)`}
+           title="SMS unavailable"
+           data-testid="contact-sms-disabled"
+@@ -165,7 +172,10 @@
+         >
+           <a
+             href={viberUri}
+-            onClick={onViberClick}
++            onClick={(e) => {
++              e.stopPropagation();
++              onViberClick?.(e);
++            }}
+             aria-label={`Open Viber chat with ${formattedNumber}`}
+             title="Open Viber"
+             data-testid="contact-viber-link"
+@@ -179,7 +189,10 @@
+           size={size}
+           fullWidth={isFullWidthInColumn}
+           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, viberClassName)}
+-          onClick={onViberClick}
++          onClick={(e) => {
++            e.stopPropagation();
++            onViberClick?.(e as unknown as React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>);
++          }}
+           aria-label={`Viber unavailable (invalid phone number)`}
+           title="Viber unavailable"
+           data-testid="contact-viber-disabled"

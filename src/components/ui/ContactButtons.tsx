@@ -119,7 +119,8 @@ export function ContactButtons({
     return () => clearTimeout(timer);
   }, [isCopied]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
     const targetNumber = formattedNumber || phone;
     const success = await copyPhoneNumberToClipboard(targetNumber);
     if (success) {
@@ -170,7 +171,10 @@ export function ContactButtons({
         >
           <a
             href={smsUri}
-            onClick={onSmsClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSmsClick?.(e);
+            }}
             aria-label={`Send SMS to ${formattedNumber}`}
             title="Send SMS"
             data-testid="contact-sms-link"
@@ -185,7 +189,10 @@ export function ContactButtons({
           size={size}
           fullWidth={isFullWidthInColumn}
           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, smsClassName)}
-          onClick={onSmsClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSmsClick?.(e);
+          }}
           aria-label={`SMS unavailable (invalid phone number)`}
           title="SMS unavailable"
           data-testid="contact-sms-disabled"
@@ -205,7 +212,10 @@ export function ContactButtons({
         >
           <a
             href={viberUri}
-            onClick={onViberClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViberClick?.(e);
+            }}
             aria-label={`Open Viber chat with ${formattedNumber}`}
             title="Open Viber"
             data-testid="contact-viber-link"
@@ -220,7 +230,10 @@ export function ContactButtons({
           size={size}
           fullWidth={isFullWidthInColumn}
           className={twMerge('opacity-50 cursor-not-allowed', dimensionClass, viberClassName)}
-          onClick={onViberClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onViberClick?.(e);
+          }}
           aria-label={`Viber unavailable (invalid phone number)`}
           title="Viber unavailable"
           data-testid="contact-viber-disabled"
