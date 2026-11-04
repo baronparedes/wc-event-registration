@@ -121,13 +121,13 @@ export function RecruitmentApplicantDetailDialog({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
               {isArchived ? (
                 <Button
                   variant="primaryOutline"
                   size="sm"
                   onClick={() => handleOpenArchiveDialog('restore')}
-                  className="gap-1.5 h-8 text-xs"
+                  className="gap-1.5 h-8 text-xs justify-center"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>Restore to Active</span>
@@ -137,7 +137,7 @@ export function RecruitmentApplicantDetailDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => handleOpenArchiveDialog('archive')}
-                  className="gap-1.5 h-8 text-xs text-danger hover:text-danger hover:bg-danger/10 border-danger/40"
+                  className="gap-1.5 h-8 text-xs text-danger hover:text-danger hover:bg-danger/10 border-danger/40 justify-center"
                 >
                   <Archive className="h-3.5 w-3.5" />
                   <span>Archive</span>
