@@ -8,13 +8,13 @@ This document defines the architectural blueprint, database schema, backend work
 
 > **Status Legend**: `⬜ Not Done` · `🔄 In Progress` · `✅ Complete`
 
-| Phase                                                                                         | Milestone                                                                         | Target Layer / Surface                                                                       | Key Deliverables                                                                                                                                                                                                                                                                         |   Status    |
-| :-------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
-| **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                                       | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC | ✅ Complete |
-| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                                        | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                              | ✅ Complete |
-| **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`                               | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                     | ✅ Complete |
-| **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`                        | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                 | ✅ Complete |
-| **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/settings/recruitment`, `/admin/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 9-step review & coaching modal (repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy), `AdminBaseNavigation` Recruitment tab, `/admin/settings` Launchpad card, & tabbed settings editor   | ⬜ Not Done |
+| Phase                                                                                         | Milestone                                                                         | Target Layer / Surface                                                                       | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                                                             |   Status    |
+| :-------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
+| **[Phase 1](#phase-1-database-schema-seeded-20-question-survey--approval-extension)**         | **Database Schema, `vmt` Role, Seeded Questions & Approval RPCs**                 | `supabase/migrations/`                                                                       | `vmt` auth role, `is_recruitment_reviewer()`, `recruitment_settings` (20 Doctrinal Survey + 25 DGroup Endorsement `DynamicFieldLike` questions), `recruitment_applications`, `recruitment_pipeline_transactions`, `approval_entity_type` extension, & `deploy_recruitment_applicant` RPC                                                                                                                                                     | ✅ Complete |
+| **[Phase 2](#phase-2-backend-edge-functions--deno-unit-tests)**                               | **Backend Edge Functions & Notifications**                                        | `supabase/functions/`                                                                        | `submit-recruitment-application`, `update-recruitment-stage` (Steps 1–8, repeatable Steps 4/5, endorsement gate), `deploy-recruitment-applicant` (Admin/SLOD only), extended `process-approval-decision`, & Deno unit tests                                                                                                                                                                                                                  | ✅ Complete |
+| **[Phase 3](#phase-3-domain-layer-srclibdomainrecruitment--hooks-srchooksdomainrecruitment)** | **Frontend Domain Layer & React Query Hooks**                                     | `src/lib/domain/recruitment/`, `src/hooks/domain/recruitment/`                               | Strict TypeScript types (`AdminRole` with `'vmt'`, `RECRUITMENT_ROLES` excluding `'OIC'`), Zod schemas, Edge/Supabase API functions, & single-file React Query hooks                                                                                                                                                                                                                                                                         | ✅ Complete |
+| **[Phase 4](#phase-4-applicant-self-service-portal-recruitment--dgroup-leader-review-ui)**    | **Kiosk Application Wizard, Own-Phone Progress Portal & DGroup Leader Review UI** | `/recruitment/apply`, `/recruitment`, `/approvals/review/:token`, `/`                        | Hub recruitment banner, 4 Pre-Gates + Kiosk-friendly Step 1 form (`DynamicFieldRenderer` for 20-Q Doctrinal Survey), Own-Phone Google Sign-In 9-Step Progress Tracker, Sunday Commitment Picker, & 25-field DGroup Leader Attestation UI                                                                                                                                                                                                     | ✅ Complete |
+| **[Phase 5](#phase-5-admin-slod--vmt-recruitment-pipeline-adminrecruitment--settings)**       | **Admin, SLOD & VMT Recruitment Pipeline & Settings UI**                          | `/admin/recruitment`, `/admin/settings/recruitment`, `/admin/settings`, `/admin/users/roles` | `AdminPageShell` 42-column pipeline table/cards & CSV export, 5-tab review modal (9-Step Pipeline, Survey, DGroup Endorsement, 40-field Profile, & Transaction History), repeatable Steps 4/5, Step 7 `ccf_vmt_id`/`ccf_vmt_date`, Step 8 RFID, Step 9 Deploy, Archive lifecycle, confirmation modals, mobile scrollbar/gutter ergonomics, `AdminBaseNavigation` Recruitment tab, `/admin/settings` Launchpad card, & tabbed settings editor | ✅ Complete |
 
 ### Phase Checklist
 
@@ -38,11 +38,14 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Build Kiosk-friendly `/recruitment/apply` (4 Pre-Qualification Gates + 5-Section Step 1 Wizard + Kiosk Auto-Reset Screen)
   - [x] Build Own-Phone `/recruitment` 9-Step Progress Tracker (Google OAuth matched by email, Step 7 VMT self-attestation, Step 8 Sunday Commitment Picker)
   - [x] Build `RecruitmentEndorsementReviewSection` in `/approvals/review/:token` using `DynamicFieldRenderer` + Vitest component tests
-- [ ] **Phase 5: Admin, SLOD & VMT Recruitment Pipeline (`/admin/recruitment`) & Settings (`/admin/settings/recruitment`)**
-  - [ ] Add `Recruitment` link to `AdminBaseNavigation` for authorized reviewers (`admin`, `super_admin`, `slod`, `vmt`)
-  - [ ] Build `AdminRecruitmentPage` (`/admin/recruitment`) with `AdminPageShell`, `ListTable`, `MobileCard`, `useInfiniteScrollTrigger`, & 42-column CSV export
-  - [ ] Build `RecruitmentApplicantDetailDialog` (9-Step Pipeline & Transaction History, Repeatable Step 4/5 controls, Step 7 VMT ID/Date, Step 8 RFID, Step 9 Deployment, & Doctrinal Survey Breakdown)
-  - [ ] Integrate Recruitment Settings into `/admin/settings` Launchpad (`System Configuration` card) & build tabbed `AdminRecruitmentSettingsPage` (`/admin/settings/recruitment`) + Vitest component tests
+- [x] **Phase 5: Admin, SLOD & VMT Recruitment Pipeline (`/admin/recruitment`) & Settings (`/admin/settings/recruitment`)**
+  - [x] Add `Recruitment` link to `AdminBaseNavigation` for authorized reviewers (`admin`, `super_admin`, `slod`, `vmt`)
+  - [x] Build `AdminRecruitmentPage` (`/admin/recruitment`) with `AdminPageShell`, `ListTable`, `MobileCard`, `useInfiniteScrollTrigger`, & 42-column CSV export
+  - [x] Build 5-tab `RecruitmentApplicantDetailDialog` (9-Step Pipeline, Doctrinal Survey Breakdown, DGroup Endorsement Review, 40-Field Applicant Profile, and Transaction History with full lifecycle archiving/restoring)
+  - [x] Build Confirmation Modals (`ScheduleSessionConfirmDialog`, `CompleteStepConfirmDialog`, `ArchiveApplicantConfirmDialog`) with theme-safe destructive/danger styling
+  - [x] Mobile & Dialog Ergonomics: Single scrollbar architecture, sticky dialog headers/footers, 16px mobile gutters (`Dialog.tsx`), and full-width footer action buttons on mobile
+  - [x] Synchronize DGroup Endorsement approval status across Step 1, Step 4 gate, Applicant Profile, and Endorsement Review tab
+  - [x] Integrate Recruitment Settings into `/admin/settings` Launchpad (`System Configuration` card) & build tabbed `AdminRecruitmentSettingsPage` (`/admin/settings/recruitment`) + Vitest component tests
 
 ---
 
@@ -405,7 +408,7 @@ erDiagram
   - Public/Kiosk and applicant views call `public.get_public_recruitment_config()` (`SECURITY DEFINER`, `search_path = public`), which returns `is_recruitment_open`, `eligibility_rules`, `vmt_registration_url`, `orientation_instructions`, and `survey_questions` mapped strictly to `DynamicFieldLike` (stripping `correct_answer` and `explanation`).
 
 1. **Table `public.recruitment_applications`**:
-   - Tracks applicant profile, `desired_role`, `confirmed_role`, `spiritual_background`, `dgroup_info`, `survey_answers`, `survey_score`, `survey_total`, `current_step` (`1..9`), `status` (`'active' | 'on_hold' | 'deployed' | 'declined' | 'withdrawn'`), `dgroup_approval_id`, `vmt_registered`, `ccf_vmt_id`, `ccf_vmt_date`, `service_commitments`, `assigned_rfid_member_id`, and `promoted_user_id`.
+   - Tracks applicant profile, `desired_role`, `confirmed_role`, `spiritual_background`, `dgroup_info`, `survey_answers`, `survey_score`, `survey_total`, `current_step` (`1..9`), `status` (`'active' | 'archived' | 'deployed' | 'declined' | 'withdrawn'`), `dgroup_approval_id`, `vmt_registered`, `ccf_vmt_id`, `ccf_vmt_date`, `service_commitments`, `assigned_rfid_member_id`, and `promoted_user_id`.
    - **RLS**:
      - `anon` (Public / Kiosk): **Zero direct table access** (`NO` `SELECT`, `INSERT`, `UPDATE`, or `DELETE` policy). Kiosk submissions go exclusively through the `submit-recruitment-application` Edge Function (`service_role`), preventing anyone on a shared Kiosk from querying or enumerating applications.
      - `authenticated` (Applicant on Own Phone):
@@ -417,7 +420,7 @@ erDiagram
    - **Columns**:
      - `step_number` (`1..9`) and `step_key` (`'register'`, `'interview'`, `'orientation'`, `'observation'`, `'evaluation'`, `'onboarding'`, `'vmt_registration'`, `'rfid_releasing'`, `'deployment'`).
      - `attempt_number` (`int`, auto-incremented per `(application_id, step_number)` — e.g., `Observation #1`, `Evaluation #1`, `Evaluation #2`, `Observation #2`, `Evaluation #3`).
-     - `transaction_type` (`'scheduled' | 'rescheduled' | 'completed' | 'repeated_step' | 'returned_to_observation' | 'skipped' | 'on_hold' | 'declined'`).
+     - `transaction_type` (`'scheduled' | 'rescheduled' | 'completed' | 'repeated_step' | 'returned_to_observation' | 'skipped' | 'archived' | 'restored' | 'declined'`).
      - `from_step` (`int`) and `to_step` (`int`) — explicitly records forward progression (`4 -> 5`), same-step repetition (`4 -> 4` for another Observation or `5 -> 5` for another Evaluation), and coaching loops back to a previous step (`5 -> 4` when an Evaluator determines the applicant needs another Observation session).
      - `scheduled_at` (`timestamptz`), `completed_at` (`timestamptz`), `assigned_reviewer_id`, `assigned_reviewer_name`, `rubric_data`, `notes` (internal), and `applicant_visible_notes`.
    - **RLS & Internal Coaching Note Privacy**:
@@ -531,7 +534,7 @@ Create a strictly typed domain module and single-responsibility React Query hook
   - `RECRUITMENT_CATEGORIES` (`Men`, `Women`, `Singles`, `Youth`, `B1G`, `NXTGen`) and `RECRUITMENT_ROLES` (`'Backroom Support'`, `'IMT Support'`, `'Prayer Coach'`, `'Usher'`, `'VMT Support'` — derived from `SERVICE_ROLES` with `'OIC'` excluded).
 - `types.ts`:
   - `RecruitmentStepNumber` (`1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9`)
-  - `RecruitmentApplicationStatus` (`'active' | 'on_hold' | 'deployed' | 'declined' | 'withdrawn'`)
+  - `RecruitmentApplicationStatus` (`'active' | 'archived' | 'deployed' | 'declined' | 'withdrawn'`)
   - `RecruitmentStageStatus` (`'locked' | 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'skipped' | 'declined'`)
   - `SurveyQuestionItem`, `EndorsementQuestionItem`, `RecruitmentSettings`
   - `RecruitmentApplication`, `RecruitmentPipelineTransaction`, `ApplicantRecruitmentView`
@@ -629,7 +632,7 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 
 #### 5.1 Objectives
 
-Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS.md` Admin UI layout, responsive table/card, dialog scroll, and semantic theme token standards.
+Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS.md` Admin UI layout, responsive table/card, dialog scroll, theme typography, and semantic theme token standards.
 
 #### 5.2 Frontend Surfaces & Components
 
@@ -637,36 +640,54 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
    - Authorized for `admin`, `super_admin`, `slod`, and `vmt` roles (`AdminRole` in `src/lib/domain/auth/types.ts` extended with `'vmt'`, and assignable at `/admin/users/roles`).
    - Integrated with `AdminBaseNavigation` as a primary navigation item (**Recruitment**) visible to authorized reviewers (`admin`, `super_admin`, `slod`, `vmt`).
    - Built with `AdminPageShell`:
-     - `AdminPageShell.Header`: Title, active applicant metrics, **Export CSV** button (exports all 42 canonical recruitment columns formatted in `Asia/Manila` timezone), and link to `Recruitment Settings` (`/admin/settings/recruitment` for Admins).
+     - `AdminPageShell.Header`: Title, active/archived/deployed metrics pills, **Export CSV** button (exports all 42 canonical recruitment columns formatted in `Asia/Manila` timezone), and link to `Recruitment Settings` (`/admin/settings/recruitment` for Admins).
      - `AdminPageShell.Filters`:
-       - Status filter `ButtonGroup` (`Active`, `On Hold`, `Deployed`, `Declined`, `All`).
+       - Status filter `ButtonGroup` (`Active`, `Archived`, `Deployed`, `Declined`, `All`).
        - Step filter `FormSelectField` (`All Steps`, `Step 1: Register`, ..., `Step 9: Deployment`).
        - Role filter `FormSelectField` (`All Roles`, `Prayer Coach`, `Usher`, etc.).
        - Search bar `SearchInputField` (searches name, nickname, email, phone, DGroup leader).
      - `AdminPageShell.Content`:
-       - Uses `useIsMobileViewport` and `useInfiniteScrollTrigger`:
-         - **Desktop (`RecruitmentTable.tsx`)**: `ListTable` showing Applicant (`Avatar`, name, email, phone), Target Role (`Badge`), Current Step (`Step X: {label}`), DGroup Endorsement status (`Badge`), Survey Score (`18/20`), Assigned Reviewer (`Avatar`), and `Review` action button.
-         - **Mobile (`RecruitmentMobileList.tsx`)**: `MobileCard` primitives with touch-friendly review actions.
-2. **Applicant 9-Step Review & Coaching Modal (`RecruitmentApplicantDetailDialog.tsx`)**:
-   - Uses `Dialog` with natural `Dialog.Body` and inner scrollable panels (`max-h-[...] overflow-y-auto pr-1`) to prevent double scrollbars and dropdown occlusion:
-   - **Tab 1: 9-Step Pipeline, Sessions & Transaction Log (`PipelineStepsPanel.tsx`)**:
-     - Interactive step list for Steps 1–9 plus a chronological **Pipeline Transaction History** feed showing every scheduled session and back-and-forth transition (e.g., `Observation #1 -> Evaluation #1 -> Returned to Observation -> Observation #2 -> Evaluation #2`).
-     - Selecting a step allows the Admin/SLOD/VMT reviewer to:
-       - Assign Reviewer/Coach (`FormSelectField` populated with Admins, SLODs & VMTs).
-       - Set Scheduled Date/Time (`FormInputField` `datetime-local`).
-       - Update Confirmed Role (`FormSelectField` — dynamically toggling Step 6 Onboarding).
-       - Fill out stage-specific rubrics & internal coaching notes (`FormTextareaField` with `textareaClassName="resize-none"`).
-       - Add applicant-visible instructions (`applicant_visible_notes`).
-       - In **Step 4 (Observation)**: Either **Complete & Advance to Evaluation (Step 5)** or click **"Schedule Another Observation (Repeat Step 4)"** (`4 -> 4`).
-       - In **Step 5 (Evaluation)**: Either **Pass Evaluation** (advancing to Step 6/7), click **"Schedule Another Evaluation (Repeat Step 5)"** (`5 -> 5`), or click **"Needs Another Observation (Return to Step 4)"** (`5 -> 4`).
-       - In **Step 7 (Register to CCF VMT Database)**: Admin/SLOD/VMT can fill out `ccf_vmt_id` (`CCF VMT ID`) and `ccf_vmt_date` (`CCF VMT Date`) to verify the external CCF VMT registration and advance the applicant to Step 8.
-       - In **Step 8 (RFID Releasing)**: View/edit the applicant's selected `first_sunday`–`fifth_sunday` commitments and input their physical RFID tag (`assigned_rfid_member_id`).
-       - In **Step 9 (Deployment)**: Restricted to `admin`, `super_admin`, and `slod` — clicking **"Deploy Volunteer"** executes `useDeployRecruitmentApplicantMutation`, promoting them to `public.users` (for `vmt` users, Step 9 displays a read-only notice that final deployment is performed by an Admin or SLOD).
+       - Uses `useIsMobileViewport` and `useInfiniteScrollTrigger` for infinite scroll pagination via React Query's `useInfiniteQuery`:
+         - **Desktop (`RecruitmentTable.tsx`)**: `ListTable` showing Applicant (`Avatar`, name, email, phone), Target Role (`Badge`), Current Step (`Badge` with theme typography `var(--font-app)`), DGroup Endorsement status (`Badge`), Survey Score (`18/20`), Assigned Reviewer (`Avatar`), and `Review` action button.
+         - **Mobile (`RecruitmentMobileList.tsx`)**: `MobileCard` primitives with touch-friendly review actions, badges, and responsive action layouts.
+
+2. **Applicant 5-Tab Review & Coaching Modal (`RecruitmentApplicantDetailDialog.tsx`)**:
+   - Uses `Dialog` with single-scrollbar architecture (`h-full sm:h-auto sm:max-h-[90vh]`) where `Dialog.Body flex-1 overflow-y-auto` handles all scrolling without nested scrollbars, sticky header/tabs/footer, and 16px mobile gutters (`p-4 sm:py-8 sm:px-6` in `Dialog.tsx`).
+   - Action buttons in `Dialog.Footer` stretch to 100% full width on mobile viewports (`flex-col-reverse sm:flex-row [&>button]:w-full sm:[&>button]:w-auto`).
+   - **Tab 1: 9-Step Pipeline (`PipelineStepsPanel.tsx`)**:
+     - Interactive step list for Steps 1–9 with badges (`completed`, `in_progress`, `scheduled`, `locked`, `skipped`) using standard application typography (`var(--font-app)`, Arimo).
+     - Selecting a step renders contextual coaching and scheduling cards:
+       - **Assign Reviewer/Coach** (`FormSelectField` populated with Admins, SLODs & VMTs).
+       - **Set Scheduled Date/Time** (`FormInputField` `datetime-local`).
+       - **Update Confirmed Role** (`FormSelectField` — dynamically toggling Step 6 Onboarding).
+       - **Internal Rubric & Coaching Notes** (`FormTextareaField` with `textareaClassName="resize-none"`).
+       - **Applicant-Visible Instructions** (`applicant_visible_notes`).
+       - **In Step 4 (Observation)**: Either **Complete & Advance to Evaluation (Step 5)** or click **"Schedule Another Observation (Repeat Step 4)"** (`4 -> 4`). DGroup Endorsement gate strictly enforced before Step 4.
+       - **In Step 5 (Evaluation)**: Either **Pass Evaluation** (advancing to Step 6/7), click **"Schedule Another Evaluation (Repeat Step 5)"** (`5 -> 5`), or click **"Needs Another Observation (Return to Step 4)"** (`5 -> 4`).
+       - **In Step 7 (Register to CCF VMT Database)**: Admin/SLOD/VMT can fill out `ccf_vmt_id` (`CCF VMT ID`) and `ccf_vmt_date` (`CCF VMT Date`) to verify the external CCF VMT registration and advance the applicant to Step 8.
+       - **In Step 8 (RFID Releasing)**: View/edit the applicant's selected `first_sunday`–`fifth_sunday` commitments and input their physical RFID tag (`assigned_rfid_member_id`).
+       - **In Step 9 (Deployment)**: Restricted to `admin`, `super_admin`, and `slod` — clicking **"Deploy Volunteer"** executes `useDeployRecruitmentApplicantMutation`, promoting them to `public.users` (for `vmt` users, Step 9 displays a read-only notice that final deployment is performed by an Admin or SLOD).
+     - **Confirmation Dialogs**:
+       - `ScheduleSessionConfirmDialog`: Confirms session date/time, reviewer assignment, and notes before scheduling.
+       - `CompleteStepConfirmDialog`: Confirms step advancement or final deployment with reviewer confirmation.
+       - `ArchiveApplicantConfirmDialog`: Confirms archiving an applicant with semantic destructive styling (`variant="destructive"` / `text-danger`).
    - **Tab 2: Biblical Survey Breakdown (`BiblicalSurveyReviewPanel.tsx`)**:
      - Displays the applicant's score (e.g., `18 / 20`) with a filter for `All Questions` vs `Incorrect Only`.
      - Shows each statement, the applicant's True/False answer, the expected answer, and the biblical explanation note to guide the Step 2 Interviewer.
-   - **Tab 3: Personal, Spiritual & DGroup Profile (`ApplicantProfilePanel.tsx`)**:
-     - Displays full personal info, spiritual background, DGroup Leader contact info, and the DGroup Leader's submitted attestation responses (with an option to copy the magic link or resend the email).
+   - **Tab 3: DGroup Endorsement Review (`DGroupEndorsementReviewPanel.tsx`)**:
+     - Real-time endorsement status badge derived from `approval_requests.status` (`approved` -> "Endorsed & Linked", `pending` -> "Pending Leader Review", `rejected` -> "Declined by Leader").
+     - Direct inspection of DGroup Leader's 25 submitted responses (ratings with 1-3 scale, disciple tenure, spiritual growth evaluation, concerns, and final recommendation).
+     - Magic link URL copy action and Resend Endorsement Email action.
+   - **Tab 4: Personal, Spiritual & DGroup Profile (`ApplicantProfilePanel.tsx`)**:
+     - Displays complete 40-field applicant profile across Personal Details, Demographics, Work/Life Stage, Emergency Contact, CCF & GLC History, and DGroup Membership/Leadership.
+     - Synchronized DGroup endorsement status badge.
+   - **Tab 5: Transaction History (`TransactionHistoryPanel.tsx`)**:
+     - Chronological timeline of all pipeline transactions (`public.recruitment_pipeline_transactions`) including scheduling, completions, repeat attempts (`Observation #1`, `Observation #2`), return loops, archiving, and restorations with reviewer names and timestamps.
+   - **Archive Lifecycle & Destructive Styling**:
+     - Replaced legacy `'on_hold'` with `'archived'` across database constraints, Edge Functions, schemas, and UI.
+     - Archive trigger button in `Dialog.Footer` uses semantic `variant="destructive"`.
+     - When archived, an informative notice appears with a **Restore Applicant** action.
+
 3. **Integrated Admin Recruitment Settings Page (`src/pages/admin/settings/recruitment/index.tsx`)**:
    - Integrated into `/admin/settings` Launchpad via a `SettingsFeatureCard` under **System Configuration** (`to: ROUTE_PATHS.adminSettingsRecruitment`, required permission: `canWriteAdminData`).
    - Also accessible directly from `/admin/recruitment` via header button for administrators.
@@ -794,3 +815,39 @@ When email delivery is disabled in local development, the DGroup Leader endorsem
    - Click **Endorse Applicant** with blank fields to verify inline required-field validation, and click **Decline** with empty **Notes / Feedback for Applicant** to verify a decline reason is required.
    - Complete all required fields (Questions 1–3, ratings 5–16, textareas 17–19, 21, recommendation 22, and attestation 24 = `I attest`) and click **Endorse Applicant**.
    - Verify the page transitions to the read-only approved summary state, then refresh `/recruitment` in **Window B** and confirm Step 1 now badges **`Endorsed by {Leader Name}`** without the resend button.
+
+6. **Test Case 6 — Admin Recruitment Pipeline, 5-Tab Modal, Advancement & Archiving (`/admin/recruitment`)**:
+   - In **Window A** (signed in as `admin`, `super_admin`, `slod`, or `vmt`), navigate to `/admin/recruitment`.
+   - **Metrics & Filters**:
+     - Verify active applicant counts match the summary pills.
+     - Test the Status filter `ButtonGroup` (`Active`, `Archived`, `Deployed`, `Declined`, `All`).
+     - Test the Step and Role dropdown filters and `SearchInputField` (searching by applicant or DGroup leader name).
+     - Test **Export CSV** to verify a 42-column CSV file downloads with Manila timezone formatting.
+   - **5-Tab Review Dialog**:
+     - Click **Review** on an applicant row to open `RecruitmentApplicantDetailDialog`.
+     - Verify dialog geometry: single scrollbar, sticky header, tabs, footer, and 16px mobile gutters.
+     - **Tab 1 (9-Step Pipeline)**:
+       - Inspect Step 1: verify endorsement status is synchronized (`Endorsed & Linked`).
+       - Click **Schedule Session**: verify `ScheduleSessionConfirmDialog` opens; confirm date/time and reviewer assignment.
+       - Click **Complete Step**: verify `CompleteStepConfirmDialog` opens; confirm advancing to the next step.
+       - Test Step 4 Observation repeats (`4 -> 4`) and Step 5 Evaluation return loops (`5 -> 4`).
+       - Verify Step 7 CCF VMT ID/Date inputs, Step 8 RFID releasing with Sunday commitment picker, and Step 9 Deploy Volunteer button (Admin/SLOD only).
+     - **Tab 2 (Biblical Survey)**:
+       - Verify score pill (`X / 20`), toggle between **All Questions** and **Incorrect Only**, and verify question statements with correct answers and interviewer explanation guides.
+     - **Tab 3 (DGroup Endorsement)**:
+       - Verify synchronized status badge (`Endorsed & Linked` vs `Pending Leader Review`), 25 attestation answers, rating score legend, magic link copy button, and resend endorsement action.
+     - **Tab 4 (Applicant Profile)**:
+       - Verify 40-field applicant details grouped into Personal, Demographics, Work/Life Stage, Emergency Contact, CCF/GLC, and DGroup sections.
+     - **Tab 5 (Transaction History)**:
+       - Verify chronological timeline of all pipeline transactions, step schedules, completions, and repeat attempts with reviewer avatars and timestamps.
+     - **Archiving & Destructive Styling**:
+       - In modal footer, click the destructive **Archive** button.
+       - Verify `ArchiveApplicantConfirmDialog` opens with warning notices. Confirm archiving.
+       - Verify status transitions to `Archived`, the archived banner appears with **Restore Applicant** option, and table/card status badges update to `archived` (`variant="destructive"`).
+       - Click **Restore Applicant** to return to `Active`.
+
+7. **Test Case 7 — Admin Recruitment Settings (`/admin/settings/recruitment`)**:
+   - As an Administrator, click **Recruitment Settings** (from `/admin/recruitment` header or `/admin/settings` Launchpad).
+   - **General & Eligibility Tab**: Toggle `is_recruitment_open`, edit VMT registration URL and orientation instructions, click **Save Settings**, and confirm success toast.
+   - **Doctrinal Survey Questions Tab**: Inspect 20 statements, edit a statement's text or explanation note, click **Save Settings**, and verify persistence.
+   - **DGroup Endorsement Prompts Tab**: Inspect 25 DGroup Leader prompts, verify rating scales and attestation configurations, click **Save Settings**, and verify persistence.

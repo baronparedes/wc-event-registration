@@ -10,7 +10,7 @@ Each `.feature` file describes one user-facing capability of the platform in pla
 
 ## How to Navigate
 
-Features are organized into 18 epic folders:
+Features are organized into 20 epic folders:
 
 ### 1. Public Registration (6 features)
 
@@ -124,6 +124,15 @@ Features are organized into 18 epic folders:
 ### 18. Public Forms (1 feature)
 
 - **Public Form Submission**: Users (members or guests) fill out and submit dynamic forms based on audience settings
+
+### 19. Admin Settings (2 features)
+
+- **Admin User Roles Management**: Super administrators view, assign, edit, and revoke system roles for authenticated users
+- **Admin Email Templates**: Administrators configure and preview notification email templates
+
+### 20. Volunteer Recruitment (1 feature)
+
+- **Admin Recruitment Pipeline Management**: Authorized reviewers (Admin, SLOD, VMT) track, coach, advance, archive, and deploy prospective volunteers through the 9-step recruitment lifecycle
 
 ### Future/Planned (4 features in `future/` subfolder)
 
