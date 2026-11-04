@@ -83,9 +83,7 @@ export function RecruitmentTable({ applications, onSelectApplication }: Recruitm
 
                 <ListTableCell>
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text">
-                    <Badge variant="secondary" className="font-mono">
-                      Step {app.current_step}
-                    </Badge>
+                    <Badge variant="secondary">Step {app.current_step}</Badge>
                     <span className="hidden lg:inline">{stepMeta?.shortLabel}</span>
                   </span>
                 </ListTableCell>

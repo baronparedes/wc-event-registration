@@ -66,7 +66,7 @@ export function RecruitmentApplicantDetailDialog({
                 {currentApp.full_name} {currentApp.nickname ? `(${currentApp.nickname})` : ''}
               </Dialog.Title>
               <Badge variant="outline">{role}</Badge>
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary">
                 Step {currentApp.current_step}: {stepMeta?.shortLabel}
               </Badge>
             </div>
