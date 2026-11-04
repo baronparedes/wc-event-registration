@@ -33,3 +33,9 @@
 **Discovery:** Found that the admin settings section, specifically the user roles management component located at `src/pages/admin/settings/roles/index.tsx`, lacked feature documentation in the Gherkin files.
 **Learning:** System-wide settings and role administration are core features that require their own distinct epic category to properly distinguish them from standard domain entities (like members or events).
 **Standard:** Documented under a new `19-admin-settings` epic folder in `docs/features/`. Going forward, all broad application settings, administrative configurations, and role management features should reside in this category to maintain a clear separation from operational domain features.
+
+## 2026-11-04 - Document Recruitment Workflow
+
+**Discovery:** Found that the new Welcome Center Recruitment Workflow (added in PR #430) was entirely undocumented in the `docs/features/` folder.
+**Learning:** This is a major public-facing and admin workflow consisting of multiple pages, settings, applications, and timelines, meaning it needs its own numbered epic directory to capture the complex sequential progress.
+**Standard:** Documented under a new `20-recruitment` epic folder. Going forward, major multi-step workflows like this should receive their own top-level epic to capture both the applicant-facing flows and the corresponding administrative views.

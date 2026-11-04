@@ -125,6 +125,15 @@ Features are organized into 18 epic folders:
 
 - **Public Form Submission**: Users (members or guests) fill out and submit dynamic forms based on audience settings
 
+### 19. Admin Settings (2 features)
+
+- **User Roles**: Admins manage roles for platform users
+- **Email Templates**: Admins manage templates used for automated communications
+
+### 20. Recruitment (1 feature)
+
+- **Recruitment Application Process**: Prospective volunteers apply to join the Welcome Center and track their onboarding progress
+
 ### Future/Planned (4 features in `future/` subfolder)
 
 - **Event Scoping**: Admins limited to their own events
