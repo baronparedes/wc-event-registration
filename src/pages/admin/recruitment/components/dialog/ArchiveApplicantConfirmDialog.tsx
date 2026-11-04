@@ -47,7 +47,7 @@ export function ArchiveApplicantConfirmDialog({
       <Dialog.Header showCloseButton onClose={onClose}>
         <div className="flex items-center gap-2">
           {isArchive ? (
-            <Archive className="h-5 w-5 text-amber-600 shrink-0" />
+            <Archive className="h-5 w-5 text-danger shrink-0" />
           ) : (
             <RotateCcw className="h-5 w-5 text-primary shrink-0" />
           )}
@@ -90,11 +90,11 @@ export function ArchiveApplicantConfirmDialog({
         <div
           className={`rounded-xl border p-3.5 text-xs ${
             isArchive
-              ? 'border-amber-500/30 bg-amber-500/10 text-text'
+              ? 'border-danger/30 bg-danger/10 text-text'
               : 'border-primary/30 bg-primary/10 text-text'
           }`}
         >
-          <p className="font-semibold">
+          <p className={`font-semibold ${isArchive ? 'text-danger' : 'text-primary'}`}>
             {isArchive ? 'What happens when archived:' : 'What happens when restored:'}
           </p>
           <ul className="mt-1 list-disc pl-4 space-y-0.5 text-muted">
@@ -145,7 +145,7 @@ export function ArchiveApplicantConfirmDialog({
           Cancel
         </Button>
         <Button
-          variant={isArchive ? 'secondary' : 'default'}
+          variant={isArchive ? 'destructive' : 'default'}
           onClick={handleConfirm}
           disabled={isPending}
           className="gap-2"

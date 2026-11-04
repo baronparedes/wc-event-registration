@@ -61,8 +61,8 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
       case 'in_progress':
         return 'accent';
       case 'declined':
-        return 'destructive';
       case 'archived':
+        return 'destructive';
       case 'on_hold':
         return 'secondary';
       default:

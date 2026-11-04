@@ -108,7 +108,7 @@ export function RecruitmentApplicantDetailDialog({
                   </Dialog.Title>
                   <Badge variant="outline">{role}</Badge>
                   {isArchived ? (
-                    <Badge variant="secondary">Archived</Badge>
+                    <Badge variant="destructive">Archived</Badge>
                   ) : (
                     <Badge variant="secondary">
                       Step {currentApp.current_step}: {stepMeta?.shortLabel}
@@ -137,7 +137,7 @@ export function RecruitmentApplicantDetailDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => handleOpenArchiveDialog('archive')}
-                  className="gap-1.5 h-8 text-xs text-muted hover:text-text"
+                  className="gap-1.5 h-8 text-xs text-danger hover:text-danger hover:bg-danger/10 border-danger/40"
                 >
                   <Archive className="h-3.5 w-3.5" />
                   <span>Archive</span>

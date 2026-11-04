@@ -34,7 +34,7 @@ const STATUS_LABELS: Record<TimelineStatus, string> = {
 function getBadgeVariant(status: TimelineStatus) {
   if (status === 'completed') return 'default';
   if (status === 'skipped') return 'secondary';
-  if (status === 'declined') return 'destructive';
+  if (status === 'declined' || status === 'archived') return 'destructive';
   if (status === 'scheduled') return 'accent';
   return 'outline';
 }
