@@ -37,11 +37,16 @@ import {
   type RecruitmentPipelineTransaction,
   type RecruitmentRole,
   type RecruitmentStepNumber,
+  type ReviewerUserItem,
 } from '@/lib/domain/recruitment';
 import { formatDateTime, localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
 import { BiblicalSurveyReviewPanel } from './BiblicalSurveyReviewPanel';
 import { ReviewerUserPicker } from './ReviewerUserPicker';
+import {
+  type ScheduleActionKind,
+  ScheduleSessionConfirmDialog,
+} from './ScheduleSessionConfirmDialog';
 
 function LockedStepCard({
   stepNumber,
@@ -128,6 +133,12 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const [reviewerName, setReviewerName] = useState<string>(
     latestStepTransaction?.assigned_reviewer_name ?? '',
   );
+  const [selectedReviewerUser, setSelectedReviewerUser] = useState<ReviewerUserItem | null>(null);
+  const [pendingScheduleAction, setPendingScheduleAction] = useState<{
+    status: 'scheduled';
+    action: 'update_stage' | 'repeat_step' | 'return_to_observation' | 'return_to_interview';
+    actionKind: ScheduleActionKind;
+  } | null>(null);
   const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
     toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
   );
@@ -222,6 +233,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
     setReviewerId(tx?.assigned_reviewer_id ?? '');
     setReviewerName(tx?.assigned_reviewer_name ?? '');
+    setSelectedReviewerUser(null);
+    setPendingScheduleAction(null);
     setScheduledAtLocal(toDatetimeLocal(tx?.completed_at ?? tx?.scheduled_at));
     setNotes(tx?.notes ?? '');
     setApplicantNotes(tx?.applicant_visible_notes ?? '');
@@ -275,6 +288,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
       },
       {
         onSuccess: () => {
+          setPendingScheduleAction(null);
           toast.success(
             action === 'repeat_step'
               ? `Scheduled another session for Step ${selectedStep}`
@@ -290,6 +304,36 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         },
       },
     );
+  };
+
+  const requestScheduleConfirmation = (
+    action:
+      | 'update_stage'
+      | 'repeat_step'
+      | 'return_to_observation'
+      | 'return_to_interview' = 'update_stage',
+  ) => {
+    let actionKind: ScheduleActionKind = 'schedule';
+    if (action === 'repeat_step') {
+      actionKind = 'repeat_step';
+    } else if (action === 'return_to_interview') {
+      actionKind = 'return_to_interview';
+    } else if (action === 'return_to_observation') {
+      actionKind = 'return_to_observation';
+    } else if (latestStepTransaction?.scheduled_at) {
+      actionKind = 'reschedule';
+    }
+
+    setPendingScheduleAction({
+      status: 'scheduled',
+      action,
+      actionKind,
+    });
+  };
+
+  const handleConfirmSchedule = () => {
+    if (!pendingScheduleAction) return;
+    handleUpdateStage(pendingScheduleAction.status, pendingScheduleAction.action);
   };
 
   const handleDeploy = () => {
@@ -621,6 +665,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       onChange={(id, user) => {
                         setReviewerId(id);
                         setReviewerName(user?.name || user?.full_name || '');
+                        setSelectedReviewerUser(user ?? null);
                       }}
                     />
 
@@ -763,7 +808,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleUpdateStage('scheduled')}
+                        onClick={() => requestScheduleConfirmation('update_stage')}
                         disabled={
                           updateStageMutation.isPending ||
                           !scheduledAtLocal ||
@@ -782,7 +827,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           type="button"
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                          onClick={() => requestScheduleConfirmation('repeat_step')}
                           disabled={
                             updateStageMutation.isPending ||
                             !scheduledAtLocal ||
@@ -800,8 +845,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           type="button"
                           variant="primaryOutline"
                           size="sm"
-                          onClick={() => handleUpdateStage('scheduled', 'return_to_interview')}
-                          disabled={updateStageMutation.isPending}
+                          onClick={() => requestScheduleConfirmation('return_to_interview')}
+                          disabled={updateStageMutation.isPending || !scheduledAtLocal}
                         >
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                           Needs Another Interview (Return to Step 2)
@@ -814,7 +859,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           type="button"
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                          onClick={() => requestScheduleConfirmation('repeat_step')}
                           disabled={updateStageMutation.isPending || !scheduledAtLocal}
                         >
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -829,7 +874,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                             type="button"
                             variant="secondary"
                             size="sm"
-                            onClick={() => handleUpdateStage('scheduled', 'repeat_step')}
+                            onClick={() => requestScheduleConfirmation('repeat_step')}
                             disabled={updateStageMutation.isPending || !scheduledAtLocal}
                           >
                             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -840,8 +885,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                             type="button"
                             variant="primaryOutline"
                             size="sm"
-                            onClick={() => handleUpdateStage('scheduled', 'return_to_observation')}
-                            disabled={updateStageMutation.isPending}
+                            onClick={() => requestScheduleConfirmation('return_to_observation')}
+                            disabled={updateStageMutation.isPending || !scheduledAtLocal}
                           >
                             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                             Needs Another Observation (Return to Step 4)
@@ -1179,6 +1224,45 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
           </div>
         )}
       </div>
+
+      {pendingScheduleAction && (
+        <ScheduleSessionConfirmDialog
+          isOpen={Boolean(pendingScheduleAction)}
+          onClose={() => setPendingScheduleAction(null)}
+          onConfirm={handleConfirmSchedule}
+          isPending={updateStageMutation.isPending}
+          applicant={{
+            name: `${application.full_name}${application.nickname ? ` (${application.nickname})` : ''}`,
+            email: application.email,
+            phone: application.phone || undefined,
+            avatarObjectKey: application.avatar_object_key,
+          }}
+          stepNumber={selectedStep}
+          stepTitle={stepMeta?.title ?? `Step ${selectedStep}`}
+          actionKind={pendingScheduleAction.actionKind}
+          scheduledAt={scheduledAtLocal}
+          reviewer={
+            selectedReviewerUser
+              ? {
+                  id: selectedReviewerUser.id,
+                  name: selectedReviewerUser.name,
+                  role: selectedReviewerUser.role,
+                  avatarObjectKey: selectedReviewerUser.avatar_object_key,
+                }
+              : reviewerName
+                ? {
+                    id: reviewerId,
+                    name: reviewerName,
+                  }
+                : null
+          }
+          assignedRole={
+            selectedStep === 2 ? confirmedRole || application.confirmed_role : undefined
+          }
+          recruitmentNotes={notes}
+          applicantInstructions={applicantNotes}
+        />
+      )}
     </div>
   );
 }
