@@ -200,9 +200,24 @@ export type ApplicantRecruitmentTimelineItem = Pick<
   | 'created_at'
 >;
 
+export type RecruiterNote = {
+  id: string;
+  application_id: string;
+  step_number: RecruitmentStepNumber;
+  attempt_number: number;
+  transaction_id?: string | null;
+  author_id?: string | null;
+  author_name: string;
+  author_role?: string | null;
+  avatar_object_key?: string | null;
+  content: string;
+  created_at: string;
+};
+
 export type RecruitmentApplicationDetail = {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
+  step_notes: RecruiterNote[];
   dgroup_endorsement?: {
     approval_id: string;
     status: 'pending' | 'approved' | 'rejected';

@@ -2,6 +2,7 @@ import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
 
 import type { RecruitmentCsvRecord } from './csv';
 import {
+  type AddRecruiterNotePayload,
   type AdminUpdateStageInput,
   type RecruitmentSettingsInput,
   type RecruitmentStep1Input,
@@ -14,9 +15,11 @@ import {
 import type {
   ApplicantRecruitmentView,
   PublicRecruitmentConfig,
+  RecruiterNote,
   RecruitmentApplication,
   RecruitmentApplicationDetail,
   RecruitmentSettings,
+  RecruitmentStepNumber,
   ReviewerUserItem,
 } from './types';
 
@@ -157,6 +160,21 @@ export async function restoreRecruitmentApplicant(params: {
   return response;
 }
 
+export async function addRecruiterNote(
+  payload: AddRecruiterNotePayload,
+): Promise<RecruitmentEdgeResponse> {
+  const response = await callUpdateRecruitmentStage({
+    action: 'add_note',
+    application_id: payload.application_id,
+    step_number: payload.step_number,
+    notes: payload.content,
+  });
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to add recruiter note');
+  }
+  return response;
+}
+
 export async function fetchAdminRecruitmentApplicationsPage(params: {
   offset: number;
   pageSize: number;
@@ -263,10 +281,15 @@ export async function fetchAdminRecruitmentApplicationsForExport(params?: {
 export async function fetchAdminRecruitmentApplicationDetail(
   applicationId: string,
 ): Promise<RecruitmentApplicationDetail> {
-  const [applicationResult, transactionsResult] = await Promise.all([
+  const [applicationResult, transactionsResult, notesResult] = await Promise.all([
     supabase.from('recruitment_applications').select('*').eq('id', applicationId).single(),
     supabase
       .from('recruitment_pipeline_transactions')
+      .select('*')
+      .eq('application_id', applicationId)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('recruitment_step_notes')
       .select('*')
       .eq('application_id', applicationId)
       .order('created_at', { ascending: true }),
@@ -287,6 +310,20 @@ export async function fetchAdminRecruitmentApplicationDetail(
     if (!result.success) throw new Error('Recruitment history response is invalid');
     return result.data;
   });
+
+  const stepNotes: RecruiterNote[] = (notesResult.data ?? []).map((row) => ({
+    id: row.id,
+    application_id: row.application_id,
+    step_number: row.step_number as RecruitmentStepNumber,
+    attempt_number: row.attempt_number,
+    transaction_id: row.transaction_id,
+    author_id: row.author_id,
+    author_name: row.author_name,
+    author_role: row.author_role,
+    avatar_object_key: row.avatar_object_key,
+    content: row.content,
+    created_at: row.created_at,
+  }));
 
   let dgroupEndorsement: RecruitmentApplicationDetail['dgroup_endorsement'] = null;
   if (application.data.dgroup_approval_id) {
@@ -326,6 +363,7 @@ export async function fetchAdminRecruitmentApplicationDetail(
   return {
     application: application.data,
     transactions,
+    step_notes: stepNotes,
     dgroup_endorsement: dgroupEndorsement,
   };
 }

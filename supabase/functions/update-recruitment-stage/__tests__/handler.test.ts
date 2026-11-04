@@ -172,6 +172,21 @@ function mockFetch(
     if (url.pathname === '/functions/v1/cron-process-email-queue') {
       return Promise.resolve(Response.json({ success: true }));
     }
+    if (url.pathname === '/rest/v1/recruitment_step_notes') {
+      return Promise.resolve(
+        Response.json({ id: 'note-mock-1', created_at: new Date().toISOString() }),
+      );
+    }
+    if (url.pathname === '/rest/v1/users') {
+      return Promise.resolve(
+        Response.json({
+          id: USER_ID,
+          full_name: 'Test Reviewer',
+          nickname: 'Reviewer',
+          avatar_object_key: null,
+        }),
+      );
+    }
     return Promise.resolve(Response.json([]));
   };
 
@@ -680,6 +695,90 @@ Deno.test('update-recruitment-stage restores an archived applicant to active', a
   });
 });
 
+Deno.test(
+  'update-recruitment-stage allows reviewers to add a recruiter note at any time',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'vmt',
+        application: { ...applicationRecord, current_step: 3 },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'add_note',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            notes: 'Candidate showed great enthusiasm during conversation.',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.note_id, 'note-mock-1');
+
+        const noteInsert = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteInsert), true);
+        const noteBody = noteInsert?.body as Record<string, unknown>;
+        assertEquals(noteBody.application_id, APPLICATION_ID);
+        assertEquals(noteBody.step_number, 2);
+        assertEquals(noteBody.content, 'Candidate showed great enthusiasm during conversation.');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('update-recruitment-stage rejects add_note when notes content is blank', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'add_note',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          notes: '   ',
+        }),
+      );
+
+      assertEquals(response.status, 400);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage rejects add_note from non-reviewers', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: null,
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'add_note',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          notes: 'Attempting to add note without reviewer role',
+        }),
+      );
+
+      assertEquals(response.status, 403);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
 Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
@@ -815,6 +914,90 @@ Deno.test('update-recruitment-stage restores an archived applicant to active', a
       const body = await response.json();
       assertEquals(body.success, true);
       assertEquals(body.status, 'active');
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test(
+  'update-recruitment-stage allows reviewers to add a recruiter note at any time',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'vmt',
+        application: { ...applicationRecord, current_step: 3 },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'add_note',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            notes: 'Candidate showed great enthusiasm during conversation.',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.note_id, 'note-mock-1');
+
+        const noteInsert = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteInsert), true);
+        const noteBody = noteInsert?.body as Record<string, unknown>;
+        assertEquals(noteBody.application_id, APPLICATION_ID);
+        assertEquals(noteBody.step_number, 2);
+        assertEquals(noteBody.content, 'Candidate showed great enthusiasm during conversation.');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('update-recruitment-stage rejects add_note when notes content is blank', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'add_note',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          notes: '   ',
+        }),
+      );
+
+      assertEquals(response.status, 400);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage rejects add_note from non-reviewers', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: null,
+      application: { ...applicationRecord, current_step: 3 },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'add_note',
+          application_id: APPLICATION_ID,
+          step_number: 2,
+          notes: 'Attempting to add note without reviewer role',
+        }),
+      );
+
+      assertEquals(response.status, 403);
     } finally {
       mock.restore();
     }

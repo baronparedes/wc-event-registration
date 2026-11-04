@@ -247,6 +247,20 @@ erDiagram
         uuid created_by_user_id
         timestamptz created_at
     }
+
+    recruitment_step_notes {
+        uuid id PK
+        uuid application_id FK
+        int step_number
+        int attempt_number
+        uuid transaction_id FK
+        uuid author_id
+        text author_name
+        text author_role
+        text avatar_object_key
+        text content
+        timestamptz created_at
+    }
 ```
 
 #### 1.3 Canonical 40-Field Recruitment Data Dictionary
@@ -502,6 +516,7 @@ sequenceDiagram
      - Reviewer updates are limited to the current step, except Steps 2 (Interview) and 3 (Orientation), which may proceed in parallel. Completing one does not skip an unfinished peer step.
        - `action: 'repeat_step'`: Logs the current session's rubric/notes and schedules another session on the **same** step (`from_step = 4, to_step = 4` for another Observation or `from_step = 5, to_step = 5` for another Evaluation, `transaction_type = 'repeated_step'`, `attempt_number = N + 1`).
        - `action: 'return_to_observation'`: Records an Evaluation outcome requiring additional shadowing (`from_step = 5`, `to_step = 4`, `transaction_type = 'returned_to_observation'`), sets `current_step = 4`, and creates a new Observation session (`attempt_number = N + 1`) so the applicant can observe and be evaluated as many times as needed.
+       - `action: 'add_note'`: Appends a permanent audit record into `public.recruitment_step_notes` for the target `step_number` with author details (`author_id`, `author_name`, `author_role`, `avatar_object_key`), content, and timestamp. Notes are strictly append-only and cannot be edited or deleted.
        - Enforces the DGroup Leader endorsement gate before starting Step 4 (Observation) — `dgroup_approval_id` must be `'approved'` to schedule, start, or advance into Step 4+ (unless `override_endorsement_gate: true` is passed by an Admin).
      - Automatically synchronizes Step 6 (`'skipped'` vs `'pending'`) whenever `confirmed_role` is updated through evaluation.
        - Dispatches in-app and email notifications to the applicant when advancing to a new step, returning to Observation for another session, or scheduling a session.
