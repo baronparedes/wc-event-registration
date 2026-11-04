@@ -39,7 +39,7 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
   };
 
   return (
-    <div className="max-h-[calc(75vh-10rem)] space-y-5 overflow-y-auto pr-1 text-xs">
+    <div className="space-y-5 pr-1 text-xs">
       {/* Identity Header */}
       <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
         <Avatar

@@ -125,7 +125,10 @@ export function Dialog({
   return createPortal(
     <DialogContext.Provider value={{ onClose, titleId, descriptionId }}>
       <div
-        className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain py-4 sm:py-8 ${containerClassName}`}
+        className={twMerge(
+          'fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:py-8 sm:px-6',
+          containerClassName,
+        )}
         style={{ touchAction: 'pan-y' }}
       >
         {closeOnBackdropClick ? (
@@ -145,7 +148,11 @@ export function Dialog({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabel ? undefined : titleId}
           aria-describedby={descriptionId}
-          className={`relative z-10 mx-3 sm:mx-4 w-full ${resolvedMaxWidth} rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all ${className}`}
+          className={twMerge(
+            'relative z-10 w-full rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xl transition-all',
+            resolvedMaxWidth,
+            className,
+          )}
           style={{ touchAction: 'pan-y' }}
         >
           {children}
@@ -252,7 +259,7 @@ function DialogBody({ children, className = '', scrollable = false, ...props }: 
   const scrollClasses = scrollable ? 'max-h-[calc(85vh-8rem)] overflow-y-auto pr-1' : '';
 
   return (
-    <div className={`mt-4 ${scrollClasses} ${className}`} {...props}>
+    <div className={twMerge('mt-4', scrollClasses, className)} {...props}>
       {children}
     </div>
   );

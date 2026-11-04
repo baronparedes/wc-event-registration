@@ -92,8 +92,14 @@ export function RecruitmentApplicantDetailDialog({
 
   return (
     <>
-      <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
-        <Dialog.Header showCloseButton onClose={onClose}>
+      <Dialog
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+        className="flex flex-col h-full sm:h-auto sm:max-h-[90vh]"
+        containerClassName="overflow-hidden sm:overflow-y-auto"
+      >
+        <Dialog.Header showCloseButton onClose={onClose} className="shrink-0">
           <div className="flex items-center gap-3 w-full pr-6">
             <Avatar
               name={currentApp.full_name}
@@ -121,7 +127,7 @@ export function RecruitmentApplicantDetailDialog({
           </div>
         </Dialog.Header>
 
-        <div className="mt-4 border-b border-border pb-3">
+        <div className="mt-4 border-b border-border pb-3 shrink-0">
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as DialogTab)}>
             <TabsList containerClassName="justify-start" className="w-auto">
               {TAB_OPTIONS.map((tab) => (
@@ -133,7 +139,7 @@ export function RecruitmentApplicantDetailDialog({
           </Tabs>
         </div>
 
-        <Dialog.Body>
+        <Dialog.Body className="flex-1 overflow-y-auto min-h-0 pr-1">
           {isLoading && !detailData ? (
             <div className="flex min-h-[250px] items-center justify-center">
               <Spinner size="lg" />
@@ -158,7 +164,7 @@ export function RecruitmentApplicantDetailDialog({
           )}
         </Dialog.Body>
 
-        <Dialog.Footer className="sm:justify-between">
+        <Dialog.Footer className="sm:justify-between shrink-0 mt-4">
           {isArchived ? (
             <Button
               type="button"

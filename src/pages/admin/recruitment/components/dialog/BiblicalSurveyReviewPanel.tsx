@@ -60,7 +60,7 @@ export function BiblicalSurveyReviewPanel({ application }: BiblicalSurveyReviewP
       </div>
 
       {/* Questions Breakdown List */}
-      <div className="max-h-[calc(75vh-14rem)] space-y-3 overflow-y-auto pr-1">
+      <div className="space-y-3 pr-1">
         {filteredQuestions.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface p-6 text-center text-xs text-muted">
             {filter === 'incorrect'
