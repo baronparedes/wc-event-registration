@@ -831,6 +831,35 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText('Endorsed & Linked')).toBeInTheDocument();
   });
 
+  it('correctly reflects pending DGroup endorsement status on Step 1 when approval is pending', async () => {
+    const user = userEvent.setup();
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+        dgroup_endorsement: {
+          approval_id: 'appr-pending',
+          status: 'pending',
+          attestation_answers: null,
+        },
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Step 4 is active by default. Jump to Step 1 in Stepper
+    await user.click(screen.getByRole('tab', { name: /register/i }));
+    expect(screen.getByText('Pending Leader Endorsement')).toBeInTheDocument();
+    expect(screen.queryByText('Endorsed & Linked')).not.toBeInTheDocument();
+  });
+
   it('allows archiving an active applicant with notes', async () => {
     const user = userEvent.setup();
     renderDialog(

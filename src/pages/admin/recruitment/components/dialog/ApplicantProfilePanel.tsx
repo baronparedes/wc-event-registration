@@ -5,14 +5,18 @@ import { toast } from 'sonner';
 
 import { Avatar, Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment';
-import type { RecruitmentApplication } from '@/lib/domain/recruitment';
+import type {
+  RecruitmentApplication,
+  RecruitmentApplicationDetail,
+} from '@/lib/domain/recruitment';
 import { calculateAge } from '@/pages/recruitment/apply/utils';
 
 interface ApplicantProfilePanelProps {
   application: RecruitmentApplication;
+  endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
 }
 
-export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProps) {
+export function ApplicantProfilePanel({ application, endorsement }: ApplicantProfilePanelProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const age = calculateAge(application.date_of_birth);
@@ -160,8 +164,20 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
       <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
           <h4 className="font-heading text-sm font-bold text-text">DGroup & Leader Attestation</h4>
-          <Badge variant={application.dgroup_approval_id ? 'default' : 'secondary'}>
-            {application.dgroup_approval_id ? 'Endorsed & Linked' : 'Pending Leader Review'}
+          <Badge
+            variant={
+              endorsement?.status === 'approved'
+                ? 'default'
+                : endorsement?.status === 'rejected'
+                  ? 'destructive'
+                  : 'secondary'
+            }
+          >
+            {endorsement?.status === 'approved'
+              ? 'Endorsed & Linked'
+              : endorsement?.status === 'rejected'
+                ? 'Endorsement Declined'
+                : 'Pending Leader Review'}
           </Badge>
         </div>
 
