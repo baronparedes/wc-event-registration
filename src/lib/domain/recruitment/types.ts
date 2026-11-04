@@ -207,8 +207,8 @@ export type RecruitmentApplicationDetail = {
     approval_id: string;
     status: 'pending' | 'approved' | 'rejected';
     decision_notes?: string | null;
-    decision_at?: string | null;
-    decision_by_email?: string | null;
+    decided_at?: string | null;
+    decided_by_email?: string | null;
     attestation_answers?: Record<string, unknown> | null;
   } | null;
 };

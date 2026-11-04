@@ -11,6 +11,7 @@ import type {
   RecruitmentApplication,
   RecruitmentApplicationDetail,
 } from '@/lib/domain/recruitment';
+import { formatDateTime } from '@/lib/infrastructure';
 import { RecruitmentEndorsementInspectSection } from '@/pages/admin/approvals/components/RecruitmentEndorsementInspectSection';
 
 export interface DGroupEndorsementPanelProps {
@@ -120,6 +121,14 @@ export function DGroupEndorsementPanel({ application, endorsement }: DGroupEndor
               {application.dgroup_info.is_dgroup_leader ? 'Yes' : 'No'}
             </p>
           </div>
+          {endorsement?.decided_at && (
+            <div>
+              <span className="text-muted">Decision Date:</span>
+              <p className="font-semibold text-text mt-0.5">
+                {formatDateTime(endorsement.decided_at)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
