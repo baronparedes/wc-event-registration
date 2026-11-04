@@ -52,9 +52,9 @@ const baseInputClassName =
 
 const calendarContainerClassName = 'relative';
 const calendarPopoverClassName =
-  'absolute z-30 mt-2 w-[288px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-3 shadow-xl';
+  'absolute z-30 mt-2 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl';
 const calendarDayPickerClassName =
-  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:36px] [--rdp-day_button-width:34px] [--rdp-day_button-height:34px]';
+  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:40px] [--rdp-day_button-width:38px] [--rdp-day_button-height:38px]';
 
 export type SundayCalendarPickerProps = {
   id?: string;

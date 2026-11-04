@@ -25,6 +25,8 @@ export interface SundayDateTimePickerProps {
   monthsInFuture?: number;
   placeholder?: string;
   className?: string;
+  align?: 'left' | 'right';
+  popoverClassName?: string;
 }
 
 function parseDateOnly(value: string | undefined): Date | undefined {
@@ -51,7 +53,7 @@ function formatDateOnly(value: Date): string {
 }
 
 const calendarDayPickerClassName =
-  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:36px] [--rdp-day_button-width:34px] [--rdp-day_button-height:34px]';
+  '[--rdp-accent-color:var(--color-primary)] [--rdp-accent-background-color:rgba(28,160,179,0.12)] [--rdp-today-color:var(--color-primary)] [--rdp-selected-border:2px_solid_var(--color-primary)] [--rdp-day-width:40px] [--rdp-day_button-width:38px] [--rdp-day_button-height:38px]';
 
 export function SundayDateTimePicker({
   id = 'sunday-date-time-picker',
@@ -67,6 +69,8 @@ export function SundayDateTimePicker({
   monthsInFuture = 6,
   placeholder = 'Select Sunday date & time...',
   className = '',
+  align = 'left',
+  popoverClassName = '',
 }: SundayDateTimePickerProps) {
   const generatedId = useId();
   const popoverId = useId();
@@ -256,7 +260,9 @@ export function SundayDateTimePicker({
               role="dialog"
               aria-modal="true"
               aria-label="Select Sunday session date and time"
-              className="absolute left-0 z-30 mt-2 w-[304px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-3.5 shadow-xl"
+              className={`absolute z-30 mt-2 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl ${
+                align === 'right' ? 'right-0' : 'left-0'
+              } ${popoverClassName}`}
             >
               {/* Sunday Calendar */}
               <DayPicker

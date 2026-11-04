@@ -278,7 +278,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getAllByText('Assigned Reviewer / Coach').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Session Date & Time').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /select sunday date & time/i })).toBeInTheDocument();
-    expect(screen.getByText('Leadership Notes / Feedback')).toBeInTheDocument();
+    expect(screen.getByText('Recruitment Notes / Feedback')).toBeInTheDocument();
 
     // Verify Complete Step button is disabled
     const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
