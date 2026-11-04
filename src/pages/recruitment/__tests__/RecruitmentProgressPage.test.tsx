@@ -148,9 +148,7 @@ describe('RecruitmentProgressPage', () => {
 
     expect(screen.getByRole('heading', { name: 'No application found' })).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /There is no email linked to a current application for this Google account\. Thank you for your interest in serving—please contact the Welcome Center VMT team if you need assistance\./,
-      ),
+      screen.getByText(/There is currently no linked application for this email account\./),
     ).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });

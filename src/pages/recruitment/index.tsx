@@ -173,9 +173,8 @@ export function RecruitmentProgressPage() {
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold text-text">No application found</h1>
         <p className="text-sm text-muted">
-          There is no email linked to a current application for this Google account. Thank you for
-          your interest in serving—please contact the Welcome Center VMT team if you need
-          assistance.
+          There is currently no linked application for this email account. Thank you for your
+          interest in serving—please contact the Welcome Center VMT team if you need assistance.
         </p>
       </main>
     );

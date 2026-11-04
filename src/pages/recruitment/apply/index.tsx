@@ -11,6 +11,7 @@ import {
   usePublicRecruitmentConfigQuery,
   useSubmitRecruitmentApplicationMutation,
 } from '@/hooks/domain/recruitment';
+import { NotFoundPage } from '@/pages/not-found';
 
 import { ApplicantApplicationWizard } from './components/ApplicantApplicationWizard';
 import { RecruitmentPreGateSection } from './components/RecruitmentPreGateSection';
@@ -53,17 +54,7 @@ export function RecruitmentApplyPage() {
   }
 
   if (!hasIntakeAccess) {
-    return (
-      <section className="mx-auto max-w-5xl space-y-4">
-        <h1 className="text-2xl font-semibold text-text">Authorized device required</h1>
-        <p className="text-sm text-muted">
-          Sign in with an admin, super admin, kiosk, or VMT account to use this application form.
-        </p>
-        <Link className="text-sm font-semibold text-primary underline" to={ROUTE_PATHS.home}>
-          Return to WelcomeHub
-        </Link>
-      </section>
-    );
+    return <NotFoundPage />;
   }
 
   if (configQuery.isLoading) {
