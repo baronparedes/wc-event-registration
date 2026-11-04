@@ -119,7 +119,7 @@ describe('PipelineHistoryPanel', () => {
     expect(screen.getByText(/Step 2: Interview — Session Scheduled/i)).toBeInTheDocument();
     expect(screen.getByText('Test Coach Peter')).toBeInTheDocument();
     expect(screen.getByText('Please bring personal Bible.')).toBeInTheDocument();
-    expect(screen.getByText('Meet at Welcome Center Room 2.')).toBeInTheDocument();
+    expect(screen.queryByText('Meet at Welcome Center Room 2.')).not.toBeInTheDocument();
 
     // Filter to Step 1 only
     const step1Btn = screen.getByRole('button', { name: /Step 1 \(1\)/i });

@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, FileText, MessageSquare, User } from 'lucide-react';
+import { Briefcase, Calendar, FileText, User } from 'lucide-react';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
@@ -37,7 +37,6 @@ export interface ScheduleSessionConfirmDialogProps {
   } | null;
   assignedRole?: string | null;
   recruitmentNotes?: string;
-  applicantInstructions?: string;
 }
 
 function getActionMeta(actionKind: ScheduleActionKind, stepNumber: number) {
@@ -106,7 +105,6 @@ export function ScheduleSessionConfirmDialog({
   reviewer,
   assignedRole,
   recruitmentNotes,
-  applicantInstructions,
 }: ScheduleSessionConfirmDialogProps) {
   const actionMeta = getActionMeta(actionKind, stepNumber);
   const { datePart, timePart } = parseDateTimeParts(scheduledAt);
@@ -217,28 +215,14 @@ export function ScheduleSessionConfirmDialog({
           )}
         </div>
 
-        {/* Notes & Applicant-Visible Instructions Previews */}
-        {(recruitmentNotes?.trim() || applicantInstructions?.trim()) && (
-          <div className="space-y-2">
-            {applicantInstructions?.trim() && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
-                <div className="flex items-center gap-1.5 font-semibold text-primary">
-                  <MessageSquare className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span>Applicant-Visible Instructions</span>
-                </div>
-                <p className="text-text whitespace-pre-wrap pl-5">{applicantInstructions.trim()}</p>
-              </div>
-            )}
-
-            {recruitmentNotes?.trim() && (
-              <div className="rounded-xl border border-border bg-surface p-3 text-xs space-y-1">
-                <div className="flex items-center gap-1.5 font-semibold text-muted">
-                  <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span>Recruitment Notes</span>
-                </div>
-                <p className="text-text whitespace-pre-wrap pl-5">{recruitmentNotes.trim()}</p>
-              </div>
-            )}
+        {/* Recruitment Notes Preview */}
+        {recruitmentNotes?.trim() && (
+          <div className="rounded-xl border border-border bg-surface p-3 text-xs space-y-1">
+            <div className="flex items-center gap-1.5 font-semibold text-muted">
+              <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Recruitment Notes</span>
+            </div>
+            <p className="text-text whitespace-pre-wrap pl-5">{recruitmentNotes.trim()}</p>
           </div>
         )}
       </Dialog.Body>

@@ -425,7 +425,7 @@ erDiagram
      - `scheduled_at` (`timestamptz`), `completed_at` (`timestamptz`), `assigned_reviewer_id`, `assigned_reviewer_name`, `rubric_data`, `notes` (internal), and `applicant_visible_notes`.
    - **RLS & Internal Coaching Note Privacy**:
      - Direct table RLS on `public.recruitment_pipeline_transactions` is restricted **strictly to `public.is_recruitment_reviewer()`** (`admin`, `super_admin`, `slod`, `vmt`) so applicants can never query internal coaching `notes` or `rubric_data`.
-     - Signed-in applicants retrieve their own progress timeline via `public.get_my_recruitment_application()` (`SECURITY DEFINER`, `search_path = public`), which verifies `auth_user_id = auth.uid() OR lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))`, automatically backfills `auth_user_id = auth.uid()` on first sign-in, and returns only safe fields (`step_number`, `step_key`, `attempt_number`, `status`, `scheduled_at`, `completed_at`, `assigned_reviewer_name`, `applicant_visible_notes`) while excluding `notes`, `rubric_data`, and internal `survey_score`.
+     - Signed-in applicants retrieve their own progress timeline via `public.get_my_recruitment_application()` (`SECURITY DEFINER`, `search_path = public`), which verifies `auth_user_id = auth.uid() OR lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))`, automatically backfills `auth_user_id = auth.uid()` on first sign-in, and returns only safe status fields (`step_number`, `step_key`, `attempt_number`, `status`, `scheduled_at`, `completed_at`, `assigned_reviewer_name`) while strictly excluding `notes`, `rubric_data`, internal `survey_score`, and suppressing custom instructions to prevent accidental information leakage.
    - **Latest Schedule View (`public.recruitment_application_latest_schedules_view`)**:
      - Created `with (security_invoker = true)` (per `AGENTS.md` Rule 3) using `DISTINCT ON (application_id, step_number) ... ORDER BY created_at DESC` to expose `scheduled_interview_on`, `scheduled_orientation_on`, `scheduled_observation_on`, `scheduled_evaluation_on`, and `scheduled_operations_onboarding_on` alongside total iteration counts (`observation_count`, `evaluation_count`) for Admin/SLOD/VMT table queries and CSV exports.
 3. **Approval Workflow Extension**:
@@ -504,7 +504,7 @@ sequenceDiagram
        - `action: 'return_to_observation'`: Records an Evaluation outcome requiring additional shadowing (`from_step = 5`, `to_step = 4`, `transaction_type = 'returned_to_observation'`), sets `current_step = 4`, and creates a new Observation session (`attempt_number = N + 1`) so the applicant can observe and be evaluated as many times as needed.
        - Enforces the DGroup Leader endorsement gate before starting Step 4 (Observation) — `dgroup_approval_id` must be `'approved'` to schedule, start, or advance into Step 4+ (unless `override_endorsement_gate: true` is passed by an Admin).
      - Automatically synchronizes Step 6 (`'skipped'` vs `'pending'`) whenever `confirmed_role` is updated through evaluation.
-       - Dispatches in-app and email notifications to the applicant when advancing to a new step, returning to Observation for another session, or updating `scheduled_at` / `applicant_visible_notes`.
+       - Dispatches in-app and email notifications to the applicant when advancing to a new step, returning to Observation for another session, or scheduling a session.
    - Unit tests: `supabase/functions/update-recruitment-stage/__tests__/handler.test.ts`.
 2. **`deploy-recruitment-applicant`**:
    - Restricted strictly to `admin`, `super_admin`, and `slod` (`public.is_admin_or_slod()` — **`vmt` is forbidden from calling this endpoint**).
@@ -605,7 +605,7 @@ Build the applicant-facing recruitment experience on WelcomeHub and extend the m
 - Prompts the applicant to sign in with Google on their personal phone and matches their application via `lower(email) = lower(auth.jwt() ->> 'email')`. Use `useAuthSessionQuery` for the general signed-in session and user ID; do not gate applicants with `useAdminAuthQuery().isAuthenticated` or an admin-only route guard.
 - Displays the applicant's header summary (`Avatar`, Name, Target Role `Badge`, Overall Progress bar) and a vertical 9-Step interactive timeline (`RecruitmentTimelineStep.tsx`):
   - **Step 1 (Register & DGroup Endorsement)**: Displays endorsement status badge (`Pending DGroup Leader Review` vs `Endorsed by {leader_name}`) and a **"Resend Endorsement Email"** action if still pending.
-  - **Steps 2–5 (Interview, Orientation, Observation, Evaluation)**: Shows status badge, scheduled date/time (if scheduled), assigned Interviewer/Coach with `Avatar`, and `applicant_visible_notes`.
+  - **Steps 2–5 (Interview, Orientation, Observation, Evaluation)**: Shows status badge, scheduled date/time (if scheduled), and assigned Interviewer/Coach with `Avatar`.
   - **Step 6 (Onboarding — Prayer Coach)**: Automatically badged as `Skipped (Not Required for {role})` if `confirmed_role !== 'Prayer Coach'`. For Prayer Coaches, displays instructions to serve 1 Sunday service as an Usher.
   - **Step 7 (Register to CCF VMT Database)**: Renders an external link button (`Open CCF VMT Database`) and an **"I Have Completed CCF VMT Registration"** confirmation button.
   - **Step 8 (RFID Releasing & Sunday Service Commitments)**: Renders `ApplicantCommitmentSelector.tsx` allowing the applicant to choose their Sunday schedule (`1st Sunday` to `5th Sunday` across `9AM`, `12NN`, `3PM`) and displays whether their physical RFID card is ready for release.
@@ -661,7 +661,6 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
        - **Set Scheduled Date/Time** (`FormInputField` `datetime-local`).
        - **Update Confirmed Role** (`FormSelectField` — dynamically toggling Step 6 Onboarding).
        - **Internal Rubric & Coaching Notes** (`FormTextareaField` with `textareaClassName="resize-none"`).
-       - **Applicant-Visible Instructions** (`applicant_visible_notes`).
        - **In Step 4 (Observation)**: Either **Complete & Advance to Evaluation (Step 5)** or click **"Schedule Another Observation (Repeat Step 4)"** (`4 -> 4`). DGroup Endorsement gate strictly enforced before Step 4.
        - **In Step 5 (Evaluation)**: Either **Pass Evaluation** (advancing to Step 6/7), click **"Schedule Another Evaluation (Repeat Step 5)"** (`5 -> 5`), or click **"Needs Another Observation (Return to Step 4)"** (`5 -> 4`).
        - **In Step 7 (Register to CCF VMT Database)**: Admin/SLOD/VMT can fill out `ccf_vmt_id` (`CCF VMT ID`) and `ccf_vmt_date` (`CCF VMT Date`) to verify the external CCF VMT registration and advance the applicant to Step 8.

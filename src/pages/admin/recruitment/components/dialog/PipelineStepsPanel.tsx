@@ -142,9 +142,6 @@ export function PipelineStepsPanel({
     application.confirmed_role ?? application.desired_role,
   );
   const [notes, setNotes] = useState<string>(latestStepTransaction?.notes ?? '');
-  const [applicantNotes, setApplicantNotes] = useState<string>(
-    latestStepTransaction?.applicant_visible_notes ?? '',
-  );
   const [ccfVmtId, setCcfVmtId] = useState<string>(application.ccf_vmt_id ?? '');
   const [ccfVmtDate, setCcfVmtDate] = useState<string>(application.ccf_vmt_date ?? '');
   const [rfidTag, setRfidTag] = useState<string>(application.assigned_rfid_member_id ?? '');
@@ -236,7 +233,6 @@ export function PipelineStepsPanel({
     setIsPendingDeployConfirm(false);
     setScheduledAtLocal(toDatetimeLocal(tx?.completed_at ?? tx?.scheduled_at));
     setNotes(tx?.notes ?? '');
-    setApplicantNotes(tx?.applicant_visible_notes ?? '');
     if (stepNum === 7) {
       setCcfVmtId(application.ccf_vmt_id ?? '');
       setCcfVmtDate(application.ccf_vmt_date ?? '');
@@ -280,7 +276,7 @@ export function PipelineStepsPanel({
         assigned_reviewer_name: reviewerName || null,
         confirmed_role: effectiveConfirmedRole,
         notes: notes.trim() || null,
-        applicant_visible_notes: applicantNotes.trim() || null,
+        applicant_visible_notes: null,
         ccf_vmt_id: ccfVmtId.trim() || null,
         ccf_vmt_date: ccfVmtDate || null,
         assigned_rfid_member_id: rfidTag.trim() || null,
@@ -591,14 +587,6 @@ export function PipelineStepsPanel({
                               <p className="whitespace-pre-wrap">{tx.notes}</p>
                             </div>
                           )}
-                          {tx.applicant_visible_notes && (
-                            <div className="mt-1 rounded-md bg-surface p-2 text-[11px] text-text border border-border/40">
-                              <span className="font-medium text-muted block mb-0.5">
-                                Applicant Instructions:
-                              </span>
-                              <p className="whitespace-pre-wrap">{tx.applicant_visible_notes}</p>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -732,23 +720,6 @@ export function PipelineStepsPanel({
                           : 'Required before completing this step. Saved to candidate pipeline history.'
                       }
                     />
-
-                    {(applicantNotes || !isCompletedStep) && (
-                      <FormTextareaField
-                        label="Applicant-Visible Instructions (Optional)"
-                        placeholder={
-                          isCompletedStep
-                            ? 'None provided'
-                            : 'Instructions shown to the applicant on their progress portal...'
-                        }
-                        rows={2}
-                        disabled={isCompletedStep}
-                        readOnly={isCompletedStep}
-                        textareaClassName="resize-none"
-                        value={applicantNotes}
-                        onChange={(event) => setApplicantNotes(event.target.value)}
-                      />
-                    )}
                   </div>
                 </div>
 
@@ -1147,7 +1118,6 @@ export function PipelineStepsPanel({
             selectedStep === 2 ? confirmedRole || application.confirmed_role : undefined
           }
           recruitmentNotes={notes}
-          applicantInstructions={applicantNotes}
         />
       )}
 

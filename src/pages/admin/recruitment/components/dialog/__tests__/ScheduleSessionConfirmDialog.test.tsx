@@ -46,7 +46,6 @@ describe('ScheduleSessionConfirmDialog', () => {
     },
     assignedRole: 'Prayer Coach',
     recruitmentNotes: 'Strong leadership and active in CCF for 5 years.',
-    applicantInstructions: 'Please arrive 15 minutes before the 9:00 AM session.',
   };
 
   it('renders applicant info, step title, formatted session date & time, reviewer, and assigned role', () => {
@@ -64,13 +63,10 @@ describe('ScheduleSessionConfirmDialog', () => {
     expect(screen.getByText('Prayer Coach')).toBeInTheDocument();
   });
 
-  it('renders recruitment notes and applicant instructions previews', () => {
+  it('renders recruitment notes preview when provided', () => {
     renderWithClient(<ScheduleSessionConfirmDialog {...defaultProps} />);
 
-    expect(screen.getByText('Applicant-Visible Instructions')).toBeInTheDocument();
-    expect(
-      screen.getByText('Please arrive 15 minutes before the 9:00 AM session.'),
-    ).toBeInTheDocument();
+    expect(screen.queryByText('Applicant-Visible Instructions')).not.toBeInTheDocument();
     expect(screen.getByText('Recruitment Notes')).toBeInTheDocument();
     expect(
       screen.getByText('Strong leadership and active in CCF for 5 years.'),

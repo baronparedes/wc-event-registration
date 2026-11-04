@@ -550,8 +550,8 @@ describe('RecruitmentApplicantDetailDialog', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue('Great meeting you! Looking forward to your orientation.'),
-    ).toBeInTheDocument();
+      screen.queryByDisplayValue('Great meeting you! Looking forward to your orientation.'),
+    ).not.toBeInTheDocument();
 
     // Verify inputs are disabled/readOnly
     const notesInput = screen.getByDisplayValue(
