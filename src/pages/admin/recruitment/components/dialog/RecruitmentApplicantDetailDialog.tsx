@@ -147,7 +147,11 @@ export function RecruitmentApplicantDetailDialog({
           ) : (
             <>
               {activeTab === 'pipeline' && (
-                <PipelineStepsPanel application={currentApp} transactions={transactions} />
+                <PipelineStepsPanel
+                  application={currentApp}
+                  transactions={transactions}
+                  endorsement={detailData?.dgroup_endorsement}
+                />
               )}
               {activeTab === 'survey' && <BiblicalSurveyReviewPanel application={currentApp} />}
               {activeTab === 'endorsement' && (
@@ -156,7 +160,12 @@ export function RecruitmentApplicantDetailDialog({
                   endorsement={detailData?.dgroup_endorsement}
                 />
               )}
-              {activeTab === 'profile' && <ApplicantProfilePanel application={currentApp} />}
+              {activeTab === 'profile' && (
+                <ApplicantProfilePanel
+                  application={currentApp}
+                  endorsement={detailData?.dgroup_endorsement}
+                />
+              )}
               {activeTab === 'history' && (
                 <PipelineHistoryPanel application={currentApp} transactions={transactions} />
               )}

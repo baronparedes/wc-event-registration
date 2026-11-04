@@ -24,6 +24,7 @@ import {
   RECRUITMENT_ROLES,
   RECRUITMENT_STEPS,
   type RecruitmentApplication,
+  type RecruitmentApplicationDetail,
   type RecruitmentPipelineTransaction,
   type RecruitmentRole,
   type RecruitmentStepNumber,
@@ -94,9 +95,14 @@ function CompletedStepCard({ stepNumber }: { stepNumber: number }) {
 interface PipelineStepsPanelProps {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
+  endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
 }
 
-export function PipelineStepsPanel({ application, transactions }: PipelineStepsPanelProps) {
+export function PipelineStepsPanel({
+  application,
+  transactions,
+  endorsement,
+}: PipelineStepsPanelProps) {
   const [selectedStep, setSelectedStep] = useState<RecruitmentStepNumber>(application.current_step);
   const { data: authState, can } = useAdminAuthQuery();
   const canWrite = can('canWriteAdminData');
@@ -155,7 +161,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
   const canOverrideGate =
     authState?.adminRole === 'admin' || authState?.adminRole === 'super_admin';
-  const isDGroupEndorsed = Boolean(application.dgroup_approval_id);
+  const isDGroupEndorsed = endorsement?.status === 'approved';
 
   const missingStepDetails = useMemo(() => {
     if (selectedStep >= 2 && selectedStep <= 6) {
@@ -471,14 +477,16 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                 <strong>DGroup Leader:</strong> {application.dgroup_info.leader_name} (
                 {application.dgroup_info.leader_email})
               </p>
-              <p>
-                <strong>DGroup Endorsement Status:</strong>{' '}
-                {application.dgroup_approval_id ? (
-                  <span className="text-primary font-semibold">Endorsed</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <strong>DGroup Endorsement Status:</strong>
+                {endorsement?.status === 'approved' ? (
+                  <Badge variant="default">Endorsed & Linked</Badge>
+                ) : endorsement?.status === 'rejected' ? (
+                  <Badge variant="destructive">Declined by Leader</Badge>
                 ) : (
-                  <span className="text-muted font-semibold">Pending Leader Endorsement</span>
+                  <Badge variant="secondary">Pending Leader Endorsement</Badge>
                 )}
-              </p>
+              </div>
             </div>
 
             {/* Biblical Survey Results */}
