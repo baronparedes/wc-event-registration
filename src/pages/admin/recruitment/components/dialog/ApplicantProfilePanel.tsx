@@ -210,14 +210,14 @@ export function ApplicantProfilePanel({ application }: ApplicantProfilePanelProp
             ) : (
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Resend Endorsement Magic-Link Email
+            Resend Endorsement Email
           </Button>
         </div>
       </div>
 
       <ConfirmDialog
         isOpen={isConfirmOpen}
-        title="Resend Endorsement Magic-Link Email"
+        title="Resend Endorsement Email"
         description={
           <>
             Are you sure you want to resend the endorsement email to{' '}

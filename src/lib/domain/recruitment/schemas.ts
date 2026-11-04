@@ -139,6 +139,7 @@ const recruitmentStepNumberSchema = z.union([
 
 const recruitmentApplicationStatusSchema = z.enum([
   'active',
+  'archived',
   'on_hold',
   'deployed',
   'declined',
@@ -152,6 +153,8 @@ const recruitmentStageStatusSchema = z.enum([
   'in_progress',
   'completed',
   'skipped',
+  'on_hold',
+  'archived',
   'declined',
 ]);
 
@@ -265,11 +268,22 @@ export const adminUpdateStageSchema = z
       'repeat_step',
       'return_to_observation',
       'return_to_interview',
+      'archive_applicant',
+      'restore_applicant',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(2).max(8).optional(),
     status: z
-      .enum(['pending', 'scheduled', 'in_progress', 'completed', 'skipped', 'declined', 'on_hold'])
+      .enum([
+        'pending',
+        'scheduled',
+        'in_progress',
+        'completed',
+        'skipped',
+        'declined',
+        'on_hold',
+        'archived',
+      ])
       .optional(),
     scheduled_at: z.string().datetime({ offset: true }).optional().nullable(),
     assigned_reviewer_id: z.string().uuid().optional().nullable(),
@@ -366,6 +380,8 @@ const applicantRecruitmentTimelineItemSchema = z.object({
     'returned_to_interview',
     'skipped',
     'on_hold',
+    'archived',
+    'restored',
     'declined',
   ]),
   scheduled_at: z.string().nullable(),
@@ -482,6 +498,8 @@ export const recruitmentPipelineTransactionSchema = z.object({
     'returned_to_interview',
     'skipped',
     'on_hold',
+    'archived',
+    'restored',
     'declined',
   ]),
   from_step: recruitmentStepNumberSchema.nullable(),

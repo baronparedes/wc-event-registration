@@ -18,6 +18,7 @@ function getStatusBadgeVariant(
       return 'default';
     case 'deployed':
       return 'accent';
+    case 'archived':
     case 'on_hold':
       return 'secondary';
     case 'declined':

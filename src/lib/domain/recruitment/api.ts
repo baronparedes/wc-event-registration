@@ -127,6 +127,36 @@ export async function deployRecruitmentApplicant(
   return response;
 }
 
+export async function archiveRecruitmentApplicant(params: {
+  applicationId: string;
+  notes?: string | null;
+}): Promise<RecruitmentEdgeResponse> {
+  const response = await callUpdateRecruitmentStage({
+    action: 'archive_applicant',
+    application_id: params.applicationId,
+    notes: params.notes ?? null,
+  });
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to archive recruitment applicant');
+  }
+  return response;
+}
+
+export async function restoreRecruitmentApplicant(params: {
+  applicationId: string;
+  notes?: string | null;
+}): Promise<RecruitmentEdgeResponse> {
+  const response = await callUpdateRecruitmentStage({
+    action: 'restore_applicant',
+    application_id: params.applicationId,
+    notes: params.notes ?? null,
+  });
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to restore recruitment applicant');
+  }
+  return response;
+}
+
 export async function fetchAdminRecruitmentApplicationsPage(params: {
   offset: number;
   pageSize: number;
@@ -258,9 +288,45 @@ export async function fetchAdminRecruitmentApplicationDetail(
     return result.data;
   });
 
+  let dgroupEndorsement: RecruitmentApplicationDetail['dgroup_endorsement'] = null;
+  if (application.data.dgroup_approval_id) {
+    const { data: approvalData } = await supabase
+      .from('approval_requests')
+      .select('id, status, decision_notes, decision_at, decision_by_email, metadata')
+      .eq('id', application.data.dgroup_approval_id)
+      .maybeSingle();
+
+    if (approvalData) {
+      let attestationAnswers: Record<string, unknown> | null = null;
+      const rawMeta = approvalData.metadata as Record<string, unknown> | null;
+      if (rawMeta && rawMeta.attestation_answers) {
+        const rawAnswers = rawMeta.attestation_answers;
+        if (typeof rawAnswers === 'object' && rawAnswers !== null) {
+          attestationAnswers = rawAnswers as Record<string, unknown>;
+        } else if (typeof rawAnswers === 'string') {
+          try {
+            attestationAnswers = JSON.parse(rawAnswers);
+          } catch {
+            attestationAnswers = null;
+          }
+        }
+      }
+
+      dgroupEndorsement = {
+        approval_id: approvalData.id,
+        status: approvalData.status as 'pending' | 'approved' | 'rejected',
+        decision_notes: approvalData.decision_notes,
+        decision_at: approvalData.decision_at,
+        decision_by_email: approvalData.decision_by_email,
+        attestation_answers: attestationAnswers,
+      };
+    }
+  }
+
   return {
     application: application.data,
     transactions,
+    dgroup_endorsement: dgroupEndorsement,
   };
 }
 

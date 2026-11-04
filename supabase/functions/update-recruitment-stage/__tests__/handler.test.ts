@@ -630,6 +630,56 @@ Deno.test(
   },
 );
 
+Deno.test('update-recruitment-stage archives an applicant', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3, status: 'active' },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'archive_applicant',
+          application_id: APPLICATION_ID,
+          notes: 'Candidate paused for personal reasons',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.status, 'archived');
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage restores an archived applicant to active', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3, status: 'archived' },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'restore_applicant',
+          application_id: APPLICATION_ID,
+          notes: 'Candidate resuming recruitment',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.status, 'active');
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
 Deno.test('update-recruitment-stage accepts scheduled_at with timezone offset', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
@@ -720,3 +770,53 @@ Deno.test(
     });
   },
 );
+
+Deno.test('update-recruitment-stage archives an applicant', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3, status: 'active' },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'archive_applicant',
+          application_id: APPLICATION_ID,
+          notes: 'Candidate paused for personal reasons',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.status, 'archived');
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+Deno.test('update-recruitment-stage restores an archived applicant to active', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({
+      adminRole: 'admin',
+      application: { ...applicationRecord, current_step: 3, status: 'archived' },
+    });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'restore_applicant',
+          application_id: APPLICATION_ID,
+          notes: 'Candidate resuming recruitment',
+        }),
+      );
+
+      assertEquals(response.status, 200);
+      const body = await response.json();
+      assertEquals(body.success, true);
+      assertEquals(body.status, 'active');
+    } finally {
+      mock.restore();
+    }
+  });
+});

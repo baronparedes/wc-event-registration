@@ -1,16 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  History,
-  Lock,
-  RotateCcw,
-  UserPlus,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Lock, RotateCcw, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -113,9 +103,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
 
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const deployMutation = useDeployRecruitmentApplicantMutation();
-
-  // Collapsible history state
-  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
   // Find transactions for selected step, sorted newest first
   const stepTransactions = useMemo(() => {
@@ -354,25 +341,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         toast.error(err.message || 'Failed to deploy volunteer');
       },
     });
-  };
-
-  const formatActivityTitle = (tx: RecruitmentPipelineTransaction) => {
-    switch (tx.transaction_type) {
-      case 'completed':
-        return `Step ${tx.step_number} Completed`;
-      case 'scheduled':
-        return `Session Scheduled for Step ${tx.step_number}`;
-      case 'rescheduled':
-        return `Session Rescheduled for Step ${tx.step_number}`;
-      case 'repeated_step':
-        return `Repeat Session Scheduled for Step ${tx.step_number}`;
-      case 'returned_to_observation':
-        return 'Returned to Observation (Step 4)';
-      case 'returned_to_interview':
-        return 'Returned to Interview (Step 2)';
-      default:
-        return `Step ${tx.step_number} Activity`;
-    }
   };
 
   return (
@@ -1131,104 +1099,6 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   </div>
                 )}
               </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Activity & Coaching History (Compact Collapsible Feed) */}
-      <div className="rounded-xl border border-border bg-surface p-3 sm:p-3.5 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setIsHistoryOpen((prev) => !prev)}
-          className="flex w-full items-center justify-between gap-2 text-left cursor-pointer"
-          aria-expanded={isHistoryOpen}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <History className="h-4 w-4 text-primary shrink-0" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading text-xs font-bold text-text">
-                  Pipeline Transaction History
-                </h4>
-                <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
-                  {transactions.length}
-                </Badge>
-              </div>
-              <p className="text-[10px] text-muted truncate">
-                Activity log of scheduled sessions, attempts, and notes
-              </p>
-            </div>
-          </div>
-          <div className="text-muted hover:text-text shrink-0 p-1">
-            {isHistoryOpen ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </div>
-        </button>
-
-        {isHistoryOpen && (
-          <div className="mt-2.5 border-t border-border/70 pt-2">
-            {transactions.length === 0 ? (
-              <p className="text-xs text-muted py-1.5">
-                No activity recorded yet for this applicant.
-              </p>
-            ) : (
-              <div className="max-h-52 overflow-y-auto divide-y divide-border/60 pr-1">
-                {[...transactions].reverse().map((tx) => (
-                  <div key={tx.id} className="py-2 first:pt-0 last:pb-0 text-xs space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="font-medium text-text">{formatActivityTitle(tx)}</span>
-                        <span className="text-muted text-[10px] font-mono">
-                          Attempt #{tx.attempt_number} ({tx.transaction_type.replace('_', ' ')})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant="secondary" className="capitalize text-[10px] px-1.5 py-0">
-                          {tx.status}
-                        </Badge>
-                        <span className="text-[10px] text-muted font-mono">
-                          {formatDateTime(tx.created_at)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {(tx.scheduled_at || tx.assigned_reviewer_name) && (
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted">
-                        {tx.scheduled_at && (
-                          <span>
-                            Scheduled:{' '}
-                            <strong className="text-text">{formatDateTime(tx.scheduled_at)}</strong>
-                          </span>
-                        )}
-                        {tx.assigned_reviewer_name && (
-                          <span>
-                            Coach:{' '}
-                            <strong className="text-text">{tx.assigned_reviewer_name}</strong>
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {tx.notes && (
-                      <p className="text-[11px] text-muted italic bg-background rounded-md px-2 py-1 border border-border/50">
-                        <span className="font-medium not-italic text-text">Note: </span>
-                        {tx.notes}
-                      </p>
-                    )}
-
-                    {tx.applicant_visible_notes && (
-                      <p className="text-[11px] text-muted bg-background rounded-md px-2 py-1 border border-border/50">
-                        <span className="font-medium text-text">Applicant visible: </span>
-                        {tx.applicant_visible_notes}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
             )}
           </div>
         )}
