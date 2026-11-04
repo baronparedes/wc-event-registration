@@ -135,6 +135,27 @@ describe('SundayDateTimePicker & Utils', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
+    it('disables session time controls when a Sunday date is not yet picked', async () => {
+      const user = userEvent.setup();
+      render(<SundayDateTimePicker id="test-session" value="" onChange={vi.fn()} />);
+
+      // Open popover
+      const trigger = screen.getByRole('button', { name: /select sunday date & time/i });
+      await user.click(trigger);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      // Session time textbox is disabled
+      const timeInput = screen.getByRole('textbox', { name: /session time/i });
+      expect(timeInput).toBeDisabled();
+
+      // Preset buttons and AM/PM buttons are disabled
+      expect(screen.getByRole('button', { name: '9 AM' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '12 NN' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '3 PM' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'AM' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'PM' })).toBeDisabled();
+    });
+
     it('renders disabled/read-only view with formatted text', () => {
       render(
         <SundayDateTimePicker

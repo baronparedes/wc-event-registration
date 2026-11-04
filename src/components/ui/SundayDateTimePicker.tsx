@@ -151,6 +151,7 @@ export function SundayDateTimePicker({
   };
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isInactive || !datePart) return;
     const val = e.target.value;
     setTimeInput(val);
 
@@ -159,20 +160,17 @@ export function SundayDateTimePicker({
       if (parsed.period !== period) {
         setPeriod(parsed.period);
       }
-      if (datePart) {
-        onChange(`${datePart}T${parsed.time24}`);
-      }
+      onChange(`${datePart}T${parsed.time24}`);
     }
   };
 
   const handleTimeInputBlur = () => {
+    if (isInactive || !datePart) return;
     const parsed = parse12HourTimeString(timeInput, period);
     if (parsed) {
       setTimeInput(parsed.timeStr);
       setPeriod(parsed.period);
-      if (datePart) {
-        onChange(`${datePart}T${parsed.time24}`);
-      }
+      onChange(`${datePart}T${parsed.time24}`);
     } else {
       const fallback = split24HourTime(timePart || '09:00');
       setTimeInput(fallback.timeStr);
@@ -181,22 +179,21 @@ export function SundayDateTimePicker({
   };
 
   const handlePeriodToggle = (newPeriod: 'AM' | 'PM') => {
-    if (newPeriod === period || isInactive) return;
+    if (newPeriod === period || isInactive || !datePart) return;
     setPeriod(newPeriod);
 
     const parsed = parse12HourTimeString(timeInput, newPeriod);
-    if (parsed && datePart) {
+    if (parsed) {
       onChange(`${datePart}T${parsed.time24}`);
     }
   };
 
   const handlePresetClick = (presetTime24: string) => {
+    if (isInactive || !datePart) return;
     const parsed = split24HourTime(presetTime24);
     setTimeInput(parsed.timeStr);
     setPeriod(parsed.period);
-    if (datePart) {
-      onChange(`${datePart}T${presetTime24}`);
-    }
+    onChange(`${datePart}T${presetTime24}`);
   };
 
   const displayDateTimeText = datePart ? formatDisplayDateTime(datePart, timePart) : '';
@@ -271,43 +268,58 @@ export function SundayDateTimePicker({
                 onSelect={handleDateSelect}
               />
 
-              {/* Integrated Time Section */}
-              <div className="space-y-2 border-t border-border mt-3 pt-3">
+              {/* Integrated Time Section (disabled until Sunday date is picked) */}
+              <div
+                className={`space-y-2 border-t border-border mt-3 pt-3 transition-opacity ${!datePart ? 'opacity-50' : 'opacity-100'}`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                    Session Time
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Clock
+                      className={`h-3.5 w-3.5 ${!datePart ? 'text-muted' : 'text-primary'}`}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={`text-xs font-semibold ${!datePart ? 'text-muted' : 'text-text'}`}
+                    >
+                      Session Time
+                    </span>
+                    {!datePart && (
+                      <span className="text-[10px] text-muted font-normal">(Pick date first)</span>
+                    )}
+                  </div>
 
                   {/* 1-Click CCF Sunday Service Presets */}
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
+                      disabled={isInactive || !datePart}
                       onClick={() => handlePresetClick('09:00')}
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition ${
-                        timePart === '09:00'
+                        timePart === '09:00' && datePart
                           ? 'bg-primary text-white'
                           : 'bg-background text-muted hover:text-text border border-border/60'
-                      }`}
+                      } ${!datePart ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                       9 AM
                     </button>
                     <button
                       type="button"
+                      disabled={isInactive || !datePart}
                       onClick={() => handlePresetClick('12:00')}
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition ${
-                        timePart === '12:00'
+                        timePart === '12:00' && datePart
                           ? 'bg-primary text-white'
                           : 'bg-background text-muted hover:text-text border border-border/60'
-                      }`}
+                      } ${!datePart ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                       12 NN
                     </button>
                     <button
                       type="button"
+                      disabled={isInactive || !datePart}
                       onClick={() => handlePresetClick('15:00')}
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition ${
-                        timePart === '15:00'
+                        timePart === '15:00' && datePart
                           ? 'bg-primary text-white'
                           : 'bg-background text-muted hover:text-text border border-border/60'
                       }`}
@@ -319,44 +331,53 @@ export function SundayDateTimePicker({
 
                 {/* Custom Time Input & AM/PM Toggle */}
                 <div className="flex items-center gap-1.5">
-                  <div className="relative flex-1 flex items-center rounded-lg border border-border bg-background px-2.5 py-1.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20">
+                  <div
+                    className={`relative flex-1 flex items-center rounded-lg border bg-background px-2.5 py-1.5 ${
+                      !datePart
+                        ? 'border-border/60 bg-muted/10 cursor-not-allowed'
+                        : 'border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20'
+                    }`}
+                  >
                     <input
                       id={`${pickerId}-time`}
                       type="text"
                       aria-label="Session Time"
-                      placeholder="e.g. 1:52 PM"
-                      value={timeInput}
+                      placeholder={!datePart ? 'Select a Sunday date first...' : 'e.g. 1:52 PM'}
+                      value={datePart ? timeInput : ''}
                       onChange={handleTimeInputChange}
                       onBlur={handleTimeInputBlur}
+                      disabled={isInactive || !datePart}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           handleTimeInputBlur();
                         }
                       }}
-                      className="w-full bg-transparent text-xs font-semibold text-text outline-none placeholder:text-muted/60"
+                      className="w-full bg-transparent text-xs font-semibold text-text outline-none placeholder:text-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
 
                   <div className="flex items-center rounded-lg border border-border bg-background p-0.5 text-xs font-semibold shrink-0">
                     <button
                       type="button"
+                      disabled={isInactive || !datePart}
                       onClick={() => handlePeriodToggle('AM')}
                       className={`rounded px-2 py-1 text-[11px] font-semibold transition-all ${
-                        period === 'AM'
+                        period === 'AM' && datePart
                           ? 'bg-primary text-white shadow-xs'
-                          : 'text-muted hover:text-text'
+                          : 'text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed'
                       }`}
                     >
                       AM
                     </button>
                     <button
                       type="button"
+                      disabled={isInactive || !datePart}
                       onClick={() => handlePeriodToggle('PM')}
                       className={`rounded px-2 py-1 text-[11px] font-semibold transition-all ${
-                        period === 'PM'
+                        period === 'PM' && datePart
                           ? 'bg-primary text-white shadow-xs'
-                          : 'text-muted hover:text-text'
+                          : 'text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed'
                       }`}
                     >
                       PM
