@@ -42,6 +42,7 @@ import {
 import { formatDateTime, localDateTimeToUTC8ISO, toDatetimeLocal } from '@/lib/infrastructure';
 
 import { BiblicalSurveyReviewPanel } from './BiblicalSurveyReviewPanel';
+import { CompleteStepConfirmDialog } from './CompleteStepConfirmDialog';
 import { ReviewerUserPicker } from './ReviewerUserPicker';
 import {
   type ScheduleActionKind,
@@ -139,6 +140,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     action: 'update_stage' | 'repeat_step' | 'return_to_observation' | 'return_to_interview';
     actionKind: ScheduleActionKind;
   } | null>(null);
+  const [isPendingCompletionConfirm, setIsPendingCompletionConfirm] = useState(false);
+  const [isPendingDeployConfirm, setIsPendingDeployConfirm] = useState(false);
   const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
     toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
   );
@@ -154,6 +157,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const [rfidTag, setRfidTag] = useState<string>(application.assigned_rfid_member_id ?? '');
 
   const stepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === selectedStep);
+  const nextStepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === selectedStep + 1);
   const isCurrentActiveStep = application.current_step === selectedStep;
   const isCompletedStep =
     application.current_step > selectedStep || application.status === 'deployed';
@@ -169,7 +173,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const missingStepDetails = useMemo(() => {
     if (selectedStep >= 2 && selectedStep <= 6) {
       const missing: string[] = [];
-      if (!reviewerId?.trim() && !reviewerName?.trim()) missing.push('Assigned Reviewer / Coach');
+      if (!reviewerId?.trim() && !reviewerName?.trim()) missing.push('Assigned To');
       if (!scheduledAtLocal?.trim() && !latestStepTransaction?.scheduled_at) {
         missing.push('Session Date & Time');
       }
@@ -235,6 +239,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
     setReviewerName(tx?.assigned_reviewer_name ?? '');
     setSelectedReviewerUser(null);
     setPendingScheduleAction(null);
+    setIsPendingCompletionConfirm(false);
+    setIsPendingDeployConfirm(false);
     setScheduledAtLocal(toDatetimeLocal(tx?.completed_at ?? tx?.scheduled_at));
     setNotes(tx?.notes ?? '');
     setApplicantNotes(tx?.applicant_visible_notes ?? '');
@@ -289,6 +295,8 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
       {
         onSuccess: () => {
           setPendingScheduleAction(null);
+          setIsPendingCompletionConfirm(false);
+          setIsPendingDeployConfirm(false);
           toast.success(
             action === 'repeat_step'
               ? `Scheduled another session for Step ${selectedStep}`
@@ -339,6 +347,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
   const handleDeploy = () => {
     deployMutation.mutate(application.id, {
       onSuccess: () => {
+        setIsPendingDeployConfirm(false);
         toast.success(`Successfully deployed ${application.full_name} to Welcome Center!`);
       },
       onError: (err) => {
@@ -657,7 +666,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                   <div className="grid gap-3 sm:grid-cols-2">
                     <ReviewerUserPicker
                       id="assignedReviewer"
-                      label="Assigned Reviewer / Coach"
+                      label="Assigned To"
                       required={!isCompletedStep}
                       disabled={isCompletedStep}
                       value={reviewerId}
@@ -795,7 +804,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => handleUpdateStage('completed')}
+                        onClick={() => setIsPendingCompletionConfirm(true)}
                         disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                         className="font-semibold"
                       >
@@ -969,7 +978,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       type="button"
                       size="sm"
                       className="w-full sm:w-auto"
-                      onClick={() => handleUpdateStage('completed')}
+                      onClick={() => setIsPendingCompletionConfirm(true)}
                       disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                     >
                       <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
@@ -1047,7 +1056,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       type="button"
                       size="sm"
                       className="w-full sm:w-auto"
-                      onClick={() => handleUpdateStage('completed')}
+                      onClick={() => setIsPendingCompletionConfirm(true)}
                       disabled={updateStageMutation.isPending || !canCompleteCurrentStep}
                     >
                       <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
@@ -1098,7 +1107,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                         type="button"
                         size="sm"
                         className="w-full sm:w-auto"
-                        onClick={handleDeploy}
+                        onClick={() => setIsPendingDeployConfirm(true)}
                         disabled={deployMutation.isPending || !application.assigned_rfid_member_id}
                       >
                         {deployMutation.isPending ? (
@@ -1261,6 +1270,67 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
           }
           recruitmentNotes={notes}
           applicantInstructions={applicantNotes}
+        />
+      )}
+
+      {isPendingCompletionConfirm && (
+        <CompleteStepConfirmDialog
+          isOpen={isPendingCompletionConfirm}
+          onClose={() => setIsPendingCompletionConfirm(false)}
+          onConfirm={() => handleUpdateStage('completed')}
+          isPending={updateStageMutation.isPending}
+          applicant={{
+            name: `${application.full_name}${application.nickname ? ` (${application.nickname})` : ''}`,
+            email: application.email,
+            phone: application.phone || undefined,
+            avatarObjectKey: application.avatar_object_key,
+          }}
+          stepNumber={selectedStep}
+          currentStepTitle={stepMeta?.title ?? `Step ${selectedStep}`}
+          nextStepTitle={nextStepMeta?.title}
+          completedAt={scheduledAtLocal}
+          reviewer={
+            selectedReviewerUser
+              ? {
+                  id: selectedReviewerUser.id,
+                  name: selectedReviewerUser.name,
+                  role: selectedReviewerUser.role,
+                  avatarObjectKey: selectedReviewerUser.avatar_object_key,
+                }
+              : reviewerName
+                ? {
+                    id: reviewerId,
+                    name: reviewerName,
+                  }
+                : null
+          }
+          assignedRole={
+            selectedStep === 2 ? confirmedRole || application.confirmed_role : undefined
+          }
+          recruitmentNotes={notes}
+          ccfVmtId={ccfVmtId || application.ccf_vmt_id}
+          ccfVmtDate={ccfVmtDate || application.ccf_vmt_date}
+          rfidTag={rfidTag || application.assigned_rfid_member_id}
+        />
+      )}
+
+      {isPendingDeployConfirm && (
+        <CompleteStepConfirmDialog
+          isOpen={isPendingDeployConfirm}
+          onClose={() => setIsPendingDeployConfirm(false)}
+          onConfirm={handleDeploy}
+          isPending={deployMutation.isPending}
+          isDeployAction
+          applicant={{
+            name: `${application.full_name}${application.nickname ? ` (${application.nickname})` : ''}`,
+            email: application.email,
+            phone: application.phone || undefined,
+            avatarObjectKey: application.avatar_object_key,
+          }}
+          stepNumber={9}
+          currentStepTitle="Final Deployment"
+          assignedRole={confirmedRole || application.confirmed_role}
+          rfidTag={application.assigned_rfid_member_id}
         />
       )}
     </div>
