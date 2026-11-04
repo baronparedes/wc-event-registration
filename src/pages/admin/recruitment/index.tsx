@@ -37,7 +37,7 @@ type StatusFilterOption = RecruitmentApplicationStatus | 'all';
 
 const STATUS_OPTIONS: Array<{ value: StatusFilterOption; label: string }> = [
   { value: 'active', label: 'Active' },
-  { value: 'on_hold', label: 'On Hold' },
+  { value: 'archived', label: 'Archived' },
   { value: 'deployed', label: 'Deployed' },
   { value: 'declined', label: 'Declined' },
   { value: 'all', label: 'All' },

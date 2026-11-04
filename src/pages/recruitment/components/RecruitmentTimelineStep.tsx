@@ -26,6 +26,8 @@ const STATUS_LABELS: Record<TimelineStatus, string> = {
   in_progress: 'In Progress',
   completed: 'Completed',
   skipped: 'Skipped',
+  on_hold: 'On Hold',
+  archived: 'Archived',
   declined: 'Declined',
 };
 

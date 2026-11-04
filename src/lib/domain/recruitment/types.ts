@@ -14,6 +14,7 @@ export type RecruitmentStepNumber = (typeof RECRUITMENT_STEPS)[number]['stepNumb
 export type RecruitmentStepKey = (typeof RECRUITMENT_STEPS)[number]['key'];
 export type RecruitmentApplicationStatus =
   | 'active'
+  | 'archived'
   | 'on_hold'
   | 'deployed'
   | 'declined'
@@ -25,6 +26,8 @@ export type RecruitmentStageStatus =
   | 'in_progress'
   | 'completed'
   | 'skipped'
+  | 'on_hold'
+  | 'archived'
   | 'declined';
 export type RecruitmentSurveyAnswer = 'true' | 'false';
 
@@ -136,6 +139,8 @@ export type RecruitmentPipelineTransaction = {
     | 'returned_to_interview'
     | 'skipped'
     | 'on_hold'
+    | 'archived'
+    | 'restored'
     | 'declined';
   from_step: RecruitmentStepNumber | null;
   to_step: RecruitmentStepNumber | null;
@@ -198,6 +203,14 @@ export type ApplicantRecruitmentTimelineItem = Pick<
 export type RecruitmentApplicationDetail = {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
+  dgroup_endorsement?: {
+    approval_id: string;
+    status: 'pending' | 'approved' | 'rejected';
+    decision_notes?: string | null;
+    decision_at?: string | null;
+    decision_by_email?: string | null;
+    attestation_answers?: Record<string, unknown> | null;
+  } | null;
 };
 
 export type PublicRecruitmentConfig = {

@@ -30,11 +30,22 @@ const updateRecruitmentStageSchema = z
       'repeat_step',
       'return_to_observation',
       'return_to_interview',
+      'archive_applicant',
+      'restore_applicant',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(2).max(8).optional(),
     status: z
-      .enum(['pending', 'scheduled', 'in_progress', 'completed', 'skipped', 'declined', 'on_hold'])
+      .enum([
+        'pending',
+        'scheduled',
+        'in_progress',
+        'completed',
+        'skipped',
+        'declined',
+        'on_hold',
+        'archived',
+      ])
       .optional(),
     scheduled_at: z.string().datetime({ offset: true }).optional().nullable(),
     assigned_reviewer_id: z.string().uuid().optional().nullable(),
@@ -124,6 +135,31 @@ function asJson(value: Record<string, unknown> | undefined): Json {
   return JSON.parse(JSON.stringify(value ?? {})) as Json;
 }
 
+function getStepKeyForNumber(
+  step: number,
+): Database['public']['Tables']['recruitment_pipeline_transactions']['Insert']['step_key'] {
+  switch (step) {
+    case 1:
+      return 'register';
+    case 2:
+      return 'interview';
+    case 3:
+      return 'orientation';
+    case 4:
+      return 'observation';
+    case 5:
+      return 'evaluation';
+    case 6:
+      return 'final_interview';
+    case 7:
+      return 'vmt_endorsement';
+    case 8:
+      return 'rfid_assignment';
+    default:
+      return 'deployment';
+  }
+}
+
 function createApprovalAccessToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -159,7 +195,18 @@ async function saveTransaction(
   stepNumber: number,
   stepKey: string,
   status: 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'skipped' | 'declined',
-  transactionType: 'scheduled' | 'rescheduled' | 'completed' | 'skipped' | 'on_hold' | 'declined',
+  transactionType:
+    | 'scheduled'
+    | 'rescheduled'
+    | 'completed'
+    | 'repeated_step'
+    | 'returned_to_observation'
+    | 'returned_to_interview'
+    | 'skipped'
+    | 'on_hold'
+    | 'archived'
+    | 'restored'
+    | 'declined',
   userId: string,
   fields: {
     scheduledAt?: string | null;
@@ -511,6 +558,70 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
     return response(403, { success: false, error: 'Reviewer access required' }, guard.corsHeaders);
   }
 
+  if (action === 'archive_applicant') {
+    const { error: archiveError } = await supabase
+      .from('recruitment_applications')
+      .update({ status: 'archived' })
+      .eq('id', application.id);
+    if (archiveError) {
+      return response(
+        500,
+        { success: false, error: 'Failed to archive applicant' },
+        guard.corsHeaders,
+      );
+    }
+
+    const stepKey = getStepKeyForNumber(application.current_step);
+    await saveTransaction(
+      supabase,
+      application,
+      application.current_step,
+      stepKey,
+      'pending',
+      'archived',
+      userId,
+      {
+        notes: guard.data.notes ?? 'Applicant moved to archived',
+        assignedReviewerId: userId,
+        assignedReviewerName: normalizedEmail,
+      },
+    );
+
+    return response(200, { success: true, status: 'archived' }, guard.corsHeaders);
+  }
+
+  if (action === 'restore_applicant') {
+    const { error: restoreError } = await supabase
+      .from('recruitment_applications')
+      .update({ status: 'active' })
+      .eq('id', application.id);
+    if (restoreError) {
+      return response(
+        500,
+        { success: false, error: 'Failed to restore applicant' },
+        guard.corsHeaders,
+      );
+    }
+
+    const stepKey = getStepKeyForNumber(application.current_step);
+    await saveTransaction(
+      supabase,
+      application,
+      application.current_step,
+      stepKey,
+      'pending',
+      'restored',
+      userId,
+      {
+        notes: guard.data.notes ?? 'Applicant restored to active pipeline',
+        assignedReviewerId: userId,
+        assignedReviewerName: normalizedEmail,
+      },
+    );
+
+    return response(200, { success: true, status: 'active' }, guard.corsHeaders);
+  }
+
   if (
     action === 'repeat_step' ||
     action === 'return_to_observation' ||
@@ -779,14 +890,15 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
         ? 'declined'
         : stageStatus === 'skipped'
           ? 'skipped'
-          : stageStatus === 'on_hold'
-            ? 'on_hold'
+          : stageStatus === 'on_hold' || stageStatus === 'archived'
+            ? 'archived'
             : guard.data.scheduled_at
               ? wasScheduled
                 ? 'rescheduled'
                 : 'scheduled'
               : 'scheduled';
-  const transactionStatus = stageStatus === 'on_hold' ? 'pending' : stageStatus;
+  const transactionStatus =
+    stageStatus === 'on_hold' || stageStatus === 'archived' ? 'pending' : stageStatus;
   const transaction = await saveTransaction(
     supabase,
     application,
@@ -819,8 +931,12 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
   if (stageStatus === 'completed')
     applicationUpdate.current_step = Math.max(application.current_step, nextStep);
   if (stageStatus === 'declined') applicationUpdate.status = 'declined';
-  if (stageStatus === 'on_hold') applicationUpdate.status = 'on_hold';
-  if (stageStatus === 'pending' && application.status === 'on_hold')
+  if (stageStatus === 'on_hold' || stageStatus === 'archived')
+    applicationUpdate.status = 'archived';
+  if (
+    stageStatus === 'pending' &&
+    (application.status === 'on_hold' || application.status === 'archived')
+  )
     applicationUpdate.status = 'active';
   if (guard.data.confirmed_role) applicationUpdate.confirmed_role = guard.data.confirmed_role;
   if (guard.data.ccf_vmt_id !== undefined) applicationUpdate.ccf_vmt_id = guard.data.ccf_vmt_id;

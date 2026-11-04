@@ -5,3 +5,6 @@ export * from './RecruitmentApplicantDetailDialog';
 export * from './ReviewerUserPicker';
 export * from './ScheduleSessionConfirmDialog';
 export * from './CompleteStepConfirmDialog';
+export * from './DGroupEndorsementPanel';
+export * from './PipelineHistoryPanel';
+export * from './ArchiveApplicantConfirmDialog';

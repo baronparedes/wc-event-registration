@@ -106,6 +106,7 @@ vi.mock('@/hooks/domain/recruitment', () => ({
   useAdminRecruitmentApplicationDetailQuery: () => mockDetailQuery(),
   useUpdateRecruitmentStageMutation: () => ({
     mutate: mockUpdateStageMutate,
+    mutateAsync: mockUpdateStageMutate,
     isPending: false,
   }),
   useDeployRecruitmentApplicantMutation: () => ({
@@ -141,16 +142,27 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     isLoading: false,
     isFetching: false,
   }),
-  useReviewerUserByIdQuery: () => ({
-    data: {
-      id: 'user-1',
-      name: 'Test Lead Usher',
-      full_name: 'Test Lead Usher',
-      nickname: null,
-      email: 'usher@example.com',
-      role: 'OIC',
-      avatar_object_key: null,
-    },
+  useReviewerUserByIdQuery: (id?: string) => ({
+    data:
+      id === 'user-pastor'
+        ? {
+            id: 'user-pastor',
+            name: 'Test Pastor Dave',
+            full_name: 'Test Pastor Dave',
+            nickname: null,
+            email: 'pastor@example.com',
+            role: 'Pastor',
+            avatar_object_key: null,
+          }
+        : {
+            id: 'user-1',
+            name: 'Test Lead Usher',
+            full_name: 'Test Lead Usher',
+            nickname: null,
+            email: 'usher@example.com',
+            role: 'OIC',
+            avatar_object_key: null,
+          },
     isLoading: false,
   }),
 }));
@@ -203,10 +215,12 @@ describe('RecruitmentApplicantDetailDialog', () => {
     expect(screen.getByText('Step 4: Observation')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /9-step pipeline/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /biblical survey/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /dgroup endorsement/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /applicant profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /transaction history/i })).toBeInTheDocument();
   });
 
-  it('renders Step 4 Observation controls and history in Pipeline tab', () => {
+  it('renders Step 4 Observation controls in Pipeline tab and history in Transaction History tab', async () => {
     renderDialog(
       <RecruitmentApplicantDetailDialog
         application={mockApplication}
@@ -215,13 +229,16 @@ describe('RecruitmentApplicantDetailDialog', () => {
       />,
     );
 
+    expect(screen.getByRole('button', { name: /complete step 4/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /repeat observation/i })).toBeInTheDocument();
+
+    // Switch to Transaction History tab
+    await userEvent.click(screen.getByRole('tab', { name: /transaction history/i }));
     expect(screen.getByText('Pipeline Transaction History')).toBeInTheDocument();
-    expect(screen.getByText(/Attempt #1 \(scheduled\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 4: Observation — Session Scheduled/i)).toBeInTheDocument();
     expect(screen.getAllByText(/First shadow session with seasoned team/i).length).toBeGreaterThan(
       0,
     );
-    expect(screen.getByRole('button', { name: /complete step 4/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /repeat observation/i })).toBeInTheDocument();
   });
 
   it('displays confirmed ministry role badge on Step 4 and shows role selector when Step 2 is active', () => {
@@ -451,7 +468,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
 
-    const resendBtn = screen.getByRole('button', { name: /resend endorsement magic-link email/i });
+    const resendBtn = screen.getByRole('button', { name: /Resend Endorsement Email/i });
     expect(resendBtn).toHaveClass('w-full', 'sm:w-auto');
 
     // Click button to open confirmation dialog
@@ -460,7 +477,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Verify confirmation dialog appears with leader details
     const alertDialog = screen.getByRole('alertdialog');
     expect(
-      within(alertDialog).getByRole('heading', { name: 'Resend Endorsement Magic-Link Email' }),
+      within(alertDialog).getByRole('heading', { name: 'Resend Endorsement Email' }),
     ).toBeInTheDocument();
     expect(within(alertDialog).getByText(/Test Paul Mentor/i)).toBeInTheDocument();
     expect(within(alertDialog).getByText(/paul@example.com/i)).toBeInTheDocument();
@@ -519,11 +536,11 @@ describe('RecruitmentApplicantDetailDialog', () => {
     );
 
     // Switch to completed Step 2 (Interview)
-    const step2Tab = screen.getByRole('tab', { name: /interview/i });
+    const step2Tab = screen.getByRole('tab', { name: /^interview$/i });
     await user.click(step2Tab);
 
     // Verify CompletedStepCard is present
-    expect(screen.getByText('Step 2 Completed')).toBeInTheDocument();
+    expect(screen.getByText('Step 2 is Completed')).toBeInTheDocument();
 
     // Verify recorded reviewer and notes are visible
     expect(screen.getByText('Test Pastor Dave')).toBeInTheDocument();
@@ -755,7 +772,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Confirmation modal should be visible
     expect(screen.getByText('Confirm Session Reschedule')).toBeInTheDocument();
     expect(screen.getAllByText('Test Paul Apostle (Test OIC Paul)').length).toBeGreaterThanOrEqual(
-      2,
+      1,
     );
 
     // Cancel closes dialog without mutation
@@ -778,5 +795,118 @@ describe('RecruitmentApplicantDetailDialog', () => {
     await user.click(closeButton);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders DGroup Endorsement tab with leader information and endorsement questions', async () => {
+    const user = userEvent.setup();
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+        dgroup_endorsement: {
+          approval_id: 'appr-1',
+          status: 'approved',
+          attestation_answers: {
+            leader_full_name: 'Test Paul Mentor',
+            disciple_dgroup_since: '2020 Jan',
+            eval_prayer_and_devotion: 3,
+          },
+        },
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /dgroup endorsement/i }));
+
+    expect(screen.getByText('DGroup & Leader Information')).toBeInTheDocument();
+    expect(screen.getAllByText('Test Paul Mentor').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Endorsed & Linked')).toBeInTheDocument();
+  });
+
+  it('allows archiving an active applicant with notes', async () => {
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Click Archive button in header
+    const archiveBtn = screen.getByRole('button', { name: /^archive$/i });
+    expect(archiveBtn).toBeInTheDocument();
+    await user.click(archiveBtn);
+
+    // Archive confirmation dialog opens
+    expect(screen.getByRole('heading', { name: /^archive applicant$/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Pausing this applicant will move them to the Archived list/i),
+    ).toBeInTheDocument();
+
+    // Type notes
+    const notesInput = screen.getByPlaceholderText(/Applicant requested a pause/i);
+    await user.type(notesInput, 'Candidate requested break until January');
+
+    // Confirm archive
+    const confirmBtn = screen.getByRole('button', { name: /^Archive Applicant$/i });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'archive_applicant',
+        application_id: mockApplication.id,
+        notes: 'Candidate requested break until January',
+      }),
+    );
+  });
+
+  it('allows restoring an archived applicant', async () => {
+    const user = userEvent.setup();
+    const archivedApp = { ...mockApplication, status: 'archived' as const };
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: archivedApp,
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={archivedApp}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Click Restore button in header
+    const restoreBtn = screen.getByRole('button', { name: /restore to active/i });
+    expect(restoreBtn).toBeInTheDocument();
+    await user.click(restoreBtn);
+
+    // Restore confirmation dialog opens
+    expect(
+      screen.getByRole('heading', { name: /^restore applicant to active$/i }),
+    ).toBeInTheDocument();
+
+    // Confirm restore
+    const confirmBtn = screen.getByRole('button', { name: /^Restore Applicant$/i });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'restore_applicant',
+        application_id: archivedApp.id,
+      }),
+    );
   });
 });
