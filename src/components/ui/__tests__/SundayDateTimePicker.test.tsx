@@ -30,7 +30,6 @@ describe('SundayDateTimePicker & Utils', () => {
     });
 
     it('parses arbitrary 12-hour time strings correctly', () => {
-      // User request example: 1:52 PM
       expect(parse12HourTimeString('1:52 PM')).toEqual({
         timeStr: '1:52',
         period: 'PM',
@@ -81,7 +80,7 @@ describe('SundayDateTimePicker & Utils', () => {
   });
 
   describe('Component rendering & interaction', () => {
-    it('renders label, Sunday trigger, and 12-hour time input with AM/PM toggle', () => {
+    it('renders as a single unified trigger button matching the form field', () => {
       render(
         <SundayDateTimePicker
           id="test-session"
@@ -94,15 +93,16 @@ describe('SundayDateTimePicker & Utils', () => {
 
       expect(screen.getByText('Session Date & Time')).toBeInTheDocument();
       expect(screen.getByText('*')).toBeInTheDocument();
-      expect(screen.getByText('Select Sunday date')).toBeInTheDocument();
 
-      const timeInput = screen.getByRole('textbox', { name: /session time/i });
-      expect(timeInput).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'AM' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'PM' })).toBeInTheDocument();
+      // Trigger button with placeholder
+      const trigger = screen.getByRole('button', { name: /select sunday date & time/i });
+      expect(trigger).toBeInTheDocument();
+
+      // Popover is initially closed
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('allows typing a specific custom time like 1:52 PM', async () => {
+    it('opens popover on click and allows picking service time presets and custom time', async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
 
@@ -110,30 +110,29 @@ describe('SundayDateTimePicker & Utils', () => {
         <SundayDateTimePicker id="test-session" value="2026-11-08T09:00" onChange={onChange} />,
       );
 
-      const timeInput = screen.getByRole('textbox', { name: /session time/i });
-      await user.clear(timeInput);
-      await user.type(timeInput, '1:52');
+      // Trigger button displays current formatted datetime
+      const trigger = screen.getByRole('button', { name: /Nov 8, 2026 · 9:00 AM/i });
+      expect(trigger).toBeInTheDocument();
 
-      // Click PM button
-      const pmButton = screen.getByRole('button', { name: 'PM' });
-      await user.click(pmButton);
+      // Click trigger to open unified popover
+      await user.click(trigger);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-      expect(onChange).toHaveBeenCalledWith('2026-11-08T13:52');
-    });
+      // Service presets exist
+      const preset12 = screen.getByRole('button', { name: '12 NN' });
+      await user.click(preset12);
+      expect(onChange).toHaveBeenCalledWith('2026-11-08T12:00');
 
-    it('auto-switches to PM when user types 1:52 PM directly in the input', async () => {
-      const user = userEvent.setup();
-      const onChange = vi.fn();
-
-      render(
-        <SundayDateTimePicker id="test-session" value="2026-11-08T09:00" onChange={onChange} />,
-      );
-
+      // Custom time input: type 1:52 PM
       const timeInput = screen.getByRole('textbox', { name: /session time/i });
       await user.clear(timeInput);
       await user.type(timeInput, '1:52 PM');
-
       expect(onChange).toHaveBeenCalledWith('2026-11-08T13:52');
+
+      // Click Done closes popover
+      const doneButton = screen.getByRole('button', { name: 'Done' });
+      await user.click(doneButton);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('renders disabled/read-only view with formatted text', () => {
@@ -148,7 +147,7 @@ describe('SundayDateTimePicker & Utils', () => {
       );
 
       expect(screen.getByText(/Nov 8, 2026 · 1:52 PM/i)).toBeInTheDocument();
-      expect(screen.queryByRole('textbox', { name: /session time/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('renders fallback text when disabled and value is empty', () => {
