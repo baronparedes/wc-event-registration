@@ -130,18 +130,19 @@ export function ScheduleSessionConfirmDialog({
 
       <Dialog.Body className="space-y-3.5">
         {/* Candidate Profile Summary */}
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+        <div className="flex items-center gap-3.5 rounded-xl border border-border bg-background p-3.5">
           <Avatar
             avatarObjectKey={applicant.avatarObjectKey}
             name={applicant.name}
-            className="h-10 w-10 shrink-0 rounded-full border border-border/80"
+            size="md"
+            className="shrink-0 border-2 border-border/80 shadow-2xs"
           />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-text truncate">{applicant.name}</h4>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-base font-bold text-text truncate">{applicant.name}</h4>
               <Badge variant="secondary">Step {stepNumber}</Badge>
             </div>
-            <p className="text-xs text-muted truncate">
+            <p className="text-xs text-muted truncate mt-0.5">
               {applicant.email}
               {applicant.phone ? ` · ${applicant.phone}` : ''}
             </p>
@@ -178,20 +179,23 @@ export function ScheduleSessionConfirmDialog({
               <User className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
               <span>Assigned Reviewer / Coach</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {reviewer ? (
                 <>
                   <Avatar
                     avatarObjectKey={reviewer.avatarObjectKey}
                     name={reviewer.name}
-                    className="h-5 w-5 shrink-0 rounded-full"
+                    size="sm"
+                    className="shrink-0 border border-border/80 shadow-2xs"
                   />
-                  <span className="font-semibold text-text">{reviewer.name}</span>
-                  {reviewer.role && (
-                    <Badge variant="outline" className="text-[10px] py-0 px-1">
-                      {reviewer.role}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-text">{reviewer.name}</span>
+                    {reviewer.role && (
+                      <Badge variant="outline" className="text-[10px] py-0 px-1">
+                        {reviewer.role}
+                      </Badge>
+                    )}
+                  </div>
                 </>
               ) : (
                 <span className="text-muted italic">Unassigned</span>
