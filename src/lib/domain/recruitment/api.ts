@@ -1,4 +1,4 @@
-import { createEdgeFunctionCaller, supabase } from '@/lib/infrastructure';
+import { createEdgeFunctionCaller, logger, supabase } from '@/lib/infrastructure';
 
 import type { RecruitmentCsvRecord } from './csv';
 import {
@@ -101,7 +101,13 @@ export async function fetchMyRecruitmentApplication(): Promise<ApplicantRecruitm
   if (data === null) return null;
 
   const result = applicantRecruitmentViewSchema.safeParse(data);
-  if (!result.success) throw new Error('Applicant recruitment response is invalid');
+  if (!result.success) {
+    logger.error('Failed to parse applicant recruitment view', {
+      error: result.error.format(),
+      data,
+    });
+    throw new Error('Applicant recruitment response is invalid');
+  }
   return result.data;
 }
 
