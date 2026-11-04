@@ -844,6 +844,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Click Archive button in header
     const archiveBtn = screen.getByRole('button', { name: /^archive$/i });
     expect(archiveBtn).toBeInTheDocument();
+    expect(archiveBtn).toHaveClass('text-danger');
     await user.click(archiveBtn);
 
     // Archive confirmation dialog opens
@@ -887,6 +888,10 @@ describe('RecruitmentApplicantDetailDialog', () => {
         onClose={onClose}
       />,
     );
+
+    // Verify Archived status badge is using destructive styling
+    const archivedBadge = screen.getByText('Archived');
+    expect(archivedBadge).toHaveClass('bg-red-600/50');
 
     // Click Restore button in header
     const restoreBtn = screen.getByRole('button', { name: /restore to active/i });

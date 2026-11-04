@@ -30,11 +30,11 @@ function getStatusBadgeVariant(
     case 'deployed':
       return 'accent';
     case 'archived':
-    case 'on_hold':
-      return 'secondary';
     case 'declined':
     case 'withdrawn':
       return 'destructive';
+    case 'on_hold':
+      return 'secondary';
   }
 }
 

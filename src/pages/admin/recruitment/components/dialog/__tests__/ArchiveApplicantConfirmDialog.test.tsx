@@ -46,6 +46,7 @@ describe('ArchiveApplicantConfirmDialog', () => {
     await user.type(notesInput, 'Applicant traveling abroad until February');
 
     const confirmBtn = screen.getByRole('button', { name: /^Archive Applicant$/i });
+    expect(confirmBtn).toHaveClass('bg-red-600');
     await user.click(confirmBtn);
 
     expect(onConfirm).toHaveBeenCalledWith('Applicant traveling abroad until February');
@@ -68,6 +69,7 @@ describe('ArchiveApplicantConfirmDialog', () => {
     expect(screen.getByText(/The applicant status returns to/i)).toBeInTheDocument();
 
     const confirmBtn = screen.getByRole('button', { name: /^Restore Applicant$/i });
+    expect(confirmBtn).toHaveClass('bg-primary');
     await user.click(confirmBtn);
 
     expect(onConfirm).toHaveBeenCalledWith(undefined);
