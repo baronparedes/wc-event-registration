@@ -199,14 +199,6 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
                   <p className="text-muted whitespace-pre-wrap">{tx.notes}</p>
                 </div>
               )}
-
-              {/* Applicant Visible Notes */}
-              {tx.applicant_visible_notes && (
-                <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs space-y-1">
-                  <span className="font-semibold text-primary">Instructions to Applicant:</span>
-                  <p className="text-text whitespace-pre-wrap">{tx.applicant_visible_notes}</p>
-                </div>
-              )}
             </div>
           ))}
         </div>

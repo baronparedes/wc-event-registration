@@ -240,7 +240,7 @@ async function saveTransaction(
     completed_at: status === 'completed' ? new Date().toISOString() : null,
     rubric_data: asJson(fields.rubricData),
     notes: fields.notes ?? null,
-    applicant_visible_notes: fields.applicantVisibleNotes ?? null,
+    applicant_visible_notes: null,
   };
 
   if (latest.data && isOpenAttempt) {
@@ -268,7 +268,7 @@ async function saveTransaction(
     completed_at: status === 'completed' ? new Date().toISOString() : null,
     rubric_data: asJson(fields.rubricData),
     notes: fields.notes ?? null,
-    applicant_visible_notes: fields.applicantVisibleNotes ?? null,
+    applicant_visible_notes: null,
     created_by_user_id: userId,
   };
   const { data, error } = await supabase
@@ -678,10 +678,7 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
             : 'repeated_step',
       notes:
         guard.data.notes !== undefined ? (guard.data.notes ?? null) : currentTransaction.data.notes,
-      applicant_visible_notes:
-        guard.data.applicant_visible_notes !== undefined
-          ? (guard.data.applicant_visible_notes ?? null)
-          : currentTransaction.data.applicant_visible_notes,
+      applicant_visible_notes: null,
       rubric_data: asJson(guard.data.rubric_data) ?? currentTransaction.data.rubric_data,
     };
     const { error: completeError } = await supabase
@@ -767,7 +764,7 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
         : action === 'return_to_interview'
           ? 'Additional interview scheduled'
           : 'Another session scheduled',
-      guard.data.applicant_visible_notes ?? 'A new recruitment session has been scheduled.',
+      'A new recruitment session has been scheduled.',
     );
     return response(200, { success: true, current_step: nextStep }, guard.corsHeaders);
   }
@@ -987,19 +984,13 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
     }
   }
 
-  if (
-    stageStatus === 'completed' ||
-    stageStatus === 'scheduled' ||
-    stageStatus === 'on_hold' ||
-    guard.data.applicant_visible_notes
-  ) {
+  if (stageStatus === 'completed' || stageStatus === 'scheduled' || stageStatus === 'on_hold') {
     await notifyApplicant(
       supabase,
       { ...application, ...applicationUpdate },
       userId,
       `Recruitment Step ${stepNumber} updated`,
-      guard.data.applicant_visible_notes ??
-        `Your recruitment progress has advanced to Step ${nextStep}.`,
+      `Your recruitment progress has advanced to Step ${nextStep}.`,
     );
   }
 

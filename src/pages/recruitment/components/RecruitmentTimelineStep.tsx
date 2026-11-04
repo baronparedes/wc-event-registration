@@ -83,11 +83,6 @@ export function RecruitmentTimelineStep({
             <span>{transaction.assigned_reviewer_name}</span>
           </div>
         )}
-        {transaction?.applicant_visible_notes && (
-          <p className="border-l-2 border-accent pl-3 text-sm text-text">
-            {transaction.applicant_visible_notes}
-          </p>
-        )}
         {children}
       </div>
     </li>
