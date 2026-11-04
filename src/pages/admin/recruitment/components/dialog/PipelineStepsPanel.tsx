@@ -365,7 +365,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     />
                   ) : (
                     <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-mono font-bold leading-none ${
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold leading-none ${
                         isStepSelected
                           ? 'bg-white/20 text-white'
                           : isStepCurrent
@@ -417,10 +417,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant={isCurrentActiveStep ? 'default' : 'secondary'}
-                className="font-mono text-xs uppercase"
-              >
+              <Badge variant={isCurrentActiveStep ? 'default' : 'secondary'}>
                 {isCurrentActiveStep ? `Active Step ${selectedStep}` : `Step ${selectedStep}`}
               </Badge>
               <h3 className="font-heading text-base font-bold text-text truncate flex items-center gap-1.5">
@@ -534,7 +531,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                             <div className="flex items-center gap-1.5">
                               <Badge
                                 variant="secondary"
-                                className="text-[10px] capitalize py-0 px-1.5 font-mono"
+                                className="text-[10px] capitalize py-0 px-1.5"
                               >
                                 {tx.status}
                               </Badge>
@@ -591,7 +588,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                         latestStepTransaction.attempt_number > 1 && (
                           <Badge
                             variant="outline"
-                            className="text-[10px] font-mono py-0 px-1.5 border-primary/40 text-primary"
+                            className="text-[10px] font-medium py-0 px-1.5 border-primary/40 text-primary"
                           >
                             Attempt #{latestStepTransaction.attempt_number}
                           </Badge>
@@ -606,7 +603,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                               ? 'accent'
                               : 'secondary'
                         }
-                        className="text-[10px] capitalize font-mono"
+                        className="text-[10px] capitalize"
                       >
                         {latestStepTransaction.status}
                       </Badge>

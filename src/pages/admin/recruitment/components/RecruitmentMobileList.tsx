@@ -60,7 +60,7 @@ export function RecruitmentMobileList({
 
             <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
               <Badge variant="outline">{role}</Badge>
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary">
                 Step {app.current_step}: {stepMeta?.shortLabel}
               </Badge>
               <span className="font-mono text-muted">
