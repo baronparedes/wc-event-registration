@@ -841,7 +841,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
       />,
     );
 
-    // Click Archive button in header
+    // Click Archive button in footer
     const archiveBtn = screen.getByRole('button', { name: /^archive$/i });
     expect(archiveBtn).toBeInTheDocument();
     expect(archiveBtn).toHaveClass('text-danger');
