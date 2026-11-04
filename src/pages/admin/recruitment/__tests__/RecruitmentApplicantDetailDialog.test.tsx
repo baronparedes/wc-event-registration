@@ -275,7 +275,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     // Verify required notice is displayed
     expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
-    expect(screen.getAllByText('Assigned Reviewer / Coach').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Assigned To').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Session Date & Time').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /select sunday date & time/i })).toBeInTheDocument();
     expect(screen.getByText('Recruitment Notes / Feedback')).toBeInTheDocument();
@@ -283,6 +283,61 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Verify Complete Step button is disabled
     const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
     expect(completeBtn).toBeDisabled();
+  });
+
+  it('opens confirmation modal before completing step and submits upon confirmation', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const readyStep2Tx: RecruitmentPipelineTransaction = {
+      ...mockTransaction,
+      step_number: 2,
+      step_key: 'interview',
+      from_step: 1,
+      to_step: 2,
+      assigned_reviewer_id: 'user-oic-1',
+      assigned_reviewer_name: 'Test Paul Apostle (Test OIC Paul)',
+      scheduled_at: '2026-11-08T09:00:00+08:00',
+      notes: 'Completed evaluation with positive notes.',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [readyStep2Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
+    expect(completeBtn).toBeEnabled();
+
+    await user.click(completeBtn);
+
+    // Verify confirmation modal appears
+    expect(screen.getByText('Confirm Step 2 Completion')).toBeInTheDocument();
+    expect(screen.getAllByText('Interview').length).toBeGreaterThan(0);
+    expect(screen.getByText('Next: Step 3')).toBeInTheDocument();
+
+    const confirmCompleteBtn = screen.getByRole('button', { name: /confirm & complete step 2/i });
+    await user.click(confirmCompleteBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        step_number: 2,
+        status: 'completed',
+      }),
+      expect.any(Object),
+    );
   });
 
   it('locks scheduling and actions on future steps', async () => {
