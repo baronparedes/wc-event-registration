@@ -141,14 +141,19 @@ export function ArchiveApplicantConfirmDialog({
       </Dialog.Body>
 
       <Dialog.Footer>
-        <Button variant="outline" onClick={onClose} disabled={isPending}>
+        <Button
+          variant="outline"
+          onClick={onClose}
+          disabled={isPending}
+          className="w-full sm:w-auto justify-center"
+        >
           Cancel
         </Button>
         <Button
           variant={isArchive ? 'destructive' : 'default'}
           onClick={handleConfirm}
           disabled={isPending}
-          className="gap-2"
+          className="w-full sm:w-auto justify-center gap-2"
         >
           {isPending ? (
             <>
