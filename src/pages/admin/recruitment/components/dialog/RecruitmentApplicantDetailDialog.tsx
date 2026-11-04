@@ -94,55 +94,29 @@ export function RecruitmentApplicantDetailDialog({
     <>
       <Dialog isOpen={isOpen} onClose={onClose} size="4xl">
         <Dialog.Header showCloseButton onClose={onClose}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full pr-6">
-            <div className="flex items-center gap-3 min-w-0">
-              <Avatar
-                name={currentApp.full_name}
-                avatarObjectKey={currentApp.avatar_object_key}
-                size="md"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Dialog.Title>
-                    {currentApp.full_name} {currentApp.nickname ? `(${currentApp.nickname})` : ''}
-                  </Dialog.Title>
-                  <Badge variant="outline">{role}</Badge>
-                  {isArchived ? (
-                    <Badge variant="destructive">Archived</Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      Step {currentApp.current_step}: {stepMeta?.shortLabel}
-                    </Badge>
-                  )}
-                </div>
-                <Dialog.Description className="truncate">
-                  {currentApp.email} · {currentApp.phone}
-                </Dialog.Description>
+          <div className="flex items-center gap-3 w-full pr-6">
+            <Avatar
+              name={currentApp.full_name}
+              avatarObjectKey={currentApp.avatar_object_key}
+              size="md"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Dialog.Title>
+                  {currentApp.full_name} {currentApp.nickname ? `(${currentApp.nickname})` : ''}
+                </Dialog.Title>
+                <Badge variant="outline">{role}</Badge>
+                {isArchived ? (
+                  <Badge variant="destructive">Archived</Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    Step {currentApp.current_step}: {stepMeta?.shortLabel}
+                  </Badge>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
-              {isArchived ? (
-                <Button
-                  variant="primaryOutline"
-                  size="sm"
-                  onClick={() => handleOpenArchiveDialog('restore')}
-                  className="gap-1.5 h-8 text-xs justify-center"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Restore to Active</span>
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleOpenArchiveDialog('archive')}
-                  className="gap-1.5 h-8 text-xs text-danger hover:text-danger hover:bg-danger/10 border-danger/40 justify-center"
-                >
-                  <Archive className="h-3.5 w-3.5" />
-                  <span>Archive</span>
-                </Button>
-              )}
+              <Dialog.Description className="truncate">
+                {currentApp.email} · {currentApp.phone}
+              </Dialog.Description>
             </div>
           </div>
         </Dialog.Header>
@@ -184,8 +158,38 @@ export function RecruitmentApplicantDetailDialog({
           )}
         </Dialog.Body>
 
-        <Dialog.Footer>
-          <Button variant="primaryOutline" onClick={onClose}>
+        <Dialog.Footer className="sm:justify-between">
+          {isArchived ? (
+            <Button
+              type="button"
+              variant="primaryOutline"
+              size="md"
+              onClick={() => handleOpenArchiveDialog('restore')}
+              className="gap-1.5 justify-center"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span>Restore to Active</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => handleOpenArchiveDialog('archive')}
+              className="gap-1.5 text-danger hover:text-danger hover:bg-danger/10 border-danger/40 justify-center"
+            >
+              <Archive className="h-4 w-4" />
+              <span>Archive</span>
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="primaryOutline"
+            size="md"
+            onClick={onClose}
+            className="justify-center"
+          >
             Close
           </Button>
         </Dialog.Footer>
