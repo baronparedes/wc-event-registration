@@ -151,6 +151,7 @@ export function RecruitmentApplicantDetailDialog({
                   application={currentApp}
                   transactions={transactions}
                   endorsement={detailData?.dgroup_endorsement}
+                  stepNotes={detailData?.step_notes}
                 />
               )}
               {activeTab === 'survey' && <BiblicalSurveyReviewPanel application={currentApp} />}

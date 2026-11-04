@@ -32,9 +32,10 @@ const updateRecruitmentStageSchema = z
       'return_to_interview',
       'archive_applicant',
       'restore_applicant',
+      'add_note',
     ]),
     application_id: z.string().uuid(),
-    step_number: z.number().int().min(2).max(8).optional(),
+    step_number: z.number().int().min(1).max(9).optional(),
     status: z
       .enum([
         'pending',
@@ -94,6 +95,13 @@ const updateRecruitmentStageSchema = z
         code: 'custom',
         message: 'return_to_observation must reference evaluation step 5',
         path: ['step_number'],
+      });
+    }
+    if (request.action === 'add_note' && (!request.step_number || !request.notes?.trim())) {
+      context.addIssue({
+        code: 'custom',
+        message: 'step_number and notes are required for add_note',
+        path: ['notes'],
       });
     }
   });
@@ -250,6 +258,19 @@ async function saveTransaction(
       .eq('id', latest.data.id)
       .select('id')
       .single();
+
+    if (!error && data?.id && fields.notes?.trim()) {
+      await supabase.from('recruitment_step_notes').insert({
+        application_id: application.id,
+        step_number: stepNumber,
+        attempt_number: attemptNumber,
+        transaction_id: data.id,
+        author_id: fields.assignedReviewerId ?? userId,
+        author_name: fields.assignedReviewerName?.trim() || 'Recruitment Reviewer',
+        content: fields.notes.trim(),
+      });
+    }
+
     return { id: data?.id ?? null, error };
   }
 
@@ -276,6 +297,19 @@ async function saveTransaction(
     .insert(insert)
     .select('id')
     .single();
+
+  if (!error && data?.id && fields.notes?.trim()) {
+    await supabase.from('recruitment_step_notes').insert({
+      application_id: application.id,
+      step_number: stepNumber,
+      attempt_number: attemptNumber,
+      transaction_id: data.id,
+      author_id: fields.assignedReviewerId ?? userId,
+      author_name: fields.assignedReviewerName?.trim() || 'Recruitment Reviewer',
+      content: fields.notes.trim(),
+    });
+  }
+
   return { id: data?.id ?? null, error };
 }
 
@@ -620,6 +654,72 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
     );
 
     return response(200, { success: true, status: 'active' }, guard.corsHeaders);
+  }
+
+  if (action === 'add_note') {
+    const stepNumber = guard.data.step_number;
+    const content = guard.data.notes?.trim();
+    if (!stepNumber || !content) {
+      return response(
+        400,
+        { success: false, error: 'step_number and notes are required to add a note' },
+        guard.corsHeaders,
+      );
+    }
+
+    const { data: memberUser } = await supabase
+      .from('users')
+      .select('id, full_name, nickname, avatar_object_key')
+      .or(`auth_user_id.eq.${userId},email.ilike.${normalizedEmail}`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const authorName =
+      guard.data.assigned_reviewer_name?.trim() ||
+      memberUser?.full_name ||
+      (authUser.user.user_metadata?.full_name as string | undefined) ||
+      (authUser.user.user_metadata?.name as string | undefined) ||
+      authUser.user.email?.split('@')[0] ||
+      'Recruitment Reviewer';
+    const authorRole = adminRole ? adminRole.toUpperCase() : null;
+    const avatarObjectKey = memberUser?.avatar_object_key ?? null;
+
+    const latestTx = await findLatestTransaction(supabase, application.id, stepNumber);
+
+    const { data: noteRecord, error: noteError } = await supabase
+      .from('recruitment_step_notes')
+      .insert({
+        application_id: application.id,
+        step_number: stepNumber,
+        attempt_number: latestTx.data?.attempt_number ?? 1,
+        transaction_id: latestTx.data?.id ?? null,
+        author_id: userId,
+        author_name: authorName,
+        author_role: authorRole,
+        avatar_object_key: avatarObjectKey,
+        content,
+      })
+      .select('id, created_at')
+      .single();
+
+    if (noteError) {
+      return response(
+        500,
+        { success: false, error: 'Failed to record recruiter note' },
+        guard.corsHeaders,
+      );
+    }
+
+    return response(
+      200,
+      {
+        success: true,
+        note_id: noteRecord?.id,
+        created_at: noteRecord?.created_at,
+      },
+      guard.corsHeaders,
+    );
   }
 
   if (

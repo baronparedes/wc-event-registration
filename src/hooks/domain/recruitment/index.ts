@@ -1,3 +1,4 @@
+export * from './mutations/useAddRecruiterNoteMutation';
 export * from './mutations/useDeployRecruitmentApplicantMutation';
 export * from './mutations/useSubmitRecruitmentApplicationMutation';
 export * from './mutations/useUpdateRecruitmentSettingsMutation';

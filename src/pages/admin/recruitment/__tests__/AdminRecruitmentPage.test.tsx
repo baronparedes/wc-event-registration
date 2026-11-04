@@ -105,6 +105,10 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     mutate: vi.fn(),
     isPending: false,
   }),
+  useAddRecruiterNoteMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useDeployRecruitmentApplicantMutation: () => ({
     mutate: vi.fn(),
     isPending: false,

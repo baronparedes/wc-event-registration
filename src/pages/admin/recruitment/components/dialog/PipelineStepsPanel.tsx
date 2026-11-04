@@ -8,7 +8,6 @@ import {
   Button,
   FormInputField,
   FormSelectField,
-  FormTextareaField,
   Spinner,
   SundayDateTimePicker,
   Tabs,
@@ -23,6 +22,7 @@ import {
 import {
   RECRUITMENT_ROLES,
   RECRUITMENT_STEPS,
+  type RecruiterNote,
   type RecruitmentApplication,
   type RecruitmentApplicationDetail,
   type RecruitmentPipelineTransaction,
@@ -39,6 +39,7 @@ import {
   type ScheduleActionKind,
   ScheduleSessionConfirmDialog,
 } from './ScheduleSessionConfirmDialog';
+import { StepRecruiterNotesThread } from './StepRecruiterNotesThread';
 
 function LockedStepCard({
   stepNumber,
@@ -96,12 +97,14 @@ interface PipelineStepsPanelProps {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
   endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
+  stepNotes?: RecruiterNote[];
 }
 
 export function PipelineStepsPanel({
   application,
   transactions,
   endorsement,
+  stepNotes = [],
 }: PipelineStepsPanelProps) {
   const [selectedStep, setSelectedStep] = useState<RecruitmentStepNumber>(application.current_step);
   const { data: authState, can } = useAdminAuthQuery();
@@ -116,6 +119,10 @@ export function PipelineStepsPanel({
       .filter((t) => t.step_number === selectedStep)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [transactions, selectedStep]);
+
+  const currentStepNotes = useMemo(() => {
+    return (stepNotes ?? []).filter((n) => n.step_number === selectedStep);
+  }, [stepNotes, selectedStep]);
 
   const latestStepTransaction = stepTransactions[0];
   const previousStepAttempts = stepTransactions.slice(1);
@@ -173,7 +180,8 @@ export function PipelineStepsPanel({
       if (selectedStep === 4 && !isDGroupEndorsed && !canOverrideGate) {
         missing.push('DGroup Leader Endorsement');
       }
-      if (!notes?.trim()) {
+      const hasNotesOnRecord = currentStepNotes.length > 0 || Boolean(notes?.trim());
+      if (!hasNotesOnRecord) {
         missing.push('Recruitment Notes / Feedback');
       }
       return missing;
@@ -200,6 +208,7 @@ export function PipelineStepsPanel({
     isDGroupEndorsed,
     canOverrideGate,
     notes,
+    currentStepNotes,
     ccfVmtId,
     ccfVmtDate,
     rfidTag,
@@ -699,28 +708,14 @@ export function PipelineStepsPanel({
                     </div>
                   )}
 
-                  {/* Recruitment Notes & Instructions */}
-                  <div className="border-t border-border/80 pt-3 space-y-3">
-                    <FormTextareaField
-                      label={isCompletedStep ? 'Recruitment Notes' : 'Recruitment Notes *'}
-                      placeholder={
-                        isCompletedStep
-                          ? 'No Recruitment Notes recorded'
-                          : 'Enter evaluation feedback, candidate observations, and notes for ministry leadership...'
-                      }
-                      rows={2}
-                      disabled={isCompletedStep}
-                      readOnly={isCompletedStep}
-                      textareaClassName="resize-none"
-                      value={notes}
-                      onChange={(event) => setNotes(event.target.value)}
-                      helperText={
-                        isCompletedStep
-                          ? undefined
-                          : 'Required before completing this step. Saved to candidate pipeline history.'
-                      }
-                    />
-                  </div>
+                  {/* Recruiter Notes Thread */}
+                  <StepRecruiterNotesThread
+                    applicationId={application.id}
+                    stepNumber={selectedStep}
+                    stepTitle={stepMeta?.title ?? `Step ${selectedStep}`}
+                    notes={currentStepNotes}
+                    isCompletedStep={isCompletedStep}
+                  />
                 </div>
 
                 {/* Missing Details Checklist Notice */}
@@ -1117,7 +1112,7 @@ export function PipelineStepsPanel({
           assignedRole={
             selectedStep === 2 ? confirmedRole || application.confirmed_role : undefined
           }
-          recruitmentNotes={notes}
+          recruitmentNotes={notes || currentStepNotes[currentStepNotes.length - 1]?.content}
         />
       )}
 
@@ -1155,7 +1150,7 @@ export function PipelineStepsPanel({
           assignedRole={
             selectedStep === 2 ? confirmedRole || application.confirmed_role : undefined
           }
-          recruitmentNotes={notes}
+          recruitmentNotes={notes || currentStepNotes[currentStepNotes.length - 1]?.content}
           ccfVmtId={ccfVmtId || application.ccf_vmt_id}
           ccfVmtDate={ccfVmtDate || application.ccf_vmt_date}
           rfidTag={rfidTag || application.assigned_rfid_member_id}

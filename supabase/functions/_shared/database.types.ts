@@ -73,6 +73,20 @@ type RecruitmentPipelineTransactionRow = {
   transaction_type: string;
 };
 
+type RecruitmentStepNoteRow = {
+  application_id: string;
+  attempt_number: number;
+  author_id: string | null;
+  author_name: string;
+  author_role: string | null;
+  avatar_object_key: string | null;
+  content: string;
+  created_at: string;
+  id: string;
+  step_number: number;
+  transaction_id: string | null;
+};
+
 export type Database = {
   graphql_public: {
     Tables: {
@@ -173,6 +187,21 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'recruitment_pipeline_transactions_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'recruitment_applications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recruitment_step_notes: {
+        Row: RecruitmentStepNoteRow;
+        Insert: Pick<RecruitmentStepNoteRow, 'application_id' | 'step_number' | 'content'> &
+          Partial<Omit<RecruitmentStepNoteRow, 'application_id' | 'step_number' | 'content'>>;
+        Update: Partial<RecruitmentStepNoteRow>;
+        Relationships: [
+          {
+            foreignKeyName: 'recruitment_step_notes_application_id_fkey';
             columns: ['application_id'];
             isOneToOne: false;
             referencedRelation: 'recruitment_applications';

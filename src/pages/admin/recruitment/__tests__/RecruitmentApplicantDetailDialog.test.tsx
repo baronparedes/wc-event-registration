@@ -109,6 +109,10 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     mutateAsync: mockUpdateStageMutate,
     isPending: false,
   }),
+  useAddRecruiterNoteMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useDeployRecruitmentApplicantMutation: () => ({
     mutate: vi.fn(),
     isPending: false,
@@ -522,6 +526,20 @@ describe('RecruitmentApplicantDetailDialog', () => {
       data: {
         application: mockApplication,
         transactions: [mockStep2CompletedTx, mockTransaction],
+        step_notes: [
+          {
+            id: 'sn-1',
+            application_id: 'app-123',
+            step_number: 2,
+            attempt_number: 1,
+            author_id: 'user-pastor',
+            author_name: 'Test Pastor Dave',
+            author_role: 'Pastor',
+            avatar_object_key: null,
+            content: 'Candidate showed great heart for welcoming guests and solid doctrine.',
+            created_at: '2026-11-02T11:00:00+08:00',
+          },
+        ],
       },
       isLoading: false,
       isError: false,
@@ -542,22 +560,14 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Verify CompletedStepCard is present
     expect(screen.getByText('Step 2 is Completed')).toBeInTheDocument();
 
-    // Verify recorded reviewer and notes are visible
-    expect(screen.getByText('Test Pastor Dave')).toBeInTheDocument();
+    // Verify recorded reviewer and notes are visible in the recruiter notes thread
+    expect(screen.getAllByText('Test Pastor Dave').length).toBeGreaterThan(0);
     expect(
-      screen.getByDisplayValue(
-        'Candidate showed great heart for welcoming guests and solid doctrine.',
-      ),
+      screen.getByText('Candidate showed great heart for welcoming guests and solid doctrine.'),
     ).toBeInTheDocument();
     expect(
-      screen.queryByDisplayValue('Great meeting you! Looking forward to your orientation.'),
+      screen.queryByText('Great meeting you! Looking forward to your orientation.'),
     ).not.toBeInTheDocument();
-
-    // Verify inputs are disabled/readOnly
-    const notesInput = screen.getByDisplayValue(
-      'Candidate showed great heart for welcoming guests and solid doctrine.',
-    );
-    expect(notesInput).toBeDisabled();
 
     // Verify action buttons are hidden since step is already completed
     expect(screen.queryByRole('button', { name: /complete step 2/i })).not.toBeInTheDocument();

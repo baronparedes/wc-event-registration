@@ -270,9 +270,10 @@ export const adminUpdateStageSchema = z
       'return_to_interview',
       'archive_applicant',
       'restore_applicant',
+      'add_note',
     ]),
     application_id: z.string().uuid(),
-    step_number: z.number().int().min(2).max(8).optional(),
+    step_number: z.number().int().min(1).max(9).optional(),
     status: z
       .enum([
         'pending',
@@ -332,7 +333,22 @@ export const adminUpdateStageSchema = z
         path: ['step_number'],
       });
     }
+    if (request.action === 'add_note' && (!request.step_number || !request.notes?.trim())) {
+      context.addIssue({
+        code: 'custom',
+        message: 'step_number and notes are required for add_note',
+        path: ['notes'],
+      });
+    }
   });
+
+export const addRecruiterNoteSchema = z.object({
+  application_id: z.string().uuid(),
+  step_number: z.number().int().min(1).max(9),
+  content: z.string().trim().min(1, 'Note content cannot be empty').max(5000),
+});
+
+export type AddRecruiterNotePayload = z.infer<typeof addRecruiterNoteSchema>;
 
 export const recruitmentSettingsSchema = z.object({
   is_recruitment_open: z.boolean(),
