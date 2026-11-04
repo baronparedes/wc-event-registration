@@ -181,7 +181,7 @@ describe('RecruitmentApplyPage', () => {
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 
-  it('blocks signed-in users outside the intake roles', () => {
+  it('renders a 404 Not Found page for signed-in users outside the intake roles', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: false,
@@ -193,7 +193,8 @@ describe('RecruitmentApplyPage', () => {
 
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Authorized device required' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Page Not Found' })).toBeInTheDocument();
+    expect(screen.getByText('404')).toBeInTheDocument();
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 });
