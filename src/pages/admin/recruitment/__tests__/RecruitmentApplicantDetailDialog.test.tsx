@@ -628,6 +628,13 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     await user.click(returnButton);
 
+    // Verify confirmation dialog opens with details before submitting mutation
+    expect(screen.getByText('Confirm Return to Interview Schedule')).toBeInTheDocument();
+    const confirmButton = screen.getByRole('button', {
+      name: /confirm & return to interview/i,
+    });
+    await user.click(confirmButton);
+
     expect(mockUpdateStageMutate).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'return_to_interview',
@@ -636,6 +643,70 @@ describe('RecruitmentApplicantDetailDialog', () => {
       }),
       expect.any(Object),
     );
+  });
+
+  it('opens confirmation modal before scheduling or rescheduling and allows cancellation', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const activeStep4Application: RecruitmentApplication = {
+      ...mockApplication,
+      current_step: 4,
+    };
+
+    const mockStep4Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-sched-4',
+      application_id: mockApplication.id,
+      step_number: 4,
+      step_key: 'observation',
+      from_step: 3,
+      to_step: 4,
+      transaction_type: 'scheduled',
+      status: 'scheduled',
+      attempt_number: 1,
+      assigned_reviewer_id: 'user-oic-1',
+      assigned_reviewer_name: 'Test Paul Apostle (Test OIC Paul)',
+      scheduled_at: '2026-11-08T09:00:00+08:00',
+      completed_at: null,
+      rubric_data: {},
+      notes: 'Initial observation scheduled.',
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-1',
+      created_at: '2026-11-03T10:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep4Application,
+        transactions: [mockStep4Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep4Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    const updateScheduleBtn = screen.getByRole('button', { name: /update schedule/i });
+    expect(updateScheduleBtn).toBeInTheDocument();
+
+    await user.click(updateScheduleBtn);
+
+    // Confirmation modal should be visible
+    expect(screen.getByText('Confirm Session Reschedule')).toBeInTheDocument();
+    expect(screen.getAllByText('Test Paul Apostle (Test OIC Paul)').length).toBeGreaterThanOrEqual(
+      2,
+    );
+
+    // Cancel closes dialog without mutation
+    const cancelBtn = screen.getByRole('button', { name: /cancel/i });
+    await user.click(cancelBtn);
+    expect(mockUpdateStageMutate).not.toHaveBeenCalled();
   });
 
   it('calls onClose when Close button is clicked', async () => {
