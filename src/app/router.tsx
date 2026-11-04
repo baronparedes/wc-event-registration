@@ -569,6 +569,15 @@ export const appRoutes = [
     ),
     errorElement: <RouteErrorBoundary />,
   },
+  {
+    path: '*',
+    element: (
+      <LazyRoute>
+        <NotFoundPage />
+      </LazyRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+  },
 ];
 
 export const appRouter = createBrowserRouter(appRoutes);

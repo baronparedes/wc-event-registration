@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ROUTE_PATHS } from '@/config/constants';
+
 import { RecruitmentApplyPage } from '../index';
 
 const {
@@ -30,6 +32,7 @@ function renderPage() {
       <Routes>
         <Route path="/recruitment/apply" element={<RecruitmentApplyPage />} />
         <Route path="/login" element={<div data-testid="login-page" />} />
+        <Route path={ROUTE_PATHS.notFound} element={<div data-testid="not-found-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -181,7 +184,7 @@ describe('RecruitmentApplyPage', () => {
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 
-  it('renders a 404 Not Found page for signed-in users outside the intake roles', () => {
+  it('redirects signed-in users outside the intake roles to 404', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: false,
@@ -193,8 +196,7 @@ describe('RecruitmentApplyPage', () => {
 
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Page Not Found' })).toBeInTheDocument();
-    expect(screen.getByText('404')).toBeInTheDocument();
+    expect(screen.getByTestId('not-found-page')).toBeInTheDocument();
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 });
