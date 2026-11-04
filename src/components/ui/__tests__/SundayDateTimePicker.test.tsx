@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -209,6 +209,25 @@ describe('SundayDateTimePicker & Utils', () => {
 
       expect(screen.getByText('Date and time is required')).toBeInTheDocument();
       expect(screen.queryByText('Please select an upcoming Sunday')).not.toBeInTheDocument();
+    });
+
+    it('applies right-aligned popover styling when align="right" is passed', () => {
+      render(
+        <SundayDateTimePicker
+          id="test-session"
+          value="2026-11-08T09:00"
+          onChange={vi.fn()}
+          align="right"
+          popoverClassName="custom-popover"
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Nov 8, 2026 · 9:00 AM/i }));
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveClass('right-0');
+      expect(dialog).toHaveClass('w-[340px]');
+      expect(dialog).toHaveClass('custom-popover');
     });
   });
 });

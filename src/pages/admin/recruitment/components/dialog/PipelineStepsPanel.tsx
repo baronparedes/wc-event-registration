@@ -169,7 +169,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
         missing.push('DGroup Leader Endorsement');
       }
       if (!notes?.trim()) {
-        missing.push('Leadership Notes / Feedback');
+        missing.push('Recruitment Notes / Feedback');
       }
       return missing;
     }
@@ -560,7 +560,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                           {tx.notes && (
                             <div className="mt-1 rounded-md bg-surface p-2 text-[11px] text-text border border-border/40">
                               <span className="font-medium text-muted block mb-0.5">
-                                Leadership Notes:
+                                Recruitment Notes:
                               </span>
                               <p className="whitespace-pre-wrap">{tx.notes}</p>
                             </div>
@@ -638,6 +638,7 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                       value={scheduledAtLocal}
                       onChange={(value) => setScheduledAtLocal(value)}
                       maxPastDays={null}
+                      align="right"
                     />
                   </div>
 
@@ -683,17 +684,13 @@ export function PipelineStepsPanel({ application, transactions }: PipelineStepsP
                     </div>
                   )}
 
-                  {/* Leadership Notes & Instructions */}
+                  {/* Recruitment Notes & Instructions */}
                   <div className="border-t border-border/80 pt-3 space-y-3">
                     <FormTextareaField
-                      label={
-                        isCompletedStep
-                          ? 'Internal Leadership Notes'
-                          : 'Internal Leadership Notes *'
-                      }
+                      label={isCompletedStep ? 'Recruitment Notes' : 'Recruitment Notes *'}
                       placeholder={
                         isCompletedStep
-                          ? 'No internal leadership notes recorded'
+                          ? 'No Recruitment Notes recorded'
                           : 'Enter evaluation feedback, candidate observations, and notes for ministry leadership...'
                       }
                       rows={2}
