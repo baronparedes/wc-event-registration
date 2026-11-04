@@ -3,13 +3,15 @@ import { useState } from 'react';
 import { RefreshCw, ShieldCheck, User } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Avatar, Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment';
 import type {
   RecruitmentApplication,
   RecruitmentApplicationDetail,
 } from '@/lib/domain/recruitment';
 import { calculateAge } from '@/pages/recruitment/apply/utils';
+
+import { EditableApplicantAvatar } from './EditableApplicantAvatar';
 
 interface ApplicantProfilePanelProps {
   application: RecruitmentApplication;
@@ -46,10 +48,10 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
     <div className="space-y-5 pr-1 text-xs">
       {/* Identity Header */}
       <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
-        <Avatar
+        <EditableApplicantAvatar
+          applicationId={application.id}
           name={application.full_name}
           avatarObjectKey={application.avatar_object_key}
-          size="lg"
         />
         <div className="min-w-0">
           <h3 className="truncate font-heading text-base font-bold text-text">

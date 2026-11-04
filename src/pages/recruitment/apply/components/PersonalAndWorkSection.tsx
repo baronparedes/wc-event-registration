@@ -4,6 +4,7 @@ import { FormInputField, FormSelectField } from '@/components/ui';
 import { RECRUITMENT_ROLES, type RecruitmentStep1Input } from '@/lib/domain/recruitment';
 
 import { calculateAge } from '../utils';
+import { ApplicantAvatarPicker } from './ApplicantAvatarPicker';
 
 type PersonalAndWorkSectionProps = {
   form: UseFormReturn<RecruitmentStep1Input>;
@@ -33,6 +34,15 @@ export function PersonalAndWorkSection({ form }: PersonalAndWorkSectionProps) {
         </h2>
         <p className="mt-1 text-sm text-muted">Share your preferred role and personal details.</p>
       </header>
+
+      <Controller
+        control={form.control}
+        name="avatar_image_base64"
+        render={({ field }) => (
+          <ApplicantAvatarPicker value={field.value} onChange={field.onChange} />
+        )}
+      />
+
       <fieldset className="space-y-4">
         <legend className="font-heading text-base font-semibold text-text">Desired Role</legend>
         <Controller

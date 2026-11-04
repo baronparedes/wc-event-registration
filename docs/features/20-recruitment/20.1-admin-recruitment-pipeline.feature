@@ -9,11 +9,19 @@ Feature: Admin Recruitment Pipeline Management
     - Reviewers can search applicants by name, nickname, email, phone number, or DGroup Leader name.
     - Authorized reviewers can export the full canonical dataset (42 columns) as a CSV file formatted with Manila timezone timestamps.
     - Inspecting an applicant opens a 5-tab review dialog:
-        1. 9-Step Pipeline: Session scheduling, coaching rubrics, notes, step progression, and repeatable steps.
+        1. 9-Step Pipeline: Session scheduling, coaching rubrics, multi-entry recruiter notes thread, step progression, and repeatable steps.
         2. Biblical Survey: 20-question doctrinal responses, score summary, and interviewer explanation guide.
         3. DGroup Endorsement: Real-time endorsement status synchronized from approval records, 25 attestation answers, rating legend, and magic link resend.
-        4. Applicant Profile: 40-field applicant background covering personal, demographic, work, emergency contact, CCF tenure, GLC status, and DGroup information.
+        4. Applicant Profile: 40-field applicant background covering personal, demographic, work, emergency contact, CCF tenure, GLC status, and DGroup information, with interactive applicant photo editing (upload or live camera capture).
         5. Transaction History: Chronological audit trail of all schedules, completions, repetitions, and status changes.
+    - Recruiter Notes Collaboration:
+        - Reviewers can add multiple timestamped notes at any step without overwriting prior notes.
+        - Notes are stored in `public.recruitment_step_notes` and display the author's name, role, avatar, and timestamp.
+    - Applicant Photo & Deployment Migration:
+        - Applicants can optionally upload an image or capture a live webcam photo during registration (Section 1 - Personal & Work Information), verified in Section 5 (Verification).
+        - Images are processed client-side (max 1024x1024 JPEG at 0.85 quality) and stored in `member_avatars` at `avatars/recruitment/{application_id}.jpg`.
+        - Reviewers can update the applicant's photo directly from the Applicant Profile tab.
+        - On Step 9 deployment, `deploy_recruitment_applicant` atomically migrates `avatar_object_key` into `public.users`.
     - Step progression rules:
         - Step 1: Registration and DGroup endorsement request dispatch.
         - Step 2: Interview session scheduling and evaluation notes.
@@ -80,6 +88,20 @@ Feature: Admin Recruitment Pipeline Management
     And an archived banner is displayed with a "Restore Applicant" option
     When I click "Restore Applicant"
     Then the applicant status returns to "active"
+
+  Scenario: Reviewer records a collaborative recruiter note
+    Given I am inspecting an active applicant on the "9-Step Pipeline" tab
+    When I type coaching feedback into the recruiter notes field and click "Add Note"
+    Then the note is saved to the step notes thread
+    And it displays my name, role, avatar, and the recorded timestamp
+    And previously recorded notes remain preserved in chronological order
+
+  Scenario: Reviewer updates applicant photo
+    Given I am inspecting an applicant on the "Applicant Profile" tab
+    When I click the camera icon on the applicant's avatar
+    And I upload a new photo or capture a headshot with the webcam
+    Then the applicant's avatar updates immediately
+    And the new photo is saved to storage at "avatars/recruitment/{application_id}.jpg"
 
   Scenario: Administrator deploys a volunteer at Step 9
     Given I am authenticated as an "admin" or "slod"

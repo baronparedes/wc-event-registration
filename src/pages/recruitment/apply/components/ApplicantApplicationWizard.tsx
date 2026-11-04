@@ -37,6 +37,7 @@ type ApplicantApplicationWizardProps = {
 
 const applicationSections = [
   [
+    'avatar_image_base64',
     'first_name',
     'middle_name',
     'last_name',
@@ -74,6 +75,7 @@ const applicationSections = [
 
 function getDefaultValues(): DefaultValues<RecruitmentStep1Input> {
   return {
+    avatar_image_base64: null,
     email: '',
     first_name: '',
     middle_name: null,

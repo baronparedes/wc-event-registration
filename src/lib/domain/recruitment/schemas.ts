@@ -169,6 +169,7 @@ export const recruitmentStep1Schema = z
     date_of_birth: dateSchema,
     gender: z.enum(['Male', 'Female']),
     life_stage: z.string().trim().min(1).max(100),
+    avatar_image_base64: z.string().max(1_500_000).optional().nullable(),
     desired_role: z.enum(RECRUITMENT_ROLES),
     personal_details: z.object({
       wedding_anniversary: dateSchema.optional().nullable(),
@@ -271,6 +272,7 @@ export const adminUpdateStageSchema = z
       'archive_applicant',
       'restore_applicant',
       'add_note',
+      'upload_avatar',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(1).max(9).optional(),
@@ -298,6 +300,7 @@ export const adminUpdateStageSchema = z
     assigned_rfid_member_id: z.string().trim().max(100).optional().nullable(),
     service_commitments: applicantCommitmentsSchema.optional(),
     override_endorsement_gate: z.boolean().optional().default(false),
+    image_base64: z.string().max(1_500_000).optional().nullable(),
   })
   .superRefine((request, context) => {
     if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
@@ -338,6 +341,13 @@ export const adminUpdateStageSchema = z
         code: 'custom',
         message: 'step_number and notes are required for add_note',
         path: ['notes'],
+      });
+    }
+    if (request.action === 'upload_avatar' && !request.image_base64) {
+      context.addIssue({
+        code: 'custom',
+        message: 'image_base64 is required for upload_avatar',
+        path: ['image_base64'],
       });
     }
   });

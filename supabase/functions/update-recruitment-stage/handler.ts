@@ -3,6 +3,7 @@ import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import type { Database, Json } from '../_shared/database.types.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
 import { enqueueEmailNotification, triggerEmailProcessor } from '../_shared/emailQueue.ts';
+import { AVATAR_BUCKET, MAX_IMAGE_BYTES, decodeJpegDataUrl } from '../_shared/image.ts';
 import { z } from '../_shared/validation.ts';
 
 const serviceSlots = ['9AM', '12NN', '3PM'] as const;
@@ -33,6 +34,7 @@ const updateRecruitmentStageSchema = z
       'archive_applicant',
       'restore_applicant',
       'add_note',
+      'upload_avatar',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(1).max(9).optional(),
@@ -62,8 +64,16 @@ const updateRecruitmentStageSchema = z
     assigned_rfid_member_id: z.string().trim().max(100).optional().nullable(),
     service_commitments: commitmentsSchema.optional(),
     override_endorsement_gate: z.boolean().optional().default(false),
+    image_base64: z.string().max(1_500_000, 'Image must be 1 MB or smaller').optional().nullable(),
   })
   .superRefine((request, context) => {
+    if (request.action === 'upload_avatar' && !request.image_base64?.trim()) {
+      context.addIssue({
+        code: 'custom',
+        message: 'image_base64 is required for upload_avatar',
+        path: ['image_base64'],
+      });
+    }
     if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
       context.addIssue({
         code: 'custom',
@@ -724,6 +734,54 @@ export async function handleUpdateRecruitmentStage(req: Request): Promise<Respon
       },
       guard.corsHeaders,
     );
+  }
+
+  if (action === 'upload_avatar') {
+    if (!isReviewer) {
+      return response(403, { success: false, error: 'Forbidden' }, guard.corsHeaders);
+    }
+    const imageBytes = decodeJpegDataUrl(guard.data.image_base64!);
+    if (!imageBytes || imageBytes.byteLength > MAX_IMAGE_BYTES) {
+      return response(
+        400,
+        { success: false, error: 'Valid JPEG image 1 MB or smaller is required' },
+        guard.corsHeaders,
+      );
+    }
+
+    const avatarObjectKey = `avatars/recruitment/${application.id}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(avatarObjectKey, imageBytes, {
+        contentType: 'image/jpeg',
+        cacheControl: '0',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload applicant avatar:', uploadError);
+      return response(
+        500,
+        { success: false, error: `Failed to upload avatar: ${uploadError.message}` },
+        guard.corsHeaders,
+      );
+    }
+
+    const { error: updateError } = await supabase
+      .from('recruitment_applications')
+      .update({ avatar_object_key: avatarObjectKey, updated_at: new Date().toISOString() })
+      .eq('id', application.id);
+
+    if (updateError) {
+      console.error('Failed to update application avatar reference:', updateError);
+      return response(
+        500,
+        { success: false, error: `Failed to update applicant: ${updateError.message}` },
+        guard.corsHeaders,
+      );
+    }
+
+    return response(200, { success: true, avatar_object_key: avatarObjectKey }, guard.corsHeaders);
   }
 
   if (

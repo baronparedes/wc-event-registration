@@ -3,6 +3,7 @@ export * from './mutations/useDeployRecruitmentApplicantMutation';
 export * from './mutations/useSubmitRecruitmentApplicationMutation';
 export * from './mutations/useUpdateRecruitmentSettingsMutation';
 export * from './mutations/useUpdateRecruitmentStageMutation';
+export * from './mutations/useUploadRecruitmentAvatarMutation';
 export * from './queries/useAdminRecruitmentApplicationDetailQuery';
 export * from './queries/useAdminRecruitmentApplicationsInfiniteQuery';
 export * from './queries/useMyRecruitmentApplicationQuery';

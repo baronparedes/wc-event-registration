@@ -104,7 +104,14 @@ function mockFetch(options: { settings?: unknown; failRequest?: string; role?: s
   globalThis.fetch = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     const method = init?.method ?? 'GET';
-    const body = init?.body ? (JSON.parse(String(init.body)) as unknown) : null;
+    let body: unknown = null;
+    if (init?.body) {
+      try {
+        body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
+      } catch {
+        body = init.body;
+      }
+    }
     calls.push({ path: url.pathname, method, body });
 
     if (options.failRequest === `${method} ${url.pathname}`) {
@@ -151,6 +158,12 @@ function mockFetch(options: { settings?: unknown; failRequest?: string; role?: s
 
     if (url.pathname === '/functions/v1/cron-process-email-queue') {
       return Promise.resolve(Response.json({ success: true }));
+    }
+
+    if (url.pathname.startsWith('/storage/v1/object/member_avatars/')) {
+      return Promise.resolve(
+        Response.json({ Key: url.pathname.slice('/storage/v1/object/'.length) }),
+      );
     }
 
     return Promise.resolve(Response.json([]));
@@ -351,3 +364,62 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'submit-recruitment-application uploads applicant avatar when valid JPEG base64 is provided',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch();
+      try {
+        const validBytes = new Uint8Array([0xff, 0xd8, 0x00, 0xff, 0xd9]);
+        const base64 = btoa(String.fromCharCode(...validBytes));
+        const validJpegDataUrl = `data:image/jpeg;base64,${base64}`;
+
+        const response = await handleSubmitRecruitmentApplication(
+          createRequest({
+            ...applicationRequest,
+            avatar_image_base64: validJpegDataUrl,
+          }),
+        );
+
+        assertEquals(response.status, 201);
+        const storageCall = mock.calls.find((call) =>
+          call.path.startsWith('/storage/v1/object/member_avatars/avatars/recruitment/'),
+        );
+        assert(storageCall, 'Storage upload call should have been made');
+
+        const appInsert = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_applications' && call.method === 'POST',
+        );
+        const payload = appInsert?.body as Record<string, unknown>;
+        assert(
+          typeof payload.avatar_object_key === 'string' &&
+            payload.avatar_object_key.startsWith('avatars/recruitment/'),
+          'avatar_object_key should be set on application record',
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('submit-recruitment-application rejects invalid avatar image format', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch();
+    try {
+      const response = await handleSubmitRecruitmentApplication(
+        createRequest({
+          ...applicationRequest,
+          avatar_image_base64: 'data:image/png;base64,not-jpeg',
+        }),
+      );
+
+      assertEquals(response.status, 400);
+      const result = await response.json();
+      assertEquals(result.error_code, 'INVALID_AVATAR_IMAGE');
+    } finally {
+      mock.restore();
+    }
+  });
+});
