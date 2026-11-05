@@ -69,7 +69,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Authorization, RBAC & Routing**:
   - **Backend-Driven RBAC**: Role-to-permission grants live in PostgreSQL (`public.admin_role_permissions`), evaluated on the backend via `public.has_admin_permission(p_permission)` (which also powers `is_super_admin()`, `is_admin()`, `is_admin_viewer()`, and `is_admin_member_viewer()`) and in Edge Functions via `requiredPermission` on `useEdgeHook` / `requireAdminAccess`.
   - **Frontend Permission Resolution**: `fetchAdminAuthState` calls the `get_my_admin_auth_context` RPC to retrieve `{ role, permissions }` from the database. `useAdminAuthQuery()` exposes a memoized `can(permission)` helper backed by `canAdminPerform`. Route definitions in `src/config/constants/routes.ts` and `RequireAdminAuth` gate access via `requiredPermission` and `can(requiredPermission)`.
-  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to the home page (`/`).
+  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to `/404` to mask admin routes.
   - The `/profile` route displays a read-only view of member details and event history for non-admin users. This is authorized via session email matching (`lower(email) = lower(auth.jwt() ->> 'email')`) on `public.users` RLS and the `get_member_event_history` RPC.
   - See [`docs/guides/rbac-architecture.md`](docs/guides/rbac-architecture.md).
 - **Super-Admin Role Management**:
