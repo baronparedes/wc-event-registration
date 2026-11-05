@@ -43,7 +43,7 @@ graph TD
 ### A. Routing & Access Control
 
 - **Route**: `/admin/forms/new` (`AdminNewFormPage` -> `FormEditorPage`).
-- **Access Control**: Protected by `RequireAdminAuth`. Unauthenticated sessions or non-admin users are redirected to `/`.
+- **Access Control**: Protected by `RequireAdminAuth`. Unauthenticated sessions are redirected to `/login`, while non-admin users or ungranted permissions are redirected to `/404` to mask admin routes.
 
 ### B. Form State & Auto-Slug Generation
 

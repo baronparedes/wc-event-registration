@@ -477,11 +477,11 @@ function RequireAdminAuth({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTE_PATHS.home} replace />;
+    return <Navigate to={ROUTE_PATHS.notFound} replace />;
   }
 
   if (requiredPermission ? !can(requiredPermission) : !can('canReadAdminData')) {
-    return <Navigate to={ROUTE_PATHS.home} replace />;
+    return <Navigate to={ROUTE_PATHS.notFound} replace />;
   }
 
   return children;
@@ -571,12 +571,7 @@ export const appRoutes = [
   },
   {
     path: '*',
-    element: (
-      <LazyRoute>
-        <NotFoundPage />
-      </LazyRoute>
-    ),
-    errorElement: <RouteErrorBoundary />,
+    element: <Navigate to={ROUTE_PATHS.notFound} replace />,
   },
 ];
 

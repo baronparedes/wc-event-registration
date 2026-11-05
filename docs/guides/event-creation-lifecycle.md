@@ -39,7 +39,7 @@ graph TD
 ### A. Routing & Access Control
 
 - **Route**: `/admin/events/new` (`AdminNewEventPage` -> `AdminEventFormPage` with `mode="create"`).
-- **Access Control**: Protected by `RequireAdminAuth`. Unauthenticated sessions or non-admin users are redirected.
+- **Access Control**: Protected by `RequireAdminAuth`. Unauthenticated sessions are redirected to `/login`, while non-admin users or ungranted permissions are redirected to `/404` to mask admin routes.
 
 ### B. Form State & Auto-Slug Generation
 
