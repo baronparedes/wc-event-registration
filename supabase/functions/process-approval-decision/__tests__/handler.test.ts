@@ -140,6 +140,7 @@ function mockFetch(
             email: 'jane@example.com',
             phone: '+639171234567',
             desired_role: 'Usher',
+            avatar_object_key: 'avatars/applicant.jpg',
             dgroup_info: { leader_name: 'Leader Name' },
           },
         ),
@@ -304,7 +305,10 @@ Deno.test(
           requester_name: 'Jane Doe',
           access_token: VALID_TOKEN,
           token_expires_at: new Date(Date.now() + 86400000).toISOString(),
-          metadata: { attestation_answers: { attendance: 'weekly' } },
+          metadata: {
+            attestation_answers: { attendance: 'weekly' },
+            avatar_object_key: 'avatars/applicant.jpg',
+          },
         },
       });
       try {
@@ -314,7 +318,9 @@ Deno.test(
 
         assertEquals(res.status, 200);
         const body = await res.json();
+        assertEquals(body.approval.requester_avatar_object_key, 'avatars/applicant.jpg');
         assertEquals(body.entity_details.full_name, 'Jane Doe');
+        assertEquals(body.entity_details.avatar_object_key, 'avatars/applicant.jpg');
         assertEquals(body.entity_details.desired_role, 'Usher');
         assertEquals(body.entity_details.endorsement_questions.length, 3);
         assertEquals(body.entity_details.attestation_answers, { attendance: 'weekly' });

@@ -388,6 +388,7 @@ export const recruitmentEndorsementReviewDetailsSchema = z.object({
   nickname: z.string(),
   desired_role: z.enum(RECRUITMENT_ROLES),
   created_at: timestampSchema,
+  avatar_object_key: z.string().nullable().optional(),
   endorsement_questions: z.array(dynamicFieldSchema).min(1),
   attestation_answers: z.record(z.string(), z.unknown()),
 });

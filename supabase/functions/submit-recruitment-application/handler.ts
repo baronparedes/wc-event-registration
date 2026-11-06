@@ -339,7 +339,10 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
     requesterName: fullName,
     requesterEmail: application.email,
     assignedToEmail: application.dgroup_info.leader_email,
-    metadata: { application_id: createdApplication.id },
+    metadata: {
+      application_id: createdApplication.id,
+      avatar_object_key: avatarObjectKey || null,
+    },
   });
 
   if (!approvalResult.success || !approvalResult.approval) {
