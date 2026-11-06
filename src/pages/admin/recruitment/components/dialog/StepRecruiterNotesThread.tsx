@@ -81,7 +81,7 @@ export function StepRecruiterNotesThread({
 
       {/* Notes List */}
       {notes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/80 bg-surface/30 p-3 text-center text-xs text-muted">
+        <div className="rounded-lg border border-dashed border-border bg-surface p-3 text-center text-xs text-muted">
           No recruiter notes recorded for this step yet.
         </div>
       ) : (
@@ -89,7 +89,7 @@ export function StepRecruiterNotesThread({
           {notes.map((note) => (
             <div
               key={note.id}
-              className="rounded-lg border border-border/70 bg-surface/60 p-2.5 text-xs space-y-1.5"
+              className="rounded-lg border border-border bg-surface p-2.5 text-xs space-y-1.5"
             >
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">

@@ -139,7 +139,7 @@ export function RecruitmentApplicantDetailDialog({
           </Tabs>
         </div>
 
-        <Dialog.Body className="flex-1 overflow-y-auto min-h-0 pr-1">
+        <Dialog.Body className="flex-1 overflow-y-auto min-h-0 px-1.5 py-1">
           {isLoading && !detailData ? (
             <div className="flex min-h-[250px] items-center justify-center">
               <Spinner size="lg" />
