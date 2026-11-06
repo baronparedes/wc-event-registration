@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -98,11 +99,21 @@ const mockTransaction: RecruitmentPipelineTransaction = {
   created_at: '2026-11-02T10:00:00+08:00',
 };
 
-const { mockDetailQuery, mockUpdateStageMutate, mockDeployApplicantMutate } = vi.hoisted(() => ({
-  mockDetailQuery: vi.fn(),
-  mockUpdateStageMutate: vi.fn(),
-  mockDeployApplicantMutate: vi.fn(),
-}));
+const { mockDetailQuery, mockUpdateStageMutate, mockDeployApplicantMutate, mockNavigate } =
+  vi.hoisted(() => ({
+    mockDetailQuery: vi.fn(),
+    mockUpdateStageMutate: vi.fn(),
+    mockDeployApplicantMutate: vi.fn(),
+    mockNavigate: vi.fn(),
+  }));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock('@/hooks/domain/recruitment', () => ({
   useAdminRecruitmentApplicationDetailQuery: () => mockDetailQuery(),
@@ -195,7 +206,11 @@ function renderDialog(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 describe('RecruitmentApplicantDetailDialog', () => {
@@ -1119,5 +1134,16 @@ describe('RecruitmentApplicantDetailDialog', () => {
     await user.click(confirmDeployBtn);
 
     expect(mockDeployApplicantMutate).toHaveBeenCalledWith(step9App.id, expect.anything());
+
+    const mutationOptions = (
+      mockDeployApplicantMutate.mock.calls[0] as [
+        string,
+        { onSuccess: (data: { user_id: string }) => void },
+      ]
+    )[1];
+    act(() => {
+      mutationOptions.onSuccess({ user_id: 'user-new-123' });
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/members/user-new-123');
   });
 });
