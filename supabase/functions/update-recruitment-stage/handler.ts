@@ -380,8 +380,8 @@ function nextStepForCompletion(
   if (stepNumber === 3) return currentStep === 2 ? 2 : 4;
   if (stepNumber === 4) return 5;
   if (stepNumber === 5) return confirmedRole === 'Prayer Coach' ? 6 : 7;
-  if (stepNumber === 6 || stepNumber === 7) return stepNumber + 1;
-  return 8;
+  if (stepNumber === 6 || stepNumber === 7 || stepNumber === 8) return stepNumber + 1;
+  return 9;
 }
 
 export async function handleUpdateRecruitmentStage(req: Request): Promise<Response> {

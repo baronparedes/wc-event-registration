@@ -315,11 +315,14 @@ export function PipelineStepsPanel({
         assigned_rfid_member_id: rfidTag.trim() || null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setPendingScheduleAction(null);
           setRepeatActionKind(null);
           setIsPendingCompletionConfirm(false);
           setIsPendingDeployConfirm(false);
+          if (status === 'completed' && data?.current_step) {
+            handleStepSelect(data.current_step as RecruitmentStepNumber);
+          }
           toast.success(
             action === 'repeat_step'
               ? `Scheduled another session for Step ${selectedStep}`
