@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 
 import { Info } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -141,11 +141,15 @@ export function PublicEventFieldsStep({
   inactivityTimeoutMs,
   onInactivityTimeout,
 }: PublicEventFieldsStepProps) {
-  const lastAppliedDefaultsRef = useRef<string>('');
+  const normalizedDefaultValues = useMemo(
+    () => buildNormalizedDefaultValues(fields, defaultValues),
+    [fields, defaultValues],
+  );
 
   const dynamicForm = useForm<DynamicFieldResponseValues>({
     mode: 'onBlur',
-    defaultValues: {},
+    defaultValues: normalizedDefaultValues,
+    values: normalizedDefaultValues,
   });
 
   const formValues = useWatch({ control: dynamicForm.control });
@@ -172,18 +176,6 @@ export function PublicEventFieldsStep({
     const cleaned = filterVisibleFieldValues(fields, parsed.data);
     onSubmit(cleaned);
   }
-
-  useEffect(() => {
-    const normalizedDefaultValues = buildNormalizedDefaultValues(fields, defaultValues);
-    const serializedDefaults = JSON.stringify(normalizedDefaultValues);
-
-    if (serializedDefaults === lastAppliedDefaultsRef.current) {
-      return;
-    }
-
-    lastAppliedDefaultsRef.current = serializedDefaults;
-    dynamicForm.reset(normalizedDefaultValues);
-  }, [dynamicForm, fields, defaultValues]);
 
   return (
     <WizardStep
