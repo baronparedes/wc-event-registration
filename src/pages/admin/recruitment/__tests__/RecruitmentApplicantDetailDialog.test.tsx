@@ -778,7 +778,9 @@ describe('RecruitmentApplicantDetailDialog', () => {
       />,
     );
 
-    const updateScheduleBtn = screen.getByRole('button', { name: /update schedule/i });
+    const updateScheduleBtn = screen.getByRole('button', {
+      name: /update session schedule/i,
+    });
     expect(updateScheduleBtn).toBeInTheDocument();
 
     await user.click(updateScheduleBtn);
