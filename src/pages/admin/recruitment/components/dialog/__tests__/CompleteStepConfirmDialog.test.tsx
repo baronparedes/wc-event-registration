@@ -88,7 +88,7 @@ describe('CompleteStepConfirmDialog', () => {
     expect(screen.getByRole('button', { name: /confirm & complete step 7/i })).toBeInTheDocument();
   });
 
-  it('renders Step 8 Assigned RFID Tag', () => {
+  it('renders Step 8 Assigned RFID Tag and committed Sunday schedule', () => {
     renderWithClient(
       <CompleteStepConfirmDialog
         {...defaultProps}
@@ -96,15 +96,25 @@ describe('CompleteStepConfirmDialog', () => {
         currentStepTitle="RFID and Service Commitments"
         nextStepTitle="Final Deployment"
         rfidTag="RFID-2026-1122"
+        serviceCommitments={{
+          first_sunday: ['9AM', '12NN'],
+          second_sunday: ['9AM'],
+          third_sunday: [],
+          fourth_sunday: ['3PM'],
+          fifth_sunday: [],
+        }}
       />,
     );
 
     expect(screen.getByText('Confirm Step 8 Completion')).toBeInTheDocument();
     expect(screen.getByText('RFID-2026-1122')).toBeInTheDocument();
+    expect(screen.getByText('Committed Sunday Schedule')).toBeInTheDocument();
+    expect(screen.getByText('9AM, 12NN')).toBeInTheDocument();
+    expect(screen.getByText('3PM')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /confirm & complete step 8/i })).toBeInTheDocument();
   });
 
-  it('renders Step 9 Deployment confirmation with warning notice', () => {
+  it('renders Step 9 Deployment confirmation with warning notice and committed schedule', () => {
     renderWithClient(
       <CompleteStepConfirmDialog
         {...defaultProps}
@@ -113,6 +123,13 @@ describe('CompleteStepConfirmDialog', () => {
         isDeployAction={true}
         assignedRole="Usher"
         rfidTag="RFID-2026-1122"
+        serviceCommitments={{
+          first_sunday: ['9AM'],
+          second_sunday: [],
+          third_sunday: ['12NN'],
+          fourth_sunday: [],
+          fifth_sunday: [],
+        }}
       />,
     );
 
@@ -120,6 +137,8 @@ describe('CompleteStepConfirmDialog', () => {
     expect(screen.getByText('Welcome Center Volunteer')).toBeInTheDocument();
     expect(screen.getByText('Usher')).toBeInTheDocument();
     expect(screen.getByText('RFID-2026-1122')).toBeInTheDocument();
+    expect(screen.getByText('Committed Sunday Schedule')).toBeInTheDocument();
+    expect(screen.getByText('12NN')).toBeInTheDocument();
     expect(
       screen.getByText(/confirming deployment will complete the recruitment pipeline/i),
     ).toBeInTheDocument();

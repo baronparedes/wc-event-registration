@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   RecruitmentApplication,
   RecruitmentPipelineTransaction,
+  RecruitmentServiceSlot,
 } from '@/lib/domain/recruitment';
 
 import { RecruitmentApplicantDetailDialog } from '../components/dialog/RecruitmentApplicantDetailDialog';
@@ -97,9 +98,10 @@ const mockTransaction: RecruitmentPipelineTransaction = {
   created_at: '2026-11-02T10:00:00+08:00',
 };
 
-const { mockDetailQuery, mockUpdateStageMutate } = vi.hoisted(() => ({
+const { mockDetailQuery, mockUpdateStageMutate, mockDeployApplicantMutate } = vi.hoisted(() => ({
   mockDetailQuery: vi.fn(),
   mockUpdateStageMutate: vi.fn(),
+  mockDeployApplicantMutate: vi.fn(),
 }));
 
 vi.mock('@/hooks/domain/recruitment', () => ({
@@ -114,7 +116,7 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     isPending: false,
   }),
   useDeployRecruitmentApplicantMutation: () => ({
-    mutate: vi.fn(),
+    mutate: mockDeployApplicantMutate,
     isPending: false,
   }),
   useUploadRecruitmentAvatarMutation: () => ({
@@ -177,6 +179,9 @@ vi.mock('@/hooks/domain/recruitment', () => ({
 
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => ({
+    data: {
+      adminRole: 'admin',
+    },
     adminRole: 'admin',
     can: () => true,
     user: { id: 'admin-1' },
@@ -983,5 +988,132 @@ describe('RecruitmentApplicantDetailDialog', () => {
         application_id: archivedApp.id,
       }),
     );
+  });
+
+  it('allows selecting Sunday commitments and assigning RFID at Step 8, passing commitments to mutation', async () => {
+    const user = userEvent.setup();
+    const step8App = {
+      ...mockApplication,
+      current_step: 8 as const,
+      assigned_rfid_member_id: null,
+      service_commitments: {
+        first_sunday: [],
+        second_sunday: [],
+        third_sunday: [],
+        fourth_sunday: [],
+        fifth_sunday: [],
+      },
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: step8App,
+        transactions: [],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog application={step8App} isOpen={true} onClose={onClose} />,
+    );
+
+    // Verify requirements banner is displayed
+    expect(screen.getByText(/Required before completing Step 8/i)).toBeInTheDocument();
+    expect(screen.getByText('Assigned Physical RFID Tag')).toBeInTheDocument();
+    expect(screen.getByText('At least one committed Sunday service slot')).toBeInTheDocument();
+
+    const completeBtn = screen.getByRole('button', {
+      name: /save commitments, assign rfid & complete step 8/i,
+    });
+    expect(completeBtn).toBeDisabled();
+
+    // Toggle 1st Sunday 9AM slot
+    const slot9amButtons = screen.getAllByRole('button', { name: '9AM' });
+    await user.click(slot9amButtons[0]);
+
+    // Type RFID tag
+    const rfidInput = screen.getByLabelText(/assigned physical rfid tag/i);
+    await user.type(rfidInput, 'RFID-9988');
+
+    // Requirements banner should disappear and button enabled
+    expect(screen.queryByText(/Required before completing Step 8/i)).not.toBeInTheDocument();
+    expect(completeBtn).toBeEnabled();
+
+    // Click Complete Step 8 button to open confirmation dialog
+    await user.click(completeBtn);
+    expect(screen.getByText('Confirm Step 8 Completion')).toBeInTheDocument();
+    expect(screen.getByText('RFID-9988')).toBeInTheDocument();
+    expect(screen.getByText('Committed Sunday Schedule')).toBeInTheDocument();
+
+    // Confirm completion
+    const confirmBtn = screen.getByRole('button', { name: /confirm & complete step 8/i });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'update_stage',
+        step_number: 8,
+        status: 'completed',
+        assigned_rfid_member_id: 'RFID-9988',
+        service_commitments: expect.objectContaining({
+          first_sunday: ['9AM'],
+        }),
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('renders Step 9 Final Deployment with confirmed Sunday commitments and triggers deployment mutation', async () => {
+    const user = userEvent.setup();
+    const step9App = {
+      ...mockApplication,
+      current_step: 9 as const,
+      assigned_rfid_member_id: 'RFID-9988',
+      service_commitments: {
+        first_sunday: ['9AM', '12NN'] as RecruitmentServiceSlot[],
+        second_sunday: [],
+        third_sunday: ['3PM'] as RecruitmentServiceSlot[],
+        fourth_sunday: [],
+        fifth_sunday: [],
+      },
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: step9App,
+        transactions: [],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog application={step9App} isOpen={true} onClose={onClose} />,
+    );
+
+    expect(
+      screen.getByText('Ready for final deployment into Welcome Center membership'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('RFID-9988')).toBeInTheDocument();
+    expect(screen.getByText('Committed Sunday Schedule:')).toBeInTheDocument();
+    expect(screen.getByText('9AM, 12NN')).toBeInTheDocument();
+    expect(screen.getByText('3PM')).toBeInTheDocument();
+
+    // Click Deploy Volunteer button to open confirm dialog
+    const deployBtn = screen.getByRole('button', {
+      name: /deploy volunteer to welcome center/i,
+    });
+    await user.click(deployBtn);
+
+    expect(screen.getByText('Confirm Volunteer Deployment')).toBeInTheDocument();
+    expect(screen.getAllByText('RFID-9988').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('9AM, 12NN').length).toBeGreaterThan(0);
+
+    // Confirm deployment
+    const confirmDeployBtn = screen.getByRole('button', {
+      name: /confirm & deploy volunteer/i,
+    });
+    await user.click(confirmDeployBtn);
+
+    expect(mockDeployApplicantMutate).toHaveBeenCalledWith(step9App.id, expect.anything());
   });
 });
