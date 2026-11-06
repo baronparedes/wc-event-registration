@@ -55,7 +55,7 @@ function LockedStepCard({
     `Step ${currentStep}`;
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 text-center space-y-2.5">
+    <div className="rounded-xl border border-dashed border-border bg-surface p-6 text-center space-y-2.5">
       <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted/15 text-muted mx-auto">
         <Lock className="h-5 w-5" />
       </div>
@@ -80,7 +80,7 @@ function LockedStepCard({
 
 function CompletedStepCard({ stepNumber }: { stepNumber: number }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background p-3.5 text-xs text-muted">
+    <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted">
       <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
       <div className="min-w-0">
         <span className="font-semibold text-text">Step {stepNumber} is Completed</span>
@@ -416,20 +416,13 @@ export function PipelineStepsPanel({
         </TabsList>
       </Tabs>
 
-      {/* Viewing other step notice banner */}
-      {!isCurrentActiveStep && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border bg-background p-3 text-xs text-text">
+      {/* Parallel step notice banner */}
+      {isAllowedParallelStep && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border bg-surface p-3 text-xs text-text">
           <div>
-            <strong>
-              Viewing {isCompletedStep ? 'Completed' : isFutureStep ? 'Locked' : 'Parallel'} Step{' '}
-              {selectedStep}: {stepMeta?.title}
-            </strong>
+            <strong>Parallel Stage: Step 3 ({stepMeta?.title ?? 'Orientation'})</strong>
             <p className="text-muted text-[11px]">
-              {isCompletedStep
-                ? 'This step was previously passed. Operations are locked to maintain pipeline integrity.'
-                : isFutureStep
-                  ? `This step is locked until Step ${application.current_step} is completed.`
-                  : 'Orientation can be scheduled in parallel while completing Step 2 interview.'}
+              Orientation can be scheduled in parallel while completing the Step 2 interview.
             </p>
           </div>
           <Button
@@ -439,13 +432,13 @@ export function PipelineStepsPanel({
             className="w-full sm:w-auto shrink-0"
             onClick={() => handleStepSelect(application.current_step)}
           >
-            Jump to Active Step ({application.current_step})
+            Back to Active Step ({application.current_step})
           </Button>
         </div>
       )}
 
-      {/* Smart Action Card: On-Theme Surface Card */}
-      <div className="space-y-4 rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs">
+      {/* Step Content Area */}
+      <div className="space-y-4 px-0.5 pt-1 pb-1">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -474,7 +467,7 @@ export function PipelineStepsPanel({
         {/* Step 1: Intake, Survey & DGroup summary */}
         {selectedStep === 1 && (
           <div className="space-y-4">
-            <div className="space-y-2.5 text-xs text-text rounded-xl border border-border bg-background p-3.5">
+            <div className="space-y-2.5 text-xs text-text py-1">
               <p>
                 <strong>Application Submitted:</strong> {formatDateTime(application.created_at)}
               </p>
@@ -538,7 +531,7 @@ export function PipelineStepsPanel({
 
                 {/* Previous attempts history for this step (kept intact) */}
                 {previousStepAttempts.length > 0 && (
-                  <div className="rounded-xl border border-border/80 bg-surface/60 p-3.5 space-y-2.5">
+                  <div className="rounded-xl border border-border bg-surface p-3.5 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <RotateCcw className="h-3.5 w-3.5 text-primary" />
@@ -556,7 +549,7 @@ export function PipelineStepsPanel({
                       {previousStepAttempts.map((tx) => (
                         <div
                           key={tx.id}
-                          className="rounded-lg border border-border/60 bg-background p-2.5 text-xs space-y-1.5"
+                          className="rounded-lg border border-border/60 bg-surface p-2.5 text-xs space-y-1.5"
                         >
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span className="font-semibold text-text">
@@ -602,9 +595,9 @@ export function PipelineStepsPanel({
                   </div>
                 )}
 
-                {/* Session & Evaluation Details Card */}
-                <div className="rounded-xl border border-border bg-background p-3.5 space-y-3">
-                  <div className="flex items-center justify-between">
+                {/* Session & Evaluation Details */}
+                <div className="space-y-4 pt-1">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
                     <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-primary" />
                       {isCompletedStep
@@ -636,7 +629,7 @@ export function PipelineStepsPanel({
                     )}
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-3.5">
                     <ReviewerUserPicker
                       id="assignedReviewer"
                       label="Assigned To"
@@ -662,7 +655,6 @@ export function PipelineStepsPanel({
                       value={scheduledAtLocal}
                       onChange={(value) => setScheduledAtLocal(value)}
                       maxPastDays={null}
-                      align="right"
                     />
                   </div>
 
@@ -737,7 +729,7 @@ export function PipelineStepsPanel({
 
                 {/* Primary Action Button Bar */}
                 {!isCompletedStep && (
-                  <div className="rounded-xl border border-border bg-background p-3.5 space-y-2.5">
+                  <div className="border-t border-border pt-3.5 space-y-2.5">
                     <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
                       Stage Action
                     </div>
@@ -757,7 +749,7 @@ export function PipelineStepsPanel({
                       {/* Schedule / Reschedule ahead of time button */}
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="primaryOutline"
                         size="sm"
                         onClick={() => requestScheduleConfirmation('update_stage')}
                         disabled={
@@ -865,7 +857,7 @@ export function PipelineStepsPanel({
               <>
                 {isCompletedStep && <CompletedStepCard stepNumber={7} />}
 
-                <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                <div className="text-xs">
                   <p>
                     <strong>Applicant Self-Attestation:</strong>{' '}
                     {application.vmt_registered ? (
@@ -915,7 +907,7 @@ export function PipelineStepsPanel({
                 )}
 
                 {!isCompletedStep && (
-                  <div className="pt-1">
+                  <div className="border-t border-border pt-3.5">
                     <Button
                       type="button"
                       size="sm"
@@ -946,7 +938,7 @@ export function PipelineStepsPanel({
               <>
                 {isCompletedStep && <CompletedStepCard stepNumber={8} />}
 
-                <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                <div className="text-xs space-y-1">
                   <h4 className="font-semibold text-text">Selected Sunday Commitments:</h4>
                   <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
                     {Object.entries(application.service_commitments ?? {}).map(([key, slots]) => (
@@ -993,7 +985,7 @@ export function PipelineStepsPanel({
                 )}
 
                 {!isCompletedStep && (
-                  <div className="pt-1">
+                  <div className="border-t border-border pt-3.5">
                     <Button
                       type="button"
                       size="sm"
@@ -1022,7 +1014,7 @@ export function PipelineStepsPanel({
               />
             ) : (
               <>
-                <div className="rounded-xl border border-border bg-background p-3 text-xs space-y-1.5">
+                <div className="text-xs space-y-1.5">
                   <p>
                     <strong>Volunteer:</strong> {application.full_name} ({confirmedRole})
                   </p>
@@ -1043,7 +1035,7 @@ export function PipelineStepsPanel({
                 </div>
 
                 {application.status !== 'deployed' && (
-                  <div className="pt-1">
+                  <div className="border-t border-border pt-3.5">
                     {canDeploy ? (
                       <Button
                         type="button"
