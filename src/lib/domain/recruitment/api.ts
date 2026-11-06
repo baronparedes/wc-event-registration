@@ -35,6 +35,12 @@ type RecruitmentEdgeResponse = {
   settings?: unknown;
 };
 
+export type DeployRecruitmentApplicantResponse = RecruitmentEdgeResponse & {
+  user_id?: string;
+  member_id?: string;
+  already_deployed?: boolean;
+};
+
 const callSubmitRecruitmentApplication = createEdgeFunctionCaller<
   RecruitmentStep1Input,
   RecruitmentEdgeResponse
@@ -47,7 +53,7 @@ const callUpdateRecruitmentStage = createEdgeFunctionCaller<
 
 const callDeployRecruitmentApplicant = createEdgeFunctionCaller<
   { application_id: string },
-  RecruitmentEdgeResponse
+  DeployRecruitmentApplicantResponse
 >('deploy-recruitment-applicant');
 
 const callUpdateRecruitmentSettings = createEdgeFunctionCaller<
@@ -130,7 +136,7 @@ export async function updateRecruitmentStage(
 
 export async function deployRecruitmentApplicant(
   applicationId: string,
-): Promise<RecruitmentEdgeResponse> {
+): Promise<DeployRecruitmentApplicantResponse> {
   const response = await callDeployRecruitmentApplicant({ application_id: applicationId });
   if (!response.success)
     throw new Error(response.error || 'Failed to deploy recruitment applicant');

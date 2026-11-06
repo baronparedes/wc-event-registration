@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { AlertCircle, CheckCircle2, Clock, Lock, RotateCcw, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import {
@@ -15,6 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
+import { toRoute } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import {
   useDeployRecruitmentApplicantMutation,
@@ -110,6 +112,7 @@ export function PipelineStepsPanel({
   stepNotes = [],
 }: PipelineStepsPanelProps) {
   const [selectedStep, setSelectedStep] = useState<RecruitmentStepNumber>(application.current_step);
+  const navigate = useNavigate();
   const { data: authState, can } = useAdminAuthQuery();
   const canWrite = can('canWriteAdminData');
 
@@ -406,9 +409,14 @@ export function PipelineStepsPanel({
 
   const handleDeploy = () => {
     deployMutation.mutate(application.id, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         setIsPendingDeployConfirm(false);
         toast.success(`Successfully deployed ${application.full_name} to Welcome Center!`);
+        if (data?.user_id) {
+          navigate(toRoute('adminMemberDetail', { id: data.user_id }));
+        } else {
+          navigate(toRoute('adminMembers'));
+        }
       },
       onError: (err) => {
         toast.error(err.message || 'Failed to deploy volunteer');
