@@ -102,7 +102,7 @@ export function EditableApplicantAvatar({
           <img
             src={previewUrl}
             alt={name}
-            className="h-16 w-16 rounded-full bg-muted object-cover border border-border"
+            className="h-32 w-32 rounded-full bg-muted object-cover border border-border"
           />
         ) : (
           <Avatar size="lg" name={name} avatarObjectKey={avatarObjectKey} />
@@ -113,12 +113,12 @@ export function EditableApplicantAvatar({
           title="Upload or take a photo"
           disabled={isSaving}
           onClick={() => setIsChooserOpen(true)}
-          className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="absolute -bottom-0.5 -right-0.5 flex h-8 w-8 min-h-0 min-w-0 aspect-square shrink-0 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? (
             <Spinner aria-hidden="true" size="sm" />
           ) : (
-            <Camera aria-hidden="true" className="h-3.5 w-3.5" />
+            <Camera aria-hidden="true" className="h-4 w-4 shrink-0" />
           )}
         </button>
       </div>
