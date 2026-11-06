@@ -3,22 +3,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { supabase } from '@/lib/infrastructure';
 
 import {
+  delegateApproval,
   fetchApprovalRequestById,
   fetchApprovalRequests,
   fetchApprovalReviewByToken,
+  fetchSlodUsers,
   submitApprovalDecision,
 } from '../api';
 
-const { mockCaller, mockCreateEdgeFunctionCaller } = vi.hoisted(() => {
+const { mockCaller, mockCreateEdgeFunctionCaller, mockFrom, mockRpc } = vi.hoisted(() => {
   const caller = vi.fn();
   return {
     mockCaller: caller,
     mockCreateEdgeFunctionCaller: vi.fn(() => caller),
+    mockFrom: vi.fn(),
+    mockRpc: vi.fn(),
   };
 });
 
 vi.mock('@/lib/infrastructure', () => ({
-  supabase: { from: vi.fn(), rpc: vi.fn() },
+  supabase: { from: mockFrom, rpc: mockRpc },
   createEdgeFunctionCaller: mockCreateEdgeFunctionCaller,
 }));
 
@@ -213,6 +217,138 @@ describe('approvals API', () => {
           decision: 'approved',
         } as never),
       ).rejects.toThrow();
+    });
+
+    it.each([
+      {
+        requester_user: { avatar_object_key: 'avatars/user.jpg' },
+        metadata: { avatar_object_key: 'avatars/meta.jpg' },
+        expected: 'avatars/user.jpg',
+      },
+      {
+        requester_user: null,
+        metadata: { avatar_object_key: ' avatars/meta.jpg ' },
+        expected: 'avatars/meta.jpg',
+      },
+      { metadata: { avatar_object_key: '   ' }, expected: null },
+      { metadata: { avatar_object_key: 42 }, expected: null },
+      { metadata: [], expected: null },
+      { metadata: 'invalid', expected: null },
+      { metadata: null, expected: null },
+    ])(
+      'resolves requester avatars consistently in lists and details: %j',
+      async ({ expected, ...row }) => {
+        const response = { data: [row], error: null };
+        const query = {
+          select: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: row, error: null }),
+          then: Promise.resolve(response).then.bind(Promise.resolve(response)),
+        };
+        mockFrom.mockReturnValue(query);
+        await expect(
+          fetchApprovalRequests({ status: 'all', entity_type: 'all', search: '  ' }),
+        ).resolves.toEqual([{ ...row, requester_avatar_object_key: expected }]);
+        expect(query.eq).not.toHaveBeenCalled();
+        await expect(fetchApprovalRequestById('approval-1')).resolves.toEqual({
+          ...row,
+          requester_avatar_object_key: expected,
+        });
+      },
+    );
+
+    it('returns an empty list when no approval rows are returned', async () => {
+      const response = { data: null, error: null };
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        then: Promise.resolve(response).then.bind(Promise.resolve(response)),
+      });
+      await expect(fetchApprovalRequests()).resolves.toEqual([]);
+    });
+
+    it('defaults absent review entity details to null', async () => {
+      const approval = { id: 'approval-1', title: 'Review', status: 'pending' };
+      mockCaller.mockResolvedValue({ success: true, approval });
+      await expect(fetchApprovalReviewByToken('token')).resolves.toEqual({
+        approval,
+        entity_details: null,
+      });
+    });
+
+    it.each([{ success: false }, { success: true }])(
+      'rejects incomplete review responses: %j',
+      async (response) => {
+        mockCaller.mockResolvedValue(response);
+        await expect(fetchApprovalReviewByToken('token')).rejects.toThrow(
+          'Failed to fetch approval review details',
+        );
+      },
+    );
+
+    it.each(['approved', 'rejected'] as const)(
+      'uses decision defaults for %s',
+      async (decision) => {
+        mockCaller.mockResolvedValue({ success: true, result: { recorded: true } });
+        await expect(submitApprovalDecision({ token: 'token', decision })).resolves.toEqual({
+          success: true,
+          message: `Decision recorded as ${decision}`,
+          status: decision,
+          result: { recorded: true },
+        });
+      },
+    );
+
+    it.each([
+      [{ success: false, error: 'Forbidden' }, 'Forbidden'],
+      [{ success: false }, 'Failed to submit approval decision'],
+    ])('propagates decision errors %j', async (response, message) => {
+      mockCaller.mockResolvedValue(response);
+      await expect(
+        submitApprovalDecision({ token: 'token', decision: 'approved' }),
+      ).rejects.toThrow(message);
+    });
+
+    it('fetches SLOD users and handles empty data and RPC errors', async () => {
+      const users = [{ id: 'user-1', full_name: 'Test Reviewer', email: 'reviewer@example.com' }];
+      mockRpc.mockResolvedValueOnce({ data: users, error: null });
+      await expect(fetchSlodUsers()).resolves.toEqual(users);
+      expect(mockRpc).toHaveBeenCalledWith('list_slod_users');
+      mockRpc.mockResolvedValueOnce({ data: null, error: null });
+      await expect(fetchSlodUsers()).resolves.toEqual([]);
+      mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'Unavailable' } });
+      await expect(fetchSlodUsers()).rejects.toThrow('Failed to fetch SLOD users: Unavailable');
+    });
+
+    it('delegates approval with explicit and fallback messages', async () => {
+      const input = {
+        approval_id: 'approval-1',
+        assigned_to_user_id: 'user-1',
+        assigned_to_email: 'reviewer@example.com',
+      };
+      mockCaller.mockResolvedValueOnce({ success: true, message: 'Delegated successfully' });
+      await expect(delegateApproval(input)).resolves.toEqual({
+        success: true,
+        message: 'Delegated successfully',
+        approval_id: input.approval_id,
+        assigned_to_email: input.assigned_to_email,
+      });
+      expect(mockCaller).toHaveBeenCalledWith({ action: 'delegate_approval', ...input });
+      mockCaller.mockResolvedValueOnce({ success: true });
+      await expect(delegateApproval(input)).resolves.toMatchObject({
+        message: `Approval delegated to ${input.assigned_to_email}`,
+      });
+    });
+
+    it.each([
+      [{ success: false, error: 'Forbidden' }, 'Forbidden'],
+      [{ success: false }, 'Failed to delegate approval'],
+    ])('propagates delegation errors %j', async (response, message) => {
+      mockCaller.mockResolvedValue(response);
+      await expect(
+        delegateApproval({ approval_id: 'approval-1', assigned_to_email: 'reviewer@example.com' }),
+      ).rejects.toThrow(message);
     });
   });
 });
