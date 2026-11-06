@@ -70,7 +70,7 @@ export async function handleDeployRecruitmentApplicant(req: Request): Promise<Re
       409,
       {
         success: false,
-        error: 'Applicant is not ready for deployment',
+        error: deploymentError?.message || 'Applicant is not ready for deployment',
         error_code: 'DEPLOYMENT_FAILED',
       },
       guard.corsHeaders,
