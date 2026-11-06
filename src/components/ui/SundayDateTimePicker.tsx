@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { Calendar, ChevronDown, Clock } from 'lucide-react';
+import { Calendar, ChevronDown, Clock, X } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 
@@ -245,12 +245,35 @@ export function SundayDateTimePicker({
                 {displayDateTimeText || placeholder}
               </span>
             </div>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-muted transition-transform duration-200 ${
-                isOpen ? 'rotate-180 text-primary' : ''
-              }`}
-              aria-hidden="true"
-            />
+            <div className="flex items-center gap-1.5 shrink-0">
+              {value && !isInactive && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Clear session date and time"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChange('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onChange('');
+                    }
+                  }}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded text-muted transition-colors hover:bg-surface-hover hover:text-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              )}
+              <ChevronDown
+                className={`h-4 w-4 text-muted transition-transform duration-200 ${
+                  isOpen ? 'rotate-180 text-primary' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </div>
           </button>
 
           {/* Unified Date & Time Popover */}

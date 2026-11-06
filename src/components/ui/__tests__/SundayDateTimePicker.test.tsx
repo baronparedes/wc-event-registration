@@ -135,6 +135,21 @@ describe('SundayDateTimePicker & Utils', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
+    it('clears selected date and time when the clear button is clicked', async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+
+      render(
+        <SundayDateTimePicker id="test-session" value="2026-11-08T09:00" onChange={onChange} />,
+      );
+
+      const clearButton = screen.getByRole('button', { name: /clear session date and time/i });
+      expect(clearButton).toBeInTheDocument();
+      await user.click(clearButton);
+
+      expect(onChange).toHaveBeenCalledWith('');
+    });
+
     it('disables session time controls when a Sunday date is not yet picked', async () => {
       const user = userEvent.setup();
       render(<SundayDateTimePicker id="test-session" value="" onChange={vi.fn()} />);
