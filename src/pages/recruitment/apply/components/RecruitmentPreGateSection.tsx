@@ -73,7 +73,7 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
     ['age_range'],
   ];
   const gateTitles = [
-    'Roles and GLC Level 1',
+    'Roles',
     'Data Privacy and Liability Waiver',
     'DGroup Eligibility',
     'Demographics',
@@ -121,14 +121,14 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
               <section className="space-y-4" aria-labelledby="roles-heading">
                 <div>
                   <h2 id="roles-heading" className="font-heading text-lg font-semibold text-text">
-                    Roles and GLC Level 1
+                    Roles
                   </h2>
                   <p className="mt-1 text-sm text-muted">{RECRUITMENT_ROLE_OVERVIEW_INTRO}</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   {RECRUITMENT_ROLES.filter((role) => role !== 'Backroom Support').map((role) => (
                     <article key={role} className="border-b border-border pb-3 last:border-0">
-                      <h3 className="font-semibold text-text">{role}</h3>
+                      <h2 className="text-lg font-semibold text-primary">{role}</h2>
                       <ReactMarkdown
                         components={{
                           p: ({ children }) => (
