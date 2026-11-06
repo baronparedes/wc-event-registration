@@ -9,6 +9,7 @@ import {
   FormInputField,
   FormSelectField,
   Spinner,
+  SundayAvailabilityTable,
   SundayDateTimePicker,
   Tabs,
   TabsList,
@@ -22,7 +23,6 @@ import {
 import {
   type ApplicantCommitments,
   RECRUITMENT_ROLES,
-  RECRUITMENT_SERVICE_SLOTS,
   RECRUITMENT_STEPS,
   type RecruiterNote,
   type RecruitmentApplication,
@@ -43,14 +43,6 @@ import {
   ScheduleSessionConfirmDialog,
 } from './ScheduleSessionConfirmDialog';
 import { StepRecruiterNotesThread } from './StepRecruiterNotesThread';
-
-const SUNDAYS = [
-  ['first_sunday', '1st Sunday'],
-  ['second_sunday', '2nd Sunday'],
-  ['third_sunday', '3rd Sunday'],
-  ['fourth_sunday', '4th Sunday'],
-  ['fifth_sunday', '5th Sunday'],
-] as const;
 
 function LockedStepCard({
   stepNumber,
@@ -173,11 +165,16 @@ export function PipelineStepsPanel({
   const handleToggleSundaySlot = (
     sundayKey: keyof ApplicantCommitments,
     slot: RecruitmentServiceSlot,
+    checked?: boolean,
   ) => {
     setServiceCommitmentsLocal((prev) => {
       const currentSlots = prev[sundayKey] ?? [];
-      const hasSlot = currentSlots.includes(slot);
-      const nextSlots = hasSlot ? currentSlots.filter((s) => s !== slot) : [...currentSlots, slot];
+      const isAlreadySelected = currentSlots.includes(slot);
+      const shouldInclude = checked !== undefined ? checked : !isAlreadySelected;
+      if (shouldInclude === isAlreadySelected) return prev;
+      const nextSlots = shouldInclude
+        ? [...currentSlots, slot]
+        : currentSlots.filter((s) => s !== slot);
       return {
         ...prev,
         [sundayKey]: nextSlots,
@@ -1229,74 +1226,39 @@ export function PipelineStepsPanel({
               <>
                 {isCompletedStep && <CompletedStepCard stepNumber={8} />}
 
-                {isCompletedStep ? (
-                  <div className="space-y-1.5 rounded-xl border border-border bg-surface p-3.5 text-xs">
-                    <h4 className="font-semibold text-text">Committed Sunday Schedule:</h4>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {SUNDAYS.map(([key, label]) => {
-                        const slots =
-                          serviceCommitmentsLocal[key as keyof ApplicantCommitments] ?? [];
-                        return (
-                          <div
-                            key={key}
-                            className="flex items-center justify-between rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5"
-                          >
-                            <span className="font-medium text-muted">{label}</span>
-                            <span className="font-semibold text-text">
-                              {slots.length > 0 ? slots.join(', ') : 'None'}
-                            </span>
-                          </div>
-                        );
-                      })}
+                <div className="space-y-2 rounded-xl border border-border bg-surface p-3.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-heading text-sm font-bold text-text">
+                        Sunday Availability
+                      </h4>
+                      <p className="text-[11px] text-muted">
+                        Manage member availability across all five Sundays.
+                      </p>
                     </div>
+                    {!hasSelectedCommitmentSlot ? (
+                      <Badge variant="destructive">Required</Badge>
+                    ) : (
+                      <Badge variant="outline">
+                        {isCompletedStep ? 'Completed' : 'Configured'}
+                      </Badge>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-2 rounded-xl border border-border bg-surface p-3.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-text">Committed Sunday Schedule *</h4>
-                        <p className="text-[11px] text-muted">
-                          Confirm or update the Sunday service time slots this volunteer is
-                          committed to serve.
-                        </p>
-                      </div>
-                      {!hasSelectedCommitmentSlot && <Badge variant="destructive">Required</Badge>}
-                    </div>
-                    <div className="space-y-2 pt-1">
-                      {SUNDAYS.map(([key, label]) => {
-                        const sundayKey = key as keyof ApplicantCommitments;
-                        const currentSlots = serviceCommitmentsLocal[sundayKey] ?? [];
-                        return (
-                          <div
-                            key={key}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded-lg border border-border/80 bg-background p-2.5"
-                          >
-                            <span className="font-medium text-text min-w-[90px]">{label}</span>
-                            <div className="flex items-center gap-1.5">
-                              {RECRUITMENT_SERVICE_SLOTS.map((slot) => {
-                                const isSelected = currentSlots.includes(slot);
-                                return (
-                                  <button
-                                    key={slot}
-                                    type="button"
-                                    onClick={() => handleToggleSundaySlot(sundayKey, slot)}
-                                    className={`flex items-center justify-center rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                                      isSelected
-                                        ? 'bg-primary text-white shadow-xs'
-                                        : 'border border-border bg-surface text-muted hover:bg-surface-hover hover:text-text'
-                                    }`}
-                                  >
-                                    {slot}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="overflow-x-auto rounded-lg border border-border">
+                    <SundayAvailabilityTable
+                      value={serviceCommitmentsLocal}
+                      onChange={
+                        isCompletedStep
+                          ? undefined
+                          : (sundayKey, timeSlot, checked) => {
+                              handleToggleSundaySlot(sundayKey, timeSlot, checked);
+                            }
+                      }
+                      disabled={isCompletedStep}
+                      readOnly={isCompletedStep}
+                    />
                   </div>
-                )}
+                </div>
 
                 <FormInputField
                   id="rfid-tag"
@@ -1382,26 +1344,23 @@ export function PipelineStepsPanel({
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-surface p-3 space-y-1.5">
-                    <h5 className="font-semibold text-text">Committed Sunday Schedule:</h5>
-                    <div className="grid gap-1 sm:grid-cols-2">
-                      {SUNDAYS.map(([key, label]) => {
-                        const slots =
-                          application.service_commitments?.[key as keyof ApplicantCommitments] ??
-                          serviceCommitmentsLocal[key as keyof ApplicantCommitments] ??
-                          [];
-                        return (
-                          <div
-                            key={key}
-                            className="flex items-center justify-between rounded border border-border/60 bg-background/50 px-2 py-1 text-[11px]"
-                          >
-                            <span className="text-muted">{label}</span>
-                            <span className="font-semibold text-text">
-                              {slots.length > 0 ? slots.join(', ') : 'None'}
-                            </span>
-                          </div>
-                        );
-                      })}
+                  <div className="space-y-2 rounded-xl border border-border bg-surface p-3.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-heading text-sm font-bold text-text">
+                          Sunday Availability
+                        </h5>
+                        <p className="text-[11px] text-muted">
+                          Committed volunteer schedule for deployment.
+                        </p>
+                      </div>
+                      <Badge variant="outline">Confirmed</Badge>
+                    </div>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <SundayAvailabilityTable
+                        value={application.service_commitments ?? serviceCommitmentsLocal}
+                        readOnly
+                      />
                     </div>
                   </div>
                 </div>

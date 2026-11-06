@@ -113,7 +113,8 @@ export function EditableApplicantAvatar({
           title="Upload or take a photo"
           disabled={isSaving}
           onClick={() => setIsChooserOpen(true)}
-          className="absolute bottom-0 right-0 flex h-10 w-10 !h-10 !w-10 !min-h-10 !min-w-10 p-0 aspect-square shrink-0 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ minHeight: 'unset', aspectRatio: '1 / 1' }}
+          className="absolute bottom-0 right-0 flex h-10 w-10 min-h-0 min-w-0 p-0 aspect-square shrink-0 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? (
             <Spinner aria-hidden="true" size="sm" />

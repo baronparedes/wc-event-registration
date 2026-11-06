@@ -1027,9 +1027,11 @@ describe('RecruitmentApplicantDetailDialog', () => {
     });
     expect(completeBtn).toBeDisabled();
 
-    // Toggle 1st Sunday 9AM slot
-    const slot9amButtons = screen.getAllByRole('button', { name: '9AM' });
-    await user.click(slot9amButtons[0]);
+    // Toggle 1st Sunday 9AM switch
+    const firstSun9amSwitch = screen.getByRole('switch', {
+      name: 'Toggle First Sunday at 9AM',
+    });
+    await user.click(firstSun9amSwitch);
 
     // Type RFID tag
     const rfidInput = screen.getByLabelText(/assigned physical rfid tag/i);
@@ -1094,9 +1096,11 @@ describe('RecruitmentApplicantDetailDialog', () => {
       screen.getByText('Ready for final deployment into Welcome Center membership'),
     ).toBeInTheDocument();
     expect(screen.getByText('RFID-9988')).toBeInTheDocument();
-    expect(screen.getByText('Committed Sunday Schedule:')).toBeInTheDocument();
-    expect(screen.getByText('9AM, 12NN')).toBeInTheDocument();
-    expect(screen.getByText('3PM')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sunday Availability' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Toggle First Sunday at 9AM' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Toggle First Sunday at 12NN' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Toggle Third Sunday at 3PM' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Toggle Second Sunday at 9AM' })).not.toBeChecked();
 
     // Click Deploy Volunteer button to open confirm dialog
     const deployBtn = screen.getByRole('button', {
