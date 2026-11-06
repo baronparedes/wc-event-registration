@@ -3,6 +3,7 @@ import {
   Briefcase,
   Calendar,
   CheckCircle2,
+  Clock,
   CreditCard,
   FileText,
   User,
@@ -15,6 +16,15 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatDisplayDateTime, parseDateTimeParts } from '@/components/ui/sundayDateTimeUtils';
+import type { ApplicantCommitments } from '@/lib/domain/recruitment';
+
+const SUNDAYS = [
+  ['first_sunday', '1st Sunday'],
+  ['second_sunday', '2nd Sunday'],
+  ['third_sunday', '3rd Sunday'],
+  ['fourth_sunday', '4th Sunday'],
+  ['fifth_sunday', '5th Sunday'],
+] as const;
 
 export interface CompleteStepConfirmDialogProps {
   isOpen: boolean;
@@ -43,6 +53,7 @@ export interface CompleteStepConfirmDialogProps {
   ccfVmtId?: string | null;
   ccfVmtDate?: string | null;
   rfidTag?: string | null;
+  serviceCommitments?: ApplicantCommitments | null;
 }
 
 export function CompleteStepConfirmDialog({
@@ -62,6 +73,7 @@ export function CompleteStepConfirmDialog({
   ccfVmtId,
   ccfVmtDate,
   rfidTag,
+  serviceCommitments,
 }: CompleteStepConfirmDialogProps) {
   const { datePart, timePart } = parseDateTimeParts(completedAt);
   const formattedDateTime = datePart ? formatDisplayDateTime(datePart, timePart) : '';
@@ -239,6 +251,31 @@ export function CompleteStepConfirmDialog({
                 {rfidTag || 'None'}
               </span>
             </div>
+
+            {serviceCommitments && (
+              <div className="border-t border-border/60 pt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-muted font-medium">
+                  <Clock className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
+                  <span>Committed Sunday Schedule</span>
+                </div>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {SUNDAYS.map(([key, label]) => {
+                    const slots = serviceCommitments[key as keyof ApplicantCommitments] ?? [];
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between rounded border border-border/60 bg-surface px-2 py-1 text-[11px]"
+                      >
+                        <span className="text-muted">{label}</span>
+                        <span className="font-semibold text-text">
+                          {slots.length > 0 ? slots.join(', ') : 'None'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -259,12 +296,37 @@ export function CompleteStepConfirmDialog({
               )}
 
               {rfidTag && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-border/60 pb-2">
                   <div className="flex items-center gap-1.5 text-muted font-medium">
                     <CreditCard className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
                     <span>Member RFID / ID</span>
                   </div>
                   <span className="font-bold font-mono text-text">{rfidTag}</span>
+                </div>
+              )}
+
+              {serviceCommitments && (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center gap-1.5 text-muted font-medium">
+                    <Clock className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
+                    <span>Committed Sunday Schedule</span>
+                  </div>
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    {SUNDAYS.map(([key, label]) => {
+                      const slots = serviceCommitments[key as keyof ApplicantCommitments] ?? [];
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between rounded border border-border/60 bg-surface px-2 py-1 text-[11px]"
+                        >
+                          <span className="text-muted">{label}</span>
+                          <span className="font-semibold text-text">
+                            {slots.length > 0 ? slots.join(', ') : 'None'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
