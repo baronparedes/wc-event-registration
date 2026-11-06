@@ -548,7 +548,7 @@ export function PipelineStepsPanel({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <strong>DGroup Endorsement Status:</strong>
                 {endorsement?.status === 'approved' ? (
-                  <Badge variant="default">Endorsed & Linked</Badge>
+                  <Badge variant="default">Endorsed</Badge>
                 ) : endorsement?.status === 'rejected' ? (
                   <Badge variant="destructive">Declined by Leader</Badge>
                 ) : (

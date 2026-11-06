@@ -115,7 +115,7 @@ describe('DGroupEndorsementPanel', () => {
       />,
     );
 
-    expect(screen.getByText('Endorsed & Linked')).toBeInTheDocument();
+    expect(screen.getByText('Endorsed')).toBeInTheDocument();
     expect(screen.getByText(/DGroup Leader Endorsement Questionnaire/i)).toBeInTheDocument();
     expect(screen.queryByText(/Awaiting DGroup Leader Endorsement/i)).not.toBeInTheDocument();
   });

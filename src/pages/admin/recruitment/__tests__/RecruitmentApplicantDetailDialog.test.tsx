@@ -889,7 +889,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     expect(screen.getByText('DGroup & Leader Information')).toBeInTheDocument();
     expect(screen.getAllByText('Test Paul Mentor').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Endorsed & Linked')).toBeInTheDocument();
+    expect(screen.getByText('Endorsed')).toBeInTheDocument();
   });
 
   it('correctly reflects pending DGroup endorsement status on Step 1 when approval is pending', async () => {
@@ -918,7 +918,7 @@ describe('RecruitmentApplicantDetailDialog', () => {
     // Step 4 is active by default. Jump to Step 1 in Stepper
     await user.click(screen.getByRole('tab', { name: /register/i }));
     expect(screen.getByText('Pending Leader Endorsement')).toBeInTheDocument();
-    expect(screen.queryByText('Endorsed & Linked')).not.toBeInTheDocument();
+    expect(screen.queryByText('Endorsed')).not.toBeInTheDocument();
   });
 
   it('allows archiving an active applicant with notes', async () => {
