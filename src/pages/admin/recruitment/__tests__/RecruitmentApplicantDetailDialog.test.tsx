@@ -714,6 +714,31 @@ describe('RecruitmentApplicantDetailDialog', () => {
 
     await user.click(returnButton);
 
+    // Verify fields are cleared and retake scheduling mode banner is displayed
+    expect(screen.getByText(/scheduling return to interview/i)).toBeInTheDocument();
+
+    // Assign coach
+    const reviewerSearchInput = screen.getByPlaceholderText(/search user by name/i);
+    await user.click(reviewerSearchInput);
+    const reviewerOption = screen.getByText('Test Lead Usher');
+    await user.click(reviewerOption);
+
+    // Pick Sunday date & time
+    const dateTrigger = screen.getByRole('button', { name: /select sunday date & time/i });
+    await user.click(dateTrigger);
+    const popover = screen.getByRole('dialog', { name: /select sunday session date/i });
+    const sundayBtn = within(popover).getByRole('button', {
+      name: /Sunday, November 8/i,
+    });
+    await user.click(sundayBtn);
+    await user.click(within(popover).getByRole('button', { name: 'Done' }));
+
+    // Click Confirm Return to Step 2 action button
+    const confirmReturnBtn = screen.getByRole('button', {
+      name: /confirm return to step 2/i,
+    });
+    await user.click(confirmReturnBtn);
+
     // Verify confirmation dialog opens with details before submitting mutation
     expect(screen.getByText('Confirm Return to Interview Schedule')).toBeInTheDocument();
     const confirmButton = screen.getByRole('button', {

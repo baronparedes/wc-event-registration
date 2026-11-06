@@ -140,6 +140,9 @@ export function PipelineStepsPanel({
     action: 'update_stage' | 'repeat_step' | 'return_to_observation' | 'return_to_interview';
     actionKind: ScheduleActionKind;
   } | null>(null);
+  const [repeatActionKind, setRepeatActionKind] = useState<
+    'repeat_step' | 'return_to_interview' | 'return_to_observation' | null
+  >(null);
   const [isPendingCompletionConfirm, setIsPendingCompletionConfirm] = useState(false);
   const [isPendingDeployConfirm, setIsPendingDeployConfirm] = useState(false);
   const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
@@ -231,6 +234,7 @@ export function PipelineStepsPanel({
 
   const handleStepSelect = (stepNum: RecruitmentStepNumber) => {
     setSelectedStep(stepNum);
+    setRepeatActionKind(null);
     const tx = [...transactions]
       .filter((t) => t.step_number === stepNum)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
@@ -249,6 +253,26 @@ export function PipelineStepsPanel({
     if (stepNum === 8) {
       setRfidTag(application.assigned_rfid_member_id ?? '');
     }
+  };
+
+  const handleInitiateRepeat = (
+    action: 'repeat_step' | 'return_to_interview' | 'return_to_observation',
+  ) => {
+    setRepeatActionKind(action);
+    setReviewerId('');
+    setReviewerName('');
+    setSelectedReviewerUser(null);
+    setScheduledAtLocal('');
+  };
+
+  const handleCancelRepeat = () => {
+    setRepeatActionKind(null);
+    setReviewerId(latestStepTransaction?.assigned_reviewer_id ?? '');
+    setReviewerName(latestStepTransaction?.assigned_reviewer_name ?? '');
+    setSelectedReviewerUser(null);
+    setScheduledAtLocal(
+      toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
+    );
   };
 
   const handleUpdateStage = (
@@ -293,6 +317,7 @@ export function PipelineStepsPanel({
       {
         onSuccess: () => {
           setPendingScheduleAction(null);
+          setRepeatActionKind(null);
           setIsPendingCompletionConfirm(false);
           setIsPendingDeployConfirm(false);
           toast.success(
@@ -630,6 +655,33 @@ export function PipelineStepsPanel({
                   </div>
 
                   <div className="space-y-3.5">
+                    {repeatActionKind && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs">
+                        <div>
+                          <strong className="text-text font-semibold">
+                            {repeatActionKind === 'return_to_interview'
+                              ? 'Scheduling Return to Interview (Step 2)'
+                              : repeatActionKind === 'return_to_observation'
+                                ? 'Scheduling Return to Observation (Step 4)'
+                                : `Scheduling Repeat Attempt #${(latestStepTransaction?.attempt_number ?? 1) + 1} (${stepMeta?.title ?? ''})`}
+                          </strong>
+                          <p className="text-muted text-[11px] mt-0.5">
+                            Previous session details have been cleared. Select a coach and Sunday
+                            date & time below.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={handleCancelRepeat}
+                          className="shrink-0"
+                        >
+                          Cancel Retake
+                        </Button>
+                      </div>
+                    )}
+
                     <ReviewerUserPicker
                       id="assignedReviewer"
                       label="Assigned To"
@@ -660,7 +712,12 @@ export function PipelineStepsPanel({
                     {!isCompletedStep && (
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
                         <div className="text-muted text-[11px] leading-relaxed">
-                          {latestStepTransaction?.scheduled_at ? (
+                          {repeatActionKind ? (
+                            <span>
+                              Assign a coach and select a Sunday date & time above to schedule this
+                              retake.
+                            </span>
+                          ) : latestStepTransaction?.scheduled_at ? (
                             <span>
                               Session scheduled for{' '}
                               <strong className="text-text">
@@ -675,23 +732,45 @@ export function PipelineStepsPanel({
                             </span>
                           )}
                         </div>
-                        <Button
-                          type="button"
-                          variant="primaryOutline"
-                          size="sm"
-                          onClick={() => requestScheduleConfirmation('update_stage')}
-                          disabled={
-                            updateStageMutation.isPending ||
-                            !scheduledAtLocal ||
-                            (!reviewerId && !reviewerName)
-                          }
-                          className="w-full sm:w-auto shrink-0 font-medium"
-                        >
-                          <Clock className="mr-1.5 h-3.5 w-3.5" />
-                          {latestStepTransaction?.scheduled_at
-                            ? 'Update Session Schedule'
-                            : 'Save Schedule'}
-                        </Button>
+                        {repeatActionKind ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => requestScheduleConfirmation(repeatActionKind)}
+                            disabled={
+                              updateStageMutation.isPending ||
+                              !scheduledAtLocal ||
+                              (!reviewerId && !reviewerName)
+                            }
+                            className="w-full sm:w-auto shrink-0 font-medium"
+                          >
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                            {repeatActionKind === 'return_to_interview'
+                              ? 'Schedule Return to Step 2'
+                              : repeatActionKind === 'return_to_observation'
+                                ? 'Schedule Return to Step 4'
+                                : `Schedule Repeat ${stepMeta?.title ?? 'Session'}`}
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="primaryOutline"
+                            size="sm"
+                            onClick={() => requestScheduleConfirmation('update_stage')}
+                            disabled={
+                              updateStageMutation.isPending ||
+                              !scheduledAtLocal ||
+                              (!reviewerId && !reviewerName)
+                            }
+                            className="w-full sm:w-auto shrink-0 font-medium"
+                          >
+                            <Clock className="mr-1.5 h-3.5 w-3.5" />
+                            {latestStepTransaction?.scheduled_at
+                              ? 'Update Session Schedule'
+                              : 'Save Schedule'}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -805,75 +884,205 @@ export function PipelineStepsPanel({
 
                         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
                           {/* Repeatable interview controls */}
-                          {selectedStep === 2 && (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => requestScheduleConfirmation('repeat_step')}
-                              disabled={
-                                updateStageMutation.isPending ||
-                                !scheduledAtLocal ||
-                                (!reviewerId && !reviewerName)
-                              }
-                            >
-                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                              Repeat Interview (Step 2)
-                            </Button>
-                          )}
-
-                          {/* Return to Step 2 from Step 3 Orientation */}
-                          {selectedStep === 3 && (
-                            <Button
-                              type="button"
-                              variant="primaryOutline"
-                              size="sm"
-                              onClick={() => requestScheduleConfirmation('return_to_interview')}
-                              disabled={updateStageMutation.isPending || !scheduledAtLocal}
-                            >
-                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                              Needs Another Interview (Return to Step 2)
-                            </Button>
-                          )}
-
-                          {/* Repeatable observation controls */}
-                          {selectedStep === 4 && (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => requestScheduleConfirmation('repeat_step')}
-                              disabled={updateStageMutation.isPending || !scheduledAtLocal}
-                            >
-                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                              Repeat Observation (Step 4)
-                            </Button>
-                          )}
-
-                          {/* Repeatable evaluation controls */}
-                          {selectedStep === 5 && (
-                            <>
+                          {selectedStep === 2 &&
+                            (repeatActionKind === 'repeat_step' ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => requestScheduleConfirmation('repeat_step')}
+                                  disabled={
+                                    updateStageMutation.isPending ||
+                                    !scheduledAtLocal ||
+                                    (!reviewerId && !reviewerName)
+                                  }
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Confirm Repeat Interview (Step 2)
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelRepeat}
+                                >
+                                  Cancel Retake
+                                </Button>
+                              </>
+                            ) : (
                               <Button
                                 type="button"
                                 variant="secondary"
                                 size="sm"
-                                onClick={() => requestScheduleConfirmation('repeat_step')}
-                                disabled={updateStageMutation.isPending || !scheduledAtLocal}
+                                onClick={() => handleInitiateRepeat('repeat_step')}
+                                disabled={updateStageMutation.isPending}
                               >
                                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Repeat Evaluation (Step 5)
+                                Repeat Interview (Step 2)
                               </Button>
+                            ))}
 
+                          {/* Return to Step 2 from Step 3 Orientation */}
+                          {selectedStep === 3 &&
+                            (repeatActionKind === 'return_to_interview' ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="primaryOutline"
+                                  size="sm"
+                                  onClick={() => requestScheduleConfirmation('return_to_interview')}
+                                  disabled={
+                                    updateStageMutation.isPending ||
+                                    !scheduledAtLocal ||
+                                    (!reviewerId && !reviewerName)
+                                  }
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Confirm Return to Step 2
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelRepeat}
+                                >
+                                  Cancel Retake
+                                </Button>
+                              </>
+                            ) : (
                               <Button
                                 type="button"
                                 variant="primaryOutline"
                                 size="sm"
-                                onClick={() => requestScheduleConfirmation('return_to_observation')}
-                                disabled={updateStageMutation.isPending || !scheduledAtLocal}
+                                onClick={() => handleInitiateRepeat('return_to_interview')}
+                                disabled={updateStageMutation.isPending}
                               >
                                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Needs Another Observation (Return to Step 4)
+                                Needs Another Interview (Return to Step 2)
                               </Button>
+                            ))}
+
+                          {/* Repeatable observation controls */}
+                          {selectedStep === 4 &&
+                            (repeatActionKind === 'repeat_step' ? (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => requestScheduleConfirmation('repeat_step')}
+                                  disabled={
+                                    updateStageMutation.isPending ||
+                                    !scheduledAtLocal ||
+                                    (!reviewerId && !reviewerName)
+                                  }
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Confirm Repeat Observation (Step 4)
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelRepeat}
+                                >
+                                  Cancel Retake
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleInitiateRepeat('repeat_step')}
+                                disabled={updateStageMutation.isPending}
+                              >
+                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                Repeat Observation (Step 4)
+                              </Button>
+                            ))}
+
+                          {/* Repeatable evaluation controls */}
+                          {selectedStep === 5 && (
+                            <>
+                              {repeatActionKind === 'repeat_step' ? (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => requestScheduleConfirmation('repeat_step')}
+                                    disabled={
+                                      updateStageMutation.isPending ||
+                                      !scheduledAtLocal ||
+                                      (!reviewerId && !reviewerName)
+                                    }
+                                  >
+                                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                    Confirm Repeat Evaluation (Step 5)
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancelRepeat}
+                                  >
+                                    Cancel Retake
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleInitiateRepeat('repeat_step')}
+                                  disabled={updateStageMutation.isPending}
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Repeat Evaluation (Step 5)
+                                </Button>
+                              )}
+
+                              {repeatActionKind === 'return_to_observation' ? (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="primaryOutline"
+                                    size="sm"
+                                    onClick={() =>
+                                      requestScheduleConfirmation('return_to_observation')
+                                    }
+                                    disabled={
+                                      updateStageMutation.isPending ||
+                                      !scheduledAtLocal ||
+                                      (!reviewerId && !reviewerName)
+                                    }
+                                  >
+                                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                    Confirm Return to Step 4
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancelRepeat}
+                                  >
+                                    Cancel Retake
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="primaryOutline"
+                                  size="sm"
+                                  onClick={() => handleInitiateRepeat('return_to_observation')}
+                                  disabled={updateStageMutation.isPending}
+                                >
+                                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                                  Needs Another Observation (Return to Step 4)
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
