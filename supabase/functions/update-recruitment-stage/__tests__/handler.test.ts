@@ -403,6 +403,36 @@ Deno.test(
   },
 );
 
+Deno.test(
+  'update-recruitment-stage completes Step 8 RFID assignment and advances to Step 9',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        application: { ...applicationRecord, current_step: 8 },
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 8,
+            status: 'completed',
+            assigned_rfid_member_id: '1000123',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const result = await response.json();
+        assertEquals(result.current_step, 9);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
 Deno.test('update-recruitment-stage hides applications from a non-matching applicant', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
