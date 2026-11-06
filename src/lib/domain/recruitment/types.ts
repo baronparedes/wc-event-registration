@@ -242,6 +242,7 @@ export type RecruitmentEndorsementReviewDetails = {
   nickname: string;
   desired_role: RecruitmentRole;
   created_at: string;
+  avatar_object_key?: string | null;
   endorsement_questions: EndorsementQuestionItem[];
   attestation_answers: Record<string, unknown>;
 };

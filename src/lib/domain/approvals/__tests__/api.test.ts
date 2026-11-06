@@ -65,6 +65,36 @@ describe('approvals API', () => {
       ]);
     });
 
+    it('resolves requester avatar from metadata when user relation is absent', async () => {
+      const mockData = [
+        {
+          id: 'appr-2',
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+          status: 'pending',
+          metadata: { avatar_object_key: 'avatars/recruitment/jane.jpg' },
+        },
+      ];
+
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        then: (resolve: (value: unknown) => void) => resolve({ data: mockData, error: null }),
+      };
+
+      vi.mocked(supabase.from).mockReturnValue(query as never);
+
+      const result = await fetchApprovalRequests();
+      expect(result).toEqual([
+        {
+          ...mockData[0],
+          requester_avatar_object_key: 'avatars/recruitment/jane.jpg',
+        },
+      ]);
+    });
+
     it('throws error when query fails', async () => {
       const query = {
         select: vi.fn().mockReturnThis(),
@@ -93,7 +123,7 @@ describe('approvals API', () => {
       vi.mocked(supabase.from).mockReturnValue(query as never);
 
       const result = await fetchApprovalRequestById('appr-1');
-      expect(result).toEqual(mockRecord);
+      expect(result).toEqual({ ...mockRecord, requester_avatar_object_key: null });
       expect(query.eq).toHaveBeenCalledWith('id', 'appr-1');
     });
 

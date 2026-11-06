@@ -74,9 +74,19 @@ export async function fetchApprovalRequests(
       | null
       | undefined;
 
+    const rawMeta =
+      typeof raw.metadata === 'object' && raw.metadata !== null && !Array.isArray(raw.metadata)
+        ? (raw.metadata as Record<string, unknown>)
+        : null;
+
+    const metadataAvatar =
+      typeof rawMeta?.avatar_object_key === 'string' && rawMeta.avatar_object_key.trim()
+        ? rawMeta.avatar_object_key.trim()
+        : null;
+
     return {
       ...raw,
-      requester_avatar_object_key: requesterUser?.avatar_object_key ?? null,
+      requester_avatar_object_key: requesterUser?.avatar_object_key ?? metadataAvatar,
     } as unknown as ApprovalRequest;
   });
 }
@@ -84,7 +94,7 @@ export async function fetchApprovalRequests(
 export async function fetchApprovalRequestById(id: string): Promise<ApprovalRequest> {
   const { data, error } = await supabase
     .from('approval_requests')
-    .select('*')
+    .select('*, requester_user:users!requester_user_id(avatar_object_key)')
     .eq('id', id)
     .single();
 
@@ -92,7 +102,26 @@ export async function fetchApprovalRequestById(id: string): Promise<ApprovalRequ
     throw new Error(`Failed to fetch approval request: ${error.message}`);
   }
 
-  return data as unknown as ApprovalRequest;
+  const raw = data as Record<string, unknown>;
+  const requesterUser = raw.requester_user as
+    | { avatar_object_key?: string | null }
+    | null
+    | undefined;
+
+  const rawMeta =
+    typeof raw.metadata === 'object' && raw.metadata !== null && !Array.isArray(raw.metadata)
+      ? (raw.metadata as Record<string, unknown>)
+      : null;
+
+  const metadataAvatar =
+    typeof rawMeta?.avatar_object_key === 'string' && rawMeta.avatar_object_key.trim()
+      ? rawMeta.avatar_object_key.trim()
+      : null;
+
+  return {
+    ...raw,
+    requester_avatar_object_key: requesterUser?.avatar_object_key ?? metadataAvatar,
+  } as unknown as ApprovalRequest;
 }
 
 export async function fetchApprovalReviewByToken(token: string): Promise<ApprovalReviewData> {

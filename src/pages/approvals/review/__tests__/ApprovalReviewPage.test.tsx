@@ -18,6 +18,17 @@ vi.mock('@/hooks/domain/approvals', () => ({
   useSubmitApprovalDecisionMutation: () => mockUseSubmitApprovalDecisionMutation(),
 }));
 
+vi.mock('@/hooks/domain/members', () => ({
+  useMemberAvatarQuery: (key?: string | null) => ({
+    data: key
+      ? {
+          url: `https://example.com/${key}`,
+          fallbackUrl: `https://example.com/${key}`,
+        }
+      : null,
+  }),
+}));
+
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -973,5 +984,45 @@ describe('ApprovalReviewPage', () => {
 
     // No "of 3" text
     expect(screen.queryByText(/of 3/i)).not.toBeInTheDocument();
+  });
+
+  it('renders applicant profile image when avatar_object_key is present in endorsement review details', () => {
+    mockUseApprovalReviewQuery.mockReturnValue({
+      data: {
+        ...mockReviewData,
+        approval: {
+          ...mockReviewData.approval,
+          entity_type: 'recruitment_endorsement',
+          title: 'DGroup Leader Endorsement',
+        },
+        entity_details: {
+          id: '22222222-2222-4222-8222-222222222222',
+          full_name: 'Test Taylor Member',
+          nickname: 'Test Tay',
+          desired_role: 'Usher',
+          avatar_object_key: 'avatars/recruitment/taylor.jpg',
+          created_at: '2026-10-18T10:00:00Z',
+          endorsement_questions: [
+            {
+              field_key: 'leader_attestation',
+              label: 'How long have you known the applicant?',
+              field_type: 'text',
+              is_required: true,
+              is_active: true,
+            },
+          ],
+          attestation_answers: {},
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    });
+
+    renderWithClient();
+
+    const avatarImg = screen.getByRole('img', { name: /Avatar of Test Taylor Member/i });
+    expect(avatarImg).toBeInTheDocument();
+    expect(avatarImg).toHaveAttribute('src', 'https://example.com/avatars/recruitment/taylor.jpg');
   });
 });

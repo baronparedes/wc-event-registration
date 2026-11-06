@@ -338,7 +338,11 @@ function RecruitmentEndorsementReviewForm({
       <div className="space-y-6">
         <SectionCard title="Applicant Profile">
           <div className="flex flex-wrap items-center gap-4">
-            <Avatar name={details.full_name} size="lg" />
+            <Avatar
+              name={details.full_name}
+              avatarObjectKey={details.avatar_object_key}
+              size="lg"
+            />
             <div className="min-w-0 flex-1">
               <div className="text-xl font-bold text-text">{details.full_name}</div>
               {details.nickname && (
@@ -442,7 +446,11 @@ function RecruitmentEndorsementReviewForm({
           <div ref={stepOneRef} className="space-y-6">
             <SectionCard title="Applicant Profile">
               <div className="flex flex-wrap items-center gap-4">
-                <Avatar name={details.full_name} size="lg" />
+                <Avatar
+                  name={details.full_name}
+                  avatarObjectKey={details.avatar_object_key}
+                  size="lg"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="text-xl font-bold text-text">{details.full_name}</div>
                   {details.nickname && (

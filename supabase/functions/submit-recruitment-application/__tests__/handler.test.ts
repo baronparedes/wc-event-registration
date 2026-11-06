@@ -397,6 +397,13 @@ Deno.test(
             payload.avatar_object_key.startsWith('avatars/recruitment/'),
           'avatar_object_key should be set on application record',
         );
+
+        const approvalInsert = mock.calls.find(
+          (call) => call.path === '/rest/v1/approval_requests' && call.method === 'POST',
+        );
+        const approvalPayload = approvalInsert?.body as Record<string, unknown>;
+        const approvalMetadata = approvalPayload?.metadata as Record<string, unknown>;
+        assertEquals(approvalMetadata?.avatar_object_key, payload.avatar_object_key);
       } finally {
         mock.restore();
       }
