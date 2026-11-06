@@ -176,7 +176,7 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
             }
           >
             {endorsement?.status === 'approved'
-              ? 'Endorsed & Linked'
+              ? 'Endorsed'
               : endorsement?.status === 'rejected'
                 ? 'Endorsement Declined'
                 : 'Pending Leader Review'}
