@@ -33,3 +33,9 @@
 **Discovery:** Found that the admin settings section, specifically the user roles management component located at `src/pages/admin/settings/roles/index.tsx`, lacked feature documentation in the Gherkin files.
 **Learning:** System-wide settings and role administration are core features that require their own distinct epic category to properly distinguish them from standard domain entities (like members or events).
 **Standard:** Documented under a new `19-admin-settings` epic folder in `docs/features/`. Going forward, all broad application settings, administrative configurations, and role management features should reside in this category to maintain a clear separation from operational domain features.
+
+## 2024-11-07 - AI Generator Documentation
+
+**Discovery:** Found an undocumented feature: the AI Generator for events and forms.
+**Learning:** The AI generator functionality (Hub AI) is deeply integrated into creating entities and configuring fields, but lacked explicit documentation on its behavior, blueprint structure, and usage modes.
+**Standard:** Documented under `19-admin-settings` as it represents an administrative capability. Future AI-related admin tools should be documented here as well.
