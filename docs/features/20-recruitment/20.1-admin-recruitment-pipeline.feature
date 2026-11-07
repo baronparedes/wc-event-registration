@@ -14,9 +14,16 @@ Feature: Admin Recruitment Pipeline Management
         3. DGroup Endorsement: Real-time endorsement status synchronized from approval records, 25 attestation answers, rating legend, and magic link resend.
         4. Applicant Profile: 40-field applicant background covering personal, demographic, work, emergency contact, CCF tenure, GLC status, and DGroup information, with interactive applicant photo editing (upload or live camera capture).
         5. Transaction History: Chronological audit trail of all schedules, completions, repetitions, and status changes.
-    - Recruiter Notes Collaboration:
+    - Recruiter Notes & Past Attempts Collaboration:
         - Reviewers can add multiple timestamped notes at any step without overwriting prior notes.
-        - Notes are stored in `public.recruitment_step_notes` and display the author's name, role, avatar, and timestamp.
+        - Notes are stored in `public.recruitment_step_notes` and display the author's compact avatar, name, and simplified timestamp (e.g. `Nov 7, 4:26 AM` in Manila timezone) without redundant role badges.
+        - Step panels surface notes and past attempt history via compact header chips (`[ 🔄 Past Attempts (X) ]` and `[ 💬 Notes (X) ]`) that open dedicated lightweight dialogs, preserving screen density.
+    - Schedule Cancellation:
+        - Authorized reviewers can cancel a scheduled coaching session via "Cancel Schedule".
+        - Cancelling clears both the scheduled date/time and the assigned reviewer/coach, resetting step status to `pending`.
+        - A cancellation reason is strictly required and automatically appended to the step's recruiter notes thread for full auditability.
+    - Responsive Validation Banners:
+        - Form validation summaries (`FormErrorSummary` / `AlertBanner`) adapt responsively (`flex-col sm:flex-row`), ensuring error checklists maintain 100% card width without cramped line wrapping on mobile devices, with full-width action buttons for easy touch interaction.
     - Applicant Photo & Deployment Migration:
         - Applicants can optionally upload an image or capture a live webcam photo during registration (Section 1 - Personal & Work Information), verified in Section 5 (Verification).
         - Images are processed client-side (max 1024x1024 JPEG at 0.85 quality) and stored in `member_avatars` at `avatars/recruitment/{application_id}.jpg`.
@@ -72,6 +79,15 @@ Feature: Admin Recruitment Pipeline Management
     Then the step is marked as scheduled
     And a new entry is recorded in the transaction history
 
+  Scenario: Reviewer cancels a scheduled coaching session
+    Given I am inspecting an applicant with an active scheduled coaching session
+    When I click "Cancel Schedule"
+    Then the cancel schedule confirmation dialog opens
+    When I provide a required cancellation reason and confirm
+    Then the session date and assigned coach are cleared
+    And the step status returns to "pending"
+    And the cancellation reason is appended to the recruiter notes thread
+
   Scenario: Reviewer repeats Step 4 Observation
     Given I am inspecting an applicant at Step 4 (Observation)
     When I evaluate the session and click "Schedule Another Observation"
@@ -91,9 +107,10 @@ Feature: Admin Recruitment Pipeline Management
 
   Scenario: Reviewer records a collaborative recruiter note
     Given I am inspecting an active applicant on the "9-Step Pipeline" tab
-    When I type coaching feedback into the recruiter notes field and click "Add Note"
+    When I click the "Notes" header chip to open the recruiter notes dialog
+    And I type coaching feedback into the recruiter notes field and click "Add Note"
     Then the note is saved to the step notes thread
-    And it displays my name, role, avatar, and the recorded timestamp
+    And it displays my name, compact avatar, and simplified timestamp
     And previously recorded notes remain preserved in chronological order
 
   Scenario: Reviewer updates applicant photo

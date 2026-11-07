@@ -683,10 +683,16 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
        - **In Step 7 (Register to CCF VMT Database)**: Admin/SLOD/VMT can fill out `ccf_vmt_id` (`CCF VMT ID`) and `ccf_vmt_date` (`CCF VMT Date`) to verify the external CCF VMT registration and advance the applicant to Step 8.
        - **In Step 8 (RFID Releasing)**: View/edit the applicant's selected `first_sunday`–`fifth_sunday` commitments and input their physical RFID tag (`assigned_rfid_member_id`).
        - **In Step 9 (Deployment)**: Restricted to `admin`, `super_admin`, and `slod` — clicking **"Deploy Volunteer"** executes `useDeployRecruitmentApplicantMutation`, promoting them to `public.users` (for `vmt` users, Step 9 displays a read-only notice that final deployment is performed by an Admin or SLOD).
-     - **Confirmation Dialogs**:
+     - **Confirmation Dialogs & Action Modals**:
        - `ScheduleSessionConfirmDialog`: Confirms session date/time, reviewer assignment, and notes before scheduling.
+       - `CancelScheduleConfirmDialog`: Cancels an active scheduled session (`action: 'cancel_schedule'`). Clears `scheduled_at`, `assigned_reviewer_id`, and `assigned_reviewer_name`, resetting step status back to `pending`. Requires a cancellation reason, which is automatically recorded into the step notes thread for audit tracking.
        - `CompleteStepConfirmDialog`: Confirms step advancement or final deployment with reviewer confirmation.
        - `ArchiveApplicantConfirmDialog`: Confirms archiving an applicant with semantic destructive styling (`variant="destructive"` / `text-danger`).
+       - `StepAttemptsHistoryDialog`: Compact dialog displaying past session attempts, completion dates, coaches, and historical evaluation feedback.
+       - `StepRecruiterNotesDialog`: Compact modal featuring a streamlined, dense activity feed of recruiter notes with single-line metadata headers, compact avatars (`size="xs"`), simplified Manila timestamps (`MMM D, h:mm A`), and a space-efficient 2-row note composer.
+     - **Ergonomics & Mobile Adaptability**:
+       - **Session Header Chips**: Replaced bulky standalone cards in `StepCoachingSessionPanel` with compact header action chips (`[ 🔄 Past Attempts (X) ]` and `[ 💬 Notes (X) ]`) to maximize visible coaching details.
+       - **Responsive Form Validation Banners**: `FormErrorSummary` and `AlertBanner` implement `flex-col sm:flex-row` stacking, ensuring validation checklists maintain 100% card width without awkward multi-line text wrapping on mobile devices, with full-width touch-friendly jump action buttons.
    - **Tab 2: Biblical Survey Breakdown (`BiblicalSurveyReviewPanel.tsx`)**:
      - Displays the applicant's score (e.g., `18 / 20`) with a filter for `All Questions` vs `Incorrect Only`.
      - Shows each statement, the applicant's True/False answer, the expected answer, and the biblical explanation note to guide the Step 2 Interviewer.
