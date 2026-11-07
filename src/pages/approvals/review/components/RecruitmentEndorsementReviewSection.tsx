@@ -21,13 +21,14 @@ import {
   Avatar,
   Badge,
   Button,
+  FormErrorSummary,
   FormTextareaField,
   MarkdownRenderer,
   SectionCard,
   StepIndicator,
   WizardStep,
 } from '@/components/ui';
-import { useWizardStepScroll } from '@/hooks/utils';
+import { useFormErrorFocus, useWizardStepScroll } from '@/hooks/utils';
 import {
   type DynamicFieldResponseValues,
   buildDynamicFieldResponseSchema,
@@ -244,6 +245,8 @@ function RecruitmentEndorsementReviewForm({
   details: RecruitmentEndorsementReviewDetails;
 }) {
   const [activeStep, setActiveStep] = useState<number>(1);
+  const [step2ErrorKeys, setStep2ErrorKeys] = useState<string[]>([]);
+  const { focusFirstError } = useFormErrorFocus();
   const stepOneRef = useRef<HTMLDivElement | null>(null);
   const stepTwoRef = useRef<HTMLDivElement | null>(null);
   const stepThreeRef = useRef<HTMLDivElement | null>(null);
@@ -300,21 +303,31 @@ function RecruitmentEndorsementReviewForm({
     }
     const result = buildDynamicFieldResponseSchema(visibleQuestions).safeParse(visibleValues);
     if (!result.success) {
+      const keysWithErrors: string[] = [];
       for (const issue of result.error.issues) {
         const fieldKey = issue.path[0];
         if (typeof fieldKey === 'string') {
           form.setError(fieldKey, { type: 'validate', message: issue.message });
+          if (!keysWithErrors.includes(fieldKey)) {
+            keysWithErrors.push(fieldKey);
+          }
         }
       }
+      setStep2ErrorKeys(keysWithErrors);
       return null;
     }
+    setStep2ErrorKeys([]);
     return result.data;
   };
 
   const handleContinueToStep3 = () => {
     const valid = validateVisibleAnswers();
     if (valid) {
+      setStep2ErrorKeys([]);
       setActiveStep(3);
+    } else {
+      const errKeys = Object.keys(form.formState.errors).filter(Boolean);
+      focusFirstError(errKeys);
     }
   };
 
@@ -327,6 +340,8 @@ function RecruitmentEndorsementReviewForm({
     const answers = validateVisibleAnswers();
     if (!answers && decision === 'approved') {
       setActiveStep(2);
+      const errKeys = Object.keys(form.formState.errors).filter(Boolean);
+      focusFirstError(errKeys);
       return;
     }
 
@@ -562,7 +577,12 @@ function RecruitmentEndorsementReviewForm({
                         }
 
                         return (
-                          <div key={question.field_key} className="space-y-1.5">
+                          <div
+                            key={question.field_key}
+                            data-field-key={question.field_key}
+                            data-field-error={error ? question.field_key : undefined}
+                            className="space-y-1.5"
+                          >
                             <label
                               className="block text-sm font-medium text-text"
                               htmlFor={`field-${question.field_key}`}
@@ -614,6 +634,19 @@ function RecruitmentEndorsementReviewForm({
                 );
               })}
             </form>
+
+            {step2ErrorKeys.length > 0 && (
+              <FormErrorSummary
+                errorCount={step2ErrorKeys.length}
+                title={
+                  step2ErrorKeys.length === 1
+                    ? '1 required question needs attention before continuing.'
+                    : `${step2ErrorKeys.length} required questions need attention before continuing.`
+                }
+                onJumpToFirstError={() => focusFirstError(step2ErrorKeys)}
+                actionLabel="Jump to first question"
+              />
+            )}
 
             <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
               <Button

@@ -27,6 +27,10 @@ describe('RecruitmentPreGateSection', () => {
     expect(
       screen.getByLabelText("I confirm that I have completed CCF's GLC Level 1 (Book 1 to 4)."),
     ).toHaveClass('shrink-0');
+    expect(screen.getByLabelText('I confirm that I can commit for 4 Services.')).toHaveClass(
+      'shrink-0',
+    );
+    expect(screen.getByRole('heading', { name: 'Applicant Confirmation' })).toBeVisible();
   });
 
   it('opens the full privacy policy in a modal from Gate 2', async () => {
@@ -40,6 +44,7 @@ describe('RecruitmentPreGateSection', () => {
     fireEvent.click(
       screen.getByLabelText("I confirm that I have completed CCF's GLC Level 1 (Book 1 to 4)."),
     );
+    fireEvent.click(screen.getByLabelText('I confirm that I can commit for 4 Services.'));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await screen.findByRole('heading', { name: 'Step 2: Data Privacy and Liability Waiver' });
 
@@ -95,6 +100,11 @@ describe('RecruitmentPreGateSection', () => {
     fireEvent.click(
       screen.getByLabelText("I confirm that I have completed CCF's GLC Level 1 (Book 1 to 4)."),
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Commitment for 4 Services is required.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Step 1: Roles' })).toBeVisible();
+
+    fireEvent.click(screen.getByLabelText('I confirm that I can commit for 4 Services.'));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('heading', { name: 'Step 2: Data Privacy and Liability Waiver' }),

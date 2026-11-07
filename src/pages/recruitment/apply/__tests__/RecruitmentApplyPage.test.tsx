@@ -159,6 +159,7 @@ describe('RecruitmentApplyPage', () => {
     fireEvent.click(
       screen.getByLabelText("I confirm that I have completed CCF's GLC Level 1 (Book 1 to 4)."),
     );
+    fireEvent.click(screen.getByLabelText('I confirm that I can commit for 4 Services.'));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('heading', { name: 'Step 2: Data Privacy and Liability Waiver' }),

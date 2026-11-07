@@ -2,7 +2,14 @@ import { useState } from 'react';
 
 import { AlertCircle, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
 
-import { Badge, Button, FormSelectField, SundayDateTimePicker } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  FormErrorSummary,
+  FormSelectField,
+  SundayDateTimePicker,
+} from '@/components/ui';
+import { useFormErrorFocus } from '@/hooks/utils';
 import {
   RECRUITMENT_ROLES,
   RECRUITMENT_STEPS,
@@ -75,6 +82,7 @@ export function StepCoachingSessionPanel({
   const previousStepAttempts = stepTransactions.slice(1);
 
   const currentStepNotes = (stepNotes ?? []).filter((n) => n.step_number === stepNumber);
+  const { focusFirstError } = useFormErrorFocus();
 
   const [reviewerId, setReviewerId] = useState<string>(
     latestStepTransaction?.assigned_reviewer_id ?? '',
@@ -397,6 +405,7 @@ export function StepCoachingSessionPanel({
               </div>
             ) : (
               <FormSelectField
+                id="confirmedRole"
                 placeholder=""
                 value={confirmedRole}
                 onChange={(val) => setConfirmedRole(val)}
@@ -429,17 +438,40 @@ export function StepCoachingSessionPanel({
 
       {/* Missing Details Checklist Notice */}
       {!isCompletedStep && !canComplete && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-          <div>
-            <span className="font-semibold">Required before completing Step {stepNumber}:</span>
-            <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
-              {missingDetails.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <FormErrorSummary
+          errorCount={missingDetails.length}
+          title={`Required before completing Step ${stepNumber}:`}
+          onJumpToFirstError={() => {
+            const firstMissing = missingDetails[0] ?? '';
+            if (
+              firstMissing.includes('Assigned') ||
+              firstMissing.includes('Coach') ||
+              firstMissing.includes('Reviewer')
+            ) {
+              focusFirstError(['assignedReviewer']);
+            } else if (firstMissing.includes('Date')) {
+              focusFirstError(['sessionDateTime']);
+            } else if (firstMissing.includes('Note')) {
+              focusFirstError(['addRecruiterNote']);
+            } else if (firstMissing.includes('Role')) {
+              focusFirstError(['confirmedRole']);
+            } else {
+              focusFirstError([
+                'assignedReviewer',
+                'sessionDateTime',
+                'confirmedRole',
+                'addRecruiterNote',
+              ]);
+            }
+          }}
+          actionLabel="Jump to missing field"
+        >
+          <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs text-text">
+            {missingDetails.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </FormErrorSummary>
       )}
 
       {/* Stage Outcomes & Action Bar */}

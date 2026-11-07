@@ -96,6 +96,7 @@ export {
   type DuplicateEntityFormValues,
 } from './DuplicateEntityDialog';
 export { AlertBanner, type AlertBannerProps, type AlertBannerVariant } from './AlertBanner';
+export { FormErrorSummary, type FormErrorSummaryProps } from './FormErrorSummary';
 export {
   LifecycleStatusBadge,
   RegistrationStatusBadge,
