@@ -1,5 +1,11 @@
--- Migration: 20261107003000_populate_full_user_metadata_on_recruitment_deployment.sql
--- Description: Populate complete metadata fields (age, city, is_oic, sr_pwd, dob, ccf_vmt, dgroup, Sunday commitments, etc.) into public.users upon recruitment deployment
+-- Migration: 20261107003000_update_deploy_recruitment_applicant_rpc.sql
+-- Description: Consolidated Phase 5 update of deploy_recruitment_applicant (supersedes the
+-- original 20261102065904 definition). Squashes the previously separate branch migrations that:
+--   * copied applicant avatar_object_key into public.users on deployment,
+--   * allowed deployment from Step 8 (RFID releasing) or Step 9 (deployment),
+--   * populated the complete member directory metadata (age, city, is_oic, sr_pwd, dob_*,
+--     ccf_vmt_*, dgroup_*, Sunday commitment strings, etc.) into public.users.metadata.
+-- Also backfills metadata for any recruitment application that was already deployed.
 begin;
 
 create or replace function public.deploy_recruitment_applicant (p_application_id uuid) returns jsonb language plpgsql security definer
