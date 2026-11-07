@@ -26,13 +26,15 @@ const STATUS_LABELS: Record<TimelineStatus, string> = {
   in_progress: 'In Progress',
   completed: 'Completed',
   skipped: 'Skipped',
+  on_hold: 'On Hold',
+  archived: 'Archived',
   declined: 'Declined',
 };
 
 function getBadgeVariant(status: TimelineStatus) {
   if (status === 'completed') return 'default';
   if (status === 'skipped') return 'secondary';
-  if (status === 'declined') return 'destructive';
+  if (status === 'declined' || status === 'archived') return 'destructive';
   if (status === 'scheduled') return 'accent';
   return 'outline';
 }
@@ -80,11 +82,6 @@ export function RecruitmentTimelineStep({
             <Avatar name={transaction.assigned_reviewer_name} size="sm" />
             <span>{transaction.assigned_reviewer_name}</span>
           </div>
-        )}
-        {transaction?.applicant_visible_notes && (
-          <p className="border-l-2 border-accent pl-3 text-sm text-text">
-            {transaction.applicant_visible_notes}
-          </p>
         )}
         {children}
       </div>

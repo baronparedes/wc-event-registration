@@ -4,6 +4,7 @@ import { Camera, ImageUp } from 'lucide-react';
 import Webcam from 'react-webcam';
 
 import { Avatar, Button, Dialog, Spinner } from '@/components/ui';
+import { fileToJpegDataUrl } from '@/lib/infrastructure';
 
 interface EditableMemberAvatarProps {
   name: string;
@@ -19,33 +20,6 @@ const CAMERA_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   width: { ideal: MAX_IMAGE_DIMENSION },
   height: { ideal: MAX_IMAGE_DIMENSION },
 };
-
-async function fileToJpegDataUrl(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Choose an image file.');
-  }
-
-  const sourceUrl = URL.createObjectURL(file);
-
-  try {
-    const image = new Image();
-    image.src = sourceUrl;
-    await image.decode();
-
-    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(image.width, image.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(image.width * scale));
-    canvas.height = Math.max(1, Math.round(image.height * scale));
-
-    const context = canvas.getContext('2d');
-    if (!context) throw new Error('Could not prepare the image.');
-
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-  } finally {
-    URL.revokeObjectURL(sourceUrl);
-  }
-}
 
 export function EditableMemberAvatar({
   name,
@@ -120,7 +94,8 @@ export function EditableMemberAvatar({
           title="Upload or take a photo"
           disabled={isSaving}
           onClick={() => setIsChooserOpen(true)}
-          className="absolute bottom-1 right-1 flex h-10 w-10 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ minHeight: 'unset', aspectRatio: '1 / 1' }}
+          className="absolute bottom-1 right-1 flex h-10 w-10 min-h-0 min-w-0 p-0 aspect-square shrink-0 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? (
             <Spinner aria-hidden="true" size="md" />

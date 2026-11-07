@@ -62,4 +62,60 @@ describe('SundayCommitmentChart', () => {
       overShort: -21,
     });
   });
+
+  it('displays deficit status for sessions with negative overShort', () => {
+    render(<SundayCommitmentChart title="TEST" sessions={sampleSessions} />);
+    expect(screen.getByText('-21 Short')).toBeInTheDocument();
+    expect(screen.getByText('-6 Short')).toBeInTheDocument();
+  });
+
+  it('displays surplus status for sessions with positive overShort', () => {
+    const surplusSessions = [
+      { slot: '9AM' as const, target: 50, scheduled: 80, confirmed: 75, overShort: 25 },
+    ];
+    render(<SundayCommitmentChart title="TEST" sessions={surplusSessions} />);
+    expect(screen.getByText('+25 Surplus')).toBeInTheDocument();
+  });
+
+  it('displays target met status for sessions with zero overShort', () => {
+    const targetMetSessions = [
+      { slot: '9AM' as const, target: 60, scheduled: 60, confirmed: 60, overShort: 0 },
+    ];
+    render(<SundayCommitmentChart title="TEST" sessions={targetMetSessions} />);
+    expect(screen.getByText('Target Met')).toBeInTheDocument();
+  });
+
+  it('renders multiple sessions with mixed statuses', () => {
+    const mixedSessions = [
+      { slot: '9AM' as const, target: 81, scheduled: 84, confirmed: 60, overShort: -21 },
+      { slot: '12NN' as const, target: 50, scheduled: 80, confirmed: 75, overShort: 25 },
+      { slot: '3PM' as const, target: 60, scheduled: 60, confirmed: 60, overShort: 0 },
+    ];
+    render(<SundayCommitmentChart title="MIXED" sessions={mixedSessions} />);
+
+    expect(screen.getByText('-21 Short')).toBeInTheDocument();
+    expect(screen.getByText('+25 Surplus')).toBeInTheDocument();
+    expect(screen.getByText('Target Met')).toBeInTheDocument();
+
+    // Verify all sessions are rendered
+    expect(screen.getByText('9 AM Session')).toBeInTheDocument();
+    expect(screen.getByText('12 NN Session')).toBeInTheDocument();
+    expect(screen.getByText('3 PM Session')).toBeInTheDocument();
+  });
+
+  it('renders tooltip with correct data on chart interaction', () => {
+    render(<SundayCommitmentChart title="TEST" sessions={sampleSessions} />);
+
+    const chart = screen.getByTestId('composed-chart');
+    const items = JSON.parse(chart.getAttribute('data-items') || '[]');
+
+    expect(items).toHaveLength(3);
+    items.forEach((item: (typeof sampleSessions)[0]) => {
+      expect(item).toHaveProperty('session');
+      expect(item).toHaveProperty('target');
+      expect(item).toHaveProperty('scheduled');
+      expect(item).toHaveProperty('expected');
+      expect(item).toHaveProperty('overShort');
+    });
+  });
 });

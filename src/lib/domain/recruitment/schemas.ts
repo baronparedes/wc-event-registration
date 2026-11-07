@@ -8,28 +8,48 @@ const monthYearPattern = /^\d{4} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|De
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const timestampSchema = z.string().datetime({ offset: true });
 
-const dateSchema = z
-  .string()
-  .regex(datePattern, 'Date must be in YYYY-MM-DD format')
-  .refine((value) => {
-    const [year, month, day] = value.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
-    );
-  }, 'Date is invalid');
+const createDateSchema = (label = 'Date') =>
+  z
+    .string({ message: `${label} is required` })
+    .trim()
+    .min(1, `${label} is required`)
+    .regex(datePattern, `${label} must be in YYYY-MM-DD format`)
+    .refine((value) => {
+      const [year, month, day] = value.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      );
+    }, `${label} is invalid`);
 
-const monthYearSchema = z
-  .string()
-  .regex(monthYearPattern, 'Month and year must use YYYY MMM format');
-const phoneSchema = z
-  .string()
-  .trim()
-  .min(5)
-  .max(30)
-  .regex(VALIDATION_PATTERNS.phone, 'Invalid Philippine mobile number');
+const dateSchema = createDateSchema('Date');
+const dobSchema = createDateSchema('Date of birth');
+
+const createMonthYearSchema = (label = 'Month and year') =>
+  z
+    .string({ message: `${label} is required` })
+    .trim()
+    .min(1, `${label} is required`)
+    .regex(monthYearPattern, `${label} must use YYYY MMM format`);
+
+const monthYearSchema = createMonthYearSchema('Month and year');
+const ccfMemberSinceSchema = createMonthYearSchema('CCF Member Since date');
+const dgroupMemberSinceSchema = createMonthYearSchema('DGroup Member Since date');
+
+const createPhoneSchema = (label = 'Mobile number') =>
+  z
+    .string({ message: `${label} is required` })
+    .trim()
+    .min(1, `${label} is required`)
+    .min(5, `${label} is too short`)
+    .max(30, `${label} is too long`)
+    .regex(VALIDATION_PATTERNS.phone, 'Invalid Philippine mobile number');
+
+const phoneSchema = createPhoneSchema('Mobile number');
+const emergencyPhoneSchema = createPhoneSchema('Emergency contact number');
+const leaderPhoneSchema = createPhoneSchema('DGroup leader mobile number');
 
 const dynamicFieldOptionSchema = z.object({
   label: z.string(),
@@ -139,6 +159,7 @@ const recruitmentStepNumberSchema = z.union([
 
 const recruitmentApplicationStatusSchema = z.enum([
   'active',
+  'archived',
   'on_hold',
   'deployed',
   'declined',
@@ -152,50 +173,118 @@ const recruitmentStageStatusSchema = z.enum([
   'in_progress',
   'completed',
   'skipped',
+  'on_hold',
+  'archived',
   'declined',
 ]);
 
 export const recruitmentStep1Schema = z
   .object({
-    email: z.string().trim().email().toLowerCase(),
-    first_name: z.string().trim().min(1).max(100),
-    middle_name: z.string().trim().max(100).optional().nullable(),
-    last_name: z.string().trim().min(1).max(100),
-    nickname: z.string().trim().min(1).max(100),
+    email: z
+      .string({ message: 'Email address is required' })
+      .trim()
+      .min(1, 'Email address is required')
+      .email('Invalid email address')
+      .toLowerCase(),
+    first_name: z
+      .string({ message: 'First name is required' })
+      .trim()
+      .min(1, 'First name is required')
+      .max(100, 'First name must be at most 100 characters'),
+    middle_name: z
+      .string()
+      .trim()
+      .max(100, 'Middle name must be at most 100 characters')
+      .optional()
+      .nullable(),
+    last_name: z
+      .string({ message: 'Last name is required' })
+      .trim()
+      .min(1, 'Last name is required')
+      .max(100, 'Last name must be at most 100 characters'),
+    nickname: z
+      .string({ message: 'Nickname is required' })
+      .trim()
+      .min(1, 'Nickname is required')
+      .max(100, 'Nickname must be at most 100 characters'),
     phone: phoneSchema,
-    date_of_birth: dateSchema,
-    gender: z.enum(['Male', 'Female']),
-    life_stage: z.string().trim().min(1).max(100),
-    desired_role: z.enum(RECRUITMENT_ROLES),
+    date_of_birth: dobSchema,
+    gender: z.enum(['Male', 'Female'], { message: 'Please select a gender' }),
+    life_stage: z
+      .string({ message: 'Please select a life stage' })
+      .trim()
+      .min(1, 'Please select a life stage')
+      .max(100),
+    avatar_image_base64: z.string().max(1_500_000).optional().nullable(),
+    desired_role: z.enum(RECRUITMENT_ROLES, { message: 'Please select a desired role' }),
     personal_details: z.object({
       wedding_anniversary: dateSchema.optional().nullable(),
-      occupation: z.string().trim().min(1).max(150),
-      company_name: z.string().trim().max(150).optional().nullable(),
+      occupation: z
+        .string({ message: 'Occupation is required' })
+        .trim()
+        .min(1, 'Occupation is required')
+        .max(150, 'Occupation must be at most 150 characters'),
+      company_name: z
+        .string()
+        .trim()
+        .max(150, 'Company name must be at most 150 characters')
+        .optional()
+        .nullable(),
     }),
     emergency_contact: z.object({
-      name: z.string().trim().min(1).max(150),
-      phone: phoneSchema,
-      relation: z.string().trim().min(1).max(100),
+      name: z
+        .string({ message: 'Emergency contact name is required' })
+        .trim()
+        .min(1, 'Emergency contact name is required')
+        .max(150),
+      phone: emergencyPhoneSchema,
+      relation: z
+        .string({ message: 'Relation to the applicant is required' })
+        .trim()
+        .min(1, 'Relation to the applicant is required')
+        .max(100),
     }),
     application_history: z.object({
       is_first_time_applicant: z.boolean(),
       previous_application_notes: z.string().trim().max(2000).optional().nullable(),
     }),
     spiritual_background: z.object({
-      ccf_member_since: monthYearSchema,
+      ccf_member_since: ccfMemberSinceSchema,
       other_ministries: z.string().trim().max(1000).optional().nullable(),
-      glc1_status: z.enum(['Completed', 'Ongoing', 'None']),
-      glc2_status: z.enum(['Completed', 'Ongoing', 'None']).optional(),
+      glc1_status: z.enum(['Completed', 'Ongoing', 'None'], {
+        message: 'Please select your GLC 1 status',
+      }),
+      glc2_status: z
+        .enum(['Completed', 'Ongoing', 'None'], {
+          message: 'Please select your GLC 2 status',
+        })
+        .optional(),
     }),
     dgroup_info: z.object({
-      is_constant_attendee: z.boolean(),
-      member_since: monthYearSchema,
-      leader_name: z.string().trim().min(1).max(150),
-      leader_email: z.string().trim().email().toLowerCase(),
-      leader_phone: phoneSchema,
+      is_constant_attendee: z.boolean({
+        message: 'Please indicate if you are a constant DGroup attendee',
+      }),
+      member_since: dgroupMemberSinceSchema,
+      leader_name: z
+        .string({ message: 'DGroup leader name is required' })
+        .trim()
+        .min(1, 'DGroup leader name is required')
+        .max(150),
+      leader_email: z
+        .string({ message: 'DGroup leader email is required' })
+        .trim()
+        .min(1, 'DGroup leader email is required')
+        .email('Invalid email address')
+        .toLowerCase(),
+      leader_phone: leaderPhoneSchema,
       is_dgroup_leader: z.boolean(),
       leader_since: monthYearSchema.optional().nullable(),
-      dgroup_member_count: z.number().int().positive().optional().nullable(),
+      dgroup_member_count: z
+        .number()
+        .int()
+        .positive('Member count must be positive')
+        .optional()
+        .nullable(),
     }),
     survey_answers: z.record(z.string(), z.enum(['true', 'false'])),
     applicant_attested: z.literal(true),
@@ -261,16 +350,32 @@ export const adminUpdateStageSchema = z
       'complete_vmt',
       'save_commitments',
       'resend_endorsement',
+      'request_endorsement',
       'update_stage',
       'repeat_step',
       'return_to_observation',
+      'return_to_interview',
+      'archive_applicant',
+      'restore_applicant',
+      'add_note',
+      'upload_avatar',
+      'cancel_schedule',
     ]),
     application_id: z.string().uuid(),
-    step_number: z.number().int().min(2).max(8).optional(),
+    step_number: z.number().int().min(1).max(9).optional(),
     status: z
-      .enum(['pending', 'scheduled', 'in_progress', 'completed', 'skipped', 'declined', 'on_hold'])
+      .enum([
+        'pending',
+        'scheduled',
+        'in_progress',
+        'completed',
+        'skipped',
+        'declined',
+        'on_hold',
+        'archived',
+      ])
       .optional(),
-    scheduled_at: z.string().datetime().optional().nullable(),
+    scheduled_at: z.string().datetime({ offset: true }).optional().nullable(),
     assigned_reviewer_id: z.string().uuid().optional().nullable(),
     assigned_reviewer_name: z.string().trim().max(150).optional().nullable(),
     rubric_data: z.record(z.string(), z.unknown()).optional(),
@@ -282,6 +387,10 @@ export const adminUpdateStageSchema = z
     assigned_rfid_member_id: z.string().trim().max(100).optional().nullable(),
     service_commitments: applicantCommitmentsSchema.optional(),
     override_endorsement_gate: z.boolean().optional().default(false),
+    image_base64: z.string().max(1_500_000).optional().nullable(),
+    leader_name: z.string().trim().max(150).optional().nullable(),
+    leader_email: z.string().trim().email().optional().nullable(),
+    leader_contact_number: z.string().trim().max(50).optional().nullable(),
   })
   .superRefine((request, context) => {
     if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
@@ -293,12 +402,20 @@ export const adminUpdateStageSchema = z
     }
     if (
       request.action === 'repeat_step' &&
+      request.step_number !== 2 &&
       request.step_number !== 4 &&
       request.step_number !== 5
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Only observation and evaluation can be repeated',
+        message: 'Only interview, observation, and evaluation can be repeated',
+        path: ['step_number'],
+      });
+    }
+    if (request.action === 'return_to_interview' && request.step_number !== 3) {
+      context.addIssue({
+        code: 'custom',
+        message: 'return_to_interview must reference orientation step 3',
         path: ['step_number'],
       });
     }
@@ -309,7 +426,29 @@ export const adminUpdateStageSchema = z
         path: ['step_number'],
       });
     }
+    if (request.action === 'add_note' && (!request.step_number || !request.notes?.trim())) {
+      context.addIssue({
+        code: 'custom',
+        message: 'step_number and notes are required for add_note',
+        path: ['notes'],
+      });
+    }
+    if (request.action === 'upload_avatar' && !request.image_base64) {
+      context.addIssue({
+        code: 'custom',
+        message: 'image_base64 is required for upload_avatar',
+        path: ['image_base64'],
+      });
+    }
   });
+
+export const addRecruiterNoteSchema = z.object({
+  application_id: z.string().uuid(),
+  step_number: z.number().int().min(1).max(9),
+  content: z.string().trim().min(1, 'Note content cannot be empty').max(5000),
+});
+
+export type AddRecruiterNotePayload = z.infer<typeof addRecruiterNoteSchema>;
 
 export const recruitmentSettingsSchema = z.object({
   is_recruitment_open: z.boolean(),
@@ -339,6 +478,7 @@ export const recruitmentEndorsementReviewDetailsSchema = z.object({
   nickname: z.string(),
   desired_role: z.enum(RECRUITMENT_ROLES),
   created_at: timestampSchema,
+  avatar_object_key: z.string().nullable().optional(),
   endorsement_questions: z.array(dynamicFieldSchema).min(1),
   attestation_answers: z.record(z.string(), z.unknown()),
 });
@@ -354,8 +494,11 @@ const applicantRecruitmentTimelineItemSchema = z.object({
     'completed',
     'repeated_step',
     'returned_to_observation',
+    'returned_to_interview',
     'skipped',
     'on_hold',
+    'archived',
+    'restored',
     'declined',
   ]),
   scheduled_at: z.string().nullable(),
@@ -469,8 +612,11 @@ export const recruitmentPipelineTransactionSchema = z.object({
     'completed',
     'repeated_step',
     'returned_to_observation',
+    'returned_to_interview',
     'skipped',
     'on_hold',
+    'archived',
+    'restored',
     'declined',
   ]),
   from_step: recruitmentStepNumberSchema.nullable(),
@@ -490,5 +636,5 @@ export const recruitmentPipelineTransactionSchema = z.object({
 export type RecruitmentStep1Input = z.infer<typeof recruitmentStep1Schema>;
 export type DgroupEndorsementDecisionInput = z.infer<typeof dgroupEndorsementDecisionSchema>;
 export type ApplicantCommitmentsInput = z.infer<typeof applicantCommitmentsSchema>;
-export type AdminUpdateStageInput = z.infer<typeof adminUpdateStageSchema>;
+export type AdminUpdateStageInput = z.input<typeof adminUpdateStageSchema>;
 export type RecruitmentSettingsInput = z.infer<typeof recruitmentSettingsSchema>;

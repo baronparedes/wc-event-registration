@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RECRUITMENT_ROLES } from '../constants';
 import {
+  adminUpdateStageSchema,
   applicantCommitmentsSchema,
   applicantRecruitmentViewSchema,
   recruitmentApplicationRecordSchema,
@@ -285,5 +286,28 @@ describe('recruitment schemas', () => {
         endorsement_questions: [{ ...settings.endorsement_questions[0], is_active: false }],
       }).success,
     ).toBe(false);
+  });
+
+  it('validates adminUpdateStageSchema with timezone offset and UTC datetime', () => {
+    const validWithOffset = {
+      action: 'update_stage',
+      application_id: '22222222-2222-4222-8222-222222222222',
+      step_number: 4,
+      status: 'scheduled',
+      scheduled_at: '2026-11-08T09:00:00+08:00',
+    };
+    expect(adminUpdateStageSchema.safeParse(validWithOffset).success).toBe(true);
+
+    const validWithUtc = {
+      ...validWithOffset,
+      scheduled_at: '2026-11-08T01:00:00.000Z',
+    };
+    expect(adminUpdateStageSchema.safeParse(validWithUtc).success).toBe(true);
+
+    const validWithNull = {
+      ...validWithOffset,
+      scheduled_at: null,
+    };
+    expect(adminUpdateStageSchema.safeParse(validWithNull).success).toBe(true);
   });
 });

@@ -101,6 +101,28 @@ describe('src/app/router.tsx', () => {
         expect(memoryRouter.state.location.pathname).toBe(expectedTarget);
       });
     });
+
+    it('redirects unmatched path to /404', async () => {
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+        },
+      });
+
+      const memoryRouter = createMemoryRouter(appRoutes, {
+        initialEntries: ['/unmatched-random-page-12345'],
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={memoryRouter} />
+        </QueryClientProvider>,
+      );
+
+      await waitFor(() => {
+        expect(memoryRouter.state.location.pathname).toBe(ROUTE_PATHS.notFound);
+      });
+    });
   });
 
   describe('isOfflineSupportedPath', () => {
@@ -318,7 +340,7 @@ describe('src/app/router.tsx', () => {
       expect(screen.getByText('Login Page Redirected')).toBeInTheDocument();
     });
 
-    it('redirects to home when session exists but isAuthenticated is false', () => {
+    it('redirects to 404 when session exists but isAuthenticated is false', () => {
       mockUseAdminAuthQuery.mockReturnValue({
         data: { isAuthenticated: false, session: { user: { id: 'u1' } } },
         isLoading: false,
@@ -335,15 +357,15 @@ describe('src/app/router.tsx', () => {
                 </RequireAdminAuth>
               }
             />
-            <Route path={ROUTE_PATHS.home} element={<div>Home Page Redirected</div>} />
+            <Route path={ROUTE_PATHS.notFound} element={<div>404 Page Redirected</div>} />
           </Routes>
         </MemoryRouter>,
       );
 
-      expect(screen.getByText('Home Page Redirected')).toBeInTheDocument();
+      expect(screen.getByText('404 Page Redirected')).toBeInTheDocument();
     });
 
-    it('redirects to home when requiredPermission is not granted', () => {
+    it('redirects to 404 when requiredPermission is not granted', () => {
       mockUseAdminAuthQuery.mockReturnValue({
         data: {
           isAuthenticated: true,
@@ -364,12 +386,12 @@ describe('src/app/router.tsx', () => {
                 </RequireAdminAuth>
               }
             />
-            <Route path={ROUTE_PATHS.home} element={<div>Home Redirected</div>} />
+            <Route path={ROUTE_PATHS.notFound} element={<div>404 Redirected</div>} />
           </Routes>
         </MemoryRouter>,
       );
 
-      expect(screen.getByText('Home Redirected')).toBeInTheDocument();
+      expect(screen.getByText('404 Redirected')).toBeInTheDocument();
     });
 
     it('renders children when requiredPermission is granted', () => {

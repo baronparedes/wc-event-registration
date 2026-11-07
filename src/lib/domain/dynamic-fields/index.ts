@@ -32,6 +32,7 @@ export {
   buildSchemaForField,
   buildDynamicFieldResponseSchema,
   createDynamicFieldDefaultValues,
+  type DynamicFieldSchemaOptions,
 } from './validation';
 
 export {

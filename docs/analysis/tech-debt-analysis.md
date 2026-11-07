@@ -121,13 +121,15 @@ Batching and RPC optimizations have been implemented for high-throughput bulk op
 
 ## Multi-Phase Refactoring Roadmap
 
-| Phase                                              | Task                                    |     Status     | Target Area                                                        |
-| :------------------------------------------------- | :-------------------------------------- | :------------: | :----------------------------------------------------------------- |
-| **Phase 1: Critical Fixes & Type Safety**          | Implement Error Boundaries              |  ✅ Completed  | Root router & Layout error boundaries                              |
-|                                                    | Remove `as any` Casting                 |  ✅ Completed  | `AttendanceFieldEditPanel.tsx`, `VisibilityRuleSection`            |
-|                                                    | Fix Direct DOM Manipulation             |  ✅ Completed  | `useEventRegistrationPageState.ts` scroll ref                      |
-| **Phase 2: Component & Hook Refactoring**          | Break down Large Files                  |    📋 Open     | `useEventRegistrationPageState.ts`, `AttendanceFieldEditPanel.tsx` |
-|                                                    | Review `useEffect` Dependencies         |  ✅ Completed  | Audit all utility and state hooks                                  |
-| **Phase 3: Architectural & Backend Optimizations** | Supabase Edge Function N+1 Optimization | ⏳ In Progress | `getEvents.ts` count RPC, transactional RPCs                       |
-|                                                    | Test File Restructuring                 |    📋 Open     | Break down large monolithic test files                             |
-|                                                    | Strict Domain Hooks                     |  ✅ Completed  | Repository pattern in `src/lib/domain/`                            |
+| Phase                                              | Task                                    |     Status     | Target Area                                                                |
+| :------------------------------------------------- | :-------------------------------------- | :------------: | :------------------------------------------------------------------------- |
+| **Phase 1: Critical Fixes & Type Safety**          | Implement Error Boundaries              |  ✅ Completed  | Root router & Layout error boundaries                                      |
+|                                                    | Remove `as any` Casting                 |  ✅ Completed  | `AttendanceFieldEditPanel.tsx`, `VisibilityRuleSection`                    |
+|                                                    | Fix Direct DOM Manipulation             |  ✅ Completed  | `useEventRegistrationPageState.ts` scroll ref                              |
+| **Phase 2: Component & Hook Refactoring**          | Break down Large Files                  |    📋 Open     | `useEventRegistrationPageState.ts`, `AttendanceFieldEditPanel.tsx`         |
+|                                                    | Review `useEffect` Dependencies         |  ✅ Completed  | Audit all utility and state hooks                                          |
+| **Phase 3: Architectural & Backend Optimizations** | Supabase Edge Function N+1 Optimization | ⏳ In Progress | `getEvents.ts` count RPC, transactional RPCs                               |
+|                                                    | Test File Restructuring                 |  ✅ Completed  | Decomposed monolithic recruitment dialog test suites into scenario files   |
+|                                                    | Strict Domain Hooks                     |  ✅ Completed  | Repository pattern in `src/lib/domain/`                                    |
+| **Phase 4: Recruitment Phase 5 Hardening**         | Decompose Monolithic Panel & Handlers   |  ✅ Completed  | `PipelineStepsPanel.tsx` subcomponents, `update-recruitment-stage` actions |
+|                                                    | Migration Squashing & Metadata Trigger  |  ✅ Completed  | Squashed RPC migration & forward `sync_user_dob_metadata` trigger          |

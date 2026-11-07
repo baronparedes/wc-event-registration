@@ -199,7 +199,7 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
         const { data: application, error: applicationError } = await supabase
           .from('recruitment_applications')
           .select(
-            'id, first_name, middle_name, last_name, full_name, nickname, desired_role, created_at',
+            'id, first_name, middle_name, last_name, full_name, nickname, desired_role, created_at, avatar_object_key',
           )
           .eq('id', approval.entity_id)
           .eq('dgroup_approval_id', approval.id)
@@ -257,9 +257,20 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
           );
         }
 
+        const metadataAvatarKey =
+          typeof approval.metadata === 'object' &&
+          approval.metadata !== null &&
+          !Array.isArray(approval.metadata) &&
+          typeof (approval.metadata as Record<string, unknown>).avatar_object_key === 'string'
+            ? ((approval.metadata as Record<string, unknown>).avatar_object_key as string)
+            : null;
+
+        const resolvedAvatarObjectKey = application?.avatar_object_key || metadataAvatarKey;
+
         entityDetails = application
           ? {
               ...application,
+              avatar_object_key: resolvedAvatarObjectKey,
               endorsement_questions: questionsResult.data.filter((question) => question.is_active),
               attestation_answers:
                 typeof approval.metadata === 'object' &&
@@ -283,6 +294,13 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
             summary: approval.summary,
             requester_name: approval.requester_name,
             requester_email: approval.requester_email,
+            requester_avatar_object_key:
+              (typeof approval.metadata === 'object' &&
+              approval.metadata !== null &&
+              !Array.isArray(approval.metadata) &&
+              typeof (approval.metadata as Record<string, unknown>).avatar_object_key === 'string'
+                ? ((approval.metadata as Record<string, unknown>).avatar_object_key as string)
+                : null) ?? null,
             assigned_to_email: approval.assigned_to_email,
             decided_at: approval.decided_at,
             decided_by_email: approval.decided_by_email,

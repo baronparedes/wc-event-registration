@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "vite",
     "dev:all": "concurrently -p name -n ui,edge,edge:tests,ui:tests \"npm run dev\" \"npm run supabase:fn\" \"npm run test:edge:watch\" \"npm run test:watch\"",
+    "dev:nt": "concurrently -p name -n ui,edge \"npm run dev\" \"npm run supabase:fn\"",
     "build": "tsc -b && vite build",
     "build:agent": "tsc -b && vite build --logLevel error",
     "lint": "eslint . --cache",

@@ -31,6 +31,7 @@ export {
 
 export { parseErrorToJsonOrString } from './errorUtils';
 export { DOMPurify } from './dompurify';
+export { fileToJpegDataUrl } from './imageUtils';
 export {
   canCopyImageToClipboard,
   copyPngToClipboard,

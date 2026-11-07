@@ -42,4 +42,18 @@ describe('AlertBanner', () => {
 
     expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
+
+  it('renders stacked action layout when stackAction is true', () => {
+    render(
+      <AlertBanner
+        title="Stacked Alert"
+        action={<button type="button">Action</button>}
+        stackAction={true}
+      />,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveClass('flex-col');
+    expect(alert).not.toHaveClass('sm:flex-row');
+  });
 });

@@ -46,6 +46,7 @@ This file contains the core principles, architecture rules, and domain logic con
     - **Colocate Scrolling to Inner Dynamic Lists**: When rendering long, dynamic item lists inside a modal (e.g., question/field lists, attendee lists), keep `Dialog.Body` natural and apply scroll classes (`max-h-[...] overflow-y-auto pr-1`) directly to the inner list container. This keeps modal headers, tab toolbars, and action footers sticky and visible at all times.
     - **Form Hierarchy & Dropdown Occlusion**: In modal forms, order fields so primary content inputs (e.g. prompt textareas) come first, followed by secondary dropdowns/settings. This prevents open dropdown menus from obscuring primary inputs. Set `textareaClassName="resize-none"` on textareas within dialogs to avoid breaking modal geometry.
     - **Dialog Footer Buttons Full Width on Mobile**: Keep action buttons as direct children (or inside React fragments `<>`) of `Dialog.Footer` without unnecessary intermediate wrapping `<div>`s. `Dialog.Footer` automatically provides `flex-col-reverse sm:flex-row [&>button]:w-full sm:[&>button]:w-auto` so buttons are 100% full-width on mobile viewports.
+    - **Responsive Alert & Error Summary Banners**: Alert and validation banners (`AlertBanner`, `FormErrorSummary`) must use responsive flex direction (`flex-col sm:flex-row`). On mobile devices, message content and bulleted checklists must occupy 100% card width to prevent cramped multi-line text wrapping, with action buttons placed below the message and stretched full width (`[&>button]:w-full justify-center`).
 
 ## 3. Architecture & Code Organization
 
@@ -69,7 +70,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Authorization, RBAC & Routing**:
   - **Backend-Driven RBAC**: Role-to-permission grants live in PostgreSQL (`public.admin_role_permissions`), evaluated on the backend via `public.has_admin_permission(p_permission)` (which also powers `is_super_admin()`, `is_admin()`, `is_admin_viewer()`, and `is_admin_member_viewer()`) and in Edge Functions via `requiredPermission` on `useEdgeHook` / `requireAdminAccess`.
   - **Frontend Permission Resolution**: `fetchAdminAuthState` calls the `get_my_admin_auth_context` RPC to retrieve `{ role, permissions }` from the database. `useAdminAuthQuery()` exposes a memoized `can(permission)` helper backed by `canAdminPerform`. Route definitions in `src/config/constants/routes.ts` and `RequireAdminAuth` gate access via `requiredPermission` and `can(requiredPermission)`.
-  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to the home page (`/`).
+  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to `/404` to mask admin routes.
   - The `/profile` route displays a read-only view of member details and event history for non-admin users. This is authorized via session email matching (`lower(email) = lower(auth.jwt() ->> 'email')`) on `public.users` RLS and the `get_member_event_history` RPC.
   - See [`docs/guides/rbac-architecture.md`](docs/guides/rbac-architecture.md).
 - **Super-Admin Role Management**:

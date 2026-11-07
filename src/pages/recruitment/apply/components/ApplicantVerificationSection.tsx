@@ -128,6 +128,21 @@ export function ApplicantVerificationSection({
           Review your application details before submitting.
         </p>
       </header>
+
+      {application.avatar_image_base64 && (
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
+          <img
+            src={application.avatar_image_base64}
+            alt="Applicant photo preview"
+            className="h-20 w-20 rounded-full border border-border object-cover shadow-inner"
+          />
+          <div>
+            <h3 className="font-heading text-sm font-semibold text-text">Applicant Photo</h3>
+            <p className="text-xs text-muted">Attached to your recruitment application</p>
+          </div>
+        </div>
+      )}
+
       {sections.map((section) => (
         <section
           key={section.id}
