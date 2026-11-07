@@ -24,6 +24,9 @@ Feature: Admin Recruitment Pipeline Management
         - A cancellation reason is strictly required and automatically appended to the step's recruiter notes thread for full auditability.
     - Responsive Validation Banners:
         - Form validation summaries (`FormErrorSummary` / `AlertBanner`) adapt responsively (`flex-col sm:flex-row`), ensuring error checklists maintain 100% card width without cramped line wrapping on mobile devices, with full-width action buttons for easy touch interaction.
+    - DGroup Endorsement Resend Visibility:
+        - The "Resend Endorsement Email / Link" action is strictly restricted to active applicants whose endorsement is awaiting leader review.
+        - The action and its confirmation dialog are automatically hidden once the candidate is endorsed, declined, or deployed.
     - Applicant Photo & Deployment Migration:
         - Applicants can optionally upload an image or capture a live webcam photo during registration (Section 1 - Personal & Work Information), verified in Section 5 (Verification).
         - Images are processed client-side (max 1024x1024 JPEG at 0.85 quality) and stored in `member_avatars` at `avatars/recruitment/{application_id}.jpg`.
@@ -127,4 +130,10 @@ Feature: Admin Recruitment Pipeline Management
     And I click "Deploy Volunteer" and confirm the deployment dialog
     Then the applicant is atomically promoted to an active WelcomeHub member
     And the application status transitions to "deployed"
+
+  Scenario: Resend endorsement link is hidden when endorsed or deployed
+    Given I am inspecting an applicant who is already endorsed or deployed
+    When I view the "Applicant Profile" or "DGroup Endorsement" tab
+    Then the "Resend Endorsement Email" button is not visible
+    And the awaiting endorsement notice is not displayed
 

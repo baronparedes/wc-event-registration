@@ -87,7 +87,7 @@ describe('DGroupEndorsementPanel', () => {
     expect(screen.getByText('Pending Leader Review')).toBeInTheDocument();
     expect(screen.getByText(/Awaiting DGroup Leader Endorsement/i)).toBeInTheDocument();
 
-    const resendBtn = screen.getByRole('button', { name: /Resend Endorsment Link/i });
+    const resendBtn = screen.getByRole('button', { name: /Resend Endorsement Link/i });
     expect(resendBtn).toBeInTheDocument();
     await user.click(resendBtn);
 
@@ -97,7 +97,7 @@ describe('DGroupEndorsementPanel', () => {
     });
   });
 
-  it('renders endorsement questions when approved', () => {
+  it('renders endorsement questions and hides resend button when approved', () => {
     const endorsedApp = { ...mockApplication, dgroup_approval_id: 'appr-123' };
     renderPanel(
       <DGroupEndorsementPanel
@@ -117,6 +117,15 @@ describe('DGroupEndorsementPanel', () => {
 
     expect(screen.getByText('Endorsed')).toBeInTheDocument();
     expect(screen.getByText(/DGroup Leader Endorsement Questionnaire/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Awaiting DGroup Leader Endorsement/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /resend/i })).not.toBeInTheDocument();
+  });
+
+  it('does not render resend button when applicant is deployed', () => {
+    const deployedApp = { ...mockApplication, status: 'deployed' as const };
+    renderPanel(<DGroupEndorsementPanel application={deployedApp} />);
+
+    expect(screen.queryByRole('button', { name: /resend/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Awaiting DGroup Leader Endorsement/i)).not.toBeInTheDocument();
   });
 

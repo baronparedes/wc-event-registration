@@ -27,7 +27,9 @@ export function DGroupEndorsementPanel({ application, endorsement }: DGroupEndor
     endorsement?.status === 'approved' ||
     Boolean(application.dgroup_approval_id && endorsement?.attestation_answers);
   const isDeclined = endorsement?.status === 'rejected';
-  const isPending = !isApproved && !isDeclined;
+  const isDeployed = application.status === 'deployed';
+  const isPending = !isApproved && !isDeclined && !isDeployed;
+  const canResend = isPending && application.status === 'active';
 
   const handleResendMagicLink = async () => {
     try {
@@ -157,25 +159,27 @@ export function DGroupEndorsementPanel({ application, endorsement }: DGroupEndor
               </p>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResendMagicLink}
-              disabled={isResending}
-              className="gap-1.5 shrink-0"
-            >
-              {isResending ? (
-                <>
-                  <Spinner size="sm" />
-                  <span>Resending...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="h-3.5 w-3.5" />
-                  <span>Resend Endorsment Link</span>
-                </>
-              )}
-            </Button>
+            {canResend && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResendMagicLink}
+                disabled={isResending}
+                className="gap-1.5 shrink-0"
+              >
+                {isResending ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span>Resending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    <span>Resend Endorsement Link</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}

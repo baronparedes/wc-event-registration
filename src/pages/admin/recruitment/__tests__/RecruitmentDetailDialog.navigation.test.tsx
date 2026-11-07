@@ -225,6 +225,69 @@ describe('RecruitmentDetailDialog - Navigation & Profile Tabs', () => {
     );
   });
 
+  it('hides resend endorsement email button in profile tab when applicant is endorsed', async () => {
+    const endorsedApp = {
+      ...mockApplication,
+      dgroup_approval_id: 'appr-1',
+    };
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: endorsedApp,
+        transactions: [mockTransaction],
+        dgroup_endorsement: {
+          approval_id: 'appr-1',
+          status: 'approved',
+        },
+      },
+      isLoading: false,
+    });
+
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={endorsedApp}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
+
+    expect(screen.getByText('Endorsed')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Resend Endorsement Email/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides resend endorsement email button in profile tab when applicant is deployed', async () => {
+    const deployedApp = {
+      ...mockApplication,
+      status: 'deployed' as const,
+    };
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: deployedApp,
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
+
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={deployedApp}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
+
+    expect(
+      screen.queryByRole('button', { name: /Resend Endorsement Email/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('calls onClose when Close button is clicked', async () => {
     const user = userEvent.setup();
     renderDialog(

@@ -13,6 +13,11 @@ interface Step1SurveyReviewPanelProps {
 }
 
 export function Step1SurveyReviewPanel({ application, endorsement }: Step1SurveyReviewPanelProps) {
+  const isEndorsed =
+    endorsement?.status === 'approved' ||
+    Boolean(application.dgroup_approval_id && endorsement?.attestation_answers);
+  const isDeclined = endorsement?.status === 'rejected';
+
   return (
     <div className="space-y-4">
       <div className="space-y-2.5 text-xs text-text py-1">
@@ -25,9 +30,9 @@ export function Step1SurveyReviewPanel({ application, endorsement }: Step1Survey
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           <strong>DGroup Endorsement Status:</strong>
-          {endorsement?.status === 'approved' ? (
+          {isEndorsed ? (
             <Badge variant="default">Endorsed</Badge>
-          ) : endorsement?.status === 'rejected' ? (
+          ) : isDeclined ? (
             <Badge variant="destructive">Declined by Leader</Badge>
           ) : (
             <Badge variant="secondary">Pending Leader Endorsement</Badge>

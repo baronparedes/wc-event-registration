@@ -96,7 +96,9 @@ export function PipelineStepsPanel({
 
   const canOverrideGate =
     authState?.adminRole === 'admin' || authState?.adminRole === 'super_admin';
-  const isDGroupEndorsed = endorsement?.status === 'approved';
+  const isDGroupEndorsed =
+    endorsement?.status === 'approved' ||
+    Boolean(application.dgroup_approval_id && endorsement?.attestation_answers);
 
   const canDeploy =
     isActionableStep &&

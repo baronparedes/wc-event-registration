@@ -23,6 +23,13 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const age = calculateAge(application.date_of_birth);
 
+  const isEndorsed =
+    endorsement?.status === 'approved' ||
+    Boolean(application.dgroup_approval_id && endorsement?.attestation_answers);
+  const isDeclined = endorsement?.status === 'rejected';
+  const isDeployed = application.status === 'deployed';
+  const canResend = !isEndorsed && !isDeclined && !isDeployed && application.status === 'active';
+
   const handleResendEndorsement = () => {
     updateStageMutation.mutate(
       {
@@ -166,18 +173,10 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
       <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
           <h4 className="font-heading text-sm font-bold text-text">DGroup & Leader Attestation</h4>
-          <Badge
-            variant={
-              endorsement?.status === 'approved'
-                ? 'default'
-                : endorsement?.status === 'rejected'
-                  ? 'destructive'
-                  : 'secondary'
-            }
-          >
-            {endorsement?.status === 'approved'
+          <Badge variant={isEndorsed ? 'default' : isDeclined ? 'destructive' : 'secondary'}>
+            {isEndorsed
               ? 'Endorsed'
-              : endorsement?.status === 'rejected'
+              : isDeclined
                 ? 'Endorsement Declined'
                 : 'Pending Leader Review'}
           </Badge>
@@ -214,43 +213,47 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           </div>
         </div>
 
-        <div className="flex justify-end pt-2">
-          <Button
-            type="button"
-            variant="primaryOutline"
-            size="sm"
-            className="w-full sm:w-auto"
-            onClick={() => setIsConfirmOpen(true)}
-            disabled={updateStageMutation.isPending}
-          >
-            {updateStageMutation.isPending ? (
-              <Spinner size="sm" className="mr-1.5" />
-            ) : (
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Resend Endorsement Email
-          </Button>
-        </div>
+        {canResend && (
+          <div className="flex justify-end pt-2">
+            <Button
+              type="button"
+              variant="primaryOutline"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => setIsConfirmOpen(true)}
+              disabled={updateStageMutation.isPending}
+            >
+              {updateStageMutation.isPending ? (
+                <Spinner size="sm" className="mr-1.5" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Resend Endorsement Email
+            </Button>
+          </div>
+        )}
       </div>
 
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        title="Resend Endorsement Email"
-        description={
-          <>
-            Are you sure you want to resend the endorsement email to{' '}
-            <strong className="text-text">{application.dgroup_info.leader_name}</strong> at{' '}
-            <strong className="text-text">{application.dgroup_info.leader_email}</strong>? This will
-            dispatch a fresh magic link to their inbox.
-          </>
-        }
-        confirmLabel="Resend Email"
-        confirmLoadingLabel="Resending..."
-        confirmVariant="default"
-        isPending={updateStageMutation.isPending}
-        onConfirm={handleResendEndorsement}
-        onCancel={() => setIsConfirmOpen(false)}
-      />
+      {canResend && (
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          title="Resend Endorsement Email"
+          description={
+            <>
+              Are you sure you want to resend the endorsement email to{' '}
+              <strong className="text-text">{application.dgroup_info.leader_name}</strong> at{' '}
+              <strong className="text-text">{application.dgroup_info.leader_email}</strong>? This
+              will dispatch a fresh magic link to their inbox.
+            </>
+          }
+          confirmLabel="Resend Email"
+          confirmLoadingLabel="Resending..."
+          confirmVariant="default"
+          isPending={updateStageMutation.isPending}
+          onConfirm={handleResendEndorsement}
+          onCancel={() => setIsConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }
