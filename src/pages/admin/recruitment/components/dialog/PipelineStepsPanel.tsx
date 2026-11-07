@@ -24,6 +24,7 @@ import {
 } from '@/lib/domain/recruitment';
 import { localDateTimeToUTC8ISO } from '@/lib/infrastructure';
 
+import { CancelScheduleConfirmDialog } from './CancelScheduleConfirmDialog';
 import { CompleteStepConfirmDialog } from './CompleteStepConfirmDialog';
 import {
   type ScheduleActionKind,
@@ -81,6 +82,7 @@ export function PipelineStepsPanel({
   } | null>(null);
 
   const [isPendingDeployConfirm, setIsPendingDeployConfirm] = useState(false);
+  const [isCancelScheduleOpen, setIsCancelScheduleOpen] = useState(false);
 
   const stepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === selectedStep);
   const nextStepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === selectedStep + 1);
@@ -199,6 +201,26 @@ export function PipelineStepsPanel({
       ...pendingCompleteOptions,
       notes: completionComment?.trim() || undefined,
     });
+  };
+
+  const handleConfirmCancelSchedule = (reason: string) => {
+    updateStageMutation.mutate(
+      {
+        action: 'cancel_schedule',
+        application_id: application.id,
+        step_number: selectedStep,
+        notes: reason.trim(),
+      },
+      {
+        onSuccess: () => {
+          setIsCancelScheduleOpen(false);
+          toast.success(`Scheduled session for Step ${selectedStep} cancelled.`);
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Failed to cancel schedule');
+        },
+      },
+    );
   };
 
   const handleDeploy = () => {
@@ -388,6 +410,7 @@ export function PipelineStepsPanel({
                 selectedReviewerUser,
               });
             }}
+            onRequestCancelSchedule={() => setIsCancelScheduleOpen(true)}
           />
         )}
 
@@ -538,6 +561,25 @@ export function PipelineStepsPanel({
           assignedRole={application.confirmed_role || application.desired_role}
           rfidTag={application.assigned_rfid_member_id}
           serviceCommitments={application.service_commitments}
+        />
+      )}
+
+      {isCancelScheduleOpen && (
+        <CancelScheduleConfirmDialog
+          isOpen={isCancelScheduleOpen}
+          onClose={() => setIsCancelScheduleOpen(false)}
+          onConfirm={handleConfirmCancelSchedule}
+          isPending={updateStageMutation.isPending}
+          applicant={{
+            name: `${application.full_name}${application.nickname ? ` (${application.nickname})` : ''}`,
+            email: application.email,
+            phone: application.phone || undefined,
+            avatarObjectKey: application.avatar_object_key,
+          }}
+          stepNumber={selectedStep}
+          stepTitle={stepMeta?.title ?? `Step ${selectedStep}`}
+          scheduledAt={latestStepTransaction?.scheduled_at}
+          reviewerName={latestStepTransaction?.assigned_reviewer_name}
         />
       )}
     </div>

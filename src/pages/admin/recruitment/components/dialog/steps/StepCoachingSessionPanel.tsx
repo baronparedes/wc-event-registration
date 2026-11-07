@@ -2,11 +2,10 @@ import { useState } from 'react';
 
 import {
   AlertCircle,
+  CalendarX,
   CheckCircle2,
   Clock,
-  Eye,
   MessageSquare,
-  Plus,
   RotateCcw,
 } from 'lucide-react';
 
@@ -60,6 +59,7 @@ interface StepCoachingSessionPanelProps {
     reviewerName?: string;
     selectedReviewerUser?: ReviewerUserItem | null;
   }) => void;
+  onRequestCancelSchedule?: () => void;
 }
 
 const roleOptions = RECRUITMENT_ROLES.map((role) => ({
@@ -80,6 +80,7 @@ export function StepCoachingSessionPanel({
   onJumpToActive,
   onRequestSchedule,
   onRequestComplete,
+  onRequestCancelSchedule,
 }: StepCoachingSessionPanelProps) {
   const stepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === stepNumber);
 
@@ -91,22 +92,34 @@ export function StepCoachingSessionPanel({
   const previousStepAttempts = stepTransactions.slice(1);
 
   const currentStepNotes = (stepNotes ?? []).filter((n) => n.step_number === stepNumber);
-  const latestStepNote = currentStepNotes[currentStepNotes.length - 1];
   const { focusFirstError } = useFormErrorFocus();
 
   const [isAttemptsDialogOpen, setIsAttemptsDialogOpen] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
-  const [reviewerId, setReviewerId] = useState<string>(
-    latestStepTransaction?.assigned_reviewer_id ?? '',
-  );
-  const [reviewerName, setReviewerName] = useState<string>(
-    latestStepTransaction?.assigned_reviewer_name ?? '',
-  );
+  const targetReviewerId = latestStepTransaction?.assigned_reviewer_id ?? '';
+  const targetReviewerName = latestStepTransaction?.assigned_reviewer_name ?? '';
+  const [reviewerId, setReviewerId] = useState<string>(targetReviewerId);
+  const [reviewerName, setReviewerName] = useState<string>(targetReviewerName);
   const [selectedReviewerUser, setSelectedReviewerUser] = useState<ReviewerUserItem | null>(null);
-  const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(
-    toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
+  const [prevReviewerId, setPrevReviewerId] = useState<string>(targetReviewerId);
+
+  if (targetReviewerId !== prevReviewerId) {
+    setPrevReviewerId(targetReviewerId);
+    setReviewerId(targetReviewerId);
+    setReviewerName(targetReviewerName);
+    setSelectedReviewerUser(null);
+  }
+  const targetScheduledAt = toDatetimeLocal(
+    latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at,
   );
+  const [scheduledAtLocal, setScheduledAtLocal] = useState<string>(targetScheduledAt);
+  const [prevScheduledAt, setPrevScheduledAt] = useState(targetScheduledAt);
+
+  if (targetScheduledAt !== prevScheduledAt) {
+    setPrevScheduledAt(targetScheduledAt);
+    setScheduledAtLocal(targetScheduledAt);
+  }
   const [confirmedRole, setConfirmedRole] = useState<string>(
     application.confirmed_role ?? application.desired_role,
   );
@@ -229,49 +242,18 @@ export function StepCoachingSessionPanel({
         </div>
       )}
 
-      {/* Previous attempts summary card */}
-      {previousStepAttempts.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-text flex items-center gap-2">
-                <span>
-                  Previous {stepNumber === 2 ? 'Interview' : stepMeta?.shortLabel} Attempts
-                </span>
-                <Badge variant="secondary" className="text-[10px] font-normal py-0 px-1.5">
-                  {previousStepAttempts.length}
-                </Badge>
-              </div>
-              <p className="text-[11px] text-muted truncate mt-0.5">
-                Attempt #{latestStepTransaction?.attempt_number ?? 1} in progress · Recorded history
-                intact
-              </p>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="primaryOutline"
-            size="sm"
-            onClick={() => setIsAttemptsDialogOpen(true)}
-            className="shrink-0 w-full sm:w-auto font-medium"
-          >
-            <Eye className="mr-1.5 h-3.5 w-3.5" />
-            View Past Attempts ({previousStepAttempts.length})
-          </Button>
-        </div>
-      )}
-
       {/* Session & Evaluation Details */}
       <div className="space-y-4 pt-1">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-          <h4 className="font-semibold text-xs text-text flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-primary" />
-            {isCompletedStep
-              ? 'Recorded Session & Evaluation Details'
-              : 'Session & Evaluation Details'}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-2">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            <h4 className="font-semibold text-xs text-text flex items-center gap-1.5 truncate">
+              <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>
+                {isCompletedStep
+                  ? 'Recorded Session & Evaluation Details'
+                  : 'Session & Evaluation Details'}
+              </span>
+            </h4>
             {latestStepTransaction?.attempt_number && latestStepTransaction.attempt_number > 1 && (
               <Badge
                 variant="outline"
@@ -280,21 +262,51 @@ export function StepCoachingSessionPanel({
                 Attempt #{latestStepTransaction.attempt_number}
               </Badge>
             )}
-          </h4>
-          {latestStepTransaction?.status && (
-            <Badge
-              variant={
-                latestStepTransaction.status === 'completed'
-                  ? 'default'
-                  : latestStepTransaction.status === 'scheduled'
-                    ? 'accent'
-                    : 'secondary'
-              }
-              className="text-[10px] capitalize"
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+            {previousStepAttempts.length > 0 && (
+              <Button
+                id="viewPastAttemptsButton"
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => setIsAttemptsDialogOpen(true)}
+                className="font-medium text-xs h-6 px-2 gap-1 text-text"
+                title={`View ${previousStepAttempts.length} past attempt(s)`}
+                aria-label={`View Past Attempts (${previousStepAttempts.length})`}
+              >
+                <RotateCcw className="h-3 w-3 text-primary shrink-0" />
+                <span>Past Attempts ({previousStepAttempts.length})</span>
+              </Button>
+            )}
+            <Button
+              id="openRecruiterNotesButton"
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={() => setIsNotesDialogOpen(true)}
+              className="font-medium text-xs h-6 px-2 gap-1 text-text"
+              title={`Open ${currentStepNotes.length} recruiter note(s)`}
+              aria-label={`Open Notes (${currentStepNotes.length})`}
             >
-              {latestStepTransaction.status}
-            </Badge>
-          )}
+              <MessageSquare className="h-3 w-3 text-primary shrink-0" />
+              <span>Notes ({currentStepNotes.length})</span>
+            </Button>
+            {latestStepTransaction?.status && (
+              <Badge
+                variant={
+                  latestStepTransaction.status === 'completed'
+                    ? 'default'
+                    : latestStepTransaction.status === 'scheduled'
+                      ? 'accent'
+                      : 'secondary'
+                }
+                className="text-[10px] capitalize h-6 px-2 flex items-center"
+              >
+                {latestStepTransaction.status}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3.5">
@@ -342,26 +354,42 @@ export function StepCoachingSessionPanel({
                   </span>
                 )}
               </div>
-              <Button
-                id="saveScheduleButton"
-                type="button"
-                variant={isSessionScheduled ? 'primaryOutline' : 'default'}
-                size="sm"
-                onClick={() =>
-                  onRequestSchedule({
-                    scheduledAt: scheduledAtLocal,
-                    reviewerId,
-                    reviewerName,
-                    selectedReviewerUser,
-                    actionKind: latestStepTransaction?.scheduled_at ? 'reschedule' : 'schedule',
-                  })
-                }
-                disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
-                className="w-full sm:w-auto shrink-0 font-medium"
-              >
-                <Clock className="mr-1.5 h-3.5 w-3.5" />
-                {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Save Schedule'}
-              </Button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                {Boolean(latestStepTransaction?.scheduled_at && onRequestCancelSchedule) && (
+                  <Button
+                    id="cancelScheduleButton"
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onRequestCancelSchedule}
+                    disabled={isPending}
+                    className="w-full sm:w-auto font-medium text-danger border-danger/30 hover:bg-danger/10 hover:border-danger/60 hover:text-danger"
+                  >
+                    <CalendarX className="mr-1.5 h-3.5 w-3.5" />
+                    Cancel Schedule
+                  </Button>
+                )}
+                <Button
+                  id="saveScheduleButton"
+                  type="button"
+                  variant={isSessionScheduled ? 'primaryOutline' : 'default'}
+                  size="sm"
+                  onClick={() =>
+                    onRequestSchedule({
+                      scheduledAt: scheduledAtLocal,
+                      reviewerId,
+                      reviewerName,
+                      selectedReviewerUser,
+                      actionKind: latestStepTransaction?.scheduled_at ? 'reschedule' : 'schedule',
+                    })
+                  }
+                  disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
+                  className="w-full sm:w-auto font-medium"
+                >
+                  <Clock className="mr-1.5 h-3.5 w-3.5" />
+                  {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Save Schedule'}
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -408,67 +436,6 @@ export function StepCoachingSessionPanel({
             </Badge>
           </div>
         )}
-
-        {/* Recruiter Notes Summary Card */}
-        <div className="border-t border-border/80 pt-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
-            <div className="flex items-start gap-2.5 min-w-0 flex-1">
-              <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
-                <MessageSquare className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-text">Recruiter Notes</span>
-                  <Badge
-                    variant={currentStepNotes.length > 0 ? 'secondary' : 'outline'}
-                    className="text-[10px] font-normal py-0 px-1.5"
-                  >
-                    {currentStepNotes.length}
-                  </Badge>
-                  {currentStepNotes.length === 0 && !isCompletedStep && (
-                    <span className="text-[10px] text-amber-700 font-medium">Required</span>
-                  )}
-                </div>
-                {latestStepNote ? (
-                  <p className="text-[11px] text-muted truncate mt-0.5 max-w-md">
-                    <strong className="text-text font-medium">
-                      {latestStepNote.author_name}:{' '}
-                    </strong>
-                    {latestStepNote.content}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted mt-0.5">
-                    {isCompletedStep
-                      ? 'No notes recorded for this step.'
-                      : 'At least one recruiter note is required before completing this step.'}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button
-              id="openRecruiterNotesButton"
-              type="button"
-              variant={
-                currentStepNotes.length === 0 && !isCompletedStep ? 'default' : 'primaryOutline'
-              }
-              size="sm"
-              onClick={() => setIsNotesDialogOpen(true)}
-              className="shrink-0 w-full sm:w-auto font-medium"
-            >
-              {currentStepNotes.length > 0 ? (
-                <>
-                  <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-                  Open Notes ({currentStepNotes.length})
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  Add Note
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Missing Details Checklist Notice */}

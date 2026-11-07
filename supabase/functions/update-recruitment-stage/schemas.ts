@@ -14,6 +14,7 @@ export const recruitmentStageActions = [
   'restore_applicant',
   'add_note',
   'upload_avatar',
+  'cancel_schedule',
 ] as const;
 
 export const commitmentsSchema = z
@@ -116,6 +117,22 @@ export const updateRecruitmentStageSchema = z
         message: 'step_number and notes are required for add_note',
         path: ['notes'],
       });
+    }
+    if (request.action === 'cancel_schedule') {
+      if (!request.step_number || request.step_number < 2 || request.step_number > 6) {
+        context.addIssue({
+          code: 'custom',
+          message: 'step_number between 2 and 6 is required for cancel_schedule',
+          path: ['step_number'],
+        });
+      }
+      if (!request.notes?.trim()) {
+        context.addIssue({
+          code: 'custom',
+          message: 'notes (cancellation reason) is required for cancel_schedule',
+          path: ['notes'],
+        });
+      }
     }
   });
 

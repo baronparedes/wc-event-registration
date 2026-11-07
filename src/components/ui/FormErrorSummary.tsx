@@ -61,7 +61,7 @@ export function FormErrorSummary({
               size="sm"
               variant="outline"
               onClick={onJumpToFirstError}
-              className="flex items-center gap-1.5 border-danger/40 text-danger hover:bg-danger/10"
+              className="flex items-center justify-center gap-1.5 border-danger/40 text-danger hover:bg-danger/10"
             >
               <ArrowUp aria-hidden="true" className="h-3.5 w-3.5" />
               <span>{actionLabel}</span>

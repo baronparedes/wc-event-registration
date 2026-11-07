@@ -27,23 +27,23 @@ export function StepAttemptsHistoryDialog({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      size="md"
+      size="lg"
       role="dialog"
       aria-label={`Previous ${stepLabel} Attempts`}
     >
       <Dialog.Header showCloseButton onClose={onClose}>
         <div className="flex items-center gap-2">
-          <RotateCcw className="h-4 w-4 text-primary" aria-hidden="true" />
-          <Dialog.Title>
+          <RotateCcw className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+          <Dialog.Title className="text-base sm:text-lg">
             Previous {stepLabel} Attempts ({attempts.length})
           </Dialog.Title>
         </div>
-        <Dialog.Description className="mt-1 text-xs text-muted">
+        <Dialog.Description className="mt-0.5 text-xs text-muted">
           Past session attempts and evaluations recorded for this stage.
         </Dialog.Description>
       </Dialog.Header>
 
-      <Dialog.Body className="space-y-3">
+      <Dialog.Body className="mt-3 space-y-3">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted">Recorded History Intact</span>
           <Badge variant="secondary" className="text-[10px]">
@@ -93,8 +93,8 @@ export function StepAttemptsHistoryDialog({
         </div>
       </Dialog.Body>
 
-      <Dialog.Footer bordered>
-        <Button variant="primaryOutline" size="md" onClick={onClose} className="w-full sm:w-auto">
+      <Dialog.Footer bordered className="mt-4 pt-3">
+        <Button variant="primaryOutline" size="sm" onClick={onClose} className="w-full sm:w-auto">
           Close
         </Button>
       </Dialog.Footer>

@@ -75,10 +75,10 @@ describe('StepRecruiterNotesThread', () => {
     expect(screen.getByText('Recruiter Notes')).toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument();
     expect(screen.getByText('No recruiter notes recorded for this step yet.')).toBeInTheDocument();
-    expect(screen.getByText('Add Recruiter Note *')).toBeInTheDocument();
+    expect(screen.getByText('Add Recruiter Note')).toBeInTheDocument();
   });
 
-  it('renders recorded notes with author info, roles, and content', () => {
+  it('renders recorded notes with author info, simplified dates, and content', () => {
     renderWithClient(
       <StepRecruiterNotesThread
         applicationId="app-123"
@@ -91,13 +91,14 @@ describe('StepRecruiterNotesThread', () => {
     expect(screen.getByText('Recruiter Notes')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('David Pastor')).toBeInTheDocument();
-    expect(screen.getByText('admin')).toBeInTheDocument();
+    // Role badges are intentionally omitted for a cleaner layout
+    expect(screen.queryByText('admin')).not.toBeInTheDocument();
     expect(
       screen.getByText('Candidate showed great communication skills during initial interview.'),
     ).toBeInTheDocument();
 
     expect(screen.getByText('Sarah Lead')).toBeInTheDocument();
-    expect(screen.getByText('slod')).toBeInTheDocument();
+    expect(screen.queryByText('slod')).not.toBeInTheDocument();
     expect(
       screen.getByText('Follow-up discussion: recommended for Prayer Coach.'),
     ).toBeInTheDocument();

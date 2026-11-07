@@ -63,7 +63,9 @@ export async function findLatestTransaction(
 ) {
   const { data, error } = await supabase
     .from('recruitment_pipeline_transactions')
-    .select('id, attempt_number, status, notes, applicant_visible_notes, rubric_data')
+    .select(
+      'id, attempt_number, status, scheduled_at, assigned_reviewer_id, assigned_reviewer_name, notes, applicant_visible_notes, rubric_data',
+    )
     .eq('application_id', applicationId)
     .eq('step_number', stepNumber)
     .order('attempt_number', { ascending: false })
