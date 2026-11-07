@@ -85,7 +85,7 @@ export function SundayDateSelector({
             type="date"
             value={selectedDate}
             onChange={(e) => onDateChange(e.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-text shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-40 sm:flex-initial"
+            className="min-w-0 appearance-none flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm font-medium text-text shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-40 sm:flex-initial"
           />
 
           <Button
