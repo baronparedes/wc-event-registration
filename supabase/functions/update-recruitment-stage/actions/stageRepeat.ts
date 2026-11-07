@@ -14,12 +14,16 @@ import {
 export async function handleStepRepeat(context: RecruitmentActionContext): Promise<Response> {
   const { supabase, request, application, userId, adminRole, corsHeaders } = context;
   const action = request.action;
-
+  const isReturnAction = action === 'return_to_interview' || action === 'return_to_observation';
   const stepNumber = request.step_number;
   if (!stepNumber) {
     return response(400, { success: false, error: 'step_number is required' }, corsHeaders);
   }
-  if (application.current_step !== stepNumber) {
+  if (
+    application.current_step !== stepNumber &&
+    !(action === 'return_to_observation' && (stepNumber === 4 || application.current_step === 5)) &&
+    !(action === 'return_to_interview' && (stepNumber === 2 || application.current_step === 3))
+  ) {
     return response(
       409,
       { success: false, error: 'Only the current step can be repeated' },
@@ -49,35 +53,45 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
   }
 
   const currentTransaction = await findLatestTransaction(supabase, application.id, stepNumber);
-  if (currentTransaction.error || !currentTransaction.data) {
+  if (currentTransaction.error) {
+    return response(500, { success: false, error: 'Failed to read current session' }, corsHeaders);
+  }
+  if (!currentTransaction.data && !isReturnAction) {
     return response(409, { success: false, error: 'There is no session to repeat' }, corsHeaders);
   }
-  const updateCurrent: RecruitmentTransactionUpdate = {
-    status: 'completed',
-    completed_at: new Date().toISOString(),
-    transaction_type:
-      action === 'return_to_observation'
-        ? 'returned_to_observation'
-        : action === 'return_to_interview'
-          ? 'returned_to_interview'
-          : 'repeated_step',
-    notes: request.notes !== undefined ? (request.notes ?? null) : currentTransaction.data.notes,
-    applicant_visible_notes: null,
-    rubric_data: asJson(request.rubric_data) ?? currentTransaction.data.rubric_data,
-  };
-  const { error: completeError } = await supabase
-    .from('recruitment_pipeline_transactions')
-    .update(updateCurrent)
-    .eq('id', currentTransaction.data.id);
-  if (completeError) {
-    return response(500, { success: false, error: 'Failed to close current session' }, corsHeaders);
+
+  if (currentTransaction.data) {
+    const updateCurrent: RecruitmentTransactionUpdate = {
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      transaction_type:
+        action === 'return_to_observation'
+          ? 'returned_to_observation'
+          : action === 'return_to_interview'
+            ? 'returned_to_interview'
+            : 'repeated_step',
+      notes: request.notes !== undefined ? (request.notes ?? null) : currentTransaction.data.notes,
+      applicant_visible_notes: null,
+      rubric_data: asJson(request.rubric_data) ?? currentTransaction.data.rubric_data,
+    };
+    const { error: completeError } = await supabase
+      .from('recruitment_pipeline_transactions')
+      .update(updateCurrent)
+      .eq('id', currentTransaction.data.id);
+    if (completeError) {
+      return response(
+        500,
+        { success: false, error: 'Failed to close current session' },
+        corsHeaders,
+      );
+    }
   }
 
   const repeatStepNumber =
     action === 'return_to_interview' ? 2 : action === 'return_to_observation' ? 4 : stepNumber;
   const repeatStepKey =
     repeatStepNumber === 2 ? 'interview' : repeatStepNumber === 4 ? 'observation' : 'evaluation';
-  let nextAttempt = currentTransaction.data.attempt_number + 1;
+  let nextAttempt = (currentTransaction.data?.attempt_number ?? 0) + 1;
   if (repeatStepNumber !== stepNumber) {
     const latestRepeat = await findLatestTransaction(supabase, application.id, repeatStepNumber);
     if (latestRepeat.error) {
@@ -89,6 +103,7 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     }
     nextAttempt = latestRepeat.data ? latestRepeat.data.attempt_number + 1 : 1;
   }
+  const targetStatus = request.scheduled_at ? 'scheduled' : 'pending';
   const { error: repeatError } = await supabase.from('recruitment_pipeline_transactions').insert({
     application_id: application.id,
     step_number: repeatStepNumber,
@@ -102,9 +117,9 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
           : 'repeated_step',
     from_step: stepNumber,
     to_step: repeatStepNumber,
-    status: 'scheduled',
+    status: targetStatus,
     scheduled_at: request.scheduled_at ?? null,
-    assigned_reviewer_id: request.assigned_reviewer_id ?? userId,
+    assigned_reviewer_id: request.assigned_reviewer_id ?? (request.scheduled_at ? userId : null),
     assigned_reviewer_name: request.assigned_reviewer_name ?? null,
     created_by_user_id: userId,
   });

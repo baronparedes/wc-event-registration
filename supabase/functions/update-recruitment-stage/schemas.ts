@@ -88,17 +88,25 @@ export const updateRecruitmentStageSchema = z
         path: ['step_number'],
       });
     }
-    if (request.action === 'return_to_interview' && request.step_number !== 3) {
+    if (
+      request.action === 'return_to_interview' &&
+      request.step_number !== 2 &&
+      request.step_number !== 3
+    ) {
       context.addIssue({
         code: 'custom',
-        message: 'return_to_interview must reference orientation step 3',
+        message: 'return_to_interview must reference step 2 or 3',
         path: ['step_number'],
       });
     }
-    if (request.action === 'return_to_observation' && request.step_number !== 5) {
+    if (
+      request.action === 'return_to_observation' &&
+      request.step_number !== 4 &&
+      request.step_number !== 5
+    ) {
       context.addIssue({
         code: 'custom',
-        message: 'return_to_observation must reference evaluation step 5',
+        message: 'return_to_observation must reference step 4 or 5',
         path: ['step_number'],
       });
     }

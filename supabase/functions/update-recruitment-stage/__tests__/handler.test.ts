@@ -1096,3 +1096,82 @@ Deno.test('update-recruitment-stage rejects upload_avatar from non-reviewers', a
     }
   });
 });
+
+Deno.test(
+  'update-recruitment-stage supports return_to_observation from step 5 (Evaluation) even without step 5 session',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+        application: { ...applicationRecord, current_step: 5 },
+        transactions: [
+          {
+            id: 'tx-obs-1',
+            step_number: 4,
+            attempt_number: 1,
+            status: 'completed',
+            notes: 'Initial observation',
+          },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'return_to_observation',
+            application_id: APPLICATION_ID,
+            step_number: 5,
+            scheduled_at: '2026-11-23T14:00:00+08:00',
+            notes: 'Requires another observation session before evaluation',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.current_step, 4);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage supports return_to_observation from step 5 with pending status when unscheduled',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+        application: { ...applicationRecord, current_step: 5 },
+        transactions: [
+          {
+            id: 'tx-obs-1',
+            step_number: 4,
+            attempt_number: 1,
+            status: 'completed',
+            notes: 'Initial observation',
+          },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'return_to_observation',
+            application_id: APPLICATION_ID,
+            step_number: 5,
+            notes: 'Reverting candidate to Step 4 observation queue',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.current_step, 4);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);

@@ -571,6 +571,158 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
   });
 
+  it('triggers return_to_observation when returning candidate from Step 5 to Step 4', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const activeStep5Application: RecruitmentApplication = {
+      ...mockApplication,
+      current_step: 5,
+    };
+
+    const mockStep5Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-eval-5',
+      application_id: mockApplication.id,
+      step_number: 5,
+      step_key: 'evaluation',
+      attempt_number: 1,
+      transaction_type: 'scheduled',
+      status: 'scheduled',
+      from_step: 4,
+      to_step: 5,
+      scheduled_at: '2026-11-22T10:00:00+08:00',
+      assigned_reviewer_id: 'user-lead-1',
+      assigned_reviewer_name: 'Test Lead Usher',
+      completed_at: null,
+      rubric_data: {},
+      notes: 'Initial evaluation scheduled.',
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-1',
+      created_at: '2026-11-15T10:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep5Application,
+        transactions: [mockStep5Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep5Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Step 5 should display "Needs Another Observation (Return to Step 4)" button
+    const returnButton = screen.getByRole('button', {
+      name: /needs another observation \(return to step 4\)/i,
+    });
+    expect(returnButton).toBeInTheDocument();
+
+    await user.click(returnButton);
+
+    // Verify fields are cleared and retake scheduling mode banner is displayed
+    expect(screen.getByText(/scheduling return to observation/i)).toBeInTheDocument();
+
+    // Click Confirm Return to Step 4 action button
+    const confirmReturnBtn = screen.getByRole('button', {
+      name: /confirm return to step 4/i,
+    });
+    await user.click(confirmReturnBtn);
+
+    // Verify confirmation dialog opens with details before submitting mutation
+    expect(screen.getByText('Confirm Return to Observation Schedule')).toBeInTheDocument();
+    const confirmButton = screen.getByRole('button', {
+      name: /confirm & return to observation/i,
+    });
+    await user.click(confirmButton);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'return_to_observation',
+        step_number: 5,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('allows returning to Step 4 directly when viewing completed Step 4 while candidate is on Step 5', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const activeStep5Application: RecruitmentApplication = {
+      ...mockApplication,
+      current_step: 5,
+    };
+
+    const mockStep4Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-obs-4',
+      application_id: mockApplication.id,
+      step_number: 4,
+      step_key: 'observation',
+      attempt_number: 1,
+      transaction_type: 'completed',
+      status: 'completed',
+      from_step: 3,
+      to_step: 4,
+      scheduled_at: '2026-11-15T10:00:00+08:00',
+      assigned_reviewer_id: 'user-lead-1',
+      assigned_reviewer_name: 'Test Lead Usher',
+      completed_at: '2026-11-15T12:00:00+08:00',
+      rubric_data: {},
+      notes: 'Initial observation completed.',
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-1',
+      created_at: '2026-11-08T10:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep5Application,
+        transactions: [mockStep4Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep5Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Navigate to Step 4 in stepper
+    const step4Tab = screen.getByRole('tab', { name: /observation/i });
+    await user.click(step4Tab);
+
+    // Verify Return to Step 4 banner and button are rendered
+    expect(screen.getByText('Return Candidate to Step 4 (Observation)')).toBeInTheDocument();
+    const returnToStep4Btn = screen.getByRole('button', { name: 'Return to Step 4' });
+    await user.click(returnToStep4Btn);
+
+    // Verify confirmation dialog opens
+    expect(screen.getByText('Confirm Return to Observation Schedule')).toBeInTheDocument();
+    const confirmButton = screen.getByRole('button', {
+      name: /confirm & return to observation/i,
+    });
+    await user.click(confirmButton);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'return_to_observation',
+        step_number: 4,
+      }),
+      expect.any(Object),
+    );
+  });
+
   it('opens confirmation modal before scheduling or rescheduling and allows cancellation', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

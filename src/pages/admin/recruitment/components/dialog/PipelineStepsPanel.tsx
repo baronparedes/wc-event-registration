@@ -163,7 +163,7 @@ export function PipelineStepsPanel({
           setPendingScheduleAction(null);
           setPendingCompleteOptions(null);
           setIsPendingDeployConfirm(false);
-          if (status === 'completed' && data?.current_step) {
+          if (data?.current_step) {
             handleStepSelect(data.current_step as RecruitmentStepNumber);
           }
           toast.success(
