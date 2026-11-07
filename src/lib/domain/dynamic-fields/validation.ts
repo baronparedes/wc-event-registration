@@ -4,6 +4,23 @@ import { VALIDATION_PATTERNS } from '@/config/constants';
 
 import type { DynamicFieldLike, DynamicFieldOptionItem } from './types';
 
+export type DynamicFieldSchemaOptions = {
+  requiredMessage?: string | ((field: DynamicFieldLike) => string);
+};
+
+function getRequiredMessage(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+  defaultFallback?: string,
+): string {
+  if (options?.requiredMessage) {
+    return typeof options.requiredMessage === 'function'
+      ? options.requiredMessage(field)
+      : options.requiredMessage;
+  }
+  return defaultFallback ?? `${field.label} is required.`;
+}
+
 function coerceOptionalString(value: unknown): unknown {
   if (typeof value !== 'string') {
     return value;
@@ -30,10 +47,14 @@ function getStartOfLocalDay(value: Date): Date {
   return new Date(value.getFullYear(), value.getMonth(), value.getDate());
 }
 
-function buildStringSchema(field: DynamicFieldLike): z.ZodType<string | undefined> {
+function buildStringSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<string | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
+  const requiredMsg = getRequiredMessage(field, options);
 
-  let schema = z.string({ message: `${field.label} is required.` }).trim();
+  let schema = z.string({ message: requiredMsg }).trim();
 
   if (typeof rules.min_length === 'number') {
     schema = schema.min(
@@ -59,16 +80,20 @@ function buildStringSchema(field: DynamicFieldLike): z.ZodType<string | undefine
   }
 
   if (field.is_required) {
-    return schema.min(1, `${field.label} is required.`);
+    return schema.min(1, requiredMsg);
   }
 
   return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
-function buildNumberSchema(field: DynamicFieldLike): z.ZodType<number | undefined> {
+function buildNumberSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<number | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
+  const requiredMsg = getRequiredMessage(field, options, `${field.label} must be a number.`);
 
-  let schema = z.number({ message: `${field.label} must be a number.` }).finite();
+  let schema = z.number({ message: requiredMsg }).finite();
 
   if (typeof rules.min === 'number') {
     schema = schema.min(rules.min, `${field.label} must be at least ${rules.min}.`);
@@ -101,15 +126,19 @@ function buildNumberSchema(field: DynamicFieldLike): z.ZodType<number | undefine
   return preprocessed as z.ZodType<number | undefined>;
 }
 
-function buildRatingSchema(field: DynamicFieldLike): z.ZodType<number | undefined> {
+function buildRatingSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<number | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
   const rawMax = typeof rules.max === 'number' ? rules.max : 5;
   const rawMin = typeof rules.min === 'number' ? rules.min : 1;
   const maxRating = Math.min(Math.max(1, rawMax), 10);
   const minRating = Math.max(1, rawMin);
+  const requiredMsg = getRequiredMessage(field, options);
 
   const schema = z
-    .number({ message: `${field.label} is required.` })
+    .number({ message: requiredMsg })
     .int(`${field.label} must be a whole number.`)
     .min(minRating, `${field.label} must be at least ${minRating}.`)
     .max(maxRating, `${field.label} must be at most ${maxRating}.`);
@@ -137,13 +166,17 @@ function buildRatingSchema(field: DynamicFieldLike): z.ZodType<number | undefine
   return preprocessed as z.ZodType<number | undefined>;
 }
 
-function buildSingleChoiceSchema(field: DynamicFieldLike): z.ZodType<string | undefined> {
-  const options = field.options ?? [];
-  const allowedValues = new Set(options.map((option) => option.value));
+function buildSingleChoiceSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<string | undefined> {
+  const fieldOptions = field.options ?? [];
+  const allowedValues = new Set(fieldOptions.map((option) => option.value));
+  const requiredMsg = getRequiredMessage(field, options);
 
   const schema = z
-    .string({ message: `${field.label} is required.` })
-    .min(1, `${field.label} is required.`)
+    .string({ message: requiredMsg })
+    .min(1, requiredMsg)
     .refine((value) => allowedValues.has(value), `${field.label} contains an unsupported option.`);
 
   if (field.is_required) {
@@ -153,10 +186,14 @@ function buildSingleChoiceSchema(field: DynamicFieldLike): z.ZodType<string | un
   return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
-function buildMultiSelectSchema(field: DynamicFieldLike): z.ZodType<string[] | undefined> {
+function buildMultiSelectSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<string[] | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
-  const options = field.options ?? [];
-  const allowedValues = new Set(options.map((option) => option.value));
+  const fieldOptions = field.options ?? [];
+  const allowedValues = new Set(fieldOptions.map((option) => option.value));
+  const requiredMsg = getRequiredMessage(field, options);
 
   let schema = z
     .array(z.string())
@@ -166,7 +203,7 @@ function buildMultiSelectSchema(field: DynamicFieldLike): z.ZodType<string[] | u
     );
 
   if (field.is_required) {
-    schema = schema.min(1, `${field.label} is required.`);
+    schema = schema.min(1, requiredMsg);
   }
 
   if (typeof rules.min_selections === 'number') {
@@ -223,12 +260,13 @@ function buildMultiSelectSchema(field: DynamicFieldLike): z.ZodType<string[] | u
 
 function buildMultiSelectToggleSchema(
   field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
 ): z.ZodType<Record<string, boolean> | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
-  const options: DynamicFieldOptionItem[] = (field.options ?? []) as DynamicFieldOptionItem[];
-  const allowedValues = new Set(options.map((option) => option.value));
+  const fieldOptions: DynamicFieldOptionItem[] = (field.options ?? []) as DynamicFieldOptionItem[];
+  const allowedValues = new Set(fieldOptions.map((option) => option.value));
   const toggleDefaultsByValue = new Map(
-    options.map((option) => [option.value, option.toggle_default]),
+    fieldOptions.map((option) => [option.value, option.toggle_default]),
   );
 
   let schema = z
@@ -250,10 +288,8 @@ function buildMultiSelectToggleSchema(
     );
 
   if (field.is_required) {
-    schema = schema.refine(
-      (values) => Object.keys(values).length > 0,
-      `${field.label} is required.`,
-    );
+    const requiredMsg = getRequiredMessage(field, options);
+    schema = schema.refine((values) => Object.keys(values).length > 0, requiredMsg);
   }
 
   if (typeof rules.min_selections === 'number') {
@@ -294,7 +330,10 @@ function buildMultiSelectToggleSchema(
   ) as z.ZodType<Record<string, boolean> | undefined>;
 }
 
-function buildDateLikeSchema(field: DynamicFieldLike): z.ZodType<string | undefined> {
+function buildDateLikeSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<string | undefined> {
   const rules = (field.validation_rules ?? {}) as Record<string, unknown>;
   const isDateOnly = field.field_type === 'date';
   const rawWeekdays = rules.allowed_weekdays;
@@ -309,10 +348,11 @@ function buildDateLikeSchema(field: DynamicFieldLike): z.ZodType<string | undefi
         )
         .filter((weekday, index, values) => values.indexOf(weekday) === index)
     : [];
+  const requiredMsg = getRequiredMessage(field, options);
 
   let schema = z
-    .string({ message: `${field.label} is required.` })
-    .min(1, `${field.label} is required.`)
+    .string({ message: requiredMsg })
+    .min(1, requiredMsg)
     .refine(
       (value) => {
         if (isDateOnly) {
@@ -394,32 +434,41 @@ function buildDateLikeSchema(field: DynamicFieldLike): z.ZodType<string | undefi
   return z.preprocess(coerceOptionalString, schema.optional()) as z.ZodType<string | undefined>;
 }
 
-function buildBooleanSchema(field: DynamicFieldLike): z.ZodType<boolean | undefined> {
+function buildBooleanSchema(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<boolean | undefined> {
   if (field.is_required) {
+    const requiredMsg = getRequiredMessage(field, options, `${field.label} must be accepted.`);
     return z.literal(true, {
-      message: `${field.label} must be accepted.`,
+      message: requiredMsg,
     }) as unknown as z.ZodType<boolean | undefined>;
   }
 
   return z.boolean().optional() as z.ZodType<boolean | undefined>;
 }
 
-export function buildSchemaForField(field: DynamicFieldLike): z.ZodType<unknown> {
+export function buildSchemaForField(
+  field: DynamicFieldLike,
+  options?: DynamicFieldSchemaOptions,
+): z.ZodType<unknown> {
+  const requiredMsg = getRequiredMessage(field, options);
+
   switch (field.field_type) {
     case 'number':
-      return buildNumberSchema(field);
+      return buildNumberSchema(field, options);
     case 'rating':
-      return buildRatingSchema(field);
+      return buildRatingSchema(field, options);
     case 'email': {
       let schema = z.string().trim().email(`${field.label} must be a valid email address.`);
       if (field.is_required) {
-        schema = schema.min(1, `${field.label} is required.`);
+        schema = schema.min(1, requiredMsg);
         return schema;
       }
       return z.preprocess(coerceOptionalString, schema.optional());
     }
     case 'phone': {
-      let schema = buildStringSchema(field);
+      let schema = buildStringSchema(field, options);
       const phonePattern = VALIDATION_PATTERNS.phone;
       schema = schema.refine(
         (value) => value === undefined || phonePattern.test(value),
@@ -429,34 +478,35 @@ export function buildSchemaForField(field: DynamicFieldLike): z.ZodType<unknown>
     }
     case 'select':
     case 'radio':
-      return buildSingleChoiceSchema(field);
+      return buildSingleChoiceSchema(field, options);
     case 'multi_select':
-      return buildMultiSelectSchema(field);
+      return buildMultiSelectSchema(field, options);
     case 'multi_select_toggle':
-      return buildMultiSelectToggleSchema(field);
+      return buildMultiSelectToggleSchema(field, options);
     case 'date':
     case 'datetime':
-      return buildDateLikeSchema(field);
+      return buildDateLikeSchema(field, options);
     case 'checkbox':
     case 'boolean':
-      return buildBooleanSchema(field);
+      return buildBooleanSchema(field, options);
     case 'required_approval':
       return z.preprocess(coerceOptionalString, z.string().optional().default('pending_approval'));
     case 'textarea':
     case 'text':
     case 'color_picker':
     default:
-      return buildStringSchema(field);
+      return buildStringSchema(field, options);
   }
 }
 
 export function buildDynamicFieldResponseSchema<T extends DynamicFieldLike>(
   fields: T[],
+  options?: DynamicFieldSchemaOptions,
 ): z.ZodObject<Record<string, z.ZodType<unknown>>> {
   const shape: Record<string, z.ZodType<unknown>> = {};
 
   fields.forEach((field) => {
-    shape[field.field_key] = buildSchemaForField(field);
+    shape[field.field_key] = buildSchemaForField(field, options);
   });
 
   return z.object(shape);

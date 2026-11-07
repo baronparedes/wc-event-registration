@@ -1,8 +1,15 @@
 import { useState } from 'react';
 
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
-import { Badge, Button, FormInputField, SundayAvailabilityTable } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  FormErrorSummary,
+  FormInputField,
+  SundayAvailabilityTable,
+} from '@/components/ui';
+import { useFormErrorFocus } from '@/hooks/utils';
 import type {
   ApplicantCommitments,
   RecruitmentApplication,
@@ -33,6 +40,7 @@ export function Step8RfidCommitmentsPanel({
   onRequestComplete,
 }: Step8RfidCommitmentsPanelProps) {
   const [rfidTag, setRfidTag] = useState<string>(application.assigned_rfid_member_id ?? '');
+  const { focusFirstError } = useFormErrorFocus();
   const [serviceCommitmentsLocal, setServiceCommitmentsLocal] = useState<ApplicantCommitments>(
     application.service_commitments ?? {},
   );
@@ -131,17 +139,20 @@ export function Step8RfidCommitmentsPanel({
       />
 
       {!isCompletedStep && !canComplete && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-          <div>
-            <span className="font-semibold">Required before completing Step 8:</span>
-            <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
-              {missingDetails.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <FormErrorSummary
+          errorCount={missingDetails.length}
+          title="Required before completing Step 8:"
+          onJumpToFirstError={() => {
+            if (!effectiveRfid.trim()) focusFirstError(['rfid-tag', 'rfidTag']);
+          }}
+          actionLabel="Jump to missing field"
+        >
+          <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs text-text">
+            {missingDetails.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </FormErrorSummary>
       )}
 
       {!isCompletedStep && (

@@ -123,6 +123,7 @@ export function StepRecruiterNotesThread({
       {/* Add Note Composer */}
       <form onSubmit={handleAddNote} className="space-y-2 pt-1">
         <FormTextareaField
+          id="addRecruiterNote"
           label={
             notes.length === 0 && !isCompletedStep ? 'Add Recruiter Note *' : 'Add Recruiter Note'
           }

@@ -613,7 +613,11 @@ describe('ApprovalReviewPage', () => {
     // Should remain on Step 2 and show error
     expect(screen.queryByRole('button', { name: 'Endorse Applicant' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Continue to Decision/i })).toBeInTheDocument();
-    expect(screen.getByText(/This field is required|Required/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/is required|required question/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText('1 required question needs attention before continuing.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Jump to first question' })).toBeInTheDocument();
   });
 
   it('requires decision notes when declining recruitment endorsement on Step 3', async () => {

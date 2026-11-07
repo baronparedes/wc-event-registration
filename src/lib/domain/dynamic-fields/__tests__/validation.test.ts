@@ -248,5 +248,17 @@ describe('dynamic-fields validation', () => {
       expect(formSchema.safeParse({ name: 'Alice' }).success).toBe(true);
       expect(formSchema.safeParse({ rating: 4 }).success).toBe(false);
     });
+
+    it('supports custom requiredMessage option', () => {
+      const fields: DynamicFieldLike[] = [
+        { field_key: 'q1', label: 'Question 1', field_type: 'radio', is_required: true },
+      ];
+      const formSchema = buildDynamicFieldResponseSchema(fields, { requiredMessage: 'Required' });
+      const result = formSchema.safeParse({});
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Required');
+      }
+    });
   });
 });

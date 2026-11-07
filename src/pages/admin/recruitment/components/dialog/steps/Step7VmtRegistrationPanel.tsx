@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
-import { Button, FormInputField } from '@/components/ui';
+import { Button, FormErrorSummary, FormInputField } from '@/components/ui';
+import { useFormErrorFocus } from '@/hooks/utils';
 import type { RecruitmentApplication } from '@/lib/domain/recruitment';
 import { formatDateTime } from '@/lib/infrastructure';
 
@@ -28,6 +29,7 @@ export function Step7VmtRegistrationPanel({
 }: Step7VmtRegistrationPanelProps) {
   const [ccfVmtId, setCcfVmtId] = useState<string>(application.ccf_vmt_id ?? '');
   const [ccfVmtDate, setCcfVmtDate] = useState<string>(application.ccf_vmt_date ?? '');
+  const { focusFirstError } = useFormErrorFocus();
 
   if (isFutureStep) {
     return (
@@ -66,6 +68,7 @@ export function Step7VmtRegistrationPanel({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <FormInputField
+          id="ccfVmtId"
           label={isCompletedStep ? 'CCF VMT ID' : 'CCF VMT ID *'}
           placeholder="e.g. VMT-12345"
           disabled={isCompletedStep}
@@ -75,6 +78,7 @@ export function Step7VmtRegistrationPanel({
         />
 
         <FormInputField
+          id="ccfVmtDate"
           label={isCompletedStep ? 'CCF VMT Registration Date' : 'CCF VMT Registration Date *'}
           type="date"
           disabled={isCompletedStep}
@@ -85,17 +89,21 @@ export function Step7VmtRegistrationPanel({
       </div>
 
       {!isCompletedStep && !canComplete && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-          <div>
-            <span className="font-semibold">Required before completing Step 7:</span>
-            <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] text-text">
-              {missingDetails.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <FormErrorSummary
+          errorCount={missingDetails.length}
+          title="Required before completing Step 7:"
+          onJumpToFirstError={() => {
+            if (!effectiveVmtId.trim()) focusFirstError(['ccfVmtId']);
+            else focusFirstError(['ccfVmtDate']);
+          }}
+          actionLabel="Jump to missing field"
+        >
+          <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs text-text">
+            {missingDetails.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </FormErrorSummary>
       )}
 
       {!isCompletedStep && (

@@ -38,7 +38,12 @@ export function BiblicalSurveySection({ fields, form }: BiblicalSurveySectionPro
         {visibleFields.map((field) => {
           const error = form.formState.errors[field.field_key]?.message;
           return (
-            <div key={field.field_key} className="border-b border-border pb-5 last:border-0">
+            <div
+              key={field.field_key}
+              data-field-key={field.field_key}
+              data-field-error={error ? field.field_key : undefined}
+              className="border-b border-border pb-5 last:border-0"
+            >
               <label
                 className="mb-2 block text-sm font-medium text-text"
                 htmlFor={`field-${field.field_key}`}

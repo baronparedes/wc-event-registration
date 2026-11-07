@@ -6,6 +6,7 @@ export type AlertBannerVariant = 'info' | 'warning' | 'error' | 'success';
 
 export interface AlertBannerProps {
   variant?: AlertBannerVariant;
+  align?: 'start' | 'center';
   title?: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
@@ -59,6 +60,7 @@ const variantStyles: Record<
  */
 export function AlertBanner({
   variant = 'info',
+  align,
   title,
   description,
   children,
@@ -75,12 +77,18 @@ export function AlertBanner({
     renderedIcon = icon;
   }
 
+  const effectiveAlign = align ?? (!description && !children ? 'center' : 'start');
+  const alignmentClass = effectiveAlign === 'center' ? 'items-center' : 'items-start';
+  const iconPadding = effectiveAlign === 'center' ? '' : 'pt-0.5';
+
   return (
     <div
       role="alert"
-      className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${config.container} ${className}`}
+      className={`flex ${alignmentClass} gap-3 rounded-xl border p-4 text-sm ${config.container} ${className}`}
     >
-      {renderedIcon && <div className={`shrink-0 pt-0.5 ${config.icon}`}>{renderedIcon}</div>}
+      {renderedIcon && (
+        <div className={`shrink-0 ${iconPadding} ${config.icon}`}>{renderedIcon}</div>
+      )}
       <div className="min-w-0 flex-1 space-y-1">
         {title && <div className={config.title}>{title}</div>}
         {description && (
