@@ -84,19 +84,25 @@ export function AlertBanner({
   return (
     <div
       role="alert"
-      className={`flex ${alignmentClass} gap-3 rounded-xl border p-4 text-sm ${config.container} ${className}`}
+      className={`flex flex-col sm:flex-row ${action ? 'sm:items-start' : alignmentClass} gap-3 rounded-xl border p-3.5 sm:p-4 text-sm ${config.container} ${className}`}
     >
-      {renderedIcon && (
-        <div className={`shrink-0 ${iconPadding} ${config.icon}`}>{renderedIcon}</div>
-      )}
-      <div className="min-w-0 flex-1 space-y-1">
-        {title && <div className={config.title}>{title}</div>}
-        {description && (
-          <div className={`text-xs sm:text-sm ${config.description}`}>{description}</div>
+      <div className={`flex ${alignmentClass} gap-2.5 sm:gap-3 min-w-0 flex-1 w-full`}>
+        {renderedIcon && (
+          <div className={`shrink-0 ${iconPadding} ${config.icon}`}>{renderedIcon}</div>
         )}
-        {children}
+        <div className="min-w-0 flex-1 space-y-1">
+          {title && <div className={config.title}>{title}</div>}
+          {description && (
+            <div className={`text-xs sm:text-sm ${config.description}`}>{description}</div>
+          )}
+          {children}
+        </div>
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && (
+        <div className="w-full sm:w-auto shrink-0 sm:self-start pt-1 sm:pt-0 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto">
+          {action}
+        </div>
+      )}
     </div>
   );
 }

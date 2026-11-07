@@ -358,6 +358,7 @@ export const adminUpdateStageSchema = z
       'restore_applicant',
       'add_note',
       'upload_avatar',
+      'cancel_schedule',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(1).max(9).optional(),

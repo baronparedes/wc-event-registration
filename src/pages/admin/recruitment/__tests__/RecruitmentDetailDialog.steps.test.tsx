@@ -333,6 +333,63 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
   });
 
+  it('allows cancelling a scheduled session, requiring a cancellation reason and submitting cancel_schedule action', async () => {
+    const user = userEvent.setup();
+    const readyStep2Tx: RecruitmentPipelineTransaction = {
+      ...mockTransaction,
+      id: 'tx-ready-step-2',
+      step_number: 2,
+      status: 'scheduled',
+      transaction_type: 'scheduled',
+      scheduled_at: '2026-11-08T09:00:00+08:00',
+      assigned_reviewer_id: 'rev-1',
+      assigned_reviewer_name: 'Aaron Atienza (Aey)',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [readyStep2Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    const cancelScheduleBtn = screen.getByRole('button', { name: /cancel schedule/i });
+    expect(cancelScheduleBtn).toBeInTheDocument();
+    await user.click(cancelScheduleBtn);
+
+    // Verify Cancel Schedule confirmation modal
+    expect(screen.getByText('Cancel Scheduled Session')).toBeInTheDocument();
+    expect(screen.getByText('To Be Cancelled')).toBeInTheDocument();
+
+    const confirmCancelBtn = screen.getByRole('button', { name: /confirm & cancel schedule/i });
+    expect(confirmCancelBtn).toBeDisabled();
+
+    const reasonInput = screen.getByLabelText(/cancellation reason/i);
+    await user.type(reasonInput, 'Applicant has scheduling conflict');
+    expect(confirmCancelBtn).toBeEnabled();
+
+    await user.click(confirmCancelBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'cancel_schedule',
+        step_number: 2,
+        notes: 'Applicant has scheduling conflict',
+      }),
+      expect.any(Object),
+    );
+  });
+
   it('locks scheduling and actions on future steps', async () => {
     const user = userEvent.setup();
     mockDetailQuery.mockReturnValue({
@@ -448,8 +505,11 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     // Verify CompletedStepCard is present
     expect(screen.getByText('Step 2 is Completed')).toBeInTheDocument();
 
-    // Verify recorded reviewer and notes are visible in the recruiter notes thread
+    // Verify recorded reviewer and notes can be viewed via the notes chip
     expect(screen.getAllByText('Test Pastor Dave').length).toBeGreaterThan(0);
+    const notesChip = screen.getByRole('button', { name: /notes \(1\)/i });
+    expect(notesChip).toBeInTheDocument();
+    await user.click(notesChip);
     expect(
       screen.getByText('Candidate showed great heart for welcoming guests and solid doctrine.'),
     ).toBeInTheDocument();
@@ -528,10 +588,9 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
       />,
     );
 
-    // Verify Previous Interview Attempts summary card is displayed
-    expect(screen.getByText('Previous Interview Attempts')).toBeInTheDocument();
+    // Verify Past Attempts chip is displayed
     const viewPastAttemptsBtn = screen.getByRole('button', {
-      name: /view past attempts \(1\)/i,
+      name: /past attempts \(1\)/i,
     });
     expect(viewPastAttemptsBtn).toBeInTheDocument();
 
@@ -839,7 +898,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
 
     // Cancel closes dialog without mutation
-    const cancelBtn = screen.getByRole('button', { name: /cancel/i });
+    const cancelBtn = screen.getByRole('button', { name: /^cancel$/i });
     await user.click(cancelBtn);
     expect(mockUpdateStageMutate).not.toHaveBeenCalled();
 
@@ -996,18 +1055,16 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
       />,
     );
 
-    // Verify Recruiter Notes summary card shows count and snippet
-    expect(screen.getByText('Recruiter Notes')).toBeInTheDocument();
-    expect(
-      screen.getByText('Candidate arrived on time and showed great energy.'),
-    ).toBeInTheDocument();
-
-    const openNotesBtn = screen.getByRole('button', { name: /open notes \(1\)/i });
+    const openNotesBtn = screen.getByRole('button', { name: /notes \(1\)/i });
+    expect(openNotesBtn).toBeInTheDocument();
     await user.click(openNotesBtn);
 
-    // Dialog is visible
+    // Dialog is visible and displays the recorded note
     const notesDialog = screen.getByRole('dialog', { name: /recruiter notes — step 4/i });
     expect(notesDialog).toBeInTheDocument();
+    expect(
+      within(notesDialog).getByText('Candidate arrived on time and showed great energy.'),
+    ).toBeInTheDocument();
 
     // Type new note
     const textarea = within(notesDialog).getByPlaceholderText(/type internal feedback/i);

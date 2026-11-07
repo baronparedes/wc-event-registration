@@ -1259,3 +1259,123 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'update-recruitment-stage cancels an active schedule, resets transaction to pending, and records cancellation note',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2 },
+        transactions: [
+          {
+            id: 'tx-scheduled-step-2',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            step_key: 'interview',
+            attempt_number: 1,
+            status: 'scheduled',
+            transaction_type: 'scheduled',
+            scheduled_at: '2026-11-08T09:00:00+08:00',
+            assigned_reviewer_id: USER_ID,
+            assigned_reviewer_name: 'Coach Reviewer',
+          },
+        ],
+      });
+
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'cancel_schedule',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            notes: 'Candidate has a family emergency',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.status, 'pending');
+        assertEquals(body.scheduled_at, null);
+        assertEquals(body.assigned_reviewer_id, null);
+        assertEquals(body.assigned_reviewer_name, null);
+
+        // Verify transaction was updated to pending with null scheduled_at and unassigned reviewer
+        const txUpdateCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/recruitment_pipeline_transactions' && call.method === 'PATCH',
+        );
+        assertEquals(Boolean(txUpdateCall), true);
+        const txBody =
+          typeof txUpdateCall?.body === 'string'
+            ? JSON.parse(txUpdateCall.body)
+            : (txUpdateCall?.body as Record<string, unknown>) || {};
+        assertEquals(txBody.status, 'pending');
+        assertEquals(txBody.scheduled_at, null);
+        assertEquals(txBody.assigned_reviewer_id, null);
+        assertEquals(txBody.assigned_reviewer_name, null);
+        assertEquals(txBody.notes, 'Schedule cancelled: Candidate has a family emergency');
+
+        // Verify cancellation note was inserted into recruitment_step_notes
+        const noteInsertCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteInsertCall), true);
+        const noteBody =
+          typeof noteInsertCall?.body === 'string'
+            ? JSON.parse(noteInsertCall.body)
+            : (noteInsertCall?.body as Record<string, unknown>) || {};
+        assertEquals(noteBody.content, 'Schedule cancelled: Candidate has a family emergency');
+        assertEquals(noteBody.step_number, 2);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage rejects cancel_schedule without notes or on non-scheduled step',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2 },
+        transactions: [
+          {
+            id: 'tx-completed-step-2',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            status: 'completed',
+          },
+        ],
+      });
+
+      try {
+        // Missing notes
+        const badReq = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'cancel_schedule',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+          }),
+        );
+        assertEquals(badReq.status, 400);
+
+        // Already completed step
+        const conflictReq = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'cancel_schedule',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            notes: 'Some reason',
+          }),
+        );
+        assertEquals(conflictReq.status, 409);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);

@@ -4,6 +4,7 @@ import { handleUploadAvatar } from './avatar.ts';
 import { handleSaveCommitments } from './commitments.ts';
 import { handleResendEndorsement } from './endorsement.ts';
 import { handleAddNote } from './notes.ts';
+import { handleCancelSchedule } from './scheduleCancel.ts';
 import { handleStepRepeat } from './stageRepeat.ts';
 import { handleUpdateStage } from './stageTransition.ts';
 import { handleCompleteVmt } from './vmt.ts';
@@ -52,5 +53,9 @@ export const actionRoutes: RecruitmentActionMap = {
   update_stage: {
     requiresReviewer: true,
     handle: handleUpdateStage,
+  },
+  cancel_schedule: {
+    requiresReviewer: true,
+    handle: handleCancelSchedule,
   },
 };

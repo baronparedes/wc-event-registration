@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { FormTextareaField } from '@/components/ui/FormTextareaField';
 import { Spinner } from '@/components/ui/Spinner';
-import { formatDisplayDateTime, parseDateTimeParts } from '@/components/ui/sundayDateTimeUtils';
 import { useAddRecruiterNoteMutation } from '@/hooks/domain/recruitment';
 import type { RecruiterNote } from '@/lib/domain/recruitment';
 
@@ -24,8 +23,16 @@ export interface StepRecruiterNotesThreadProps {
 
 function formatNoteDate(dateStr: string): string {
   try {
-    const { datePart, timePart } = parseDateTimeParts(dateStr);
-    return datePart ? formatDisplayDateTime(datePart, timePart) : dateStr;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return dateStr;
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila',
+    });
   } catch {
     return dateStr;
   }
@@ -36,7 +43,6 @@ export function StepRecruiterNotesThread({
   stepNumber,
   stepTitle,
   notes,
-  isCompletedStep = false,
   hideHeader = false,
   hideBorder = false,
 }: StepRecruiterNotesThreadProps) {
@@ -87,38 +93,27 @@ export function StepRecruiterNotesThread({
 
       {/* Notes List */}
       {notes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface p-3 text-center text-xs text-muted">
+        <div className="rounded-lg border border-dashed border-border/70 bg-background/40 p-3 text-center text-xs text-muted">
           No recruiter notes recorded for this step yet.
         </div>
       ) : (
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+        <div className="rounded-lg border border-border/70 bg-background/40 divide-y divide-border/40 max-h-80 overflow-y-auto px-3 py-1">
           {notes.map((note) => (
-            <div
-              key={note.id}
-              className="rounded-lg border border-border bg-surface p-2.5 text-xs space-y-1.5"
-            >
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
+            <div key={note.id} className="py-2.5 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <Avatar
                     name={note.author_name}
                     avatarObjectKey={note.avatar_object_key}
-                    size="sm"
+                    size="xs"
                   />
-                  <span className="font-semibold text-text">{note.author_name}</span>
-                  {note.author_role && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] py-0 px-1 border-primary/30 text-primary"
-                    >
-                      {note.author_role}
-                    </Badge>
-                  )}
+                  <span className="font-medium text-xs text-text truncate">{note.author_name}</span>
                 </div>
-                <span className="text-[10px] text-muted font-mono">
+                <span className="text-[11px] text-muted shrink-0">
                   {formatNoteDate(note.created_at)}
                 </span>
               </div>
-              <p className="text-text whitespace-pre-wrap pl-8 text-xs leading-relaxed">
+              <p className="text-text whitespace-pre-wrap pl-7 text-xs leading-relaxed break-words">
                 {note.content}
               </p>
             </div>
@@ -127,39 +122,34 @@ export function StepRecruiterNotesThread({
       )}
 
       {/* Add Note Composer */}
-      <form onSubmit={handleAddNote} className="space-y-2 pt-1">
+      <form onSubmit={handleAddNote} className="space-y-1.5 pt-1">
         <FormTextareaField
           id="addRecruiterNote"
-          label={
-            notes.length === 0 && !isCompletedStep ? 'Add Recruiter Note *' : 'Add Recruiter Note'
-          }
+          label="Add Recruiter Note"
           placeholder={`Type internal feedback, candidate observations, or notes for Step ${stepNumber}...`}
           rows={2}
-          textareaClassName="resize-none text-xs"
+          className="space-y-1"
+          textareaClassName="resize-none text-xs min-h-[56px] py-2 px-3"
           value={content}
           onChange={(event) => setContent(event.target.value)}
           disabled={addNoteMutation.isPending}
-          helperText={
-            notes.length === 0 && !isCompletedStep
-              ? 'At least one recruiter note is required before completing this step.'
-              : undefined
-          }
         />
         <div className="flex justify-end">
           <Button
             type="submit"
             variant="default"
             size="sm"
+            className="h-7 px-2.5 text-xs"
             disabled={addNoteMutation.isPending || !content.trim()}
           >
             {addNoteMutation.isPending ? (
               <>
-                <Spinner className="mr-1.5 h-3.5 w-3.5 text-white" />
+                <Spinner className="mr-1.5 h-3 w-3 text-white" />
                 Posting Note...
               </>
             ) : (
               <>
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                <Plus className="mr-1.5 h-3 w-3" />
                 Add Note
               </>
             )}
