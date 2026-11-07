@@ -9,7 +9,16 @@ import {
 } from './helpers.ts';
 
 export async function handleUpdateStage(context: RecruitmentActionContext): Promise<Response> {
-  const { supabase, request, application, userId, adminRole, corsHeaders } = context;
+  const {
+    supabase,
+    request,
+    application,
+    authUser,
+    userId,
+    normalizedEmail,
+    adminRole,
+    corsHeaders,
+  } = context;
 
   if (!request.step_number || !request.status) {
     return response(
@@ -119,6 +128,17 @@ export async function handleUpdateStage(context: RecruitmentActionContext): Prom
     );
   }
   const wasScheduled = Boolean(latest.data?.status === 'scheduled');
+
+  if (stageStatus === 'completed' && stepNumber >= 2 && stepNumber <= 6 && !wasScheduled) {
+    return response(
+      409,
+      {
+        success: false,
+        error: `Step ${stepNumber} must be scheduled before it can be completed`,
+      },
+      corsHeaders,
+    );
+  }
   const transactionType =
     stageStatus === 'completed'
       ? 'completed'
@@ -161,6 +181,41 @@ export async function handleUpdateStage(context: RecruitmentActionContext): Prom
       { success: false, error: 'Failed to update recruitment stage' },
       corsHeaders,
     );
+  }
+
+  if (request.notes?.trim()) {
+    const { data: memberUser } = await supabase
+      .from('users')
+      .select('id, full_name, nickname, avatar_object_key')
+      .or(`auth_user_id.eq.${userId},email.ilike.${normalizedEmail}`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const authorName =
+      request.assigned_reviewer_name?.trim() ||
+      memberUser?.full_name ||
+      (authUser?.user_metadata?.full_name as string | undefined) ||
+      (authUser?.user_metadata?.name as string | undefined) ||
+      authUser?.email?.split('@')[0] ||
+      'Recruitment Reviewer';
+    const authorRole = adminRole ? adminRole.toUpperCase() : null;
+    const avatarObjectKey = memberUser?.avatar_object_key ?? null;
+
+    const { error: noteInsertError } = await supabase.from('recruitment_step_notes').insert({
+      application_id: application.id,
+      step_number: stepNumber,
+      attempt_number: latest.data?.attempt_number ?? 1,
+      transaction_id: transaction.id,
+      author_id: userId,
+      author_name: authorName,
+      author_role: authorRole,
+      avatar_object_key: avatarObjectKey,
+      content: request.notes.trim(),
+    });
+    if (noteInsertError) {
+      console.warn('Failed to record recruiter note during stage transition:', noteInsertError);
+    }
   }
 
   const applicationUpdate: RecruitmentApplicationUpdate = {};

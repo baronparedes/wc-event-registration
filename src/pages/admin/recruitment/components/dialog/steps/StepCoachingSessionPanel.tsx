@@ -1,6 +1,14 @@
 import { useState } from 'react';
 
-import { AlertCircle, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Eye,
+  MessageSquare,
+  Plus,
+  RotateCcw,
+} from 'lucide-react';
 
 import {
   Badge,
@@ -22,7 +30,8 @@ import { formatDateTime, toDatetimeLocal } from '@/lib/infrastructure';
 
 import { ReviewerUserPicker } from '../ReviewerUserPicker';
 import { type ScheduleActionKind } from '../ScheduleSessionConfirmDialog';
-import { StepRecruiterNotesThread } from '../StepRecruiterNotesThread';
+import { StepAttemptsHistoryDialog } from '../StepAttemptsHistoryDialog';
+import { StepRecruiterNotesDialog } from '../StepRecruiterNotesDialog';
 import { CompletedStepCard } from './CompletedStepCard';
 import { LockedStepCard } from './LockedStepCard';
 
@@ -82,7 +91,11 @@ export function StepCoachingSessionPanel({
   const previousStepAttempts = stepTransactions.slice(1);
 
   const currentStepNotes = (stepNotes ?? []).filter((n) => n.step_number === stepNumber);
+  const latestStepNote = currentStepNotes[currentStepNotes.length - 1];
   const { focusFirstError } = useFormErrorFocus();
+
+  const [isAttemptsDialogOpen, setIsAttemptsDialogOpen] = useState(false);
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   const [reviewerId, setReviewerId] = useState<string>(
     latestStepTransaction?.assigned_reviewer_id ?? '',
@@ -97,9 +110,6 @@ export function StepCoachingSessionPanel({
   const [confirmedRole, setConfirmedRole] = useState<string>(
     application.confirmed_role ?? application.desired_role,
   );
-  const [repeatActionKind, setRepeatActionKind] = useState<
-    'repeat_step' | 'return_to_interview' | 'return_to_observation' | null
-  >(null);
 
   if (isFutureStep) {
     return (
@@ -111,40 +121,23 @@ export function StepCoachingSessionPanel({
     );
   }
 
-  const handleInitiateRepeat = (
-    kind: 'repeat_step' | 'return_to_interview' | 'return_to_observation',
-  ) => {
-    setRepeatActionKind(kind);
-    setReviewerId('');
-    setReviewerName('');
-    setSelectedReviewerUser(null);
-    setScheduledAtLocal('');
-  };
-
-  const handleCancelRepeat = () => {
-    setRepeatActionKind(null);
-    setReviewerId(latestStepTransaction?.assigned_reviewer_id ?? '');
-    setReviewerName(latestStepTransaction?.assigned_reviewer_name ?? '');
-    setSelectedReviewerUser(null);
-    setScheduledAtLocal(
-      toDatetimeLocal(latestStepTransaction?.completed_at ?? latestStepTransaction?.scheduled_at),
-    );
-  };
+  const isSessionScheduled = Boolean(
+    latestStepTransaction?.status === 'scheduled' ||
+    (latestStepTransaction?.status === 'completed' && latestStepTransaction?.scheduled_at),
+  );
 
   const hasAssignedReviewer = Boolean(reviewerId?.trim() || reviewerName?.trim());
   const hasScheduledAt = Boolean(scheduledAtLocal?.trim() || latestStepTransaction?.scheduled_at);
-  const hasNotesOnRecord =
-    currentStepNotes.length > 0 || Boolean(latestStepTransaction?.notes?.trim());
 
   const missingDetails: string[] = [];
+  if (!isSessionScheduled) {
+    missingDetails.push('Session must be scheduled first');
+  }
   if (!hasAssignedReviewer) missingDetails.push('Assigned To');
   if (!hasScheduledAt) missingDetails.push('Session Date & Time');
   if (stepNumber === 2 && !confirmedRole) missingDetails.push('Confirmed Ministry Role');
   if (stepNumber === 4 && !isDGroupEndorsed && !canOverrideGate) {
     missingDetails.push('DGroup Leader Endorsement');
-  }
-  if (!hasNotesOnRecord) {
-    missingDetails.push('Recruitment Notes / Feedback');
   }
 
   const canComplete = missingDetails.length === 0;
@@ -236,60 +229,38 @@ export function StepCoachingSessionPanel({
         </div>
       )}
 
-      {/* Previous attempts history for this step */}
+      {/* Previous attempts summary card */}
       {previousStepAttempts.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-3.5 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5 text-primary" />
-              <h4 className="font-semibold text-xs text-text">
-                Previous {stepNumber === 2 ? 'Interview' : stepMeta?.shortLabel} Attempts (
-                {previousStepAttempts.length})
-              </h4>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </div>
-            <Badge variant="secondary" className="text-[10px]">
-              Recorded History Intact
-            </Badge>
-          </div>
-
-          <div className="space-y-2">
-            {previousStepAttempts.map((tx) => (
-              <div
-                key={tx.id}
-                className="rounded-lg border border-border/60 bg-surface p-2.5 text-xs space-y-1.5"
-              >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="font-semibold text-text">Attempt #{tx.attempt_number}</span>
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="secondary" className="text-[10px] capitalize py-0 px-1.5">
-                      {tx.status}
-                    </Badge>
-                    <span className="text-[10px] text-muted font-mono">
-                      {formatDateTime(tx.completed_at || tx.created_at)}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 text-[11px] text-muted">
-                  <div>
-                    <span>Coach: </span>
-                    <strong className="text-text">{tx.assigned_reviewer_name || 'None'}</strong>
-                  </div>
-                  <div>
-                    <span>Session Date: </span>
-                    <strong className="text-text">
-                      {tx.scheduled_at ? formatDateTime(tx.scheduled_at) : 'N/A'}
-                    </strong>
-                  </div>
-                </div>
-                {tx.notes && (
-                  <div className="mt-1 rounded-md bg-surface p-2 text-[11px] text-text border border-border/40">
-                    <span className="font-medium text-muted block mb-0.5">Recruitment Notes:</span>
-                    <p className="whitespace-pre-wrap">{tx.notes}</p>
-                  </div>
-                )}
+            <div className="min-w-0">
+              <div className="font-semibold text-text flex items-center gap-2">
+                <span>
+                  Previous {stepNumber === 2 ? 'Interview' : stepMeta?.shortLabel} Attempts
+                </span>
+                <Badge variant="secondary" className="text-[10px] font-normal py-0 px-1.5">
+                  {previousStepAttempts.length}
+                </Badge>
               </div>
-            ))}
+              <p className="text-[11px] text-muted truncate mt-0.5">
+                Attempt #{latestStepTransaction?.attempt_number ?? 1} in progress · Recorded history
+                intact
+              </p>
+            </div>
           </div>
+          <Button
+            type="button"
+            variant="primaryOutline"
+            size="sm"
+            onClick={() => setIsAttemptsDialogOpen(true)}
+            className="shrink-0 w-full sm:w-auto font-medium"
+          >
+            <Eye className="mr-1.5 h-3.5 w-3.5" />
+            View Past Attempts ({previousStepAttempts.length})
+          </Button>
         </div>
       )}
 
@@ -327,33 +298,6 @@ export function StepCoachingSessionPanel({
         </div>
 
         <div className="space-y-3.5">
-          {repeatActionKind && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs">
-              <div>
-                <strong className="text-text font-semibold">
-                  {repeatActionKind === 'return_to_interview'
-                    ? 'Scheduling Return to Interview (Step 2)'
-                    : repeatActionKind === 'return_to_observation'
-                      ? 'Scheduling Return to Observation (Step 4)'
-                      : `Scheduling Repeat Attempt #${(latestStepTransaction?.attempt_number ?? 1) + 1} (${stepMeta?.title ?? ''})`}
-                </strong>
-                <p className="text-muted text-[11px] mt-0.5">
-                  Previous session details have been cleared. Select a coach and Sunday date & time
-                  below.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                onClick={handleCancelRepeat}
-                className="shrink-0"
-              >
-                Cancel Retake
-              </Button>
-            </div>
-          )}
-
           <ReviewerUserPicker
             id="assignedReviewer"
             label="Assigned To"
@@ -382,11 +326,7 @@ export function StepCoachingSessionPanel({
           {!isCompletedStep && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
               <div className="text-muted text-[11px] leading-relaxed">
-                {repeatActionKind ? (
-                  <span>
-                    Assign a coach and select a Sunday date & time above to schedule this retake.
-                  </span>
-                ) : latestStepTransaction?.scheduled_at ? (
+                {latestStepTransaction?.scheduled_at ? (
                   <span>
                     Session scheduled for{' '}
                     <strong className="text-text">
@@ -396,57 +336,32 @@ export function StepCoachingSessionPanel({
                   </span>
                 ) : (
                   <span>
-                    Assign a coach and select a Sunday date & time above to schedule this session.
+                    Assign a coach and select a Sunday date & time above, then click{' '}
+                    <strong className="text-text">Save Schedule</strong>. Sessions must be scheduled
+                    before completing this step.
                   </span>
                 )}
               </div>
-              {repeatActionKind ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    onRequestSchedule({
-                      scheduledAt: scheduledAtLocal,
-                      reviewerId,
-                      reviewerName,
-                      selectedReviewerUser,
-                      actionKind: repeatActionKind,
-                    })
-                  }
-                  disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
-                  className="w-full sm:w-auto shrink-0 font-medium"
-                >
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                  {repeatActionKind === 'return_to_interview'
-                    ? 'Schedule Return to Step 2'
-                    : repeatActionKind === 'return_to_observation'
-                      ? 'Schedule Return to Step 4'
-                      : `Schedule Repeat ${stepMeta?.title ?? 'Session'}`}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="primaryOutline"
-                  size="sm"
-                  onClick={() =>
-                    onRequestSchedule({
-                      scheduledAt: scheduledAtLocal,
-                      reviewerId,
-                      reviewerName,
-                      selectedReviewerUser,
-                      actionKind: latestStepTransaction?.scheduled_at ? 'reschedule' : 'schedule',
-                    })
-                  }
-                  disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
-                  className="w-full sm:w-auto shrink-0 font-medium"
-                >
-                  <Clock className="mr-1.5 h-3.5 w-3.5" />
-                  {latestStepTransaction?.scheduled_at
-                    ? 'Update Session Schedule'
-                    : 'Save Schedule'}
-                </Button>
-              )}
+              <Button
+                id="saveScheduleButton"
+                type="button"
+                variant={isSessionScheduled ? 'primaryOutline' : 'default'}
+                size="sm"
+                onClick={() =>
+                  onRequestSchedule({
+                    scheduledAt: scheduledAtLocal,
+                    reviewerId,
+                    reviewerName,
+                    selectedReviewerUser,
+                    actionKind: latestStepTransaction?.scheduled_at ? 'reschedule' : 'schedule',
+                  })
+                }
+                disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
+                className="w-full sm:w-auto shrink-0 font-medium"
+              >
+                <Clock className="mr-1.5 h-3.5 w-3.5" />
+                {latestStepTransaction?.scheduled_at ? 'Update Schedule' : 'Save Schedule'}
+              </Button>
             </div>
           )}
         </div>
@@ -494,14 +409,66 @@ export function StepCoachingSessionPanel({
           </div>
         )}
 
-        {/* Recruiter Notes Thread */}
-        <StepRecruiterNotesThread
-          applicationId={application.id}
-          stepNumber={stepNumber}
-          stepTitle={stepMeta?.title ?? `Step ${stepNumber}`}
-          notes={currentStepNotes}
-          isCompletedStep={isCompletedStep}
-        />
+        {/* Recruiter Notes Summary Card */}
+        <div className="border-t border-border/80 pt-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-surface p-3 text-xs">
+            <div className="flex items-start gap-2.5 min-w-0 flex-1">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
+                <MessageSquare className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-text">Recruiter Notes</span>
+                  <Badge
+                    variant={currentStepNotes.length > 0 ? 'secondary' : 'outline'}
+                    className="text-[10px] font-normal py-0 px-1.5"
+                  >
+                    {currentStepNotes.length}
+                  </Badge>
+                  {currentStepNotes.length === 0 && !isCompletedStep && (
+                    <span className="text-[10px] text-amber-700 font-medium">Required</span>
+                  )}
+                </div>
+                {latestStepNote ? (
+                  <p className="text-[11px] text-muted truncate mt-0.5 max-w-md">
+                    <strong className="text-text font-medium">
+                      {latestStepNote.author_name}:{' '}
+                    </strong>
+                    {latestStepNote.content}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted mt-0.5">
+                    {isCompletedStep
+                      ? 'No notes recorded for this step.'
+                      : 'At least one recruiter note is required before completing this step.'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              id="openRecruiterNotesButton"
+              type="button"
+              variant={
+                currentStepNotes.length === 0 && !isCompletedStep ? 'default' : 'primaryOutline'
+              }
+              size="sm"
+              onClick={() => setIsNotesDialogOpen(true)}
+              className="shrink-0 w-full sm:w-auto font-medium"
+            >
+              {currentStepNotes.length > 0 ? (
+                <>
+                  <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+                  Open Notes ({currentStepNotes.length})
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Note
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Missing Details Checklist Notice */}
@@ -511,7 +478,9 @@ export function StepCoachingSessionPanel({
           title={`Required before completing Step ${stepNumber}:`}
           onJumpToFirstError={() => {
             const firstMissing = missingDetails[0] ?? '';
-            if (
+            if (firstMissing.includes('scheduled')) {
+              focusFirstError(['saveScheduleButton', 'sessionDateTime', 'assignedReviewer']);
+            } else if (
               firstMissing.includes('Assigned') ||
               firstMissing.includes('Coach') ||
               firstMissing.includes('Reviewer')
@@ -520,15 +489,19 @@ export function StepCoachingSessionPanel({
             } else if (firstMissing.includes('Date')) {
               focusFirstError(['sessionDateTime']);
             } else if (firstMissing.includes('Note')) {
-              focusFirstError(['addRecruiterNote']);
+              setIsNotesDialogOpen(true);
+              setTimeout(() => {
+                document.getElementById('addRecruiterNote')?.focus();
+              }, 100);
             } else if (firstMissing.includes('Role')) {
               focusFirstError(['confirmedRole']);
             } else {
               focusFirstError([
+                'saveScheduleButton',
                 'assignedReviewer',
                 'sessionDateTime',
                 'confirmedRole',
-                'addRecruiterNote',
+                'openRecruiterNotesButton',
               ]);
             }
           }}
@@ -546,8 +519,15 @@ export function StepCoachingSessionPanel({
       {!isCompletedStep && (
         <div className="border-t border-border pt-3.5 space-y-3">
           <div className="space-y-2">
-            <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
-              Stage Outcome
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
+                Stage Outcome
+              </div>
+              {!isSessionScheduled && (
+                <span className="text-[11px] text-muted font-medium">
+                  Requires scheduled session before completion
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
@@ -569,255 +549,102 @@ export function StepCoachingSessionPanel({
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
                 Complete Step {stepNumber}
               </Button>
+
+              {/* Conclude & Repeat current step (available once scheduled) */}
+              {isSessionScheduled && (stepNumber === 2 || stepNumber === 4 || stepNumber === 5) && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    onRequestSchedule({
+                      scheduledAt: scheduledAtLocal,
+                      reviewerId,
+                      reviewerName,
+                      selectedReviewerUser,
+                      actionKind: 'repeat_step',
+                    })
+                  }
+                  disabled={isPending}
+                >
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  {stepNumber === 2
+                    ? 'Needs Another Interview (Repeat Step 2)'
+                    : stepNumber === 4
+                      ? 'Needs Another Observation (Repeat Step 4)'
+                      : 'Needs Another Evaluation (Repeat Step 5)'}
+                </Button>
+              )}
+
+              {/* Step 5: Return to Step 4 Observation */}
+              {isSessionScheduled && stepNumber === 5 && (
+                <Button
+                  type="button"
+                  variant="primaryOutline"
+                  size="sm"
+                  onClick={() =>
+                    onRequestSchedule({
+                      scheduledAt: '',
+                      reviewerId: '',
+                      reviewerName: '',
+                      selectedReviewerUser: null,
+                      actionKind: 'return_to_observation',
+                    })
+                  }
+                  disabled={isPending}
+                >
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Needs Another Observation (Return to Step 4)
+                </Button>
+              )}
+
+              {/* Step 3: Return to Step 2 Interview */}
+              {isSessionScheduled && stepNumber === 3 && (
+                <Button
+                  type="button"
+                  variant="primaryOutline"
+                  size="sm"
+                  onClick={() =>
+                    onRequestSchedule({
+                      scheduledAt: '',
+                      reviewerId: '',
+                      reviewerName: '',
+                      selectedReviewerUser: null,
+                      actionKind: 'return_to_interview',
+                    })
+                  }
+                  disabled={isPending}
+                >
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Needs Another Interview (Return to Step 2)
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Additional Evaluation / Retake Controls */}
-          {(stepNumber === 2 || stepNumber === 3 || stepNumber === 4 || stepNumber === 5) && (
-            <div className="pt-2.5 border-t border-border/70 space-y-2">
-              <div>
-                <div className="text-[10px] font-semibold text-muted uppercase tracking-wider">
-                  Requires Additional Evaluation
-                </div>
-                <p className="text-[11px] text-muted">
-                  If the candidate needs another round before passing this stage, schedule a retake
-                  or return session below.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 [&>button]:w-full sm:[&>button]:w-auto">
-                {/* Repeatable interview controls */}
-                {stepNumber === 2 &&
-                  (repeatActionKind === 'repeat_step' ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          onRequestSchedule({
-                            scheduledAt: scheduledAtLocal,
-                            reviewerId,
-                            reviewerName,
-                            selectedReviewerUser,
-                            actionKind: 'repeat_step',
-                          })
-                        }
-                        disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Confirm Repeat Interview (Step 2)
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelRepeat}
-                      >
-                        Cancel Retake
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleInitiateRepeat('repeat_step')}
-                      disabled={isPending}
-                    >
-                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                      Repeat Interview (Step 2)
-                    </Button>
-                  ))}
-
-                {/* Return to Step 2 from Step 3 Orientation */}
-                {stepNumber === 3 &&
-                  (repeatActionKind === 'return_to_interview' ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="primaryOutline"
-                        size="sm"
-                        onClick={() =>
-                          onRequestSchedule({
-                            scheduledAt: scheduledAtLocal,
-                            reviewerId,
-                            reviewerName,
-                            selectedReviewerUser,
-                            actionKind: 'return_to_interview',
-                          })
-                        }
-                        disabled={isPending}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Confirm Return to Step 2
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelRepeat}
-                      >
-                        Cancel Retake
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="primaryOutline"
-                      size="sm"
-                      onClick={() => {
-                        handleInitiateRepeat('return_to_interview');
-                        focusFirstError(['assignedReviewer', 'sessionDateTime']);
-                      }}
-                      disabled={isPending}
-                    >
-                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                      Needs Another Interview (Return to Step 2)
-                    </Button>
-                  ))}
-
-                {/* Repeatable observation controls */}
-                {stepNumber === 4 &&
-                  (repeatActionKind === 'repeat_step' ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          onRequestSchedule({
-                            scheduledAt: scheduledAtLocal,
-                            reviewerId,
-                            reviewerName,
-                            selectedReviewerUser,
-                            actionKind: 'repeat_step',
-                          })
-                        }
-                        disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Confirm Repeat Observation (Step 4)
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelRepeat}
-                      >
-                        Cancel Retake
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleInitiateRepeat('repeat_step')}
-                      disabled={isPending}
-                    >
-                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                      Repeat Observation (Step 4)
-                    </Button>
-                  ))}
-
-                {/* Repeatable evaluation controls */}
-                {stepNumber === 5 && (
-                  <>
-                    {repeatActionKind === 'repeat_step' ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() =>
-                            onRequestSchedule({
-                              scheduledAt: scheduledAtLocal,
-                              reviewerId,
-                              reviewerName,
-                              selectedReviewerUser,
-                              actionKind: 'repeat_step',
-                            })
-                          }
-                          disabled={
-                            isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)
-                          }
-                        >
-                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                          Confirm Repeat Evaluation (Step 5)
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancelRepeat}
-                        >
-                          Cancel Retake
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleInitiateRepeat('repeat_step')}
-                        disabled={isPending}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Repeat Evaluation (Step 5)
-                      </Button>
-                    )}
-
-                    {repeatActionKind === 'return_to_observation' ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="primaryOutline"
-                          size="sm"
-                          onClick={() =>
-                            onRequestSchedule({
-                              scheduledAt: scheduledAtLocal,
-                              reviewerId,
-                              reviewerName,
-                              selectedReviewerUser,
-                              actionKind: 'return_to_observation',
-                            })
-                          }
-                          disabled={isPending}
-                        >
-                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                          Confirm Return to Step 4
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancelRepeat}
-                        >
-                          Cancel Retake
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="primaryOutline"
-                        size="sm"
-                        onClick={() => {
-                          handleInitiateRepeat('return_to_observation');
-                          focusFirstError(['assignedReviewer', 'sessionDateTime']);
-                        }}
-                        disabled={isPending}
-                      >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                        Needs Another Observation (Return to Step 4)
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </div>
+      )}
+
+      {/* Sub-modals for Attempts History and Recruiter Notes */}
+      {isAttemptsDialogOpen && (
+        <StepAttemptsHistoryDialog
+          isOpen={isAttemptsDialogOpen}
+          onClose={() => setIsAttemptsDialogOpen(false)}
+          stepNumber={stepNumber}
+          stepTitle={stepMeta?.title ?? `Step ${stepNumber}`}
+          attempts={previousStepAttempts}
+        />
+      )}
+
+      {isNotesDialogOpen && (
+        <StepRecruiterNotesDialog
+          isOpen={isNotesDialogOpen}
+          onClose={() => setIsNotesDialogOpen(false)}
+          applicationId={application.id}
+          stepNumber={stepNumber}
+          stepTitle={stepMeta?.title ?? `Step ${stepNumber}`}
+          notes={currentStepNotes}
+          isCompletedStep={isCompletedStep}
+        />
       )}
     </div>
   );

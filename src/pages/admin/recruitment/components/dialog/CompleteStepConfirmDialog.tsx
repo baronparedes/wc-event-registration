@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   ArrowRight,
   Briefcase,
@@ -14,6 +16,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { FormTextareaField } from '@/components/ui/FormTextareaField';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatDisplayDateTime, parseDateTimeParts } from '@/components/ui/sundayDateTimeUtils';
 import type { ApplicantCommitments } from '@/lib/domain/recruitment';
@@ -29,7 +32,7 @@ const SUNDAYS = [
 export interface CompleteStepConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (completionNotes?: string) => void;
   isPending: boolean;
   isDeployAction?: boolean;
   applicant: {
@@ -75,8 +78,19 @@ export function CompleteStepConfirmDialog({
   rfidTag,
   serviceCommitments,
 }: CompleteStepConfirmDialogProps) {
+  const [completionComment, setCompletionComment] = useState(recruitmentNotes ?? '');
+  const [prevRecruitmentNotes, setPrevRecruitmentNotes] = useState(recruitmentNotes);
+
+  if (recruitmentNotes !== prevRecruitmentNotes) {
+    setPrevRecruitmentNotes(recruitmentNotes);
+    setCompletionComment(recruitmentNotes ?? '');
+  }
+
   const { datePart, timePart } = parseDateTimeParts(completedAt);
   const formattedDateTime = datePart ? formatDisplayDateTime(datePart, timePart) : '';
+
+  const isCommentValid = Boolean(completionComment.trim());
+  const isConfirmDisabled = isPending || (!isDeployAction && !isCommentValid);
 
   const title = isDeployAction
     ? 'Confirm Volunteer Deployment'
@@ -340,6 +354,23 @@ export function CompleteStepConfirmDialog({
             </div>
           </div>
         )}
+        {/* Required Step Completion Feedback / Comment */}
+        {!isDeployAction && (
+          <div className="space-y-1 pt-1">
+            <FormTextareaField
+              id="stepCompletionComment"
+              label="Completion Notes / Feedback *"
+              required
+              placeholder={`Enter internal feedback, candidate observations, or completion notes for Step ${stepNumber}...`}
+              rows={3}
+              textareaClassName="resize-none text-xs"
+              value={completionComment}
+              onChange={(e) => setCompletionComment(e.target.value)}
+              disabled={isPending}
+              helperText="Required. This comment will be automatically recorded in the Recruiter Notes thread upon completion."
+            />
+          </div>
+        )}
       </Dialog.Body>
 
       <Dialog.Footer bordered className="mt-2">
@@ -352,7 +383,13 @@ export function CompleteStepConfirmDialog({
         >
           Cancel
         </Button>
-        <Button type="button" variant="default" size="md" onClick={onConfirm} disabled={isPending}>
+        <Button
+          type="button"
+          variant="default"
+          size="md"
+          onClick={() => onConfirm(completionComment.trim())}
+          disabled={isConfirmDisabled}
+        >
           {isPending ? (
             <>
               <Spinner size="sm" className="mr-2" aria-hidden="true" />

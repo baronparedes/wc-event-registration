@@ -10,13 +10,19 @@ import type {
 import { RecruitmentApplicantDetailDialog } from '../components/dialog/RecruitmentApplicantDetailDialog';
 import { mockApplication, mockTransaction, renderDialog } from './testDetailDialogHelpers';
 
-const { mockDetailQuery, mockUpdateStageMutate, mockDeployApplicantMutate, mockNavigate } =
-  vi.hoisted(() => ({
-    mockDetailQuery: vi.fn(),
-    mockUpdateStageMutate: vi.fn(),
-    mockDeployApplicantMutate: vi.fn(),
-    mockNavigate: vi.fn(),
-  }));
+const {
+  mockDetailQuery,
+  mockUpdateStageMutate,
+  mockDeployApplicantMutate,
+  mockAddRecruiterNoteMutate,
+  mockNavigate,
+} = vi.hoisted(() => ({
+  mockDetailQuery: vi.fn(),
+  mockUpdateStageMutate: vi.fn(),
+  mockDeployApplicantMutate: vi.fn(),
+  mockAddRecruiterNoteMutate: vi.fn(),
+  mockNavigate: vi.fn(),
+}));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
@@ -34,7 +40,7 @@ vi.mock('@/hooks/domain/recruitment', () => ({
     isPending: false,
   }),
   useAddRecruiterNoteMutation: () => ({
-    mutate: vi.fn(),
+    mutate: mockAddRecruiterNoteMutate,
     isPending: false,
   }),
   useDeployRecruitmentApplicantMutation: () => ({
@@ -135,7 +141,9 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
 
     expect(screen.getByRole('button', { name: /complete step 4/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /repeat observation/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /needs another observation \(repeat step 4\)/i }),
+    ).toBeInTheDocument();
 
     // Switch to Transaction History tab
     await userEvent.click(screen.getByRole('tab', { name: /transaction history/i }));
@@ -197,14 +205,73 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
 
     // Verify required notice is displayed
     expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
+    expect(screen.getByText('Session must be scheduled first')).toBeInTheDocument();
+    expect(screen.getByText(/requires scheduled session before completion/i)).toBeInTheDocument();
     expect(screen.getAllByText('Assigned To').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Session Date & Time').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /select sunday date & time/i })).toBeInTheDocument();
-    expect(screen.getByText('Recruitment Notes / Feedback')).toBeInTheDocument();
 
     // Verify Complete Step button is disabled
     const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
     expect(completeBtn).toBeDisabled();
+  });
+
+  it('disables Complete Step button when session fields are filled but session has not been scheduled yet', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        // Step 2 has no transaction scheduled yet
+        transactions: [],
+        step_notes: [
+          {
+            id: 'note-1',
+            application_id: mockApplication.id,
+            step_number: 2,
+            author_user_id: 'user-1',
+            author_name: 'Lead Reviewer',
+            notes: 'Feedback recorded',
+            created_at: '2026-11-01T10:00:00+08:00',
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Pick reviewer
+    const reviewerSearchInput = screen.getByPlaceholderText(/search user by name/i);
+    await user.click(reviewerSearchInput);
+    const reviewerOption = screen.getByText('Test Lead Usher');
+    await user.click(reviewerOption);
+
+    // Pick Sunday date & time
+    const dateTrigger = screen.getByRole('button', { name: /select sunday date & time/i });
+    await user.click(dateTrigger);
+    const popover = screen.getByRole('dialog', { name: /select sunday session date/i });
+    const sundayBtn = within(popover).getByRole('button', {
+      name: /Sunday, November 8/i,
+    });
+    await user.click(sundayBtn);
+    await user.click(within(popover).getByRole('button', { name: 'Done' }));
+
+    // Reviewer and Date are set, Note exists, but session is NOT saved yet
+    expect(screen.getByText('Session must be scheduled first')).toBeInTheDocument();
+    const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
+    expect(completeBtn).toBeDisabled();
+
+    // Save Schedule button is enabled with prominent text
+    const saveScheduleBtn = screen.getByRole('button', { name: /save schedule/i });
+    expect(saveScheduleBtn).toBeEnabled();
   });
 
   it('opens confirmation modal before completing step and submits upon confirmation', async () => {
@@ -250,6 +317,9 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     expect(screen.getAllByText('Interview').length).toBeGreaterThan(0);
     expect(screen.getByText('Next: Step 3')).toBeInTheDocument();
 
+    const commentInput = screen.getByLabelText(/completion notes \/ feedback/i);
+    await user.type(commentInput, 'Passed interview evaluation');
+
     const confirmCompleteBtn = screen.getByRole('button', { name: /confirm & complete step 2/i });
     await user.click(confirmCompleteBtn);
 
@@ -257,6 +327,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
       expect.objectContaining({
         step_number: 2,
         status: 'completed',
+        notes: 'Passed interview evaluation',
       }),
       expect.any(Object),
     );
@@ -390,7 +461,8 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     expect(screen.queryByRole('button', { name: /complete step 2/i })).not.toBeInTheDocument();
   });
 
-  it('displays previous interview attempts intact when an interview is repeated', () => {
+  it('displays previous interview attempts intact when an interview is repeated', async () => {
+    const user = userEvent.setup();
     const mockStep2Attempt1Tx: RecruitmentPipelineTransaction = {
       id: 'tx-step2-att1',
       application_id: 'app-123',
@@ -456,7 +528,17 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
       />,
     );
 
-    // Verify Previous Interview Attempts card displays Attempt #1 data intact
+    // Verify Previous Interview Attempts summary card is displayed
+    expect(screen.getByText('Previous Interview Attempts')).toBeInTheDocument();
+    const viewPastAttemptsBtn = screen.getByRole('button', {
+      name: /view past attempts \(1\)/i,
+    });
+    expect(viewPastAttemptsBtn).toBeInTheDocument();
+
+    // Click to open attempts history dialog
+    await user.click(viewPastAttemptsBtn);
+
+    // Verify dialog content contains Attempt #1 data intact
     expect(screen.getByText('Previous Interview Attempts (1)')).toBeInTheDocument();
     expect(screen.getByText('Recorded History Intact')).toBeInTheDocument();
     expect(
@@ -466,11 +548,18 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     ).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Test Pastor Dave').length).toBeGreaterThanOrEqual(1);
 
+    // Close dialog
+    const attemptsDialog = screen.getByRole('dialog', { name: /previous interview attempts/i });
+    const closeDialogBtn = within(attemptsDialog).getByRole('button', { name: /^close$/i });
+    await user.click(closeDialogBtn);
+
     // Verify current session indicates Attempt #2
     expect(screen.getByText('Attempt #2')).toBeInTheDocument();
 
     // Verify Repeat Interview button is rendered on Step 2
-    const repeatButton = screen.getByRole('button', { name: /repeat interview \(step 2\)/i });
+    const repeatButton = screen.getByRole('button', {
+      name: /needs another interview \(repeat step 2\)/i,
+    });
     expect(repeatButton).toBeInTheDocument();
   });
 
@@ -529,32 +618,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
 
     await user.click(returnButton);
 
-    // Verify fields are cleared and retake scheduling mode banner is displayed
-    expect(screen.getByText(/scheduling return to interview/i)).toBeInTheDocument();
-
-    // Assign coach
-    const reviewerSearchInput = screen.getByPlaceholderText(/search user by name/i);
-    await user.click(reviewerSearchInput);
-    const reviewerOption = screen.getByText('Test Lead Usher');
-    await user.click(reviewerOption);
-
-    // Pick Sunday date & time
-    const dateTrigger = screen.getByRole('button', { name: /select sunday date & time/i });
-    await user.click(dateTrigger);
-    const popover = screen.getByRole('dialog', { name: /select sunday session date/i });
-    const sundayBtn = within(popover).getByRole('button', {
-      name: /Sunday, November 8/i,
-    });
-    await user.click(sundayBtn);
-    await user.click(within(popover).getByRole('button', { name: 'Done' }));
-
-    // Click Confirm Return to Step 2 action button
-    const confirmReturnBtn = screen.getByRole('button', {
-      name: /confirm return to step 2/i,
-    });
-    await user.click(confirmReturnBtn);
-
-    // Verify confirmation dialog opens with details before submitting mutation
+    // Verify confirmation dialog opens directly with details before submitting mutation
     expect(screen.getByText('Confirm Return to Interview Schedule')).toBeInTheDocument();
     const confirmButton = screen.getByRole('button', {
       name: /confirm & return to interview/i,
@@ -626,16 +690,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
 
     await user.click(returnButton);
 
-    // Verify fields are cleared and retake scheduling mode banner is displayed
-    expect(screen.getByText(/scheduling return to observation/i)).toBeInTheDocument();
-
-    // Click Confirm Return to Step 4 action button
-    const confirmReturnBtn = screen.getByRole('button', {
-      name: /confirm return to step 4/i,
-    });
-    await user.click(confirmReturnBtn);
-
-    // Verify confirmation dialog opens with details before submitting mutation
+    // Verify confirmation dialog opens directly with details before submitting mutation
     expect(screen.getByText('Confirm Return to Observation Schedule')).toBeInTheDocument();
     const confirmButton = screen.getByRole('button', {
       name: /confirm & return to observation/i,
@@ -771,7 +826,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
 
     const updateScheduleBtn = screen.getByRole('button', {
-      name: /update session schedule/i,
+      name: /update schedule/i,
     });
     expect(updateScheduleBtn).toBeInTheDocument();
 
@@ -787,6 +842,97 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     const cancelBtn = screen.getByRole('button', { name: /cancel/i });
     await user.click(cancelBtn);
     expect(mockUpdateStageMutate).not.toHaveBeenCalled();
+
+    // Reopen and confirm reschedule
+    await user.click(updateScheduleBtn);
+    expect(screen.getByText('Confirm Session Reschedule')).toBeInTheDocument();
+    const confirmRescheduleBtn = screen.getByRole('button', { name: /confirm & reschedule/i });
+    await user.click(confirmRescheduleBtn);
+
+    // Rescheduling must update in place with action: update_stage and NOT repeat_step
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'update_stage',
+        step_number: 4,
+        status: 'scheduled',
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('triggers repeat_step when clicking Needs Another Observation on Step 4', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const activeStep4Application: RecruitmentApplication = {
+      ...mockApplication,
+      current_step: 4,
+    };
+
+    const mockStep4Tx: RecruitmentPipelineTransaction = {
+      id: 'tx-obs-4',
+      application_id: mockApplication.id,
+      step_number: 4,
+      step_key: 'observation',
+      attempt_number: 1,
+      transaction_type: 'scheduled',
+      status: 'scheduled',
+      from_step: 3,
+      to_step: 4,
+      scheduled_at: '2026-11-15T09:00:00+08:00',
+      assigned_reviewer_id: 'user-oic-1',
+      assigned_reviewer_name: 'Test Paul Apostle (Test OIC Paul)',
+      completed_at: null,
+      rubric_data: {},
+      notes: 'First observation session scheduled.',
+      applicant_visible_notes: null,
+      created_by_user_id: 'user-1',
+      created_at: '2026-11-08T10:00:00+08:00',
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: activeStep4Application,
+        transactions: [mockStep4Tx],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={activeStep4Application}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    const repeatStepBtn = screen.getByRole('button', {
+      name: /needs another observation \(repeat step 4\)/i,
+    });
+    expect(repeatStepBtn).toBeInTheDocument();
+
+    await user.click(repeatStepBtn);
+
+    // Verify confirmation modal opens with Re-Observation schedule details
+    expect(screen.getByText('Confirm Re-Observation Schedule')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'A new attempt session will be scheduled while preserving candidate pipeline history.',
+      ),
+    ).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: /confirm & schedule re-observation/i });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'repeat_step',
+        step_number: 4,
+        status: 'scheduled',
+      }),
+      expect.any(Object),
+    );
   });
 
   it('correctly reflects pending DGroup endorsement status on Step 1 when approval is pending', async () => {
@@ -816,5 +962,71 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     await user.click(screen.getByRole('tab', { name: /register/i }));
     expect(screen.getByText('Pending Leader Endorsement')).toBeInTheDocument();
     expect(screen.queryByText('Endorsed')).not.toBeInTheDocument();
+  });
+
+  it('opens recruiter notes dialog when clicking Open Notes and adds a note', async () => {
+    const user = userEvent.setup();
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+        step_notes: [
+          {
+            id: 'note-1',
+            application_id: mockApplication.id,
+            step_number: 4,
+            attempt_number: 1,
+            author_id: 'user-oic-1',
+            author_name: 'Test Paul Apostle',
+            author_role: 'OIC',
+            avatar_object_key: null,
+            content: 'Candidate arrived on time and showed great energy.',
+            created_at: '2026-11-08T10:00:00+08:00',
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Verify Recruiter Notes summary card shows count and snippet
+    expect(screen.getByText('Recruiter Notes')).toBeInTheDocument();
+    expect(
+      screen.getByText('Candidate arrived on time and showed great energy.'),
+    ).toBeInTheDocument();
+
+    const openNotesBtn = screen.getByRole('button', { name: /open notes \(1\)/i });
+    await user.click(openNotesBtn);
+
+    // Dialog is visible
+    const notesDialog = screen.getByRole('dialog', { name: /recruiter notes — step 4/i });
+    expect(notesDialog).toBeInTheDocument();
+
+    // Type new note
+    const textarea = within(notesDialog).getByPlaceholderText(/type internal feedback/i);
+    await user.type(textarea, 'Follow-up check completed successfully.');
+
+    const addNoteBtn = within(notesDialog).getByRole('button', { name: /add note/i });
+    await user.click(addNoteBtn);
+
+    expect(mockAddRecruiterNoteMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        application_id: mockApplication.id,
+        step_number: 4,
+        content: 'Follow-up check completed successfully.',
+      }),
+      expect.any(Object),
+    );
+
+    // Close notes dialog
+    const closeBtn = within(notesDialog).getByRole('button', { name: /^close$/i });
+    await user.click(closeBtn);
   });
 });

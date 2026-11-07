@@ -127,6 +127,7 @@ export function PipelineStepsPanel({
       ccfVmtDate?: string;
       rfidTag?: string;
       serviceCommitments?: ApplicantCommitments;
+      notes?: string;
     },
   ) => {
     const rawScheduledAt = overrides?.scheduledAt;
@@ -157,6 +158,7 @@ export function PipelineStepsPanel({
         ccf_vmt_date: overrides?.ccfVmtDate || null,
         assigned_rfid_member_id: overrides?.rfidTag?.trim() || null,
         service_commitments: selectedStep === 8 ? overrides?.serviceCommitments : undefined,
+        notes: overrides?.notes?.trim() || null,
       },
       {
         onSuccess: (data) => {
@@ -192,8 +194,11 @@ export function PipelineStepsPanel({
     });
   };
 
-  const handleConfirmComplete = () => {
-    handleExecuteUpdateStage('completed', 'update_stage', pendingCompleteOptions ?? undefined);
+  const handleConfirmComplete = (completionComment?: string) => {
+    handleExecuteUpdateStage('completed', 'update_stage', {
+      ...pendingCompleteOptions,
+      notes: completionComment?.trim() || undefined,
+    });
   };
 
   const handleDeploy = () => {
