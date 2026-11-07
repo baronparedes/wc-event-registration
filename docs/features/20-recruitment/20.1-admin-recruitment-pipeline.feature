@@ -125,6 +125,15 @@ Feature: Admin Recruitment Pipeline Management
     And it displays my name, compact avatar, and simplified timestamp
     And previously recorded notes remain preserved in chronological order
 
+  Scenario: Reviewer inspects and sorts transaction history
+    Given I am inspecting an active applicant
+    When I switch to the "Transaction History" tab
+    Then transactions are sorted by newest activity first by default
+    When I toggle the sort order to "Oldest First"
+    Then transactions are displayed chronologically starting from Step 1 registration
+    When I filter transactions by "Step 2"
+    Then only Step 2 transaction records are displayed in the selected sort order
+
   Scenario: Reviewer updates applicant photo
     Given I am inspecting an applicant on the "Applicant Profile" tab
     When I click the camera icon on the applicant's avatar

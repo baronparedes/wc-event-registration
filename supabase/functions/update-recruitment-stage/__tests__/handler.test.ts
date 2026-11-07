@@ -95,7 +95,7 @@ function mockFetch(
   } = {},
 ) {
   const originalFetch = globalThis.fetch;
-  const calls: Array<{ path: string; method: string; body: unknown }> = [];
+  const calls: Array<{ path: string; method: string; body: unknown; search?: string }> = [];
 
   globalThis.fetch = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -108,7 +108,7 @@ function mockFetch(
         body = init.body;
       }
     }
-    calls.push({ path: url.pathname, method, body });
+    calls.push({ path: url.pathname, method, body, search: url.search });
 
     if (url.pathname === '/auth/v1/user') {
       return Promise.resolve(Response.json({ id: USER_ID, email: 'applicant@example.com' }));
@@ -150,13 +150,22 @@ function mockFetch(
       if (method === 'POST' || method === 'PATCH') {
         return Promise.resolve(Response.json({ id: 'tx-mock-1' }));
       }
-      return Promise.resolve(
-        Response.json(
-          options.transactions ?? [
-            { id: 'tx-1', attempt_number: 1, status: 'scheduled', notes: null },
-          ],
-        ),
-      );
+      const stepQuery = url.searchParams.get('step_number');
+      const stepNum = stepQuery ? Number(stepQuery.replace('eq.', '')) : null;
+      const allTx = (options.transactions ?? [
+        { id: 'tx-1', attempt_number: 1, status: 'scheduled', notes: null },
+      ]) as Record<string, unknown>[];
+      const matching =
+        stepNum !== null
+          ? allTx.filter((t) => t.step_number === undefined || t.step_number === stepNum)
+          : allTx;
+      const acceptHeader =
+        (init?.headers as Record<string, string> | undefined)?.['accept'] ||
+        (init?.headers as Record<string, string> | undefined)?.['Accept'];
+      if (acceptHeader?.includes('application/vnd.pgrst.object+json')) {
+        return Promise.resolve(Response.json(matching[0] ?? null));
+      }
+      return Promise.resolve(Response.json(matching));
     }
     if (url.pathname === '/rest/v1/app_notifications') {
       return Promise.resolve(Response.json({ id: 'mock-notif-1' }));
@@ -1565,6 +1574,121 @@ Deno.test(
           }),
         );
         assertEquals(conflictReq.status, 409);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage does not create duplicate Step 6 skipped transaction when confirming a non-Prayer Coach role',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2, confirmed_role: null },
+        transactions: [
+          {
+            id: 'tx-int-2',
+            step_number: 2,
+            attempt_number: 1,
+            status: 'scheduled',
+            notes: null,
+          },
+          {
+            id: 'tx-onboard-6',
+            step_number: 6,
+            attempt_number: 1,
+            status: 'skipped',
+            notes: null,
+          },
+        ],
+      });
+
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            status: 'completed',
+            confirmed_role: 'Usher',
+            notes: 'Candidate confirmed for Usher role',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+
+        // Verify that NO insert or update calls were made to Step 6
+        const step6Calls = mock.calls.filter((call) => {
+          if (call.path !== '/rest/v1/recruitment_pipeline_transactions') return false;
+          if (call.method === 'GET') return false;
+          const bodyPayload = (call.body ?? {}) as Record<string, unknown>;
+          return bodyPayload.step_number === 6;
+        });
+        assertEquals(step6Calls.length, 0);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage updates Step 6 in place when switching confirmed role from non-Prayer Coach to Prayer Coach',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2, confirmed_role: 'Usher' },
+        transactions: [
+          {
+            id: 'tx-int-2',
+            step_number: 2,
+            attempt_number: 1,
+            status: 'scheduled',
+            notes: null,
+          },
+          {
+            id: 'tx-onboard-6',
+            step_number: 6,
+            attempt_number: 1,
+            status: 'skipped',
+            notes: null,
+          },
+        ],
+      });
+
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            status: 'completed',
+            confirmed_role: 'Prayer Coach',
+            notes: 'Candidate switched to Prayer Coach',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+
+        // Verify that Step 6 was updated in place via PATCH on existing id
+        const step6Patch = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/recruitment_pipeline_transactions' &&
+            call.method === 'PATCH' &&
+            call.search?.includes('id=eq.tx-onboard-6'),
+        );
+        assertEquals(Boolean(step6Patch), true);
+        const payload = (step6Patch?.body ?? {}) as Record<string, unknown>;
+        assertEquals(payload.status, 'pending');
+        assertEquals(payload.transaction_type, 'scheduled');
       } finally {
         mock.restore();
       }

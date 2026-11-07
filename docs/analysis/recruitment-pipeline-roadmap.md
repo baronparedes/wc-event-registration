@@ -704,7 +704,9 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
      - Displays complete 40-field applicant profile across Personal Details, Demographics, Work/Life Stage, Emergency Contact, CCF & GLC History, and DGroup Membership/Leadership.
      - Synchronized DGroup endorsement status badge.
    - **Tab 5: Transaction History (`TransactionHistoryPanel.tsx`)**:
-     - Chronological timeline of all pipeline transactions (`public.recruitment_pipeline_transactions`) including scheduling, completions, repeat attempts (`Observation #1`, `Observation #2`), return loops, archiving, and restorations with reviewer names and timestamps.
+     - Complete audit trail of all pipeline transactions (`public.recruitment_pipeline_transactions`) including scheduling, completions, repeat attempts (`Observation #1`, `Observation #2`), return loops, archiving, and restorations with reviewer names and timestamps.
+     - Deterministic activity ordering based on effective timestamp (`completed_at || scheduled_at || created_at`) with step number and attempt number tie-breakers.
+     - Segmented `ButtonGroup` sort toggle allowing reviewers to switch seamlessly between **Newest First** (default) and **Oldest First**.
    - **Archive Lifecycle & Destructive Styling**:
      - Replaced legacy `'on_hold'` with `'archived'` across database constraints, Edge Functions, schemas, and UI.
      - Archive trigger button in `Dialog.Footer` uses semantic `variant="destructive"`.

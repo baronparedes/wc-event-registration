@@ -258,22 +258,55 @@ export async function handleUpdateStage(context: RecruitmentActionContext): Prom
 
   if (request.confirmed_role && request.confirmed_role !== application.confirmed_role) {
     const shouldSkipOnboarding = request.confirmed_role !== 'Prayer Coach';
-    const onboarding = await saveTransaction(
-      supabase,
-      application,
-      6,
-      'onboarding',
-      shouldSkipOnboarding ? 'skipped' : 'pending',
-      shouldSkipOnboarding ? 'skipped' : 'scheduled',
-      userId,
-      { fromStep: 5, toStep: shouldSkipOnboarding ? 7 : 6 },
-    );
-    if (onboarding.error) {
-      return response(
-        500,
-        { success: false, error: 'Failed to synchronize onboarding step' },
-        corsHeaders,
-      );
+    const targetStatus = shouldSkipOnboarding ? 'skipped' : 'pending';
+    const targetType = shouldSkipOnboarding ? 'skipped' : 'scheduled';
+
+    const latestStep6 = await findLatestTransaction(supabase, application.id, 6);
+    const currentStatus = latestStep6.data?.status;
+
+    // Only synchronize if Step 6 is not already in the target state
+    if (currentStatus !== targetStatus) {
+      if (latestStep6.data?.id) {
+        // Update the existing Step 6 transaction in place instead of creating duplicate attempt records
+        const { error: updateError } = await supabase
+          .from('recruitment_pipeline_transactions')
+          .update({
+            status: targetStatus,
+            transaction_type: targetType,
+            to_step: shouldSkipOnboarding ? 7 : 6,
+            from_step: 5,
+            notes: shouldSkipOnboarding
+              ? 'Onboarding skipped (role does not require Prayer Coach onboarding)'
+              : 'Onboarding required for confirmed Prayer Coach role',
+          })
+          .eq('id', latestStep6.data.id);
+
+        if (updateError) {
+          return response(
+            500,
+            { success: false, error: 'Failed to synchronize onboarding step' },
+            corsHeaders,
+          );
+        }
+      } else {
+        const onboarding = await saveTransaction(
+          supabase,
+          application,
+          6,
+          'onboarding',
+          targetStatus,
+          targetType,
+          userId,
+          { fromStep: 5, toStep: shouldSkipOnboarding ? 7 : 6 },
+        );
+        if (onboarding.error) {
+          return response(
+            500,
+            { success: false, error: 'Failed to synchronize onboarding step' },
+            corsHeaders,
+          );
+        }
+      }
     }
   }
 

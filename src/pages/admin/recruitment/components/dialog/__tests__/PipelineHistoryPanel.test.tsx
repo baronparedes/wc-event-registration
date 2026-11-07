@@ -140,4 +140,30 @@ describe('PipelineHistoryPanel', () => {
 
     expect(screen.getByText(/No transaction records found/i)).toBeInTheDocument();
   });
+
+  it('sorts transactions by newest first by default and toggles to oldest first', async () => {
+    const user = userEvent.setup();
+    render(<PipelineHistoryPanel application={mockApplication} transactions={mockTransactions} />);
+
+    // Default is Newest First: tx-2 (Nov 8 scheduled / Nov 2 created) before tx-1 (Nov 1)
+    const titlesDefault = screen.getAllByText(/Step \d: /i);
+    expect(titlesDefault[0]).toHaveTextContent('Step 2: Interview — Session Scheduled');
+    expect(titlesDefault[1]).toHaveTextContent('Step 1: Register — Completed');
+
+    // Toggle to Oldest First
+    const oldestToggle = screen.getByRole('button', { name: /oldest first/i });
+    await user.click(oldestToggle);
+
+    const titlesOldest = screen.getAllByText(/Step \d: /i);
+    expect(titlesOldest[0]).toHaveTextContent('Step 1: Register — Completed');
+    expect(titlesOldest[1]).toHaveTextContent('Step 2: Interview — Session Scheduled');
+
+    // Toggle back to Newest First
+    const newestToggle = screen.getByRole('button', { name: /newest first/i });
+    await user.click(newestToggle);
+
+    const titlesNewest = screen.getAllByText(/Step \d: /i);
+    expect(titlesNewest[0]).toHaveTextContent('Step 2: Interview — Session Scheduled');
+    expect(titlesNewest[1]).toHaveTextContent('Step 1: Register — Completed');
+  });
 });

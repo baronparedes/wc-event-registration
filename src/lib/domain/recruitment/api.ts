@@ -316,7 +316,9 @@ export async function fetchAdminRecruitmentApplicationDetail(
       .from('recruitment_pipeline_transactions')
       .select('*')
       .eq('application_id', applicationId)
-      .order('created_at', { ascending: true }),
+      .order('created_at', { ascending: false })
+      .order('step_number', { ascending: false })
+      .order('attempt_number', { ascending: false }),
     supabase
       .from('recruitment_step_notes')
       .select('*')

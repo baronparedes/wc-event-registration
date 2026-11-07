@@ -4,6 +4,7 @@ import { Calendar, CheckCircle2, Filter, History, User } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ButtonGroup, type ButtonGroupOption } from '@/components/ui/ButtonGroup';
 import type {
   RecruitmentApplication,
   RecruitmentPipelineTransaction,
@@ -16,11 +17,54 @@ export interface PipelineHistoryPanelProps {
   transactions: RecruitmentPipelineTransaction[];
 }
 
+export type TransactionSortOrder = 'newest' | 'oldest';
+
+const SORT_OPTIONS: ButtonGroupOption<TransactionSortOrder>[] = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+];
+
+function getEffectiveTransactionTime(tx: RecruitmentPipelineTransaction): number {
+  const raw = tx.completed_at || tx.scheduled_at || tx.created_at;
+  const time = new Date(raw).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function compareTransactions(
+  a: RecruitmentPipelineTransaction,
+  b: RecruitmentPipelineTransaction,
+  order: TransactionSortOrder,
+): number {
+  const timeA = getEffectiveTransactionTime(a);
+  const timeB = getEffectiveTransactionTime(b);
+
+  if (timeA !== timeB) {
+    return order === 'newest' ? timeB - timeA : timeA - timeB;
+  }
+
+  if (a.step_number !== b.step_number) {
+    return order === 'newest' ? b.step_number - a.step_number : a.step_number - b.step_number;
+  }
+
+  if (a.attempt_number !== b.attempt_number) {
+    return order === 'newest'
+      ? b.attempt_number - a.attempt_number
+      : a.attempt_number - b.attempt_number;
+  }
+
+  return order === 'newest' ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
+}
+
 export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps) {
   const [selectedStepFilter, setSelectedStepFilter] = useState<number | 'all'>('all');
+  const [sortOrder, setSortOrder] = useState<TransactionSortOrder>('newest');
 
   const filteredTransactions = transactions.filter((tx) =>
     selectedStepFilter === 'all' ? true : tx.step_number === selectedStepFilter,
+  );
+
+  const sortedTransactions = [...filteredTransactions].sort((a, b) =>
+    compareTransactions(a, b, sortOrder),
   );
 
   const formatActivityTitle = (tx: RecruitmentPipelineTransaction) => {
@@ -86,9 +130,18 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
               </p>
             </div>
           </div>
-          <Badge variant="outline">
-            {transactions.length} Total {transactions.length === 1 ? 'Record' : 'Records'}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <ButtonGroup<TransactionSortOrder>
+              value={sortOrder}
+              onChange={setSortOrder}
+              options={SORT_OPTIONS}
+              size="xs"
+              ariaLabel="Sort transaction order"
+            />
+            <Badge variant="outline">
+              {transactions.length} Total {transactions.length === 1 ? 'Record' : 'Records'}
+            </Badge>
+          </div>
         </div>
 
         {/* Filter Pills */}
@@ -126,7 +179,7 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
       </div>
 
       {/* Transaction List */}
-      {filteredTransactions.length === 0 ? (
+      {sortedTransactions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-background p-8 text-center">
           <p className="text-sm font-medium text-muted">
             No transaction records found for the selected filter.
@@ -134,7 +187,7 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
         </div>
       ) : (
         <div className="space-y-3">
-          {[...filteredTransactions].reverse().map((tx) => (
+          {sortedTransactions.map((tx) => (
             <div
               key={tx.id}
               className="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-2.5"
