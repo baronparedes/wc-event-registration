@@ -43,12 +43,12 @@ export function FormErrorSummary({
     return null;
   }
 
-  const defaultTitle =
-    errorCount === 1
-      ? '1 required field needs attention before continuing.'
-      : errorCount !== undefined
-        ? `${errorCount} required fields need attention before continuing.`
-        : 'Please review the required fields before continuing.';
+  let defaultTitle = 'Please review the required fields before continuing.';
+  if (errorCount === 1) {
+    defaultTitle = '1 required field needs attention before continuing.';
+  } else if (errorCount !== undefined) {
+    defaultTitle = `${errorCount} required fields need attention before continuing.`;
+  }
 
   const shouldStack = stackAction ?? Boolean(children || description);
 

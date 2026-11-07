@@ -38,6 +38,96 @@ import {
   StepCoachingSessionPanel,
 } from './steps';
 
+function getStepTabClass(
+  isStepSelected: boolean,
+  isStepCurrent: boolean,
+  isStepCompleted: boolean,
+): string {
+  if (isStepSelected) return 'border-primary bg-primary text-white font-bold shadow-xs';
+  if (isStepCurrent) return 'border-primary bg-surface text-primary font-semibold';
+  if (isStepCompleted) return 'border-transparent text-muted hover:text-text hover:bg-muted/10';
+  return 'border-transparent text-muted/60 opacity-60';
+}
+
+function renderStepIcon(
+  stepNumber: number,
+  isStepCompleted: boolean,
+  isStepLocked: boolean,
+  isStepSelected: boolean,
+) {
+  if (isStepCompleted) {
+    return (
+      <CheckCircle2
+        className={`h-4 w-4 shrink-0 ${isStepSelected ? 'text-white' : 'text-primary'}`}
+      />
+    );
+  }
+  if (isStepLocked) {
+    return <Lock className="h-3.5 w-3.5 shrink-0 text-muted/70" />;
+  }
+  return (
+    <span
+      className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+        isStepSelected ? 'bg-white text-primary' : 'bg-primary text-white'
+      }`}
+    >
+      {stepNumber}
+    </span>
+  );
+}
+
+function getStepBadge(
+  isCompletedStep: boolean,
+  isActionableStep: boolean,
+  isCurrentActiveStep: boolean,
+) {
+  if (isCompletedStep) return { variant: 'default' as const, label: 'Completed' };
+  if (isActionableStep) {
+    return {
+      variant: 'accent' as const,
+      label: isCurrentActiveStep ? 'In Progress' : 'Parallel Session',
+    };
+  }
+  return { variant: 'secondary' as const, label: 'Locked' };
+}
+
+function resolveDialogReviewer(
+  selectedReviewerUser?: ReviewerUserItem | null,
+  reviewerName?: string | null,
+  reviewerId?: string | null,
+) {
+  if (selectedReviewerUser) {
+    return {
+      id: selectedReviewerUser.id,
+      name: selectedReviewerUser.name,
+      role: selectedReviewerUser.role,
+      avatarObjectKey: selectedReviewerUser.avatar_object_key,
+    };
+  }
+  if (reviewerName) {
+    return {
+      id: reviewerId || '',
+      name: reviewerName,
+    };
+  }
+  return null;
+}
+
+const ACTION_SUCCESS_TOAST_MAP: Record<string, string> = {
+  repeat_step: 'Scheduled another session',
+  return_to_observation: 'Returned candidate to Observation for another session',
+  return_to_interview: 'Returned candidate to Interview (Step 2) for another session',
+};
+
+const ACTION_KIND_MAP: Record<
+  string,
+  'repeat_step' | 'return_to_interview' | 'return_to_observation'
+> = {
+  repeat_step: 'repeat_step',
+  return_to_interview: 'return_to_interview',
+  return_to_observation: 'return_to_observation',
+};
+
 interface PipelineStepsPanelProps {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
@@ -137,16 +227,14 @@ export function PipelineStepsPanel({
     const rawScheduledAt = overrides?.scheduledAt;
     const isoScheduledAt = rawScheduledAt?.trim() ? localDateTimeToUTC8ISO(rawScheduledAt) : null;
 
-    const effectiveConfirmedRole =
-      selectedStep === 2
-        ? ((overrides?.confirmedRole ||
-            application.confirmed_role ||
-            application.desired_role) as RecruitmentRole)
-        : application.confirmed_role
-          ? undefined
-          : overrides?.confirmedRole
-            ? (overrides.confirmedRole as RecruitmentRole)
-            : undefined;
+    let effectiveConfirmedRole: RecruitmentRole | undefined;
+    if (selectedStep === 2) {
+      effectiveConfirmedRole = (overrides?.confirmedRole ||
+        application.confirmed_role ||
+        application.desired_role) as RecruitmentRole;
+    } else if (!application.confirmed_role && overrides?.confirmedRole) {
+      effectiveConfirmedRole = overrides.confirmedRole as RecruitmentRole;
+    }
 
     updateStageMutation.mutate(
       {
@@ -172,15 +260,11 @@ export function PipelineStepsPanel({
           if (data?.current_step) {
             handleStepSelect(data.current_step as RecruitmentStepNumber);
           }
-          toast.success(
+          const toastSuccessMessage =
             action === 'repeat_step'
               ? `Scheduled another session for Step ${selectedStep}`
-              : action === 'return_to_observation'
-                ? 'Returned candidate to Observation for another session'
-                : action === 'return_to_interview'
-                  ? 'Returned candidate to Interview (Step 2) for another session'
-                  : `Step ${selectedStep} updated successfully`,
-          );
+              : (ACTION_SUCCESS_TOAST_MAP[action] ?? `Step ${selectedStep} updated successfully`);
+          toast.success(toastSuccessMessage);
         },
         onError: (err) => {
           toast.error(err.message || 'Failed to update stage');
@@ -273,31 +357,13 @@ export function PipelineStepsPanel({
               <TabsTrigger
                 key={s.stepNumber}
                 value={String(s.stepNumber)}
-                className={`px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all border-2 ${
-                  isStepSelected
-                    ? 'border-primary bg-primary text-white font-bold shadow-xs'
-                    : isStepCurrent
-                      ? 'border-primary bg-surface text-primary font-semibold'
-                      : isStepCompleted
-                        ? 'border-transparent text-muted hover:text-text hover:bg-muted/10'
-                        : 'border-transparent text-muted/60 opacity-60'
-                }`}
+                className={`px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all border-2 ${getStepTabClass(
+                  isStepSelected,
+                  isStepCurrent,
+                  isStepCompleted,
+                )}`}
               >
-                {isStepCompleted ? (
-                  <CheckCircle2
-                    className={`h-4 w-4 shrink-0 ${isStepSelected ? 'text-white' : 'text-primary'}`}
-                  />
-                ) : isStepLocked ? (
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-muted/70" />
-                ) : (
-                  <span
-                    className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                      isStepSelected ? 'bg-white text-primary' : 'bg-primary text-white'
-                    }`}
-                  >
-                    {s.stepNumber}
-                  </span>
-                )}
+                {renderStepIcon(s.stepNumber, isStepCompleted, isStepLocked, isStepSelected)}
                 <span>{s.shortLabel}</span>
               </TabsTrigger>
             );
@@ -342,15 +408,10 @@ export function PipelineStepsPanel({
             <p className="mt-1 text-xs text-muted">{stepMeta?.description}</p>
           </div>
 
-          <Badge variant={isCompletedStep ? 'default' : isActionableStep ? 'accent' : 'secondary'}>
-            {isCompletedStep
-              ? 'Completed'
-              : isActionableStep
-                ? isCurrentActiveStep
-                  ? 'In Progress'
-                  : 'Parallel Session'
-                : 'Locked'}
-          </Badge>
+          {(() => {
+            const badge = getStepBadge(isCompletedStep, isActionableStep, isCurrentActiveStep);
+            return <Badge variant={badge.variant}>{badge.label}</Badge>;
+          })()}
         </div>
 
         {/* Step 1: Survey & DGroup summary */}
@@ -379,14 +440,7 @@ export function PipelineStepsPanel({
               selectedReviewerUser,
               actionKind,
             }) => {
-              const action =
-                actionKind === 'repeat_step'
-                  ? 'repeat_step'
-                  : actionKind === 'return_to_interview'
-                    ? 'return_to_interview'
-                    : actionKind === 'return_to_observation'
-                      ? 'return_to_observation'
-                      : 'update_stage';
+              const action = ACTION_KIND_MAP[actionKind] ?? 'update_stage';
               setPendingScheduleAction({
                 status: 'scheduled',
                 action,
@@ -477,21 +531,11 @@ export function PipelineStepsPanel({
           stepTitle={stepMeta?.title ?? `Step ${selectedStep}`}
           actionKind={pendingScheduleAction.actionKind}
           scheduledAt={pendingScheduleAction.scheduledAt}
-          reviewer={
-            pendingScheduleAction.selectedReviewerUser
-              ? {
-                  id: pendingScheduleAction.selectedReviewerUser.id,
-                  name: pendingScheduleAction.selectedReviewerUser.name,
-                  role: pendingScheduleAction.selectedReviewerUser.role,
-                  avatarObjectKey: pendingScheduleAction.selectedReviewerUser.avatar_object_key,
-                }
-              : pendingScheduleAction.reviewerName
-                ? {
-                    id: pendingScheduleAction.reviewerId || '',
-                    name: pendingScheduleAction.reviewerName,
-                  }
-                : null
-          }
+          reviewer={resolveDialogReviewer(
+            pendingScheduleAction.selectedReviewerUser,
+            pendingScheduleAction.reviewerName,
+            pendingScheduleAction.reviewerId,
+          )}
           assignedRole={selectedStep === 2 ? application.confirmed_role : undefined}
           recruitmentNotes={currentStepNotes[currentStepNotes.length - 1]?.content}
         />
@@ -515,21 +559,11 @@ export function PipelineStepsPanel({
           completedAt={
             pendingCompleteOptions.scheduledAt || latestStepTransaction?.scheduled_at || undefined
           }
-          reviewer={
-            pendingCompleteOptions.selectedReviewerUser
-              ? {
-                  id: pendingCompleteOptions.selectedReviewerUser.id,
-                  name: pendingCompleteOptions.selectedReviewerUser.name,
-                  role: pendingCompleteOptions.selectedReviewerUser.role,
-                  avatarObjectKey: pendingCompleteOptions.selectedReviewerUser.avatar_object_key,
-                }
-              : pendingCompleteOptions.reviewerName
-                ? {
-                    id: pendingCompleteOptions.reviewerId || '',
-                    name: pendingCompleteOptions.reviewerName,
-                  }
-                : null
-          }
+          reviewer={resolveDialogReviewer(
+            pendingCompleteOptions.selectedReviewerUser,
+            pendingCompleteOptions.reviewerName,
+            pendingCompleteOptions.reviewerId,
+          )}
           assignedRole={
             selectedStep === 2
               ? pendingCompleteOptions.confirmedRole ||

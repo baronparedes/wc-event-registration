@@ -113,19 +113,19 @@ export async function saveTransaction(
   const attemptNumber = latest.data ? latest.data.attempt_number + (isOpenAttempt ? 0 : 1) : 1;
   const scheduledAt = fields.scheduledAt ?? null;
 
-  const resolvedReviewerId =
-    fields.assignedReviewerId !== undefined
-      ? fields.assignedReviewerId
-      : status === 'completed'
-        ? (latest.data?.assigned_reviewer_id ?? userId)
-        : null;
+  let resolvedReviewerId: string | null = null;
+  if (fields.assignedReviewerId !== undefined) {
+    resolvedReviewerId = fields.assignedReviewerId;
+  } else if (status === 'completed') {
+    resolvedReviewerId = latest.data?.assigned_reviewer_id ?? userId;
+  }
 
-  const resolvedReviewerName =
-    fields.assignedReviewerName !== undefined
-      ? fields.assignedReviewerName
-      : status === 'completed'
-        ? (latest.data?.assigned_reviewer_name ?? null)
-        : null;
+  let resolvedReviewerName: string | null = null;
+  if (fields.assignedReviewerName !== undefined) {
+    resolvedReviewerName = fields.assignedReviewerName;
+  } else if (status === 'completed') {
+    resolvedReviewerName = latest.data?.assigned_reviewer_name ?? null;
+  }
 
   const update: RecruitmentTransactionUpdate = {
     attempt_number: attemptNumber,

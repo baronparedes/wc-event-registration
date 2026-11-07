@@ -56,10 +56,13 @@ export function ReviewerUserPicker({
     includesPlaceholder: true,
   });
 
-  const effectiveSelectedUser: ReviewerUserItem | null = value
-    ? selectedUserCache?.id === value
-      ? selectedUserCache
-      : (users.find((u) => u.id === value) ??
+  let effectiveSelectedUser: ReviewerUserItem | null = null;
+  if (value) {
+    if (selectedUserCache?.id === value) {
+      effectiveSelectedUser = selectedUserCache;
+    } else {
+      effectiveSelectedUser =
+        users.find((u) => u.id === value) ??
         userById ??
         (reviewerName
           ? {
@@ -71,18 +74,19 @@ export function ReviewerUserPicker({
               role: null,
               avatar_object_key: null,
             }
-          : null))
-    : reviewerName
-      ? {
-          id: '',
-          name: reviewerName,
-          full_name: reviewerName,
-          nickname: null,
-          email: null,
-          role: null,
-          avatar_object_key: null,
-        }
-      : null;
+          : null);
+    }
+  } else if (reviewerName) {
+    effectiveSelectedUser = {
+      id: '',
+      name: reviewerName,
+      full_name: reviewerName,
+      nickname: null,
+      email: null,
+      role: null,
+      avatar_object_key: null,
+    };
+  }
 
   // Click outside to close dropdown (guarded against inactive event listeners per React anti-patterns)
   useEffect(() => {

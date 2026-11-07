@@ -126,32 +126,40 @@ export function AdminRecruitmentSettingsPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content>
-        {isLoading ? (
-          <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-border bg-surface">
-            <Spinner size="lg" />
-          </div>
-        ) : isError ? (
-          <div className="rounded-2xl border border-danger/20 bg-danger/5 p-6 text-center text-sm text-danger">
-            {error instanceof Error ? error.message : 'Failed to load recruitment settings.'}
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)}>
-            {activeTab === 'general' && (
-              <GeneralSettingsTab
-                control={control}
-                register={register}
-                errors={errors}
-                isRecruitmentOpen={isRecruitmentOpen}
-              />
-            )}
-            {activeTab === 'survey' && (
-              <SurveyQuestionsTab control={control} register={register} errors={errors} />
-            )}
-            {activeTab === 'endorsement' && (
-              <EndorsementQuestionsTab control={control} register={register} errors={errors} />
-            )}
-          </form>
-        )}
+        {(() => {
+          if (isLoading) {
+            return (
+              <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-border bg-surface">
+                <Spinner size="lg" />
+              </div>
+            );
+          }
+          if (isError) {
+            return (
+              <div className="rounded-2xl border border-danger/20 bg-danger/5 p-6 text-center text-sm text-danger">
+                {error instanceof Error ? error.message : 'Failed to load recruitment settings.'}
+              </div>
+            );
+          }
+          return (
+            <form onSubmit={handleSubmit(onSubmit)}>
+              {activeTab === 'general' && (
+                <GeneralSettingsTab
+                  control={control}
+                  register={register}
+                  errors={errors}
+                  isRecruitmentOpen={isRecruitmentOpen}
+                />
+              )}
+              {activeTab === 'survey' && (
+                <SurveyQuestionsTab control={control} register={register} errors={errors} />
+              )}
+              {activeTab === 'endorsement' && (
+                <EndorsementQuestionsTab control={control} register={register} errors={errors} />
+              )}
+            </form>
+          );
+        })()}
       </AdminPageShell.Content>
     </AdminPageShell>
   );

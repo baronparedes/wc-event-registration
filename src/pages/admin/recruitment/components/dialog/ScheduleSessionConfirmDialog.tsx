@@ -39,6 +39,17 @@ export interface ScheduleSessionConfirmDialogProps {
   recruitmentNotes?: string;
 }
 
+const REPEAT_STEP_NAME_MAP: Record<number, string> = {
+  2: 'Re-Interview',
+  3: 'Re-Orientation',
+  4: 'Re-Observation',
+};
+
+const RETURN_ACTION_DATE_FALLBACK: Record<string, string> = {
+  return_to_observation: 'To be scheduled in Step 4',
+  return_to_interview: 'To be scheduled in Step 2',
+};
+
 function getActionMeta(actionKind: ScheduleActionKind, stepNumber: number) {
   switch (actionKind) {
     case 'reschedule':
@@ -49,14 +60,7 @@ function getActionMeta(actionKind: ScheduleActionKind, stepNumber: number) {
         description: 'Verify the updated session schedule and reviewer assignment.',
       };
     case 'repeat_step': {
-      const stepName =
-        stepNumber === 2
-          ? 'Re-Interview'
-          : stepNumber === 3
-            ? 'Re-Orientation'
-            : stepNumber === 4
-              ? 'Re-Observation'
-              : 'Re-Service';
+      const stepName = REPEAT_STEP_NAME_MAP[stepNumber] ?? 'Re-Service';
       return {
         title: `Confirm ${stepName} Schedule`,
         badge: 'Repeat / Re-evaluation',
@@ -167,12 +171,7 @@ export function ScheduleSessionConfirmDialog({
               <span>Session Date & Time</span>
             </div>
             <span className="font-bold text-text text-xs sm:text-sm">
-              {formattedDateTime ||
-                (actionKind === 'return_to_observation'
-                  ? 'To be scheduled in Step 4'
-                  : actionKind === 'return_to_interview'
-                    ? 'To be scheduled in Step 2'
-                    : 'No date set')}
+              {formattedDateTime || RETURN_ACTION_DATE_FALLBACK[actionKind] || 'No date set'}
             </span>
           </div>
 

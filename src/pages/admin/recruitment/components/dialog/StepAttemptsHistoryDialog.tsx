@@ -14,6 +14,23 @@ export interface StepAttemptsHistoryDialogProps {
   attempts: RecruitmentPipelineTransaction[];
 }
 
+const renderCoachValue = (reviewerName?: string | null, isScheduled?: boolean) => {
+  if (reviewerName) {
+    return <strong className="text-text">{reviewerName}</strong>;
+  }
+  if (isScheduled) {
+    return (
+      <Badge
+        variant="outline"
+        className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
+      >
+        Unassigned (Assign on service day)
+      </Badge>
+    );
+  }
+  return <strong className="text-text">None</strong>;
+};
+
 export function StepAttemptsHistoryDialog({
   isOpen,
   onClose,
@@ -72,18 +89,7 @@ export function StepAttemptsHistoryDialog({
               <div className="grid gap-2 sm:grid-cols-2 text-[11px] text-muted">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span>Coach: </span>
-                  {tx.assigned_reviewer_name ? (
-                    <strong className="text-text">{tx.assigned_reviewer_name}</strong>
-                  ) : tx.status === 'scheduled' ? (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
-                    >
-                      Unassigned (Assign on service day)
-                    </Badge>
-                  ) : (
-                    <strong className="text-text">None</strong>
-                  )}
+                  {renderCoachValue(tx.assigned_reviewer_name, tx.status === 'scheduled')}
                 </div>
                 <div>
                   <span>Session Date: </span>

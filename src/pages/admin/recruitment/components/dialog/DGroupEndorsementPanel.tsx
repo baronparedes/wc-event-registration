@@ -31,6 +31,35 @@ import { RecruitmentEndorsementInspectSection } from '@/pages/admin/approvals/co
 
 import { EndorsementActionDialog } from './EndorsementActionDialog';
 
+const getEndorsementStatusBadge = (isApproved: boolean, isDeclined: boolean) => {
+  if (isApproved) {
+    return {
+      variant: 'default' as const,
+      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+      label: 'Endorsed',
+    };
+  }
+  if (isDeclined) {
+    return {
+      variant: 'destructive' as const,
+      icon: <XCircle className="h-3.5 w-3.5" />,
+      label: 'Endorsement Declined',
+    };
+  }
+  return {
+    variant: 'secondary' as const,
+    icon: <Clock className="h-3.5 w-3.5" />,
+    label: 'Pending Leader Review',
+  };
+};
+
+const getHistoryItemBadge = (isApproved: boolean, isDeclined: boolean, isCancelled: boolean) => {
+  if (isApproved) return { variant: 'default' as const, label: 'Endorsed' };
+  if (isDeclined) return { variant: 'destructive' as const, label: 'Declined' };
+  if (isCancelled) return { variant: 'outline' as const, label: 'Cancelled / Superseded' };
+  return { variant: 'secondary' as const, label: 'Pending Review' };
+};
+
 export interface DGroupEndorsementPanelProps {
   application: RecruitmentApplication;
   endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
@@ -103,27 +132,15 @@ export function DGroupEndorsementPanel({
             </div>
           </div>
 
-          <Badge
-            variant={isApproved ? 'default' : isDeclined ? 'destructive' : 'secondary'}
-            className="gap-1.5"
-          >
-            {isApproved ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Endorsed</span>
-              </>
-            ) : isDeclined ? (
-              <>
-                <XCircle className="h-3.5 w-3.5" />
-                <span>Endorsement Declined</span>
-              </>
-            ) : (
-              <>
-                <Clock className="h-3.5 w-3.5" />
-                <span>Pending Leader Review</span>
-              </>
-            )}
-          </Badge>
+          {(() => {
+            const badge = getEndorsementStatusBadge(isApproved, isDeclined);
+            return (
+              <Badge variant={badge.variant} className="gap-1.5">
+                {badge.icon}
+                <span>{badge.label}</span>
+              </Badge>
+            );
+          })()}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3 text-xs">
@@ -327,25 +344,14 @@ export function DGroupEndorsementPanel({
                           <span className="text-muted">({item.assigned_to_email})</span>
                         )}
                       </div>
-                      <Badge
-                        variant={
-                          isItemApproved
-                            ? 'default'
-                            : isItemDeclined
-                              ? 'destructive'
-                              : isItemCancelled
-                                ? 'outline'
-                                : 'secondary'
-                        }
-                      >
-                        {isItemApproved
-                          ? 'Endorsed'
-                          : isItemDeclined
-                            ? 'Declined'
-                            : isItemCancelled
-                              ? 'Cancelled / Superseded'
-                              : 'Pending Review'}
-                      </Badge>
+                      {(() => {
+                        const historyBadge = getHistoryItemBadge(
+                          isItemApproved,
+                          isItemDeclined,
+                          isItemCancelled,
+                        );
+                        return <Badge variant={historyBadge.variant}>{historyBadge.label}</Badge>;
+                      })()}
                     </div>
 
                     <div className="grid gap-1 sm:grid-cols-2 text-muted">

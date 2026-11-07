@@ -98,6 +98,21 @@ export function EndorsementActionDialog({
     }
   };
 
+  let bannerTitle = 'Endorsement Reset';
+  if (isChangeLeader) {
+    bannerTitle = isEndorsed ? 'Endorsement Status Reset' : 'Automatic Request Replacement';
+  }
+
+  let bannerDescription =
+    'Sending a new endorsement request will reset the status to Pending Leader Review and email an endorsement link to the leader.';
+  if (isChangeLeader) {
+    bannerDescription = isEndorsed
+      ? 'This applicant has already been endorsed. Updating the leader will supersede the previous endorsement, reset their status to Pending, and dispatch a new endorsement link to the updated email address.'
+      : `Updating the leader will cancel the current pending request${
+          initialLeaderEmail ? ` to ${initialLeaderEmail}` : ''
+        } and immediately send a new invitation link to the updated email address.`;
+  }
+
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="md">
       <Dialog.Header showCloseButton onClose={onClose}>
@@ -123,22 +138,8 @@ export function EndorsementActionDialog({
           <AlertBanner
             variant="info"
             icon={<AlertCircle className="h-4 w-4 shrink-0" />}
-            title={
-              isChangeLeader
-                ? isEndorsed
-                  ? 'Endorsement Status Reset'
-                  : 'Automatic Request Replacement'
-                : 'Endorsement Reset'
-            }
-            description={
-              isChangeLeader
-                ? isEndorsed
-                  ? `This applicant has already been endorsed. Updating the leader will supersede the previous endorsement, reset their status to Pending, and dispatch a new endorsement link to the updated email address.`
-                  : `Updating the leader will cancel the current pending request${
-                      initialLeaderEmail ? ` to ${initialLeaderEmail}` : ''
-                    } and immediately send a new invitation link to the updated email address.`
-                : 'Sending a new endorsement request will reset the status to Pending Leader Review and email an endorsement link to the leader.'
-            }
+            title={bannerTitle}
+            description={bannerDescription}
           />
 
           <div className="space-y-3">

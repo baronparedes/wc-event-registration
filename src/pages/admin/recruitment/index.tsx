@@ -176,46 +176,59 @@ export function AdminRecruitmentPage() {
       </AdminPageShell.Filters>
 
       <AdminPageShell.Content>
-        {isLoading ? (
-          <div className="flex min-h-[350px] items-center justify-center rounded-2xl border border-border bg-surface">
-            <Spinner size="lg" />
-          </div>
-        ) : isError ? (
-          <div className="rounded-2xl border border-danger/20 bg-danger/5 p-6 text-center text-sm text-danger">
-            {error instanceof Error ? error.message : 'Failed to load recruitment applications.'}
-          </div>
-        ) : applications.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-surface px-6 py-12">
-            <EmptyState
-              icon={<Users className="h-8 w-8 text-muted" />}
-              title="No applicants found"
-              description={
-                searchTerm || stepFilter || roleFilter || statusFilter !== 'all'
-                  ? 'No recruitment applications match the current filter criteria.'
-                  : 'No volunteer recruitment applications have been received yet.'
-              }
-            />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {isMobile ? (
-              <RecruitmentMobileList
-                applications={applications}
-                onSelectApplication={(app) => setSelectedApplication(app)}
-              />
-            ) : (
-              <RecruitmentTable
-                applications={applications}
-                onSelectApplication={(app) => setSelectedApplication(app)}
-              />
-            )}
+        {(() => {
+          if (isLoading) {
+            return (
+              <div className="flex min-h-[350px] items-center justify-center rounded-2xl border border-border bg-surface">
+                <Spinner size="lg" />
+              </div>
+            );
+          }
+          if (isError) {
+            return (
+              <div className="rounded-2xl border border-danger/20 bg-danger/5 p-6 text-center text-sm text-danger">
+                {error instanceof Error
+                  ? error.message
+                  : 'Failed to load recruitment applications.'}
+              </div>
+            );
+          }
+          if (applications.length === 0) {
+            return (
+              <div className="rounded-2xl border border-border bg-surface px-6 py-12">
+                <EmptyState
+                  icon={<Users className="h-8 w-8 text-muted" />}
+                  title="No applicants found"
+                  description={
+                    searchTerm || stepFilter || roleFilter || statusFilter !== 'all'
+                      ? 'No recruitment applications match the current filter criteria.'
+                      : 'No volunteer recruitment applications have been received yet.'
+                  }
+                />
+              </div>
+            );
+          }
+          return (
+            <div className="space-y-4">
+              {isMobile ? (
+                <RecruitmentMobileList
+                  applications={applications}
+                  onSelectApplication={(app) => setSelectedApplication(app)}
+                />
+              ) : (
+                <RecruitmentTable
+                  applications={applications}
+                  onSelectApplication={(app) => setSelectedApplication(app)}
+                />
+              )}
 
-            {/* Infinite scroll sentinel */}
-            <div ref={sentinelRef} className="py-2 text-center">
-              {isFetchingNextPage && <Spinner size="sm" />}
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="py-2 text-center">
+                {isFetchingNextPage && <Spinner size="sm" />}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </AdminPageShell.Content>
 
       <RecruitmentApplicantDetailDialog

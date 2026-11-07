@@ -1,4 +1,8 @@
-import type { RecruitmentActionContext, RecruitmentApplicationUpdate } from '../types.ts';
+import type {
+  RecruitmentActionContext,
+  RecruitmentApplicationUpdate,
+  TransactionType,
+} from '../types.ts';
 import {
   findLatestTransaction,
   nextStepForCompletion,
@@ -7,6 +11,25 @@ import {
   response,
   saveTransaction,
 } from './helpers.ts';
+
+const STAGE_STATUS_TRANSACTION_TYPE_MAP: Partial<Record<string, TransactionType>> = {
+  completed: 'completed',
+  declined: 'declined',
+  skipped: 'skipped',
+  on_hold: 'archived',
+  archived: 'archived',
+};
+
+function resolveTransitionTransactionType(
+  stageStatus: string,
+  hasSchedule: boolean,
+  wasScheduled: boolean,
+): TransactionType {
+  const mapped = STAGE_STATUS_TRANSACTION_TYPE_MAP[stageStatus];
+  if (mapped) return mapped;
+  if (hasSchedule && wasScheduled) return 'rescheduled';
+  return 'scheduled';
+}
 
 export async function handleUpdateStage(context: RecruitmentActionContext): Promise<Response> {
   const {
@@ -155,20 +178,11 @@ export async function handleUpdateStage(context: RecruitmentActionContext): Prom
       corsHeaders,
     );
   }
-  const transactionType =
-    stageStatus === 'completed'
-      ? 'completed'
-      : stageStatus === 'declined'
-        ? 'declined'
-        : stageStatus === 'skipped'
-          ? 'skipped'
-          : stageStatus === 'on_hold' || stageStatus === 'archived'
-            ? 'archived'
-            : request.scheduled_at
-              ? wasScheduled
-                ? 'rescheduled'
-                : 'scheduled'
-              : 'scheduled';
+  const transactionType = resolveTransitionTransactionType(
+    stageStatus,
+    Boolean(request.scheduled_at),
+    wasScheduled,
+  );
   const transactionStatus =
     stageStatus === 'on_hold' || stageStatus === 'archived' ? 'pending' : stageStatus;
 

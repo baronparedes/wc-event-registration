@@ -67,6 +67,17 @@ const roleOptions = RECRUITMENT_ROLES.map((role) => ({
   value: role,
 }));
 
+const TRANSACTION_STATUS_BADGE_VARIANT_MAP: Record<string, 'default' | 'accent' | 'secondary'> = {
+  completed: 'default',
+  scheduled: 'accent',
+};
+
+const REPEAT_BUTTON_LABEL_MAP: Record<number, string> = {
+  2: 'Needs Another Interview (Repeat Step 2)',
+  4: 'Needs Another Observation (Repeat Step 4)',
+  5: 'Needs Another Evaluation (Repeat Step 5)',
+};
+
 export function StepCoachingSessionPanel({
   stepNumber,
   application,
@@ -295,11 +306,7 @@ export function StepCoachingSessionPanel({
             {latestStepTransaction?.status && (
               <Badge
                 variant={
-                  latestStepTransaction.status === 'completed'
-                    ? 'default'
-                    : latestStepTransaction.status === 'scheduled'
-                      ? 'accent'
-                      : 'secondary'
+                  TRANSACTION_STATUS_BADGE_VARIANT_MAP[latestStepTransaction.status] ?? 'secondary'
                 }
                 className="text-[10px] capitalize h-6 px-2 flex items-center"
               >
@@ -556,11 +563,7 @@ export function StepCoachingSessionPanel({
                   disabled={isPending}
                 >
                   <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                  {stepNumber === 2
-                    ? 'Needs Another Interview (Repeat Step 2)'
-                    : stepNumber === 4
-                      ? 'Needs Another Observation (Repeat Step 4)'
-                      : 'Needs Another Evaluation (Repeat Step 5)'}
+                  {REPEAT_BUTTON_LABEL_MAP[stepNumber] ?? 'Needs Another Session'}
                 </Button>
               )}
 

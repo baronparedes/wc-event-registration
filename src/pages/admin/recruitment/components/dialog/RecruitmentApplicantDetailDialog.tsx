@@ -177,7 +177,7 @@ export function RecruitmentApplicantDetailDialog({
         </Dialog.Body>
 
         <Dialog.Footer className="sm:justify-between shrink-0 mt-4">
-          {isArchived ? (
+          {isArchived && (
             <Button
               type="button"
               variant="primaryOutline"
@@ -188,7 +188,8 @@ export function RecruitmentApplicantDetailDialog({
               <RotateCcw className="h-4 w-4" />
               <span>Restore to Active</span>
             </Button>
-          ) : !isDeployed ? (
+          )}
+          {!isArchived && !isDeployed && (
             <Button
               type="button"
               variant="outline"
@@ -199,9 +200,8 @@ export function RecruitmentApplicantDetailDialog({
               <Archive className="h-4 w-4" />
               <span>Archive</span>
             </Button>
-          ) : (
-            <div />
           )}
+          {!isArchived && isDeployed && <div />}
 
           <Button
             type="button"

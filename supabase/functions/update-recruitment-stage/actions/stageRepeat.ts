@@ -1,7 +1,9 @@
 import type {
   RecruitmentActionContext,
   RecruitmentRole,
+  RecruitmentStepKey,
   RecruitmentTransactionUpdate,
+  TransactionType,
 } from '../types.ts';
 import {
   asJson,
@@ -10,6 +12,27 @@ import {
   overrideRoles,
   response,
 } from './helpers.ts';
+
+const ACTION_TRANSACTION_TYPE_MAP: Record<string, TransactionType> = {
+  return_to_observation: 'returned_to_observation',
+  return_to_interview: 'returned_to_interview',
+};
+
+const ACTION_REPEAT_STEP_MAP: Record<string, number> = {
+  return_to_interview: 2,
+  return_to_observation: 4,
+};
+
+const STEP_KEY_MAP: Record<number, RecruitmentStepKey> = {
+  2: 'interview',
+  4: 'observation',
+  5: 'evaluation',
+};
+
+const ACTION_NOTIFICATION_TITLE_MAP: Record<string, string> = {
+  return_to_observation: 'Additional observation scheduled',
+  return_to_interview: 'Additional interview scheduled',
+};
 
 export async function handleStepRepeat(context: RecruitmentActionContext): Promise<Response> {
   const { supabase, request, application, userId, adminRole, corsHeaders } = context;
@@ -60,16 +83,13 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     return response(409, { success: false, error: 'There is no session to repeat' }, corsHeaders);
   }
 
+  const transactionType = ACTION_TRANSACTION_TYPE_MAP[action] ?? 'repeated_step';
+
   if (currentTransaction.data) {
     const updateCurrent: RecruitmentTransactionUpdate = {
       status: 'completed',
       completed_at: new Date().toISOString(),
-      transaction_type:
-        action === 'return_to_observation'
-          ? 'returned_to_observation'
-          : action === 'return_to_interview'
-            ? 'returned_to_interview'
-            : 'repeated_step',
+      transaction_type: transactionType,
       notes: request.notes !== undefined ? (request.notes ?? null) : currentTransaction.data.notes,
       applicant_visible_notes: null,
       rubric_data: asJson(request.rubric_data) ?? currentTransaction.data.rubric_data,
@@ -87,10 +107,8 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     }
   }
 
-  const repeatStepNumber =
-    action === 'return_to_interview' ? 2 : action === 'return_to_observation' ? 4 : stepNumber;
-  const repeatStepKey =
-    repeatStepNumber === 2 ? 'interview' : repeatStepNumber === 4 ? 'observation' : 'evaluation';
+  const repeatStepNumber = ACTION_REPEAT_STEP_MAP[action] ?? stepNumber;
+  const repeatStepKey = STEP_KEY_MAP[repeatStepNumber] ?? 'evaluation';
   let nextAttempt = (currentTransaction.data?.attempt_number ?? 0) + 1;
   if (repeatStepNumber !== stepNumber) {
     const latestRepeat = await findLatestTransaction(supabase, application.id, repeatStepNumber);
@@ -109,12 +127,7 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     step_number: repeatStepNumber,
     step_key: repeatStepKey,
     attempt_number: nextAttempt,
-    transaction_type:
-      action === 'return_to_observation'
-        ? 'returned_to_observation'
-        : action === 'return_to_interview'
-          ? 'returned_to_interview'
-          : 'repeated_step',
+    transaction_type: transactionType,
     from_step: stepNumber,
     to_step: repeatStepNumber,
     status: targetStatus,
@@ -132,8 +145,7 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     );
   }
 
-  const nextStep =
-    action === 'return_to_interview' ? 2 : action === 'return_to_observation' ? 4 : stepNumber;
+  const nextStep = repeatStepNumber;
   const appUpdate: { current_step: number; confirmed_role?: RecruitmentRole } = {
     current_step: nextStep,
   };
@@ -155,11 +167,7 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     supabase,
     application,
     userId,
-    action === 'return_to_observation'
-      ? 'Additional observation scheduled'
-      : action === 'return_to_interview'
-        ? 'Additional interview scheduled'
-        : 'Another session scheduled',
+    ACTION_NOTIFICATION_TITLE_MAP[action] ?? 'Another session scheduled',
     'A new recruitment session has been scheduled.',
   );
   return response(200, { success: true, current_step: nextStep }, corsHeaders);

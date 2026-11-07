@@ -202,6 +202,13 @@ export function SundayDateTimePicker({
 
   const displayDateTimeText = datePart ? formatDisplayDateTime(datePart, timePart) : '';
 
+  let borderStateClass = 'border-border focus:border-primary';
+  if (isOpen) {
+    borderStateClass = 'border-primary ring-2 ring-primary/20';
+  } else if (error) {
+    borderStateClass = 'border-danger';
+  }
+
   return (
     <div className={`space-y-1.5 ${className}`} ref={containerRef}>
       {label && (
@@ -231,13 +238,7 @@ export function SundayDateTimePicker({
             aria-label={`${label ? `${label}: ` : ''}${displayDateTimeText || placeholder}`}
             disabled={isInactive}
             onClick={() => setIsOpen((prev) => !prev)}
-            className={`w-full min-h-[46px] rounded-md border bg-background px-3 py-2.5 text-left text-sm text-text transition flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-              isOpen
-                ? 'border-primary ring-2 ring-primary/20'
-                : error
-                  ? 'border-danger'
-                  : 'border-border focus:border-primary'
-            } ${isInactive ? 'opacity-60 cursor-not-allowed bg-surface/50' : 'hover:border-primary/60'}`}
+            className={`w-full min-h-[46px] rounded-md border bg-background px-3 py-2.5 text-left text-sm text-text transition flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-primary/20 ${borderStateClass} ${isInactive ? 'opacity-60 cursor-not-allowed bg-surface/50' : 'hover:border-primary/60'}`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <Calendar className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />

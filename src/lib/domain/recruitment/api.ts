@@ -427,11 +427,12 @@ export async function fetchAdminRecruitmentApplicationDetail(
       .eq('entity_id', application.data.id)
       .order('created_at', { ascending: false });
 
-    const rawList = Array.isArray(approvalsData)
-      ? approvalsData
-      : approvalsData
-        ? [approvalsData]
-        : [];
+    let rawList: NonNullable<typeof approvalsData> = [];
+    if (Array.isArray(approvalsData)) {
+      rawList = approvalsData;
+    } else if (approvalsData) {
+      rawList = [approvalsData];
+    }
 
     for (const approvalData of rawList) {
       let attestationAnswers: Record<string, unknown> | null = null;

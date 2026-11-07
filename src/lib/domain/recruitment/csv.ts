@@ -72,6 +72,19 @@ function escapeCsvCell(value: string | number | null | undefined): string {
   return stringValue;
 }
 
+const DGROUP_STATUS_CSV_MAP: Record<string, string> = {
+  approved: 'Endorsed',
+  rejected: 'Not Endorsed',
+};
+
+function resolveEndorsementCsvStatus(status?: string | null, approvalId?: string | null): string {
+  if (status && DGROUP_STATUS_CSV_MAP[status]) {
+    return DGROUP_STATUS_CSV_MAP[status];
+  }
+  if (!approvalId) return 'Not Endorsed';
+  return 'Pending';
+}
+
 export function formatRecruitmentCsvRow(record: RecruitmentCsvRecord): string {
   const age = calculateAge(record.date_of_birth);
   const role = record.confirmed_role ?? record.desired_role;
@@ -96,12 +109,10 @@ export function formatRecruitmentCsvRow(record: RecruitmentCsvRecord): string {
     ? formatDateTime(record.applicant_attested_at)
     : 'No';
 
-  const endorsementStatus =
-    record.dgroup_approval_status === 'approved'
-      ? 'Endorsed'
-      : record.dgroup_approval_status === 'rejected' || !record.dgroup_approval_id
-        ? 'Not Endorsed'
-        : 'Pending';
+  const endorsementStatus = resolveEndorsementCsvStatus(
+    record.dgroup_approval_status,
+    record.dgroup_approval_id,
+  );
 
   const cells: (string | number | null | undefined)[] = [
     role,

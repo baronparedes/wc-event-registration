@@ -21,6 +21,12 @@ interface ApplicantProfilePanelProps {
   endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
 }
 
+const getEndorsementBadge = (isEndorsed: boolean, isDeclined: boolean) => {
+  if (isEndorsed) return { variant: 'default' as const, label: 'Endorsed' };
+  if (isDeclined) return { variant: 'destructive' as const, label: 'Endorsement Declined' };
+  return { variant: 'secondary' as const, label: 'Pending Leader Review' };
+};
+
 export function ApplicantProfilePanel({ application, endorsement }: ApplicantProfilePanelProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -201,13 +207,10 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
       <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
           <h4 className="font-heading text-sm font-bold text-text">DGroup & Leader Attestation</h4>
-          <Badge variant={isEndorsed ? 'default' : isDeclined ? 'destructive' : 'secondary'}>
-            {isEndorsed
-              ? 'Endorsed'
-              : isDeclined
-                ? 'Endorsement Declined'
-                : 'Pending Leader Review'}
-          </Badge>
+          {(() => {
+            const badge = getEndorsementBadge(isEndorsed, isDeclined);
+            return <Badge variant={badge.variant}>{badge.label}</Badge>;
+          })()}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">

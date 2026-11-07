@@ -12,6 +12,12 @@ interface Step1SurveyReviewPanelProps {
   endorsement?: RecruitmentApplicationDetail['dgroup_endorsement'];
 }
 
+const getEndorsementStatusBadge = (isEndorsed: boolean, isDeclined: boolean) => {
+  if (isEndorsed) return { variant: 'default' as const, label: 'Endorsed' };
+  if (isDeclined) return { variant: 'destructive' as const, label: 'Declined by Leader' };
+  return { variant: 'secondary' as const, label: 'Pending Leader Endorsement' };
+};
+
 export function Step1SurveyReviewPanel({ application, endorsement }: Step1SurveyReviewPanelProps) {
   const isEndorsed =
     endorsement?.status === 'approved' ||
@@ -30,13 +36,10 @@ export function Step1SurveyReviewPanel({ application, endorsement }: Step1Survey
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           <strong>DGroup Endorsement Status:</strong>
-          {isEndorsed ? (
-            <Badge variant="default">Endorsed</Badge>
-          ) : isDeclined ? (
-            <Badge variant="destructive">Declined by Leader</Badge>
-          ) : (
-            <Badge variant="secondary">Pending Leader Endorsement</Badge>
-          )}
+          {(() => {
+            const badge = getEndorsementStatusBadge(isEndorsed, isDeclined);
+            return <Badge variant={badge.variant}>{badge.label}</Badge>;
+          })()}
         </div>
       </div>
 
