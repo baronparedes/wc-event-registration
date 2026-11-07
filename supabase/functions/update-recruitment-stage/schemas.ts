@@ -138,6 +138,13 @@ export const updateRecruitmentStageSchema = z
         });
       }
     }
+    if (request.action === 'archive_applicant' && !request.notes?.trim()) {
+      context.addIssue({
+        code: 'custom',
+        message: 'notes (archive reason) is required for archive_applicant',
+        path: ['notes'],
+      });
+    }
     if (request.action === 'request_endorsement') {
       if (!request.leader_name?.trim()) {
         context.addIssue({

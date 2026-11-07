@@ -789,7 +789,7 @@ Deno.test(
   },
 );
 
-Deno.test('update-recruitment-stage archives an applicant', async () => {
+Deno.test('update-recruitment-stage archives an applicant and records note', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
       adminRole: 'admin',
@@ -808,36 +808,81 @@ Deno.test('update-recruitment-stage archives an applicant', async () => {
       const body = await response.json();
       assertEquals(body.success, true);
       assertEquals(body.status, 'archived');
+
+      // Verify note was inserted into current step recruitment_step_notes
+      const noteCall = mock.calls.find(
+        (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+      );
+      assertEquals(Boolean(noteCall), true);
+      assertEquals(
+        (noteCall?.body as Record<string, unknown>).content,
+        'Archived: Candidate paused for personal reasons',
+      );
+      assertEquals((noteCall?.body as Record<string, unknown>).step_number, 3);
     } finally {
       mock.restore();
     }
   });
 });
 
-Deno.test('update-recruitment-stage restores an archived applicant to active', async () => {
+Deno.test('update-recruitment-stage rejects archive_applicant without reason notes', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
       adminRole: 'admin',
-      application: { ...applicationRecord, current_step: 3, status: 'archived' },
+      application: { ...applicationRecord, current_step: 3, status: 'active' },
     });
     try {
       const response = await handleUpdateRecruitmentStage(
         createRequest({
-          action: 'restore_applicant',
+          action: 'archive_applicant',
           application_id: APPLICATION_ID,
-          notes: 'Candidate resuming recruitment',
+          notes: '',
         }),
       );
 
-      assertEquals(response.status, 200);
-      const body = await response.json();
-      assertEquals(body.success, true);
-      assertEquals(body.status, 'active');
+      assertEquals(response.status, 400);
     } finally {
       mock.restore();
     }
   });
 });
+
+Deno.test(
+  'update-recruitment-stage restores an archived applicant to active and records note',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 3, status: 'archived' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'restore_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Candidate resuming recruitment',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.status, 'active');
+
+        const noteCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteCall), true);
+        assertEquals(
+          (noteCall?.body as Record<string, unknown>).content,
+          'Restored: Candidate resuming recruitment',
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
 
 Deno.test(
   'update-recruitment-stage allows reviewers to add a recruiter note at any time',
@@ -1014,7 +1059,7 @@ Deno.test(
   },
 );
 
-Deno.test('update-recruitment-stage archives an applicant', async () => {
+Deno.test('update-recruitment-stage archives an applicant and records note', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
       adminRole: 'admin',
@@ -1033,36 +1078,81 @@ Deno.test('update-recruitment-stage archives an applicant', async () => {
       const body = await response.json();
       assertEquals(body.success, true);
       assertEquals(body.status, 'archived');
+
+      // Verify note was inserted into current step recruitment_step_notes
+      const noteCall = mock.calls.find(
+        (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+      );
+      assertEquals(Boolean(noteCall), true);
+      assertEquals(
+        (noteCall?.body as Record<string, unknown>).content,
+        'Archived: Candidate paused for personal reasons',
+      );
+      assertEquals((noteCall?.body as Record<string, unknown>).step_number, 3);
     } finally {
       mock.restore();
     }
   });
 });
 
-Deno.test('update-recruitment-stage restores an archived applicant to active', async () => {
+Deno.test('update-recruitment-stage rejects archive_applicant without reason notes', async () => {
   await withEnv(async () => {
     const mock = mockFetch({
       adminRole: 'admin',
-      application: { ...applicationRecord, current_step: 3, status: 'archived' },
+      application: { ...applicationRecord, current_step: 3, status: 'active' },
     });
     try {
       const response = await handleUpdateRecruitmentStage(
         createRequest({
-          action: 'restore_applicant',
+          action: 'archive_applicant',
           application_id: APPLICATION_ID,
-          notes: 'Candidate resuming recruitment',
+          notes: '',
         }),
       );
 
-      assertEquals(response.status, 200);
-      const body = await response.json();
-      assertEquals(body.success, true);
-      assertEquals(body.status, 'active');
+      assertEquals(response.status, 400);
     } finally {
       mock.restore();
     }
   });
 });
+
+Deno.test(
+  'update-recruitment-stage restores an archived applicant to active and records note',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 3, status: 'archived' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'restore_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Candidate resuming recruitment',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.status, 'active');
+
+        const noteCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteCall), true);
+        assertEquals(
+          (noteCall?.body as Record<string, unknown>).content,
+          'Restored: Candidate resuming recruitment',
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
 
 Deno.test(
   'update-recruitment-stage allows reviewers to add a recruiter note at any time',

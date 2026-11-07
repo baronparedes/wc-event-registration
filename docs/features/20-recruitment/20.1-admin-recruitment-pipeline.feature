@@ -107,12 +107,15 @@ Feature: Admin Recruitment Pipeline Management
   Scenario: Reviewer archives and restores an applicant
     Given I am inspecting an active applicant
     When I click the destructive "Archive" button in the modal footer
-    Then a confirmation dialog appears warning of the archive action
-    When I confirm the archive action
+    Then a confirmation dialog appears requiring an archive reason
+    When I enter "Applicant requested pause until next term" as the archive reason
+    And I click "Archive Applicant"
     Then the applicant status updates to "archived"
+    And the archive reason is appended to the recruiter notes thread as "Archived: Applicant requested pause until next term"
     And an archived banner is displayed with a "Restore Applicant" option
-    When I click "Restore Applicant"
+    When I click "Restore Applicant" and optionally provide restoration notes
     Then the applicant status returns to "active"
+    And the restoration note is recorded in the recruiter notes thread
 
   Scenario: Reviewer records a collaborative recruiter note
     Given I am inspecting an active applicant on the "9-Step Pipeline" tab

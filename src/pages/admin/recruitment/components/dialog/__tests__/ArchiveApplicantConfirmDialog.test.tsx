@@ -52,6 +52,30 @@ describe('ArchiveApplicantConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith('Applicant traveling abroad until February');
   });
 
+  it('disables confirm button when archive reason is blank in archive mode', async () => {
+    const user = userEvent.setup();
+    renderDialog(
+      <ArchiveApplicantConfirmDialog
+        isOpen={true}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        isPending={false}
+        mode="archive"
+        applicant={mockApplicant}
+      />,
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: /^Archive Applicant$/i });
+    expect(confirmBtn).toBeDisabled();
+
+    const notesInput = screen.getByPlaceholderText(/Applicant requested a pause/i);
+    await user.type(notesInput, 'Valid archive reason');
+    expect(confirmBtn).toBeEnabled();
+
+    await user.clear(notesInput);
+    expect(confirmBtn).toBeDisabled();
+  });
+
   it('renders restore mode confirmation details', async () => {
     const user = userEvent.setup();
     renderDialog(

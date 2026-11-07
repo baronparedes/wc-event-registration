@@ -39,7 +39,9 @@ export function ArchiveApplicantConfirmDialog({
   const title = isArchive ? 'Archive Applicant' : 'Restore Applicant to Active';
 
   const handleConfirm = () => {
-    onConfirm(notes.trim() || undefined);
+    const trimmed = notes.trim();
+    if (isArchive && !trimmed) return;
+    onConfirm(trimmed || undefined);
   };
 
   return (
@@ -124,14 +126,19 @@ export function ArchiveApplicantConfirmDialog({
           </ul>
         </div>
 
-        {/* Optional Notes */}
+        {/* Archive Reason / Restoration Notes */}
         <FormTextareaField
           id="archive-notes-input"
-          label={isArchive ? 'Archive Reason / Notes (Optional)' : 'Restoration Notes (Optional)'}
+          label={isArchive ? 'Archive Reason *' : 'Restoration Notes (Optional)'}
           placeholder={
             isArchive
               ? 'e.g. Applicant requested a pause until next month, or currently unresponsive...'
               : 'e.g. Candidate confirmed availability to resume recruitment...'
+          }
+          helperText={
+            isArchive
+              ? 'Required. This reason will be recorded in the candidate recruitment notes thread.'
+              : undefined
           }
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -152,7 +159,7 @@ export function ArchiveApplicantConfirmDialog({
         <Button
           variant={isArchive ? 'destructive' : 'default'}
           onClick={handleConfirm}
-          disabled={isPending}
+          disabled={isPending || (isArchive && !notes.trim())}
           className="w-full sm:w-auto justify-center gap-2"
         >
           {isPending ? (
