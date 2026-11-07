@@ -170,6 +170,20 @@ export function DGroupEndorsementPanel({
             </div>
           )}
         </div>
+
+        {canManageEndorsement && application.status === 'active' && !isDeployed && isApproved && (
+          <div className="flex justify-end border-t border-border pt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActionDialogMode('change_leader')}
+              className="gap-1.5 w-full sm:w-auto"
+            >
+              <UserCog className="h-3.5 w-3.5" />
+              <span>Change DGroup Leader</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Endorsed State: Render Questionnaire Responses */}
@@ -378,6 +392,7 @@ export function DGroupEndorsementPanel({
           initialLeaderName={application.dgroup_info.leader_name}
           initialLeaderEmail={application.dgroup_info.leader_email}
           initialLeaderPhone={application.dgroup_info.leader_phone}
+          isEndorsed={isApproved}
         />
       )}
     </div>

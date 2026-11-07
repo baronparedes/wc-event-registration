@@ -242,7 +242,7 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
         </div>
 
         <div className="flex flex-wrap justify-end gap-2 pt-2">
-          {canManageEndorsement && canResend && (
+          {canManageEndorsement && application.status === 'active' && !isDeployed && (
             <Button
               type="button"
               variant="outline"
@@ -321,6 +321,7 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           initialLeaderName={application.dgroup_info.leader_name}
           initialLeaderEmail={application.dgroup_info.leader_email}
           initialLeaderPhone={application.dgroup_info.leader_phone}
+          isEndorsed={isEndorsed}
         />
       )}
 

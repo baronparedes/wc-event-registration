@@ -146,4 +146,22 @@ describe('EndorsementActionDialog', () => {
       expect(onCloseMock).not.toHaveBeenCalled();
     });
   });
+
+  it('renders endorsement status reset notice when isEndorsed is true', () => {
+    render(
+      <EndorsementActionDialog
+        isOpen={true}
+        onClose={onCloseMock}
+        applicationId="app-123"
+        applicantName="Jane Doe"
+        mode="change_leader"
+        initialLeaderName="Pastor Mark"
+        initialLeaderEmail="mark@example.com"
+        isEndorsed={true}
+      />,
+    );
+
+    expect(screen.getByText('Endorsement Status Reset')).toBeInTheDocument();
+    expect(screen.getByText(/This applicant has already been endorsed/i)).toBeInTheDocument();
+  });
 });

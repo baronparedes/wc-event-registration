@@ -653,6 +653,52 @@ Deno.test(
   },
 );
 
+Deno.test(
+  'update-recruitment-stage allows changing dgroup leader when applicant is already endorsed',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'request_endorsement',
+            application_id: APPLICATION_ID,
+            leader_name: 'Successor Leader',
+            leader_email: 'successor@example.com',
+            leader_contact_number: '+639179998888',
+            notes: 'Transferring to different pastoral group',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = (await response.json()) as { success: boolean; approval_id: string };
+        assertEquals(body.success, true);
+        assertEquals(body.approval_id, 'new-approval-123');
+
+        // Verify application updated with new approval ID
+        const appUpdateCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/recruitment_applications' &&
+            call.method === 'PATCH' &&
+            (call.body as Record<string, unknown>).dgroup_approval_id === 'new-approval-123',
+        );
+        assertEquals(Boolean(appUpdateCall), true);
+
+        // Verify fresh endorsement email was dispatched to new leader
+        const emailQueueCall = mock.calls.find((call) =>
+          call.path.endsWith('/enqueue_email_notification'),
+        );
+        assertEquals(Boolean(emailQueueCall), true);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
 Deno.test('update-recruitment-stage rejects request_endorsement from non-reviewers', async () => {
   await withEnv(async () => {
     const mock = mockFetch({ adminRole: null });

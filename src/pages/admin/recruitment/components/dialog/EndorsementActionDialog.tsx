@@ -32,6 +32,7 @@ export interface EndorsementActionDialogProps {
   initialLeaderName?: string;
   initialLeaderEmail?: string;
   initialLeaderPhone?: string;
+  isEndorsed?: boolean;
 }
 
 export function EndorsementActionDialog({
@@ -43,6 +44,7 @@ export function EndorsementActionDialog({
   initialLeaderName = '',
   initialLeaderEmail = '',
   initialLeaderPhone = '',
+  isEndorsed = false,
 }: EndorsementActionDialogProps) {
   const updateStageMutation = useUpdateRecruitmentStageMutation();
 
@@ -121,12 +123,20 @@ export function EndorsementActionDialog({
           <AlertBanner
             variant="info"
             icon={<AlertCircle className="h-4 w-4 shrink-0" />}
-            title={isChangeLeader ? 'Automatic Request Replacement' : 'Endorsement Reset'}
+            title={
+              isChangeLeader
+                ? isEndorsed
+                  ? 'Endorsement Status Reset'
+                  : 'Automatic Request Replacement'
+                : 'Endorsement Reset'
+            }
             description={
               isChangeLeader
-                ? `Updating the leader will cancel the current pending request${
-                    initialLeaderEmail ? ` to ${initialLeaderEmail}` : ''
-                  } and immediately send a new invitation link to the updated email address.`
+                ? isEndorsed
+                  ? `This applicant has already been endorsed. Updating the leader will supersede the previous endorsement, reset their status to Pending, and dispatch a new endorsement link to the updated email address.`
+                  : `Updating the leader will cancel the current pending request${
+                      initialLeaderEmail ? ` to ${initialLeaderEmail}` : ''
+                    } and immediately send a new invitation link to the updated email address.`
                 : 'Sending a new endorsement request will reset the status to Pending Leader Review and email an endorsement link to the leader.'
             }
           />

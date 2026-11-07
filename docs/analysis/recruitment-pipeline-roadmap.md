@@ -47,6 +47,10 @@ This document defines the architectural blueprint, database schema, backend work
   - [x] Synchronize DGroup Endorsement approval status across Step 1, Step 4 gate, Applicant Profile, and Endorsement Review tab
   - [x] Collaborative Recruiter Notes: `public.recruitment_step_notes` multi-entry thread tracking author ID, reviewer name, role, avatar, and timestamp per step without overwriting notes history
   - [x] Applicant Photo Upload & Migration: Device camera/file upload in registration Section 1 (`ApplicantAvatarPicker`), preview in Section 5 (`ApplicantVerificationSection`), reviewer photo editing in Applicant Profile (`EditableApplicantAvatar`), and automated migration of `avatar_object_key` to `public.users` in `deploy_recruitment_applicant`
+  - [x] Recruiter Profile Editing: Author `EditApplicantDetailsDialog` and `update_profile` action handler in `update-recruitment-stage` enabling reviewers to update candidate details (typos, contact info, emergency contacts, CCF background) atomically
+  - [x] Post-Endorsement DGroup Leader Changes: Enable changing DGroup Leader even after endorsement is completed, resetting status to Pending Leader Review, re-locking Step 4/deployment gates, preserving previous endorsement answers in history, and re-enabling resend links
+  - [x] Deployed Application Lifecycle Protection: Disallow archiving deployed applications in the UI, preserving active member audit integrity
+  - [x] Stepper Navigation & Border Polish: Enforce continuous 2px primary border on active step, eliminate clipping with `py-1.5` scroll track padding, and sanitize focus styles with `outline-none`
   - [x] Integrate Recruitment Settings into `/admin/settings` Launchpad (`System Configuration` card) & build tabbed `AdminRecruitmentSettingsPage` (`/admin/settings/recruitment`) + Vitest component tests
 
 ---
@@ -699,9 +703,11 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
    - **Tab 3: DGroup Endorsement Review (`DGroupEndorsementReviewPanel.tsx`)**:
      - Real-time endorsement status badge derived from `approval_requests.status` (`approved` -> "Endorsed & Linked", `pending` -> "Pending Leader Review", `rejected` -> "Declined by Leader").
      - Direct inspection of DGroup Leader's 25 submitted responses (ratings with 1-3 scale, disciple tenure, spiritual growth evaluation, concerns, and final recommendation).
-     - Magic link URL copy action and Resend Endorsement Email action.
+     - Magic link URL copy action and Resend Endorsement Email action (automatically hidden when endorsed or deployed; re-enabled if leader is changed).
+     - **Change DGroup Leader When Already Endorsed**: Reviewers can re-assign the leader even on already-endorsed applicants. Confirms status reset to Pending, dispatches new endorsement link, re-locks Step 4/deployment gates, and retains prior endorsement records in collapsible history.
    - **Tab 4: Personal, Spiritual & DGroup Profile (`ApplicantProfilePanel.tsx`)**:
      - Displays complete 40-field applicant profile across Personal Details, Demographics, Work/Life Stage, Emergency Contact, CCF & GLC History, and DGroup Membership/Leadership.
+     - **Recruiter Profile Editing (`EditApplicantDetailsDialog.tsx`)**: "Edit Details" button allowing reviewers to correct typos, update contact numbers, life stage, occupation, or spiritual history. Submits via `action: 'update_profile'` on `update-recruitment-stage`.
      - Synchronized DGroup endorsement status badge.
    - **Tab 5: Transaction History (`TransactionHistoryPanel.tsx`)**:
      - Complete audit trail of all pipeline transactions (`public.recruitment_pipeline_transactions`) including scheduling, completions, repeat attempts (`Observation #1`, `Observation #2`), return loops, archiving, and restorations with reviewer names and timestamps.
@@ -713,6 +719,7 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
      - Archiving strictly requires an explicit archive reason (`Archive Reason *`), disabling confirmation until provided.
      - Upon archiving, the reason is automatically appended to the applicant's current step recruitment notes thread as `Archived: <reason>` with reviewer attribution.
      - When archived, an informative notice appears with a **Restore Applicant** action; optional restoration notes are similarly recorded in the notes thread as `Restored: <notes>`.
+     - **Deployed Applicant Protection**: Deployed applications (`application.status === 'deployed'`) cannot be archived; the archive action is hidden in the dialog footer to preserve active member audit integrity.
 
 3. **Integrated Admin Recruitment Settings Page (`src/pages/admin/settings/recruitment/index.tsx`)**:
    - Integrated into `/admin/settings` Launchpad via a `SettingsFeatureCard` under **System Configuration** (`to: ROUTE_PATHS.adminSettingsRecruitment`, required permission: `canWriteAdminData`).

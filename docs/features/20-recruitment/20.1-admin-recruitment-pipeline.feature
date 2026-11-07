@@ -30,9 +30,14 @@ Feature: Admin Recruitment Pipeline Management
     - Multi-Endorsement Lifecycle & Leader Updates:
         - Only one endorsement request can be open/pending at a time for any given applicant.
         - Authorized reviewers ("admin", "super_admin", "slod", "vmt") can update DGroup leader details (Name, Email, Contact) via "Change DGroup Leader". Any existing pending request is automatically marked "cancelled" (superseded) and a new request link is dispatched.
+        - Changing DGroup Leader When Already Endorsed: Reviewers can update the leader even after an applicant has been endorsed. Updating the leader resets the endorsement status back to "Pending Leader Review", immediately dispatches an endorsement invitation to the new leader, and re-locks Step 4 (Observation) and Step 9 (Deployment) until newly approved. Previous approved attestation answers and endorsement records are fully preserved in the applicant's historical audit trail ("Endorsement History"), and the "Resend Endorsement Link" action is automatically re-enabled.
         - When an endorsement was declined by a leader ("rejected"), reviewers can re-request endorsement via "Request Endorsement Again" to the same or updated leader with optional context notes.
         - Re-requesting resets the applicant's endorsement status back to "Pending Leader Review" and locks Step 4 / deployment until newly approved.
         - Past attempts are preserved in `approval_requests` and surfaced in a collapsible "Endorsement History" section on the DGroup Endorsement tab.
+    - Recruiter Profile Editing:
+        - Authorized reviewers can edit applicant profile details directly from the "Applicant Profile" tab via "Edit Details" (`EditApplicantDetailsDialog`) to correct typos or update contact, work, emergency, and spiritual background information.
+        - Updates are processed atomically via the `update_profile` action of `update-recruitment-stage` using `editApplicantProfileSchema`.
+        - If an applicant's email address is modified, their own-phone progress portal access (`/recruitment`) automatically reflects the new email on their next Google sign-in.
     - Applicant Photo & Deployment Migration:
         - Applicants can optionally upload an image or capture a live webcam photo during registration (Section 1 - Personal & Work Information), verified in Section 5 (Verification).
         - Images are processed client-side (max 1024x1024 JPEG at 0.85 quality) and stored in `member_avatars` at `avatars/recruitment/{application_id}.jpg`.
@@ -48,8 +53,13 @@ Feature: Admin Recruitment Pipeline Management
         - Step 7 (CCF VMT Registration): Records verified CCF VMT ID and registration date.
         - Step 8 (RFID Releasing & Commitments): Assigns a unique physical RFID member ID and configures 1st to 5th Sunday service slot commitments.
         - Step 9 (Deployment): Promotes the applicant into an active member record; restricted strictly to Administrators and SLODs (VMT reviewers have read-only access).
-    - Reviewers can archive applicants with semantic destructive styling; archived applicants can be restored to active status at any time.
-    - Dialogs maintain single scrollbar architecture, sticky headers/tabs/footers, 16px mobile gutters, and full-width footer actions on mobile viewports.
+    - Lifecycle & Archive Protection:
+        - Reviewers can archive active applicants with semantic destructive styling; archived applicants can be restored to active status at any time.
+        - Deployed applicants cannot be archived; the archive action is strictly hidden/disabled once an applicant is deployed to preserve the audit trail of active members.
+    - Stepper Navigation & Dialog Ergonomics:
+        - The 9-step stepper renders with semantic theme tokens, displaying a continuous 2px primary border on the active stage without border clipping.
+        - The scrollable track provides vertical breathing room (`py-1.5`) and uses sanitized focus styles (`outline-none`) to prevent browser-native focus rings from obscuring tab geometry.
+        - Dialogs maintain single scrollbar architecture, sticky headers/tabs/footers, 16px mobile gutters, and full-width footer actions on mobile viewports.
 
   Scenario: Reviewer views the recruitment pipeline dashboard
     Given I am authenticated with an authorized reviewer role ("admin", "super_admin", "slod", or "vmt")
@@ -173,4 +183,32 @@ Feature: Admin Recruitment Pipeline Management
     Then a new endorsement invitation is sent to the leader
     And the applicant's endorsement status resets to "Pending Leader Review"
     And the previous decline is retained in the endorsement history section
+
+  Scenario: Reviewer edits applicant profile details to fix typos or update contact info
+    Given I am authenticated as an authorized reviewer
+    And I am inspecting an active applicant on the "Applicant Profile" tab
+    When I click "Edit Details" to open the edit applicant details dialog
+    And I update the applicant's phone number, marital status, or spiritual background
+    And I submit the form
+    Then the applicant's profile details are updated atomically
+    And a confirmation toast confirms the profile update
+    And the updated details are immediately reflected across the review dialog and table
+
+  Scenario: Reviewer changes DGroup leader when applicant is already endorsed
+    Given I am authenticated as an authorized reviewer
+    And an applicant has already been endorsed by their DGroup leader
+    When I click "Change DGroup Leader"
+    Then I see a warning notice that changing the leader will reset the endorsement status to pending
+    When I enter the new leader's name, email, and mobile number and confirm the update
+    Then a new endorsement request link is dispatched to the new leader
+    And the applicant's endorsement status resets to "Pending Leader Review"
+    And the previous endorsement and attestation answers remain preserved in endorsement history
+    And Step 4 Observation and Step 9 Deployment gates are re-locked until newly endorsed
+    And the "Resend Endorsement Email" button is re-enabled
+
+  Scenario: Deployed applications cannot be archived
+    Given I am inspecting a volunteer whose status is "deployed"
+    When I view the applicant detail dialog
+    Then the "Archive Applicant" button is hidden
+    And the applicant's records are preserved without allowing lifecycle archiving
 

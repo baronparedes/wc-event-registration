@@ -150,4 +150,42 @@ describe('ApplicantProfilePanel', () => {
 
     expect(screen.queryByRole('button', { name: /edit details/i })).not.toBeInTheDocument();
   });
+
+  it('renders "Change Leader" button even when applicant is endorsed, while hiding resend', () => {
+    render(
+      <ApplicantProfilePanel
+        application={mockApplication}
+        endorsement={{
+          approval_id: 'appr-123',
+          status: 'approved',
+          attestation_answers: {},
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /change leader/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /resend endorsement email/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens EndorsementActionDialog when "Change Leader" is clicked for endorsed applicant', async () => {
+    const user = userEvent.setup();
+    render(
+      <ApplicantProfilePanel
+        application={mockApplication}
+        endorsement={{
+          approval_id: 'appr-123',
+          status: 'approved',
+          attestation_answers: {},
+        }}
+      />,
+    );
+
+    const changeLeaderBtn = screen.getByRole('button', { name: /change leader/i });
+    await user.click(changeLeaderBtn);
+
+    expect(screen.getByRole('heading', { name: /change dgroup leader/i })).toBeInTheDocument();
+    expect(screen.getByText(/This applicant has already been endorsed/i)).toBeInTheDocument();
+  });
 });

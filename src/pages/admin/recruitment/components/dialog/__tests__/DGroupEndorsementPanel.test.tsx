@@ -130,6 +130,28 @@ describe('DGroupEndorsementPanel', () => {
     expect(screen.getByText(/DGroup Leader Endorsement Questionnaire/i)).toBeInTheDocument();
     expect(screen.queryByText(/Awaiting DGroup Leader Endorsement/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resend/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /change dgroup leader/i })).toBeInTheDocument();
+  });
+
+  it('renders Change DGroup Leader button when endorsed and shows endorsement reset notice', async () => {
+    const user = userEvent.setup();
+    renderPanel(
+      <DGroupEndorsementPanel
+        application={mockApplication}
+        endorsement={{
+          approval_id: 'appr-123',
+          status: 'approved',
+          attestation_answers: { leader_full_name: 'Test Barnabas Leader' },
+        }}
+      />,
+    );
+
+    const changeLeaderBtn = screen.getByRole('button', { name: /change dgroup leader/i });
+    expect(changeLeaderBtn).toBeInTheDocument();
+
+    await user.click(changeLeaderBtn);
+    expect(screen.getByRole('heading', { name: /change dgroup leader/i })).toBeInTheDocument();
+    expect(screen.getByText(/This applicant has already been endorsed/i)).toBeInTheDocument();
   });
 
   it('does not render resend button when applicant is deployed', () => {
