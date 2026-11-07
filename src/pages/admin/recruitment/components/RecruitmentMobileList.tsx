@@ -27,6 +27,22 @@ function getStatusBadgeVariant(
   }
 }
 
+function getEndorsementBadge(app: RecruitmentApplication) {
+  if (app.dgroup_approval_status === 'approved') {
+    return <Badge variant="default">Endorsed</Badge>;
+  }
+  if (app.dgroup_approval_status === 'rejected') {
+    return <Badge variant="destructive">Not Endorsed</Badge>;
+  }
+  if (app.dgroup_approval_status === 'pending') {
+    return <Badge variant="secondary">Pending</Badge>;
+  }
+  if (!app.dgroup_approval_id) {
+    return <Badge variant="outline">Not Endorsed</Badge>;
+  }
+  return <Badge variant="secondary">Pending</Badge>;
+}
+
 export function RecruitmentMobileList({
   applications,
   onSelectApplication,
@@ -64,6 +80,7 @@ export function RecruitmentMobileList({
               <Badge variant="secondary">
                 Step {app.current_step}: {stepMeta?.shortLabel}
               </Badge>
+              {getEndorsementBadge(app)}
               <span className="font-mono text-muted">
                 Survey: {app.survey_score}/{app.survey_total}
               </span>

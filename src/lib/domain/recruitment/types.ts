@@ -109,6 +109,7 @@ export type RecruitmentApplicationStatusData = {
   current_step: RecruitmentStepNumber;
   status: RecruitmentApplicationStatus;
   dgroup_approval_id: string | null;
+  dgroup_approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | string | null;
   vmt_registered: boolean;
   ccf_vmt_id: string | null;
   ccf_vmt_date: string | null;

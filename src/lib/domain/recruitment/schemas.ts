@@ -583,6 +583,7 @@ export const recruitmentApplicationRecordSchema = z
     current_step: recruitmentStepNumberSchema,
     status: recruitmentApplicationStatusSchema,
     dgroup_approval_id: z.string().uuid().nullable(),
+    dgroup_approval_status: z.string().nullable().optional(),
     vmt_registered: z.boolean(),
     ccf_vmt_id: z.string().nullable(),
     ccf_vmt_date: dateSchema.nullable(),

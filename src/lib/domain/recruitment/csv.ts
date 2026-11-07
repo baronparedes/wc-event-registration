@@ -96,6 +96,13 @@ export function formatRecruitmentCsvRow(record: RecruitmentCsvRecord): string {
     ? formatDateTime(record.applicant_attested_at)
     : 'No';
 
+  const endorsementStatus =
+    record.dgroup_approval_status === 'approved'
+      ? 'Endorsed'
+      : record.dgroup_approval_status === 'rejected' || !record.dgroup_approval_id
+        ? 'Not Endorsed'
+        : 'Pending';
+
   const cells: (string | number | null | undefined)[] = [
     role,
     record.status,
@@ -109,7 +116,7 @@ export function formatRecruitmentCsvRow(record: RecruitmentCsvRecord): string {
     record.email,
     record.gender,
     attestationDate,
-    record.dgroup_approval_id ? 'Endorsed/Linked' : 'Pending',
+    endorsementStatus,
     orientationOn,
     evaluationOn,
     observationOn,

@@ -62,6 +62,7 @@ const mockRecord: RecruitmentCsvRecord = {
   current_step: 4,
   status: 'active',
   dgroup_approval_id: 'approval-123',
+  dgroup_approval_status: 'approved',
   vmt_registered: true,
   ccf_vmt_id: 'VMT-9988',
   ccf_vmt_date: '2026-11-02',
@@ -105,7 +106,31 @@ describe('Recruitment CSV Export', () => {
     expect(dataRow[2]).toBe('Test Juan'); // First Name
     expect(dataRow[4]).toBe('Test Dela Cruz'); // Last Name
     expect(dataRow[9]).toBe('applicant@example.com'); // Email
+    expect(dataRow[12]).toBe('Endorsed'); // Endorsement
     expect(dataRow[40]).toBe('VMT-9988'); // CCF VMT ID
+  });
+
+  it('formats endorsement status as Pending, Not Endorsed, or Endorsed', () => {
+    const pendingRow = parseCsvTextToRows(
+      buildRecruitmentCsvExport([
+        { ...mockRecord, dgroup_approval_id: 'appr-1', dgroup_approval_status: 'pending' },
+      ]).csvText,
+    )[1];
+    expect(pendingRow[12]).toBe('Pending');
+
+    const rejectedRow = parseCsvTextToRows(
+      buildRecruitmentCsvExport([
+        { ...mockRecord, dgroup_approval_id: 'appr-2', dgroup_approval_status: 'rejected' },
+      ]).csvText,
+    )[1];
+    expect(rejectedRow[12]).toBe('Not Endorsed');
+
+    const unlinkedRow = parseCsvTextToRows(
+      buildRecruitmentCsvExport([
+        { ...mockRecord, dgroup_approval_id: null, dgroup_approval_status: null },
+      ]).csvText,
+    )[1];
+    expect(unlinkedRow[12]).toBe('Not Endorsed');
   });
 
   it('properly escapes commas, quotes, and newlines in cells', () => {

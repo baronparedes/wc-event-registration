@@ -85,6 +85,8 @@ const sampleApplications: RecruitmentApplication[] = [
     current_step: 2,
     survey_score: 19,
     survey_total: 20,
+    dgroup_approval_id: 'approval-123',
+    dgroup_approval_status: 'approved',
   }),
   createMockApplication({
     id: 'app-2',
@@ -96,6 +98,8 @@ const sampleApplications: RecruitmentApplication[] = [
     current_step: 3,
     survey_score: 14,
     survey_total: 20,
+    dgroup_approval_id: 'approval-456',
+    dgroup_approval_status: 'pending',
   }),
 ];
 
@@ -127,6 +131,8 @@ describe('RecruitmentMobileList', () => {
     expect(screen.getByText('Survey: 19/20')).toBeInTheDocument();
     expect(screen.getByText('active')).toBeInTheDocument();
     expect(screen.getByText('on hold')).toBeInTheDocument();
+    expect(screen.getByText('Endorsed')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
   });
 
   it('triggers onSelectApplication when Review Application button is clicked', () => {

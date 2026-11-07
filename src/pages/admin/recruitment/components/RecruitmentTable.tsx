@@ -38,6 +38,22 @@ function getStatusBadgeVariant(
   }
 }
 
+function getEndorsementBadge(app: RecruitmentApplication) {
+  if (app.dgroup_approval_status === 'approved') {
+    return <Badge variant="default">Endorsed</Badge>;
+  }
+  if (app.dgroup_approval_status === 'rejected') {
+    return <Badge variant="destructive">Not Endorsed</Badge>;
+  }
+  if (app.dgroup_approval_status === 'pending') {
+    return <Badge variant="secondary">Pending</Badge>;
+  }
+  if (!app.dgroup_approval_id) {
+    return <Badge variant="outline">Not Endorsed</Badge>;
+  }
+  return <Badge variant="secondary">Pending</Badge>;
+}
+
 export function RecruitmentTable({ applications, onSelectApplication }: RecruitmentTableProps) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
@@ -89,13 +105,7 @@ export function RecruitmentTable({ applications, onSelectApplication }: Recruitm
                   </span>
                 </ListTableCell>
 
-                <ListTableCell>
-                  {app.dgroup_approval_id ? (
-                    <Badge variant="default">Linked</Badge>
-                  ) : (
-                    <Badge variant="outline">Pending</Badge>
-                  )}
-                </ListTableCell>
+                <ListTableCell>{getEndorsementBadge(app)}</ListTableCell>
 
                 <ListTableCell>
                   <span className="font-mono text-xs font-semibold text-text">

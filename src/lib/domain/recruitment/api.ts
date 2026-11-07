@@ -235,8 +235,37 @@ export async function fetchAdminRecruitmentApplicationsPage(params: {
   const { data, error, count } = await query;
   if (error) throw new Error(`Failed to fetch recruitment applications: ${error.message}`);
 
+  const approvalIds = (data ?? [])
+    .map((row) =>
+      typeof row === 'object' && row !== null && 'dgroup_approval_id' in row
+        ? (row as { dgroup_approval_id?: unknown }).dgroup_approval_id
+        : null,
+    )
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const statusMap = new Map<string, string>();
+  if (approvalIds.length > 0) {
+    const { data: approvals, error: approvalsError } = await supabase
+      .from('approval_requests')
+      .select('id, status')
+      .in('id', approvalIds);
+    if (!approvalsError && approvals) {
+      for (const appr of approvals) {
+        statusMap.set(appr.id, appr.status);
+      }
+    }
+  }
+
   const rows = (data ?? []).map((row) => {
-    const result = recruitmentApplicationRecordSchema.safeParse(row);
+    const approvalId =
+      typeof row === 'object' && row !== null && 'dgroup_approval_id' in row
+        ? (row as { dgroup_approval_id?: string | null }).dgroup_approval_id
+        : null;
+    const approvalStatus = approvalId ? (statusMap.get(approvalId) ?? null) : null;
+    const result = recruitmentApplicationRecordSchema.safeParse({
+      ...row,
+      dgroup_approval_status: approvalStatus,
+    });
     if (!result.success) throw new Error('Recruitment application response is invalid');
     return result.data;
   });
@@ -278,6 +307,27 @@ export async function fetchAdminRecruitmentApplicationsForExport(params?: {
     );
   }
 
+  const approvalIds = (appsResult.data ?? [])
+    .map((row) =>
+      typeof row === 'object' && row !== null && 'dgroup_approval_id' in row
+        ? (row as { dgroup_approval_id?: unknown }).dgroup_approval_id
+        : null,
+    )
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const statusMap = new Map<string, string>();
+  if (approvalIds.length > 0) {
+    const { data: approvals, error: approvalsError } = await supabase
+      .from('approval_requests')
+      .select('id, status')
+      .in('id', approvalIds);
+    if (!approvalsError && approvals) {
+      for (const appr of approvals) {
+        statusMap.set(appr.id, appr.status);
+      }
+    }
+  }
+
   const schedulesMap = new Map<
     string,
     {
@@ -298,7 +348,15 @@ export async function fetchAdminRecruitmentApplicationsForExport(params?: {
   }
 
   return (appsResult.data ?? []).map((row) => {
-    const parsed = recruitmentApplicationRecordSchema.safeParse(row);
+    const approvalId =
+      typeof row === 'object' && row !== null && 'dgroup_approval_id' in row
+        ? (row as { dgroup_approval_id?: string | null }).dgroup_approval_id
+        : null;
+    const approvalStatus = approvalId ? (statusMap.get(approvalId) ?? null) : null;
+    const parsed = recruitmentApplicationRecordSchema.safeParse({
+      ...row,
+      dgroup_approval_status: approvalStatus,
+    });
     if (!parsed.success) throw new Error('Recruitment application record is invalid');
     return {
       ...parsed.data,

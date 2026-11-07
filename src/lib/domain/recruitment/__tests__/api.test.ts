@@ -51,6 +51,7 @@ function queryFor(
   return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),
@@ -391,6 +392,20 @@ describe('recruitment API', () => {
     ).resolves.toEqual({ rows: [], count: null });
     expect(query.eq).not.toHaveBeenCalled();
     expect(query.or).not.toHaveBeenCalled();
+  });
+
+  it('resolves approval request status for applications on the page', async () => {
+    const approvalId = '44444444-4444-4444-8444-444444444444';
+    const appWithApproval = { ...application, dgroup_approval_id: approvalId };
+    const appsQuery = queryFor([appWithApproval], null, 1);
+    const approvalsQuery = queryFor([{ id: approvalId, status: 'approved' }]);
+
+    mocks.from.mockReturnValueOnce(appsQuery).mockReturnValueOnce(approvalsQuery);
+
+    const result = await fetchAdminRecruitmentApplicationsPage({ offset: 0, pageSize: 10 });
+    expect(result.rows[0].dgroup_approval_status).toBe('approved');
+    expect(mocks.from).toHaveBeenCalledWith('approval_requests');
+    expect(approvalsQuery.in).toHaveBeenCalledWith('id', [approvalId]);
   });
 
   it('rejects page query failures and malformed application rows', async () => {

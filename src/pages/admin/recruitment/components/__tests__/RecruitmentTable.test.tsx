@@ -86,6 +86,7 @@ const sampleApplications: RecruitmentApplication[] = [
     survey_score: 19,
     survey_total: 20,
     dgroup_approval_id: 'approval-123',
+    dgroup_approval_status: 'approved',
   }),
   createMockApplication({
     id: 'app-2',
@@ -98,7 +99,8 @@ const sampleApplications: RecruitmentApplication[] = [
     current_step: 9,
     survey_score: 15,
     survey_total: 20,
-    dgroup_approval_id: null,
+    dgroup_approval_id: 'approval-456',
+    dgroup_approval_status: 'pending',
   }),
   createMockApplication({
     id: 'app-3',
@@ -109,7 +111,20 @@ const sampleApplications: RecruitmentApplication[] = [
     current_step: 3,
     survey_score: 12,
     survey_total: 20,
+    dgroup_approval_id: 'approval-789',
+    dgroup_approval_status: 'rejected',
+  }),
+  createMockApplication({
+    id: 'app-4',
+    full_name: 'Test Unlinked Applicant',
+    nickname: '',
+    email: 'unlinked@example.com',
+    status: 'active',
+    current_step: 1,
+    survey_score: 10,
+    survey_total: 20,
     dgroup_approval_id: null,
+    dgroup_approval_status: null,
   }),
 ];
 
@@ -142,8 +157,9 @@ describe('RecruitmentTable', () => {
     expect(screen.getByText('Test Juan Dela Cruz')).toBeInTheDocument();
     expect(screen.getByText('19 / 20')).toBeInTheDocument();
     expect(screen.getByText('15 / 20')).toBeInTheDocument();
-    expect(screen.getByText('Linked')).toBeInTheDocument();
-    expect(screen.getAllByText('Pending').length).toBe(2);
+    expect(screen.getByText('Endorsed')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(screen.getAllByText('Not Endorsed').length).toBe(2);
   });
 
   it('triggers onSelectApplication when Review button is clicked', () => {
