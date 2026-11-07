@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 interface TabsContextValue {
   value: string;
@@ -172,9 +173,12 @@ export function TabsList({
   };
 
   return (
-    <div className={`flex w-full justify-center ${containerClassName}`.trim()}>
+    <div className={twMerge('flex w-full justify-center', containerClassName)}>
       <div
-        className={`relative inline-flex max-w-full items-center overflow-hidden rounded-full border border-border bg-surface p-1 shadow-xs isolate ${className}`.trim()}
+        className={twMerge(
+          'relative inline-flex max-w-full items-center overflow-hidden rounded-full border border-border bg-surface p-1 shadow-xs isolate',
+          className,
+        )}
       >
         {/* Floating Left Scroll Button */}
         {hasOverflow && (
@@ -277,11 +281,13 @@ export function TabsTrigger({
           onValueChange(value);
         }
       }}
-      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 ${
+      className={twMerge(
+        'inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50',
         isSelected
           ? 'bg-primary font-semibold text-white shadow-xs'
-          : 'text-muted hover:bg-background/50 hover:text-text'
-      } ${className}`.trim()}
+          : 'text-muted hover:bg-background/50 hover:text-text',
+        className,
+      )}
       {...props}
     >
       {children}

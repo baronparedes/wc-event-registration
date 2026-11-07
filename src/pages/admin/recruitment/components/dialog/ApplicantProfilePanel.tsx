@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
+import { Pencil, RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
@@ -12,6 +12,7 @@ import type {
 } from '@/lib/domain/recruitment';
 import { calculateAge } from '@/pages/recruitment/apply/utils';
 
+import { EditApplicantDetailsDialog } from './EditApplicantDetailsDialog';
 import { EditableApplicantAvatar } from './EditableApplicantAvatar';
 import { EndorsementActionDialog } from './EndorsementActionDialog';
 
@@ -22,6 +23,7 @@ interface ApplicantProfilePanelProps {
 
 export function ApplicantProfilePanel({ application, endorsement }: ApplicantProfilePanelProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [actionDialogMode, setActionDialogMode] = useState<'change_leader' | 're_request' | null>(
     null,
   );
@@ -81,6 +83,18 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           <p className="text-muted">{application.email}</p>
           <p className="text-muted">{application.phone}</p>
         </div>
+        {canWrite && !isDeployed && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditDialogOpen(true)}
+            className="gap-1.5 ml-auto shrink-0"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span>Edit Details</span>
+          </Button>
+        )}
       </div>
 
       {/* Demographics & Personal Details */}
@@ -307,6 +321,14 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           initialLeaderName={application.dgroup_info.leader_name}
           initialLeaderEmail={application.dgroup_info.leader_email}
           initialLeaderPhone={application.dgroup_info.leader_phone}
+        />
+      )}
+
+      {isEditDialogOpen && (
+        <EditApplicantDetailsDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          application={application}
         />
       )}
     </div>

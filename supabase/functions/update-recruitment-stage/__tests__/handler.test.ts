@@ -884,25 +884,55 @@ Deno.test(
 );
 
 Deno.test(
-  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  'update-recruitment-stage updates applicant profile and recomputes full_name',
   async () => {
     await withEnv(async () => {
       const mock = mockFetch({
         adminRole: 'admin',
-        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+        application: { ...applicationRecord, current_step: 2, status: 'active' },
       });
       try {
         const response = await handleUpdateRecruitmentStage(
           createRequest({
-            action: 'archive_applicant',
+            action: 'update_profile',
             application_id: APPLICATION_ID,
-            notes: 'Attempting to archive deployed',
+            profile: {
+              first_name: 'UpdatedFirst',
+              middle_name: 'Mid',
+              last_name: 'UpdatedLast',
+              nickname: 'NewNick',
+              email: 'updated.applicant@example.com',
+              phone: '09191112233',
+              life_stage: 'Married',
+              personal_details: {
+                occupation: 'Software Engineer',
+              },
+              emergency_contact: {
+                name: 'Jane Doe',
+                phone: '09194445566',
+                relation: 'Spouse',
+              },
+            },
           }),
         );
 
-        assertEquals(response.status, 400);
+        assertEquals(response.status, 200);
         const body = await response.json();
-        assertEquals(body.error, 'Deployed applicants cannot be archived');
+        assertEquals(body.success, true);
+
+        // Verify update payload sent to database
+        const updateCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_applications' && call.method === 'PATCH',
+        );
+        assertEquals(Boolean(updateCall), true);
+        const updateBody = updateCall?.body as Record<string, unknown>;
+        assertEquals(updateBody.first_name, 'UpdatedFirst');
+        assertEquals(updateBody.middle_name, 'Mid');
+        assertEquals(updateBody.last_name, 'UpdatedLast');
+        assertEquals(updateBody.full_name, 'UpdatedFirst Mid UpdatedLast');
+        assertEquals(updateBody.nickname, 'NewNick');
+        assertEquals(updateBody.email, 'updated.applicant@example.com');
+        assertEquals(updateBody.phone, '09191112233');
       } finally {
         mock.restore();
       }
@@ -1208,25 +1238,55 @@ Deno.test(
 );
 
 Deno.test(
-  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  'update-recruitment-stage updates applicant profile and recomputes full_name',
   async () => {
     await withEnv(async () => {
       const mock = mockFetch({
         adminRole: 'admin',
-        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+        application: { ...applicationRecord, current_step: 2, status: 'active' },
       });
       try {
         const response = await handleUpdateRecruitmentStage(
           createRequest({
-            action: 'archive_applicant',
+            action: 'update_profile',
             application_id: APPLICATION_ID,
-            notes: 'Attempting to archive deployed',
+            profile: {
+              first_name: 'UpdatedFirst',
+              middle_name: 'Mid',
+              last_name: 'UpdatedLast',
+              nickname: 'NewNick',
+              email: 'updated.applicant@example.com',
+              phone: '09191112233',
+              life_stage: 'Married',
+              personal_details: {
+                occupation: 'Software Engineer',
+              },
+              emergency_contact: {
+                name: 'Jane Doe',
+                phone: '09194445566',
+                relation: 'Spouse',
+              },
+            },
           }),
         );
 
-        assertEquals(response.status, 400);
+        assertEquals(response.status, 200);
         const body = await response.json();
-        assertEquals(body.error, 'Deployed applicants cannot be archived');
+        assertEquals(body.success, true);
+
+        // Verify update payload sent to database
+        const updateCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_applications' && call.method === 'PATCH',
+        );
+        assertEquals(Boolean(updateCall), true);
+        const updateBody = updateCall?.body as Record<string, unknown>;
+        assertEquals(updateBody.first_name, 'UpdatedFirst');
+        assertEquals(updateBody.middle_name, 'Mid');
+        assertEquals(updateBody.last_name, 'UpdatedLast');
+        assertEquals(updateBody.full_name, 'UpdatedFirst Mid UpdatedLast');
+        assertEquals(updateBody.nickname, 'NewNick');
+        assertEquals(updateBody.email, 'updated.applicant@example.com');
+        assertEquals(updateBody.phone, '09191112233');
       } finally {
         mock.restore();
       }

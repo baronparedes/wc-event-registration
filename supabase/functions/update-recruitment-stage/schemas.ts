@@ -16,6 +16,7 @@ export const recruitmentStageActions = [
   'add_note',
   'upload_avatar',
   'cancel_schedule',
+  'update_profile',
 ] as const;
 
 export const commitmentsSchema = z
@@ -65,6 +66,33 @@ export const updateRecruitmentStageSchema = z
     leader_name: z.string().trim().max(150).optional().nullable(),
     leader_email: z.string().trim().email().optional().nullable(),
     leader_contact_number: z.string().trim().max(50).optional().nullable(),
+    profile: z
+      .object({
+        first_name: z.string().trim().min(1, 'First name is required').max(100),
+        middle_name: z.string().trim().max(100).optional().nullable(),
+        last_name: z.string().trim().min(1, 'Last name is required').max(100),
+        nickname: z.string().trim().min(1, 'Nickname is required').max(100),
+        email: z.string().trim().email('Valid email is required').toLowerCase(),
+        phone: z.string().trim().min(1, 'Phone is required').max(50),
+        date_of_birth: z.string().date().optional(),
+        gender: z.enum(['Male', 'Female']).optional(),
+        life_stage: z.string().trim().min(1).max(100).optional(),
+        personal_details: z
+          .object({
+            occupation: z.string().trim().min(1).max(150).optional(),
+            company_name: z.string().trim().max(150).optional().nullable(),
+            wedding_anniversary: z.string().date().optional().nullable(),
+          })
+          .optional(),
+        emergency_contact: z
+          .object({
+            name: z.string().trim().min(1).max(150).optional(),
+            phone: z.string().trim().min(1).max(50).optional(),
+            relation: z.string().trim().min(1).max(100).optional(),
+          })
+          .optional(),
+      })
+      .optional(),
   })
   .superRefine((request, context) => {
     if (request.action === 'upload_avatar' && !request.image_base64?.trim()) {
@@ -160,6 +188,13 @@ export const updateRecruitmentStageSchema = z
           path: ['leader_email'],
         });
       }
+    }
+    if (request.action === 'update_profile' && !request.profile) {
+      context.addIssue({
+        code: 'custom',
+        message: 'profile is required for update_profile',
+        path: ['profile'],
+      });
     }
   });
 

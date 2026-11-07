@@ -273,11 +273,11 @@ export function PipelineStepsPanel({
               <TabsTrigger
                 key={s.stepNumber}
                 value={String(s.stepNumber)}
-                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all border-2 ${
+                className={`px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm gap-2 rounded-full whitespace-nowrap transition-all border-2 ${
                   isStepSelected
                     ? 'border-primary bg-primary text-white font-bold shadow-xs'
                     : isStepCurrent
-                      ? 'border-primary/80 bg-primary/10 text-primary font-semibold ring-1 ring-inset ring-primary/40'
+                      ? 'border-primary/80 bg-primary/10 text-primary font-semibold'
                       : isStepCompleted
                         ? 'border-transparent text-muted hover:text-text hover:bg-muted/10'
                         : 'border-transparent text-muted/60 opacity-60'

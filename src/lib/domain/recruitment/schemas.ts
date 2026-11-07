@@ -360,6 +360,7 @@ export const adminUpdateStageSchema = z
       'add_note',
       'upload_avatar',
       'cancel_schedule',
+      'update_profile',
     ]),
     application_id: z.string().uuid(),
     step_number: z.number().int().min(1).max(9).optional(),
@@ -391,6 +392,33 @@ export const adminUpdateStageSchema = z
     leader_name: z.string().trim().max(150).optional().nullable(),
     leader_email: z.string().trim().email().optional().nullable(),
     leader_contact_number: z.string().trim().max(50).optional().nullable(),
+    profile: z
+      .object({
+        first_name: z.string().trim().min(1, 'First name is required').max(100),
+        middle_name: z.string().trim().max(100).optional().nullable(),
+        last_name: z.string().trim().min(1, 'Last name is required').max(100),
+        nickname: z.string().trim().min(1, 'Nickname is required').max(100),
+        email: z.string().trim().email('Valid email is required').toLowerCase(),
+        phone: phoneSchema,
+        date_of_birth: dateSchema.optional(),
+        gender: z.enum(['Male', 'Female']).optional(),
+        life_stage: z.string().trim().min(1).max(100).optional(),
+        personal_details: z
+          .object({
+            occupation: z.string().trim().min(1).max(150).optional(),
+            company_name: z.string().trim().max(150).optional().nullable(),
+            wedding_anniversary: dateSchema.optional().nullable(),
+          })
+          .optional(),
+        emergency_contact: z
+          .object({
+            name: z.string().trim().min(1).max(150).optional(),
+            phone: emergencyPhoneSchema.optional(),
+            relation: z.string().trim().min(1).max(100).optional(),
+          })
+          .optional(),
+      })
+      .optional(),
   })
   .superRefine((request, context) => {
     if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
@@ -633,6 +661,34 @@ export const recruitmentPipelineTransactionSchema = z.object({
   created_by_user_id: z.string().uuid().nullable(),
   created_at: timestampSchema,
 });
+
+const optionalDateSchema = z
+  .string()
+  .trim()
+  .regex(datePattern, 'Date must be in YYYY-MM-DD format')
+  .or(z.literal(''))
+  .optional()
+  .nullable();
+
+export const editApplicantProfileSchema = z.object({
+  first_name: z.string().trim().min(1, 'First name is required').max(100),
+  middle_name: z.string().trim().max(100).or(z.literal('')).optional().nullable(),
+  last_name: z.string().trim().min(1, 'Last name is required').max(100),
+  nickname: z.string().trim().min(1, 'Nickname is required').max(100),
+  email: z.string().trim().email('Valid email is required').toLowerCase(),
+  phone: phoneSchema,
+  date_of_birth: dateSchema,
+  gender: z.enum(['Male', 'Female']),
+  life_stage: z.string().trim().min(1, 'Life stage is required').max(100),
+  occupation: z.string().trim().min(1, 'Occupation is required').max(150),
+  company_name: z.string().trim().max(150).or(z.literal('')).optional().nullable(),
+  wedding_anniversary: optionalDateSchema,
+  emergency_name: z.string().trim().min(1, 'Emergency contact name is required').max(150),
+  emergency_phone: emergencyPhoneSchema,
+  emergency_relation: z.string().trim().min(1, 'Emergency relation is required').max(100),
+});
+
+export type EditApplicantProfileInput = z.infer<typeof editApplicantProfileSchema>;
 
 export type RecruitmentStep1Input = z.infer<typeof recruitmentStep1Schema>;
 export type DgroupEndorsementDecisionInput = z.infer<typeof dgroupEndorsementDecisionSchema>;
