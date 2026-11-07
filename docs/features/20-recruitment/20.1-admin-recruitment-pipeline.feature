@@ -212,3 +212,17 @@ Feature: Admin Recruitment Pipeline Management
     Then the "Archive Applicant" button is hidden
     And the applicant's records are preserved without allowing lifecycle archiving
 
+  Scenario: Reviewer schedules session with blank coach and completes after assignment
+    Given I am authenticated as an authorized reviewer
+    And an applicant is at a coaching step (Step 2, 3, 4, or 5)
+    When I select a Sunday session date and time leaving the coach blank
+    Then the "Save Schedule" button is enabled
+    When I click "Save Schedule" and confirm the schedule modal
+    Then the session is scheduled with an "Unassigned (Assign on service day)" badge
+    And the "Complete Step" button remains disabled
+    When the service day arrives and I assign a coach in the "Assigned To" picker
+    Then the "Complete Step" button becomes enabled
+    When I click "Complete Step"
+    Then the step is completed and the assigned coach is recorded in transaction history
+
+

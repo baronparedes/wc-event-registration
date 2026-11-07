@@ -13,6 +13,7 @@ export interface ReviewerUserPickerProps {
   reviewerName?: string;
   onChange: (userId: string, user?: ReviewerUserItem | null) => void;
   label?: string;
+  placeholder?: string;
   required?: boolean;
   error?: string;
   disabled?: boolean;
@@ -24,6 +25,7 @@ export function ReviewerUserPicker({
   reviewerName = '',
   onChange,
   label = 'Assigned Reviewer / Coach',
+  placeholder = 'Search coach or leave blank (assign on service day)...',
   required = true,
   error,
   disabled = false,
@@ -201,7 +203,7 @@ export function ReviewerUserPicker({
               aria-autocomplete="list"
               disabled={disabled}
               value={searchTerm}
-              placeholder="Search user by name, email, or role (or type @)..."
+              placeholder={placeholder}
               onFocus={() => {
                 if (disabled) return;
                 prepareOpenDirection();

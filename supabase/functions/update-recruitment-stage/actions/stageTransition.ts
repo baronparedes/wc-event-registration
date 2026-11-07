@@ -139,6 +139,22 @@ export async function handleUpdateStage(context: RecruitmentActionContext): Prom
       corsHeaders,
     );
   }
+
+  const hasReviewer =
+    Boolean(request.assigned_reviewer_id?.trim() || request.assigned_reviewer_name?.trim()) ||
+    (request.assigned_reviewer_id === undefined &&
+      Boolean(latest.data?.assigned_reviewer_id || latest.data?.assigned_reviewer_name || userId));
+
+  if (stageStatus === 'completed' && stepNumber >= 2 && stepNumber <= 5 && !hasReviewer) {
+    return response(
+      400,
+      {
+        success: false,
+        error: `An assigned reviewer / coach is required before completing Step ${stepNumber}`,
+      },
+      corsHeaders,
+    );
+  }
   const transactionType =
     stageStatus === 'completed'
       ? 'completed'

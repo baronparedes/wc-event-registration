@@ -201,7 +201,12 @@ export function ScheduleSessionConfirmDialog({
                   </div>
                 </>
               ) : (
-                <span className="text-muted italic">Unassigned</span>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
+                >
+                  Unassigned (Assign on service day)
+                </Badge>
               )}
             </div>
           </div>

@@ -1909,3 +1909,104 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'update-recruitment-stage allows scheduling a session with assigned_reviewer_id as null (unassigned)',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+        application: { ...applicationRecord, current_step: 4 },
+        transactions: [
+          {
+            id: 'tx-obs-sched-1',
+            step_number: 4,
+            attempt_number: 1,
+            status: 'pending',
+            scheduled_at: null,
+            assigned_reviewer_id: null,
+            assigned_reviewer_name: null,
+          },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 4,
+            status: 'scheduled',
+            scheduled_at: '2026-11-22T09:00:00+08:00',
+            assigned_reviewer_id: null,
+            assigned_reviewer_name: null,
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+
+        const patchCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/recruitment_pipeline_transactions' &&
+            call.method === 'PATCH' &&
+            call.search?.includes('id=eq.tx-obs-sched-1'),
+        );
+        assertEquals(Boolean(patchCall), true);
+        const payload = (patchCall?.body ?? {}) as Record<string, unknown>;
+        assertEquals(payload.status, 'scheduled');
+        assertEquals(payload.assigned_reviewer_id, null);
+        assertEquals(payload.assigned_reviewer_name, null);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage rejects completing Step 4 without an assigned reviewer',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        approvalStatus: 'approved',
+        application: { ...applicationRecord, current_step: 4 },
+        transactions: [
+          {
+            id: 'tx-obs-sched-2',
+            step_number: 4,
+            attempt_number: 1,
+            status: 'scheduled',
+            scheduled_at: '2026-11-22T09:00:00+08:00',
+            assigned_reviewer_id: null,
+            assigned_reviewer_name: null,
+          },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 4,
+            status: 'completed',
+            assigned_reviewer_id: null,
+            assigned_reviewer_name: null,
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const body = await response.json();
+        assertEquals(body.success, false);
+        assertEquals(
+          body.error,
+          'An assigned reviewer / coach is required before completing Step 4',
+        );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);

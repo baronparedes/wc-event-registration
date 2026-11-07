@@ -166,4 +166,18 @@ describe('PipelineHistoryPanel', () => {
     expect(titlesNewest[0]).toHaveTextContent('Step 2: Interview — Session Scheduled');
     expect(titlesNewest[1]).toHaveTextContent('Step 1: Register — Completed');
   });
+
+  it('renders unassigned badge for scheduled transaction when coach is blank', () => {
+    const unassignedTx: RecruitmentPipelineTransaction = {
+      ...mockTransactions[1],
+      id: 'tx-unassigned',
+      assigned_reviewer_id: null,
+      assigned_reviewer_name: null,
+      status: 'scheduled',
+    };
+
+    render(<PipelineHistoryPanel application={mockApplication} transactions={[unassignedTx]} />);
+
+    expect(screen.getByText(/Unassigned \(Assign on service day\)/i)).toBeInTheDocument();
+  });
 });

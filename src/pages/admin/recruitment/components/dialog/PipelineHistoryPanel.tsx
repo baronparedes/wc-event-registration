@@ -234,7 +234,7 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
                     </span>
                   </div>
                 )}
-                {tx.assigned_reviewer_name && (
+                {tx.assigned_reviewer_name ? (
                   <div className="flex items-center gap-1.5 text-muted">
                     <User className="h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -242,7 +242,18 @@ export function PipelineHistoryPanel({ transactions }: PipelineHistoryPanelProps
                       <strong className="text-text">{tx.assigned_reviewer_name}</strong>
                     </span>
                   </div>
-                )}
+                ) : tx.status === 'scheduled' ? (
+                  <div className="flex items-center gap-1.5 text-muted">
+                    <User className="h-3.5 w-3.5 shrink-0" />
+                    <span>Reviewer / Coach: </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
+                    >
+                      Unassigned (Assign on service day)
+                    </Badge>
+                  </div>
+                ) : null}
               </div>
 
               {/* Notes */}

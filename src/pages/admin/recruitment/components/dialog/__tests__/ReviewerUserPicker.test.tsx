@@ -73,7 +73,17 @@ describe('ReviewerUserPicker', () => {
 
     expect(screen.getByLabelText(/Assigned Reviewer \/ Coach/i)).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Search user by name, email, or role/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search coach or leave blank/i)).toBeInTheDocument();
+  });
+
+  it('allows custom placeholder', () => {
+    const handleChange = vi.fn();
+    renderComponent({
+      onChange: handleChange,
+      placeholder: 'Custom search placeholder...',
+    });
+
+    expect(screen.getByPlaceholderText('Custom search placeholder...')).toBeInTheDocument();
   });
 
   it('opens dropdown and displays list of reviewers with OIC badges', () => {

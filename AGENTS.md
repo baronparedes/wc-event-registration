@@ -160,6 +160,9 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Lifecycle & Archive Protection**:
   - Reviewers can archive active applicants with a mandatory archive reason, which is automatically recorded in the step notes thread.
   - Deployed volunteers (`application.status === 'deployed'`) CANNOT be archived; the archive action is hidden in the UI to protect active member audit trails.
+- **Session Scheduling with Optional Coach & Completion Gate**:
+  - Schedulable coaching steps (Step 2 Interview, Step 3 Orientation, Step 4 Observation, Step 5 Evaluation) can be scheduled with date & time while leaving the coach blank (`assigned_reviewer_id: null`). Sessions scheduled without a coach render an `Unassigned (Assign on service day)` badge.
+  - Reviewer assignment is strictly required before completing the step: the "Complete Step" button remains disabled and backend validation returns 400 Bad Request if completion is attempted without an assigned coach.
 - **Stepper Navigation & Dialog Ergonomics**:
   - Stepper navigation pills must use semantic theme tokens (`border-primary bg-surface text-primary font-semibold` for active step) without Tailwind opacity modifiers (`/80`, `/10`), ensuring full 2px border rendering without vertical clipping.
   - Scroll tracks must provide vertical breathing room (`py-1.5`) and sanitized focus styles (`outline-none`) to prevent browser-native focus rings from obscuring tab geometry.

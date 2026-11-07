@@ -119,7 +119,8 @@ export async function handleStepRepeat(context: RecruitmentActionContext): Promi
     to_step: repeatStepNumber,
     status: targetStatus,
     scheduled_at: request.scheduled_at ?? null,
-    assigned_reviewer_id: request.assigned_reviewer_id ?? (request.scheduled_at ? userId : null),
+    assigned_reviewer_id:
+      request.assigned_reviewer_id !== undefined ? request.assigned_reviewer_id : null,
     assigned_reviewer_name: request.assigned_reviewer_name ?? null,
     created_by_user_id: userId,
   });

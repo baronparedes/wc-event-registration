@@ -112,14 +112,29 @@ export async function saveTransaction(
     latest.data && !['completed', 'skipped', 'declined'].includes(latest.data.status);
   const attemptNumber = latest.data ? latest.data.attempt_number + (isOpenAttempt ? 0 : 1) : 1;
   const scheduledAt = fields.scheduledAt ?? null;
+
+  const resolvedReviewerId =
+    fields.assignedReviewerId !== undefined
+      ? fields.assignedReviewerId
+      : status === 'completed'
+        ? (latest.data?.assigned_reviewer_id ?? userId)
+        : null;
+
+  const resolvedReviewerName =
+    fields.assignedReviewerName !== undefined
+      ? fields.assignedReviewerName
+      : status === 'completed'
+        ? (latest.data?.assigned_reviewer_name ?? null)
+        : null;
+
   const update: RecruitmentTransactionUpdate = {
     attempt_number: attemptNumber,
     transaction_type: transactionType,
     from_step: fields.fromStep ?? application.current_step,
     to_step: fields.toStep ?? application.current_step,
     status,
-    assigned_reviewer_id: fields.assignedReviewerId ?? userId,
-    assigned_reviewer_name: fields.assignedReviewerName ?? null,
+    assigned_reviewer_id: resolvedReviewerId,
+    assigned_reviewer_name: resolvedReviewerName,
     scheduled_at: scheduledAt,
     completed_at: status === 'completed' ? new Date().toISOString() : null,
     rubric_data: asJson(fields.rubricData),
@@ -160,8 +175,8 @@ export async function saveTransaction(
     from_step: fields.fromStep ?? application.current_step,
     to_step: fields.toStep ?? application.current_step,
     status,
-    assigned_reviewer_id: fields.assignedReviewerId ?? userId,
-    assigned_reviewer_name: fields.assignedReviewerName ?? null,
+    assigned_reviewer_id: resolvedReviewerId,
+    assigned_reviewer_name: resolvedReviewerName,
     scheduled_at: scheduledAt,
     completed_at: status === 'completed' ? new Date().toISOString() : null,
     rubric_data: asJson(fields.rubricData),

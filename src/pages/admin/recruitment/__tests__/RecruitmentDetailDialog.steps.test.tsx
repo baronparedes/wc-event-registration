@@ -249,7 +249,7 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     );
 
     // Pick reviewer
-    const reviewerSearchInput = screen.getByPlaceholderText(/search user by name/i);
+    const reviewerSearchInput = screen.getByPlaceholderText(/search coach|search user/i);
     await user.click(reviewerSearchInput);
     const reviewerOption = screen.getByText('Test Lead Usher');
     await user.click(reviewerOption);
@@ -272,6 +272,118 @@ describe('RecruitmentDetailDialog - Pipeline Steps', () => {
     // Save Schedule button is enabled with prominent text
     const saveScheduleBtn = screen.getByRole('button', { name: /save schedule/i });
     expect(saveScheduleBtn).toBeEnabled();
+  });
+
+  it('allows scheduling session with date/time and blank coach', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [],
+        step_notes: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Save schedule button should be disabled when date is not set
+    const saveScheduleBtn = screen.getByRole('button', { name: /save schedule/i });
+    expect(saveScheduleBtn).toBeDisabled();
+
+    // Select Sunday date & time (leaving coach blank)
+    const dateTrigger = screen.getByRole('button', { name: /select sunday date & time/i });
+    await user.click(dateTrigger);
+    const popover = screen.getByRole('dialog', { name: /select sunday session date/i });
+    const sundayBtn = within(popover).getByRole('button', {
+      name: /Sunday, November 8/i,
+    });
+    await user.click(sundayBtn);
+    await user.click(within(popover).getByRole('button', { name: 'Done' }));
+
+    // Now Save Schedule button is enabled even though reviewer is blank!
+    expect(saveScheduleBtn).toBeEnabled();
+    await user.click(saveScheduleBtn);
+
+    // Confirm dialog should open and display the Unassigned badge
+    expect(screen.getByText('Confirm Session Schedule')).toBeInTheDocument();
+    expect(screen.getByText(/Unassigned \(Assign on service day\)/i)).toBeInTheDocument();
+
+    // Confirm scheduling
+    const confirmBtn = screen.getByRole('button', { name: /confirm & schedule/i });
+    await user.click(confirmBtn);
+
+    expect(mockUpdateStageMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'update_stage',
+        status: 'scheduled',
+        step_number: 2,
+        assigned_reviewer_id: null,
+        assigned_reviewer_name: null,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('displays unassigned badge on scheduled session and blocks completion until coach is assigned', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    const scheduledUnassignedTx: RecruitmentPipelineTransaction = {
+      ...mockTransaction,
+      id: 'tx-scheduled-unassigned',
+      step_number: 2,
+      status: 'scheduled',
+      transaction_type: 'scheduled',
+      scheduled_at: '2026-11-08T09:00:00+08:00',
+      assigned_reviewer_id: null,
+      assigned_reviewer_name: null,
+    };
+
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: { ...mockApplication, current_step: 2 },
+        transactions: [scheduledUnassignedTx],
+        step_notes: [],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={{ ...mockApplication, current_step: 2 }}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    // Notice should show unassigned badge
+    expect(screen.getAllByText(/Unassigned \(Assign on service day\)/i).length).toBeGreaterThan(0);
+
+    // Complete Step button must be disabled because coach is still unassigned
+    const completeBtn = screen.getByRole('button', { name: /complete step 2/i });
+    expect(completeBtn).toBeDisabled();
+    expect(screen.getByText(/Required before completing Step 2/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Assigned To').length).toBeGreaterThan(0);
+
+    // Now assign a coach on service day
+    const reviewerSearchInput = screen.getByPlaceholderText(/search coach|search user/i);
+    await user.click(reviewerSearchInput);
+    const reviewerOption = screen.getByText('Test Lead Usher');
+    await user.click(reviewerOption);
+
+    // Now Complete Step button should be enabled!
+    expect(completeBtn).toBeEnabled();
   });
 
   it('opens confirmation modal before completing step and submits upon confirmation', async () => {

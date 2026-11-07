@@ -313,7 +313,7 @@ export function StepCoachingSessionPanel({
           <ReviewerUserPicker
             id="assignedReviewer"
             label="Assigned To"
-            required={!isCompletedStep}
+            required={false}
             disabled={isCompletedStep}
             value={reviewerId}
             reviewerName={reviewerName}
@@ -344,11 +344,32 @@ export function StepCoachingSessionPanel({
                     <strong className="text-text">
                       {formatDateTime(latestStepTransaction.scheduled_at)}
                     </strong>
+                    {latestStepTransaction.assigned_reviewer_name ? (
+                      <>
+                        {' '}
+                        with{' '}
+                        <strong className="text-text">
+                          {latestStepTransaction.assigned_reviewer_name}
+                        </strong>
+                      </>
+                    ) : (
+                      <>
+                        {' '}
+                        (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
+                        >
+                          Unassigned (Assign on service day)
+                        </Badge>
+                        )
+                      </>
+                    )}
                     . Pick a new Sunday date or coach above to reschedule.
                   </span>
                 ) : (
                   <span>
-                    Assign a coach and select a Sunday date & time above, then click{' '}
+                    Select a Sunday date & time (coach optional) above, then click{' '}
                     <strong className="text-text">Save Schedule</strong>. Sessions must be scheduled
                     before completing this step.
                   </span>
@@ -383,7 +404,7 @@ export function StepCoachingSessionPanel({
                       actionKind: latestStepTransaction?.scheduled_at ? 'reschedule' : 'schedule',
                     })
                   }
-                  disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
+                  disabled={isPending || !scheduledAtLocal}
                   className="w-full sm:w-auto font-medium"
                 >
                   <Clock className="mr-1.5 h-3.5 w-3.5" />

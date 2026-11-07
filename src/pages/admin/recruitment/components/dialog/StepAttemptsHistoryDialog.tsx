@@ -70,9 +70,20 @@ export function StepAttemptsHistoryDialog({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 text-[11px] text-muted">
-                <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span>Coach: </span>
-                  <strong className="text-text">{tx.assigned_reviewer_name || 'None'}</strong>
+                  {tx.assigned_reviewer_name ? (
+                    <strong className="text-text">{tx.assigned_reviewer_name}</strong>
+                  ) : tx.status === 'scheduled' ? (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-amber-700 border-amber-500/40 bg-amber-500/10"
+                    >
+                      Unassigned (Assign on service day)
+                    </Badge>
+                  ) : (
+                    <strong className="text-text">None</strong>
+                  )}
                 </div>
                 <div>
                   <span>Session Date: </span>
