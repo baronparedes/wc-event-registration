@@ -167,7 +167,12 @@ export function ScheduleSessionConfirmDialog({
               <span>Session Date & Time</span>
             </div>
             <span className="font-bold text-text text-xs sm:text-sm">
-              {formattedDateTime || 'No date set'}
+              {formattedDateTime ||
+                (actionKind === 'return_to_observation'
+                  ? 'To be scheduled in Step 4'
+                  : actionKind === 'return_to_interview'
+                    ? 'To be scheduled in Step 2'
+                    : 'No date set')}
             </span>
           </div>
 

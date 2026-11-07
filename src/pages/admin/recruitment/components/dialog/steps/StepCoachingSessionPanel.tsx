@@ -151,7 +151,75 @@ export function StepCoachingSessionPanel({
 
   return (
     <div className="space-y-4">
-      {isCompletedStep && <CompletedStepCard stepNumber={stepNumber} />}
+      {isCompletedStep && (
+        <div className="space-y-3">
+          <CompletedStepCard stepNumber={stepNumber} />
+          {stepNumber === 4 && application.current_step === 5 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs">
+              <div>
+                <strong className="text-text font-semibold">
+                  Return Candidate to Step 4 (Observation)
+                </strong>
+                <p className="text-muted text-[11px] mt-0.5">
+                  Candidate is currently at Step 5. If they need another observation round, you can
+                  return them to Step 4.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="primaryOutline"
+                size="sm"
+                onClick={() =>
+                  onRequestSchedule({
+                    scheduledAt: '',
+                    reviewerId: '',
+                    reviewerName: '',
+                    selectedReviewerUser: null,
+                    actionKind: 'return_to_observation',
+                  })
+                }
+                disabled={isPending}
+                className="shrink-0 font-medium"
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Return to Step 4
+              </Button>
+            </div>
+          )}
+          {stepNumber === 2 && application.current_step === 3 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs">
+              <div>
+                <strong className="text-text font-semibold">
+                  Return Candidate to Step 2 (Interview)
+                </strong>
+                <p className="text-muted text-[11px] mt-0.5">
+                  Candidate is currently at Step 3. If they need another interview round, you can
+                  return them to Step 2.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="primaryOutline"
+                size="sm"
+                onClick={() =>
+                  onRequestSchedule({
+                    scheduledAt: '',
+                    reviewerId: '',
+                    reviewerName: '',
+                    selectedReviewerUser: null,
+                    actionKind: 'return_to_interview',
+                  })
+                }
+                disabled={isPending}
+                className="shrink-0 font-medium"
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Return to Step 2
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Step 4 DGroup Endorsement Gate Warning */}
       {!isCompletedStep && stepNumber === 4 && !isDGroupEndorsed && (
@@ -579,7 +647,7 @@ export function StepCoachingSessionPanel({
                             actionKind: 'return_to_interview',
                           })
                         }
-                        disabled={isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)}
+                        disabled={isPending}
                       >
                         <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                         Confirm Return to Step 2
@@ -598,7 +666,10 @@ export function StepCoachingSessionPanel({
                       type="button"
                       variant="primaryOutline"
                       size="sm"
-                      onClick={() => handleInitiateRepeat('return_to_interview')}
+                      onClick={() => {
+                        handleInitiateRepeat('return_to_interview');
+                        focusFirstError(['assignedReviewer', 'sessionDateTime']);
+                      }}
                       disabled={isPending}
                     >
                       <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -712,9 +783,7 @@ export function StepCoachingSessionPanel({
                               actionKind: 'return_to_observation',
                             })
                           }
-                          disabled={
-                            isPending || !scheduledAtLocal || (!reviewerId && !reviewerName)
-                          }
+                          disabled={isPending}
                         >
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                           Confirm Return to Step 4
@@ -733,7 +802,10 @@ export function StepCoachingSessionPanel({
                         type="button"
                         variant="primaryOutline"
                         size="sm"
-                        onClick={() => handleInitiateRepeat('return_to_observation')}
+                        onClick={() => {
+                          handleInitiateRepeat('return_to_observation');
+                          focusFirstError(['assignedReviewer', 'sessionDateTime']);
+                        }}
                         disabled={isPending}
                       >
                         <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
