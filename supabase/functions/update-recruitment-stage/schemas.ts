@@ -6,6 +6,7 @@ export const recruitmentStageActions = [
   'complete_vmt',
   'save_commitments',
   'resend_endorsement',
+  'request_endorsement',
   'update_stage',
   'repeat_step',
   'return_to_observation',
@@ -61,6 +62,9 @@ export const updateRecruitmentStageSchema = z
     service_commitments: commitmentsSchema.optional(),
     override_endorsement_gate: z.boolean().optional().default(false),
     image_base64: z.string().max(1_500_000, 'Image must be 1 MB or smaller').optional().nullable(),
+    leader_name: z.string().trim().max(150).optional().nullable(),
+    leader_email: z.string().trim().email().optional().nullable(),
+    leader_contact_number: z.string().trim().max(50).optional().nullable(),
   })
   .superRefine((request, context) => {
     if (request.action === 'upload_avatar' && !request.image_base64?.trim()) {
@@ -131,6 +135,22 @@ export const updateRecruitmentStageSchema = z
           code: 'custom',
           message: 'notes (cancellation reason) is required for cancel_schedule',
           path: ['notes'],
+        });
+      }
+    }
+    if (request.action === 'request_endorsement') {
+      if (!request.leader_name?.trim()) {
+        context.addIssue({
+          code: 'custom',
+          message: 'leader_name is required for request_endorsement',
+          path: ['leader_name'],
+        });
+      }
+      if (!request.leader_email?.trim()) {
+        context.addIssue({
+          code: 'custom',
+          message: 'leader_email is required for request_endorsement',
+          path: ['leader_email'],
         });
       }
     }

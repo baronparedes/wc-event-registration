@@ -159,6 +159,7 @@ export function RecruitmentApplicantDetailDialog({
                 <DGroupEndorsementPanel
                   application={currentApp}
                   endorsement={detailData?.dgroup_endorsement}
+                  endorsementHistory={detailData?.dgroup_endorsement_history}
                 />
               )}
               {activeTab === 'profile' && (

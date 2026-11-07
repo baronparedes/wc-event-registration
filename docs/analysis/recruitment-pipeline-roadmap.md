@@ -857,9 +857,12 @@ When email delivery is disabled in local development, the DGroup Leader endorsem
      - **Tab 2 (Biblical Survey)**:
        - Verify score pill (`X / 20`), toggle between **All Questions** and **Incorrect Only**, and verify question statements with correct answers and interviewer explanation guides.
      - **Tab 3 (DGroup Endorsement)**:
-       - Verify synchronized status badge (`Endorsed & Linked` vs `Pending Leader Review`), 25 attestation answers, rating score legend, magic link copy button, and resend endorsement action.
+       - Verify synchronized status badge (`Endorsed` vs `Pending Leader Review` vs `Declined`), 25 attestation answers, rating score legend, and resend endorsement action.
+       - Verify "Change DGroup Leader" button when pending, and "Request Endorsement Again" button when declined (both opening `EndorsementActionDialog`).
+       - Verify collapsible "Endorsement History" section rendering all prior attempts with status badges, timestamps, leader details, and decision notes.
      - **Tab 4 (Applicant Profile)**:
        - Verify 40-field applicant details grouped into Personal, Demographics, Work/Life Stage, Emergency Contact, CCF/GLC, and DGroup sections.
+       - Verify DGroup attestation card with "Change Leader" (when pending) and "Request Endorsement Again" (when declined) triggers.
      - **Tab 5 (Transaction History)**:
        - Verify chronological timeline of all pipeline transactions, step schedules, completions, and repeat attempts with reviewer avatars and timestamps.
      - **Archiving & Destructive Styling**:

@@ -2,7 +2,7 @@ import type { RecruitmentActionMap } from '../types.ts';
 import { handleArchiveApplicant, handleRestoreApplicant } from './archive.ts';
 import { handleUploadAvatar } from './avatar.ts';
 import { handleSaveCommitments } from './commitments.ts';
-import { handleResendEndorsement } from './endorsement.ts';
+import { handleRequestEndorsement, handleResendEndorsement } from './endorsement.ts';
 import { handleAddNote } from './notes.ts';
 import { handleCancelSchedule } from './scheduleCancel.ts';
 import { handleStepRepeat } from './stageRepeat.ts';
@@ -21,6 +21,10 @@ export const actionRoutes: RecruitmentActionMap = {
   resend_endorsement: {
     requiresReviewer: false,
     handle: handleResendEndorsement,
+  },
+  request_endorsement: {
+    requiresReviewer: true,
+    handle: handleRequestEndorsement,
   },
   archive_applicant: {
     requiresReviewer: true,

@@ -168,7 +168,22 @@ function mockFetch(
       if (method === 'PATCH') {
         return Promise.resolve(Response.json({ id: APPROVAL_ID, access_token: 'rotated-token' }));
       }
-      return Promise.resolve(Response.json({ status: options.approvalStatus ?? 'pending' }));
+      if (method === 'POST') {
+        return Promise.resolve(
+          Response.json({ id: 'new-approval-123', access_token: 'new-access-token' }),
+        );
+      }
+      const acceptHeader =
+        (init?.headers as Record<string, string> | undefined)?.['accept'] ||
+        (init?.headers as Record<string, string> | undefined)?.['Accept'];
+      if (acceptHeader?.includes('application/vnd.pgrst.object+json')) {
+        return Promise.resolve(
+          Response.json({ id: APPROVAL_ID, status: options.approvalStatus ?? 'pending' }),
+        );
+      }
+      return Promise.resolve(
+        Response.json([{ id: APPROVAL_ID, status: options.approvalStatus ?? 'pending' }]),
+      );
     }
     if (url.pathname.endsWith('/enqueue_email_notification')) {
       return Promise.resolve(Response.json(1));
@@ -561,6 +576,93 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'update-recruitment-stage creates a new endorsement and cancels pending when request_endorsement is called',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({ adminRole: 'admin' });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'request_endorsement',
+            application_id: APPLICATION_ID,
+            leader_name: 'New Leader',
+            leader_email: 'newleader@example.com',
+            leader_contact_number: '+639170001111',
+            notes: 'Applicant transferred to new group',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = (await response.json()) as { success: boolean; approval_id: string };
+        assertEquals(body.success, true);
+        assertEquals(body.approval_id, 'new-approval-123');
+
+        // Verify pending request was cancelled
+        const cancelCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/approval_requests' &&
+            call.method === 'PATCH' &&
+            (call.body as Record<string, unknown>).status === 'cancelled',
+        );
+        assertEquals(Boolean(cancelCall), true);
+
+        // Verify new approval was created with assigned email
+        const createApprovalCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/approval_requests' &&
+            call.method === 'POST' &&
+            (call.body as Record<string, unknown>).assigned_to_email === 'newleader@example.com',
+        );
+        assertEquals(Boolean(createApprovalCall), true);
+
+        // Verify application was updated with new leader info and new approval ID
+        const appUpdateCall = mock.calls.find(
+          (call) =>
+            call.path === '/rest/v1/recruitment_applications' &&
+            call.method === 'PATCH' &&
+            (call.body as Record<string, unknown>).dgroup_approval_id === 'new-approval-123',
+        );
+        assertEquals(Boolean(appUpdateCall), true);
+
+        // Verify email notification was enqueued
+        const emailQueueCall = mock.calls.find((call) =>
+          call.path.endsWith('/enqueue_email_notification'),
+        );
+        assertEquals(Boolean(emailQueueCall), true);
+
+        // Verify audit note was recorded
+        const noteCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteCall), true);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test('update-recruitment-stage rejects request_endorsement from non-reviewers', async () => {
+  await withEnv(async () => {
+    const mock = mockFetch({ adminRole: null });
+    try {
+      const response = await handleUpdateRecruitmentStage(
+        createRequest({
+          action: 'request_endorsement',
+          application_id: APPLICATION_ID,
+          leader_name: 'New Leader',
+          leader_email: 'newleader@example.com',
+        }),
+      );
+
+      assertEquals(response.status, 403);
+    } finally {
+      mock.restore();
+    }
+  });
+});
 
 Deno.test(
   'update-recruitment-stage requires a confirmed role before completing evaluation',

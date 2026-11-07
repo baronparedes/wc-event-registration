@@ -350,6 +350,7 @@ export const adminUpdateStageSchema = z
       'complete_vmt',
       'save_commitments',
       'resend_endorsement',
+      'request_endorsement',
       'update_stage',
       'repeat_step',
       'return_to_observation',
@@ -387,6 +388,9 @@ export const adminUpdateStageSchema = z
     service_commitments: applicantCommitmentsSchema.optional(),
     override_endorsement_gate: z.boolean().optional().default(false),
     image_base64: z.string().max(1_500_000).optional().nullable(),
+    leader_name: z.string().trim().max(150).optional().nullable(),
+    leader_email: z.string().trim().email().optional().nullable(),
+    leader_contact_number: z.string().trim().max(50).optional().nullable(),
   })
   .superRefine((request, context) => {
     if (request.action === 'update_stage' && (!request.step_number || !request.status)) {
