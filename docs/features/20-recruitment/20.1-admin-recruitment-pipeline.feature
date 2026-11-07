@@ -27,6 +27,12 @@ Feature: Admin Recruitment Pipeline Management
     - DGroup Endorsement Resend Visibility:
         - The "Resend Endorsement Email / Link" action is strictly restricted to active applicants whose endorsement is awaiting leader review.
         - The action and its confirmation dialog are automatically hidden once the candidate is endorsed, declined, or deployed.
+    - Multi-Endorsement Lifecycle & Leader Updates:
+        - Only one endorsement request can be open/pending at a time for any given applicant.
+        - Authorized reviewers ("admin", "super_admin", "slod", "vmt") can update DGroup leader details (Name, Email, Contact) via "Change DGroup Leader". Any existing pending request is automatically marked "cancelled" (superseded) and a new request link is dispatched.
+        - When an endorsement was declined by a leader ("rejected"), reviewers can re-request endorsement via "Request Endorsement Again" to the same or updated leader with optional context notes.
+        - Re-requesting resets the applicant's endorsement status back to "Pending Leader Review" and locks Step 4 / deployment until newly approved.
+        - Past attempts are preserved in `approval_requests` and surfaced in a collapsible "Endorsement History" section on the DGroup Endorsement tab.
     - Applicant Photo & Deployment Migration:
         - Applicants can optionally upload an image or capture a live webcam photo during registration (Section 1 - Personal & Work Information), verified in Section 5 (Verification).
         - Images are processed client-side (max 1024x1024 JPEG at 0.85 quality) and stored in `member_avatars` at `avatars/recruitment/{application_id}.jpg`.
@@ -136,4 +142,23 @@ Feature: Admin Recruitment Pipeline Management
     When I view the "Applicant Profile" or "DGroup Endorsement" tab
     Then the "Resend Endorsement Email" button is not visible
     And the awaiting endorsement notice is not displayed
+
+  Scenario: Reviewer changes DGroup leader while endorsement is pending
+    Given I am authenticated as an authorized reviewer
+    And an applicant has a pending endorsement request
+    When I click "Change DGroup Leader"
+    And I enter the new leader's name, email, and contact number
+    And I confirm the leader update
+    Then the previous pending endorsement request is cancelled and superseded
+    And a fresh endorsement request link is dispatched to the new leader
+    And the applicant's DGroup info is updated
+
+  Scenario: Reviewer re-requests endorsement after decline
+    Given I am authenticated as an authorized reviewer
+    And an applicant's endorsement was previously declined by their leader
+    When I click "Request Endorsement Again"
+    And I provide clarification notes and confirm the request
+    Then a new endorsement invitation is sent to the leader
+    And the applicant's endorsement status resets to "Pending Leader Review"
+    And the previous decline is retained in the endorsement history section
 

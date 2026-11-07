@@ -14,6 +14,7 @@ import {
 } from './schemas';
 import type {
   ApplicantRecruitmentView,
+  EndorsementRecord,
   PublicRecruitmentConfig,
   RecruiterNote,
   RecruitmentApplication,
@@ -353,15 +354,26 @@ export async function fetchAdminRecruitmentApplicationDetail(
     created_at: row.created_at,
   }));
 
-  let dgroupEndorsement: RecruitmentApplicationDetail['dgroup_endorsement'] = null;
-  if (application.data.dgroup_approval_id) {
-    const { data: approvalData } = await supabase
-      .from('approval_requests')
-      .select('id, status, decision_notes, decided_at, decided_by_email, metadata')
-      .eq('id', application.data.dgroup_approval_id)
-      .maybeSingle();
+  let dgroupEndorsement: EndorsementRecord | null = null;
+  const dgroupEndorsementHistory: EndorsementRecord[] = [];
 
-    if (approvalData) {
+  if (application.data.dgroup_approval_id) {
+    const { data: approvalsData } = await supabase
+      .from('approval_requests')
+      .select(
+        'id, status, decision_notes, decided_at, decided_by_email, assigned_to_email, created_at, metadata',
+      )
+      .eq('entity_type', 'recruitment_endorsement')
+      .eq('entity_id', application.data.id)
+      .order('created_at', { ascending: false });
+
+    const rawList = Array.isArray(approvalsData)
+      ? approvalsData
+      : approvalsData
+        ? [approvalsData]
+        : [];
+
+    for (const approvalData of rawList) {
       let attestationAnswers: Record<string, unknown> | null = null;
       const rawMeta = approvalData.metadata as Record<string, unknown> | null;
       if (rawMeta && rawMeta.attestation_answers) {
@@ -377,15 +389,22 @@ export async function fetchAdminRecruitmentApplicationDetail(
         }
       }
 
-      dgroupEndorsement = {
+      dgroupEndorsementHistory.push({
         approval_id: approvalData.id,
-        status: approvalData.status as 'pending' | 'approved' | 'rejected',
+        status: approvalData.status as EndorsementRecord['status'],
         decision_notes: approvalData.decision_notes,
         decided_at: approvalData.decided_at,
         decided_by_email: approvalData.decided_by_email,
+        assigned_to_email: approvalData.assigned_to_email,
+        created_at: approvalData.created_at ?? '',
         attestation_answers: attestationAnswers,
-      };
+      });
     }
+
+    dgroupEndorsement =
+      dgroupEndorsementHistory.find((a) => a.approval_id === application.data.dgroup_approval_id) ??
+      dgroupEndorsementHistory[0] ??
+      null;
   }
 
   return {
@@ -393,6 +412,7 @@ export async function fetchAdminRecruitmentApplicationDetail(
     transactions,
     step_notes: stepNotes,
     dgroup_endorsement: dgroupEndorsement,
+    dgroup_endorsement_history: dgroupEndorsementHistory,
   };
 }
 

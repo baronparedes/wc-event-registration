@@ -259,6 +259,69 @@ describe('RecruitmentDetailDialog - Navigation & Profile Tabs', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders Change Leader button in profile tab when pending and opens action dialog', async () => {
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+        dgroup_endorsement: {
+          approval_id: 'appr-1',
+          status: 'pending',
+        },
+      },
+      isLoading: false,
+    });
+
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
+
+    const changeBtn = screen.getByRole('button', { name: /change leader/i });
+    expect(changeBtn).toBeInTheDocument();
+
+    await user.click(changeBtn);
+    expect(screen.getByRole('heading', { name: /change dgroup leader/i })).toBeInTheDocument();
+  });
+
+  it('renders Request Endorsement Again button in profile tab when declined and opens action dialog', async () => {
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: mockApplication,
+        transactions: [mockTransaction],
+        dgroup_endorsement: {
+          approval_id: 'appr-1',
+          status: 'rejected',
+          decision_notes: 'Needs more discipleship.',
+        },
+      },
+      isLoading: false,
+    });
+
+    const user = userEvent.setup();
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={mockApplication}
+        isOpen={true}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: /applicant profile/i }));
+
+    const reRequestBtn = screen.getByRole('button', { name: /request endorsement again/i });
+    expect(reRequestBtn).toBeInTheDocument();
+
+    await user.click(reRequestBtn);
+    expect(screen.getByRole('heading', { name: /request endorsement again/i })).toBeInTheDocument();
+  });
+
   it('hides resend endorsement email button in profile tab when applicant is deployed', async () => {
     const deployedApp = {
       ...mockApplication,

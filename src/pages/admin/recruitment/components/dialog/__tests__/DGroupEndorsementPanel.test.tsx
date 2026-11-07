@@ -9,6 +9,17 @@ import { DGroupEndorsementPanel } from '../DGroupEndorsementPanel';
 
 const mockMutateAsync = vi.fn().mockResolvedValue({ success: true });
 
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => ({
+    data: {
+      adminRole: 'admin',
+      isAuthenticated: true,
+      permissions: ['canWriteAdminData'],
+    },
+    can: () => true,
+  }),
+}));
+
 vi.mock('@/hooks/domain/recruitment/mutations/useUpdateRecruitmentStageMutation', () => ({
   useUpdateRecruitmentStageMutation: () => ({
     mutateAsync: mockMutateAsync,
@@ -144,5 +155,78 @@ describe('DGroupEndorsementPanel', () => {
     expect(screen.getByText('Endorsement Declined')).toBeInTheDocument();
     expect(screen.getByText(/Endorsement Declined by Leader/i)).toBeInTheDocument();
     expect(screen.getByText(/Candidate needs more time in DGroup/i)).toBeInTheDocument();
+  });
+
+  it('renders Change DGroup Leader button when pending and opens action dialog', async () => {
+    const user = userEvent.setup();
+    renderPanel(<DGroupEndorsementPanel application={mockApplication} />);
+
+    const changeLeaderBtn = screen.getByRole('button', { name: /change dgroup leader/i });
+    expect(changeLeaderBtn).toBeInTheDocument();
+
+    await user.click(changeLeaderBtn);
+    expect(screen.getByRole('heading', { name: /change dgroup leader/i })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Test Barnabas Leader')).toBeInTheDocument();
+  });
+
+  it('renders Request Endorsement Again button when declined and opens action dialog', async () => {
+    const user = userEvent.setup();
+    renderPanel(
+      <DGroupEndorsementPanel
+        application={mockApplication}
+        endorsement={{
+          approval_id: 'appr-123',
+          status: 'rejected',
+          decision_notes: 'Needs more time.',
+        }}
+      />,
+    );
+
+    const reRequestBtn = screen.getByRole('button', { name: /request endorsement again/i });
+    expect(reRequestBtn).toBeInTheDocument();
+
+    await user.click(reRequestBtn);
+    expect(screen.getByRole('heading', { name: /request endorsement again/i })).toBeInTheDocument();
+  });
+
+  it('renders Endorsement History section when multiple attempts exist and expands on click', async () => {
+    const user = userEvent.setup();
+    renderPanel(
+      <DGroupEndorsementPanel
+        application={mockApplication}
+        endorsement={{
+          approval_id: 'appr-2',
+          status: 'pending',
+        }}
+        endorsementHistory={[
+          {
+            approval_id: 'appr-2',
+            status: 'pending',
+            assigned_to_email: 'newleader@example.com',
+            created_at: '2026-11-03T00:00:00+00:00',
+          },
+          {
+            approval_id: 'appr-1',
+            status: 'rejected',
+            assigned_to_email: 'oldleader@example.com',
+            created_at: '2026-11-01T00:00:00+00:00',
+            decided_at: '2026-11-02T00:00:00+00:00',
+            decision_notes: 'Needs spiritual maturity.',
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText(/Endorsement History \(2 attempts\)/i)).toBeInTheDocument();
+    expect(screen.queryByText('Attempt #1')).not.toBeInTheDocument();
+
+    const historyToggle = screen.getByRole('button', {
+      name: /endorsement history \(2 attempts\)/i,
+    });
+    await user.click(historyToggle);
+
+    expect(screen.getByText('Attempt #2')).toBeInTheDocument();
+    expect(screen.getByText('Attempt #1')).toBeInTheDocument();
+    expect(screen.getByText(/Needs spiritual maturity/i)).toBeInTheDocument();
   });
 });

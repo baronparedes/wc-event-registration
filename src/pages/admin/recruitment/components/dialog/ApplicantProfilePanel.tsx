@@ -1,9 +1,10 @@
 import { useState } from 'react';
 
-import { RefreshCw, ShieldCheck, User } from 'lucide-react';
+import { RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment';
 import type {
   RecruitmentApplication,
@@ -12,6 +13,7 @@ import type {
 import { calculateAge } from '@/pages/recruitment/apply/utils';
 
 import { EditableApplicantAvatar } from './EditableApplicantAvatar';
+import { EndorsementActionDialog } from './EndorsementActionDialog';
 
 interface ApplicantProfilePanelProps {
   application: RecruitmentApplication;
@@ -20,8 +22,20 @@ interface ApplicantProfilePanelProps {
 
 export function ApplicantProfilePanel({ application, endorsement }: ApplicantProfilePanelProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [actionDialogMode, setActionDialogMode] = useState<'change_leader' | 're_request' | null>(
+    null,
+  );
+  const { data: authState, can } = useAdminAuthQuery();
   const updateStageMutation = useUpdateRecruitmentStageMutation();
   const age = calculateAge(application.date_of_birth);
+
+  const canWrite = can('canWriteAdminData');
+  const isAllowedRole =
+    authState?.adminRole === 'admin' ||
+    authState?.adminRole === 'super_admin' ||
+    authState?.adminRole === 'slod' ||
+    authState?.adminRole === 'vmt';
+  const canManageEndorsement = canWrite && isAllowedRole;
 
   const isEndorsed =
     endorsement?.status === 'approved' ||
@@ -213,8 +227,22 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           </div>
         </div>
 
-        {canResend && (
-          <div className="flex justify-end pt-2">
+        <div className="flex flex-wrap justify-end gap-2 pt-2">
+          {canManageEndorsement && canResend && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => setActionDialogMode('change_leader')}
+              disabled={updateStageMutation.isPending}
+            >
+              <UserCog className="mr-1.5 h-3.5 w-3.5" />
+              Change Leader
+            </Button>
+          )}
+
+          {canResend && (
             <Button
               type="button"
               variant="primaryOutline"
@@ -230,8 +258,22 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
               )}
               Resend Endorsement Email
             </Button>
-          </div>
-        )}
+          )}
+
+          {canManageEndorsement && isDeclined && application.status === 'active' && (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => setActionDialogMode('re_request')}
+              disabled={updateStageMutation.isPending}
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Request Endorsement Again
+            </Button>
+          )}
+        </div>
       </div>
 
       {canResend && (
@@ -252,6 +294,19 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           isPending={updateStageMutation.isPending}
           onConfirm={handleResendEndorsement}
           onCancel={() => setIsConfirmOpen(false)}
+        />
+      )}
+
+      {actionDialogMode && (
+        <EndorsementActionDialog
+          isOpen={Boolean(actionDialogMode)}
+          onClose={() => setActionDialogMode(null)}
+          applicationId={application.id}
+          applicantName={application.full_name}
+          mode={actionDialogMode}
+          initialLeaderName={application.dgroup_info.leader_name}
+          initialLeaderEmail={application.dgroup_info.leader_email}
+          initialLeaderPhone={application.dgroup_info.leader_phone}
         />
       )}
     </div>

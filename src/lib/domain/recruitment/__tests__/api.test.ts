@@ -493,6 +493,7 @@ describe('recruitment API', () => {
       transactions: [transaction],
       step_notes: [note],
       dgroup_endorsement: null,
+      dgroup_endorsement_history: [],
     });
     expect(queries.appQuery.eq).toHaveBeenCalledWith('id', applicationId);
     expect(queries.historyQuery.eq).toHaveBeenCalledWith('application_id', applicationId);
@@ -545,6 +546,8 @@ describe('recruitment API', () => {
       decision_notes: 'Approved',
       decided_at: timestamp,
       decided_by_email: 'reviewer@example.com',
+      assigned_to_email: 'leader@example.com',
+      created_at: timestamp,
       metadata,
     };
     const approvalQuery = queryFor(approval);
@@ -556,9 +559,11 @@ describe('recruitment API', () => {
       decision_notes: 'Approved',
       decided_at: timestamp,
       decided_by_email: 'reviewer@example.com',
+      assigned_to_email: 'leader@example.com',
+      created_at: timestamp,
       attestation_answers: expected,
     });
-    expect(approvalQuery.eq).toHaveBeenCalledWith('id', transaction.id);
+    expect(approvalQuery.eq).toHaveBeenCalledWith('entity_id', applicationId);
   });
 
   it('leaves endorsement null when the linked approval does not exist', async () => {
@@ -566,7 +571,41 @@ describe('recruitment API', () => {
     mocks.from.mockReturnValueOnce(queryFor(null));
     await expect(fetchAdminRecruitmentApplicationDetail(applicationId)).resolves.toMatchObject({
       dgroup_endorsement: null,
+      dgroup_endorsement_history: [],
     });
+  });
+
+  it('populates multiple endorsement records in reverse chronological history', async () => {
+    const latestApprovalId = '44444444-4444-4444-8444-444444444444';
+    detailQueries({ app: { ...application, dgroup_approval_id: latestApprovalId } });
+    const approvals = [
+      {
+        id: latestApprovalId,
+        status: 'pending',
+        decision_notes: null,
+        decided_at: null,
+        decided_by_email: null,
+        assigned_to_email: 'newleader@example.com',
+        created_at: '2026-11-03T00:00:00+00:00',
+        metadata: {},
+      },
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        status: 'cancelled',
+        decision_notes: 'Superseded by new request',
+        decided_at: '2026-11-02T12:00:00+00:00',
+        decided_by_email: 'admin@example.com',
+        assigned_to_email: 'oldleader@example.com',
+        created_at: '2026-11-01T00:00:00+00:00',
+        metadata: {},
+      },
+    ];
+    mocks.from.mockReturnValueOnce(queryFor(approvals));
+    const result = await fetchAdminRecruitmentApplicationDetail(applicationId);
+    expect(result.dgroup_endorsement?.approval_id).toBe(latestApprovalId);
+    expect(result.dgroup_endorsement?.status).toBe('pending');
+    expect(result.dgroup_endorsement_history).toHaveLength(2);
+    expect(result.dgroup_endorsement_history?.[1].status).toBe('cancelled');
   });
 
   it('searches active reviewers and formats optional nicknames', async () => {

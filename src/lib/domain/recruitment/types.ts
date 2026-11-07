@@ -214,18 +214,23 @@ export type RecruiterNote = {
   created_at: string;
 };
 
+export type EndorsementRecord = {
+  approval_id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  decision_notes?: string | null;
+  decided_at?: string | null;
+  decided_by_email?: string | null;
+  assigned_to_email?: string | null;
+  created_at?: string | null;
+  attestation_answers?: Record<string, unknown> | null;
+};
+
 export type RecruitmentApplicationDetail = {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
   step_notes: RecruiterNote[];
-  dgroup_endorsement?: {
-    approval_id: string;
-    status: 'pending' | 'approved' | 'rejected';
-    decision_notes?: string | null;
-    decided_at?: string | null;
-    decided_by_email?: string | null;
-    attestation_answers?: Record<string, unknown> | null;
-  } | null;
+  dgroup_endorsement?: EndorsementRecord | null;
+  dgroup_endorsement_history?: EndorsementRecord[];
 };
 
 export type PublicRecruitmentConfig = {
