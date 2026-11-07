@@ -67,7 +67,9 @@ describe('CompleteStepConfirmDialog', () => {
     expect(screen.getByText('Aaron Atienza (Aey)')).toBeInTheDocument();
     expect(screen.getByText('OIC')).toBeInTheDocument();
     expect(screen.getByText('Prayer Coach')).toBeInTheDocument();
-    expect(screen.getByText('Passed interview with excellent feedback.')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Passed interview with excellent feedback.').length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it('renders Step 7 VMT ID and Registration Date', () => {
@@ -145,12 +147,33 @@ describe('CompleteStepConfirmDialog', () => {
     expect(screen.getByRole('button', { name: /confirm & deploy volunteer/i })).toBeInTheDocument();
   });
 
-  it('triggers onConfirm when confirmation button is clicked', () => {
+  it('triggers onConfirm with completion notes when confirmation button is clicked', () => {
     const onConfirm = vi.fn();
     renderWithClient(<CompleteStepConfirmDialog {...defaultProps} onConfirm={onConfirm} />);
 
     fireEvent.click(screen.getByRole('button', { name: /confirm & complete step 2/i }));
-    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledWith('Passed interview with excellent feedback.');
+  });
+
+  it('requires completion comment and disables confirm button when empty', () => {
+    const onConfirm = vi.fn();
+    renderWithClient(
+      <CompleteStepConfirmDialog
+        {...defaultProps}
+        recruitmentNotes={undefined}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: /confirm & complete step 2/i });
+    expect(confirmBtn).toBeDisabled();
+
+    const textarea = screen.getByPlaceholderText(/enter internal feedback/i);
+    fireEvent.change(textarea, { target: { value: 'Great candidate, approved for orientation.' } });
+
+    expect(confirmBtn).toBeEnabled();
+    fireEvent.click(confirmBtn);
+    expect(onConfirm).toHaveBeenCalledWith('Great candidate, approved for orientation.');
   });
 
   it('triggers onClose when cancel button is clicked', () => {

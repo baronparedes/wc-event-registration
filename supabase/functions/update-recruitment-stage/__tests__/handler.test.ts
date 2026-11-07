@@ -1175,3 +1175,87 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'update-recruitment-stage rejects completing a coaching step before it is scheduled',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2 },
+        transactions: [], // no transaction scheduled yet
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            status: 'completed',
+            confirmed_role: 'Usher',
+            notes: 'Completed interview notes',
+          }),
+        );
+
+        assertEquals(response.status, 409);
+        const body = await response.json();
+        assertEquals(body.success, false);
+        assertEquals(body.error, 'Step 2 must be scheduled before it can be completed');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage allows completing a coaching step when it was scheduled',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 2 },
+        transactions: [
+          {
+            id: 'tx-int-sched-1',
+            step_number: 2,
+            attempt_number: 1,
+            status: 'scheduled',
+            scheduled_at: '2026-11-15T10:00:00+08:00',
+            notes: null,
+          },
+        ],
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'update_stage',
+            application_id: APPLICATION_ID,
+            step_number: 2,
+            status: 'completed',
+            confirmed_role: 'Usher',
+            notes: 'Completed interview notes',
+          }),
+        );
+
+        assertEquals(response.status, 200);
+        const body = await response.json();
+        assertEquals(body.success, true);
+        assertEquals(body.current_step, 3);
+
+        const noteInsertCall = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_step_notes' && call.method === 'POST',
+        );
+        assertEquals(Boolean(noteInsertCall), true);
+        const payload =
+          typeof noteInsertCall?.body === 'string'
+            ? JSON.parse(noteInsertCall.body)
+            : (noteInsertCall?.body as Record<string, unknown>) || {};
+        assertEquals(payload.content, 'Completed interview notes');
+        assertEquals(payload.step_number, 2);
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);

@@ -130,6 +130,9 @@ describe('RecruitmentDetailDialog - Step 8 RFID Commitments & Step 9 Deployment'
     expect(screen.getByText('Committed Sunday Schedule')).toBeInTheDocument();
 
     // Confirm completion
+    const commentInput = screen.getByLabelText(/completion notes \/ feedback/i);
+    await user.type(commentInput, 'RFID assigned and schedule committed');
+
     const confirmBtn = screen.getByRole('button', { name: /confirm & complete step 8/i });
     await user.click(confirmBtn);
 
@@ -139,6 +142,7 @@ describe('RecruitmentDetailDialog - Step 8 RFID Commitments & Step 9 Deployment'
         step_number: 8,
         status: 'completed',
         assigned_rfid_member_id: 'RFID-9988',
+        notes: 'RFID assigned and schedule committed',
         service_commitments: expect.objectContaining({
           first_sunday: ['9AM'],
         }),
