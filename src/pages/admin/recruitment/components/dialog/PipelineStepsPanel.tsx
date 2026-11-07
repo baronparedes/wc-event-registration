@@ -277,7 +277,7 @@ export function PipelineStepsPanel({
                   isStepSelected
                     ? 'border-primary bg-primary text-white font-bold shadow-xs'
                     : isStepCurrent
-                      ? 'border-primary/80 bg-primary/10 text-primary font-semibold ring-1 ring-primary/40'
+                      ? 'border-primary/80 bg-primary/10 text-primary font-semibold ring-1 ring-inset ring-primary/40'
                       : isStepCompleted
                         ? 'border-transparent text-muted hover:text-text hover:bg-muted/10'
                         : 'border-transparent text-muted/60 opacity-60'
