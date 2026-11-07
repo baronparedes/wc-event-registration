@@ -5,6 +5,14 @@ export async function handleArchiveApplicant(context: RecruitmentActionContext):
   const { supabase, request, application, authUser, userId, normalizedEmail, corsHeaders } =
     context;
 
+  if (application.status === 'deployed') {
+    return response(
+      400,
+      { success: false, error: 'Deployed applicants cannot be archived' },
+      corsHeaders,
+    );
+  }
+
   const archiveReason = request.notes?.trim();
   if (!archiveReason) {
     return response(400, { success: false, error: 'Archive reason is required' }, corsHeaders);

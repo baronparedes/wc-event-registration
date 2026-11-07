@@ -66,6 +66,7 @@ export function RecruitmentApplicantDetailDialog({
   const stepMeta = RECRUITMENT_STEPS.find((s) => s.stepNumber === currentApp.current_step);
   const role = currentApp.confirmed_role ?? currentApp.desired_role;
   const isArchived = currentApp.status === 'archived';
+  const isDeployed = currentApp.status === 'deployed';
 
   const handleOpenArchiveDialog = (mode: 'archive' | 'restore') => {
     setArchiveMode(mode);
@@ -187,7 +188,7 @@ export function RecruitmentApplicantDetailDialog({
               <RotateCcw className="h-4 w-4" />
               <span>Restore to Active</span>
             </Button>
-          ) : (
+          ) : !isDeployed ? (
             <Button
               type="button"
               variant="outline"
@@ -198,6 +199,8 @@ export function RecruitmentApplicantDetailDialog({
               <Archive className="h-4 w-4" />
               <span>Archive</span>
             </Button>
+          ) : (
+            <div />
           )}
 
           <Button

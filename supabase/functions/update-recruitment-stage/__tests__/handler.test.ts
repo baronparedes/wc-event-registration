@@ -857,6 +857,60 @@ Deno.test('update-recruitment-stage rejects archive_applicant without reason not
 });
 
 Deno.test(
+  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'archive_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Attempting to archive deployed',
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const body = await response.json();
+        assertEquals(body.error, 'Deployed applicants cannot be archived');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'archive_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Attempting to archive deployed',
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const body = await response.json();
+        assertEquals(body.error, 'Deployed applicants cannot be archived');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
   'update-recruitment-stage restores an archived applicant to active and records note',
   async () => {
     await withEnv(async () => {
@@ -1125,6 +1179,60 @@ Deno.test('update-recruitment-stage rejects archive_applicant without reason not
     }
   });
 });
+
+Deno.test(
+  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'archive_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Attempting to archive deployed',
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const body = await response.json();
+        assertEquals(body.error, 'Deployed applicants cannot be archived');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage rejects archive_applicant when applicant is deployed',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        adminRole: 'admin',
+        application: { ...applicationRecord, current_step: 9, status: 'deployed' },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest({
+            action: 'archive_applicant',
+            application_id: APPLICATION_ID,
+            notes: 'Attempting to archive deployed',
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const body = await response.json();
+        assertEquals(body.error, 'Deployed applicants cannot be archived');
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
 
 Deno.test(
   'update-recruitment-stage restores an archived applicant to active and records note',

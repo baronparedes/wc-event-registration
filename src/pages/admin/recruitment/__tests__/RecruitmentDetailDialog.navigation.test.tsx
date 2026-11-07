@@ -484,4 +484,31 @@ describe('RecruitmentDetailDialog - Navigation & Profile Tabs', () => {
       }),
     );
   });
+
+  it('does not display the Archive button when applicant is deployed', () => {
+    const deployedApp = {
+      ...mockApplication,
+      status: 'deployed' as const,
+      current_step: 9 as const,
+    };
+    mockDetailQuery.mockReturnValue({
+      data: {
+        application: deployedApp,
+        transactions: [mockTransaction],
+      },
+      isLoading: false,
+    });
+
+    renderDialog(
+      <RecruitmentApplicantDetailDialog
+        application={deployedApp}
+        isOpen={true}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /^archive$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /restore to active/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^close$/i })).toBeInTheDocument();
+  });
 });
