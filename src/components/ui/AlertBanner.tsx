@@ -13,6 +13,8 @@ export interface AlertBannerProps {
   icon?: ReactNode | boolean;
   action?: ReactNode;
   className?: string;
+  /** Whether to stack the action element below the content rather than side-by-side on wide screens. */
+  stackAction?: boolean;
 }
 
 const variantStyles: Record<
@@ -67,6 +69,7 @@ export function AlertBanner({
   icon = true,
   action,
   className = '',
+  stackAction = false,
 }: AlertBannerProps) {
   const config = variantStyles[variant];
 
@@ -84,7 +87,7 @@ export function AlertBanner({
   return (
     <div
       role="alert"
-      className={`flex flex-col sm:flex-row ${action ? 'sm:items-start' : alignmentClass} gap-3 rounded-xl border p-3.5 sm:p-4 text-sm ${config.container} ${className}`}
+      className={`flex ${stackAction ? 'flex-col' : 'flex-col sm:flex-row'} ${action && !stackAction ? 'sm:items-start' : alignmentClass} gap-3 rounded-xl border p-3.5 sm:p-4 text-sm ${config.container} ${className}`}
     >
       <div className={`flex ${alignmentClass} gap-2.5 sm:gap-3 min-w-0 flex-1 w-full`}>
         {renderedIcon && (
@@ -99,7 +102,13 @@ export function AlertBanner({
         </div>
       </div>
       {action && (
-        <div className="w-full sm:w-auto shrink-0 sm:self-start pt-1 sm:pt-0 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto">
+        <div
+          className={
+            stackAction
+              ? 'w-full pt-1.5 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto'
+              : 'w-full sm:w-auto shrink-0 sm:self-start pt-1 sm:pt-0 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto'
+          }
+        >
           {action}
         </div>
       )}

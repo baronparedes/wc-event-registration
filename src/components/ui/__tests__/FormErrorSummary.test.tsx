@@ -65,4 +65,19 @@ describe('FormErrorSummary', () => {
 
     expect(screen.getByRole('button', { name: /review missing field/i })).toBeInTheDocument();
   });
+
+  it('stacks action layout below when children or description are present', () => {
+    render(
+      <FormErrorSummary errorCount={2} onJumpToFirstError={() => {}}>
+        <ul>
+          <li>Field 1 missing</li>
+          <li>Field 2 missing</li>
+        </ul>
+      </FormErrorSummary>,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveClass('flex-col');
+    expect(alert).not.toHaveClass('sm:flex-row');
+  });
 });

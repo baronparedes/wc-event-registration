@@ -708,7 +708,9 @@ Deliver the full Admin, SLOD, and VMT management interface following all `AGENTS
    - **Archive Lifecycle & Destructive Styling**:
      - Replaced legacy `'on_hold'` with `'archived'` across database constraints, Edge Functions, schemas, and UI.
      - Archive trigger button in `Dialog.Footer` uses semantic `variant="destructive"`.
-     - When archived, an informative notice appears with a **Restore Applicant** action.
+     - Archiving strictly requires an explicit archive reason (`Archive Reason *`), disabling confirmation until provided.
+     - Upon archiving, the reason is automatically appended to the applicant's current step recruitment notes thread as `Archived: <reason>` with reviewer attribution.
+     - When archived, an informative notice appears with a **Restore Applicant** action; optional restoration notes are similarly recorded in the notes thread as `Restored: <notes>`.
 
 3. **Integrated Admin Recruitment Settings Page (`src/pages/admin/settings/recruitment/index.tsx`)**:
    - Integrated into `/admin/settings` Launchpad via a `SettingsFeatureCard` under **System Configuration** (`to: ROUTE_PATHS.adminSettingsRecruitment`, required permission: `canWriteAdminData`).

@@ -20,6 +20,8 @@ export interface FormErrorSummaryProps {
   className?: string;
   /** Optional child elements to render inside the banner. */
   children?: ReactNode;
+  /** Whether to stack the action button below the message/checklist. Defaults to true when children or description are provided. */
+  stackAction?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export function FormErrorSummary({
   actionLabel = 'Jump to first error',
   className = '',
   children,
+  stackAction,
 }: FormErrorSummaryProps) {
   if (errorCount !== undefined && errorCount <= 0) {
     return null;
@@ -47,6 +50,8 @@ export function FormErrorSummary({
         ? `${errorCount} required fields need attention before continuing.`
         : 'Please review the required fields before continuing.';
 
+  const shouldStack = stackAction ?? Boolean(children || description);
+
   return (
     <div aria-live="polite" className={`w-full ${className}`}>
       <AlertBanner
@@ -54,6 +59,7 @@ export function FormErrorSummary({
         align={children || description ? 'start' : 'center'}
         title={title ?? defaultTitle}
         description={description}
+        stackAction={shouldStack}
         action={
           onJumpToFirstError ? (
             <Button
