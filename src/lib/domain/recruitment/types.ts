@@ -117,6 +117,7 @@ export type RecruitmentApplicationStatusData = {
   vmt_verified_by: string | null;
   service_commitments: ApplicantCommitments;
   assigned_rfid_member_id: string | null;
+  access_token?: string;
   promoted_user_id: string | null;
   deployed_at: string | null;
   created_at: string;
@@ -186,6 +187,10 @@ export type ApplicantRecruitmentView = Pick<
   dgroup_leader_name: string;
   transactions: ApplicantRecruitmentTimelineItem[];
 };
+
+export type RecruitmentApplicationByTokenResult =
+  | { expired: true; status: RecruitmentApplication['status'] }
+  | ({ expired: false } & ApplicantRecruitmentView);
 
 export type ApplicantRecruitmentTimelineItem = Pick<
   RecruitmentPipelineTransaction,

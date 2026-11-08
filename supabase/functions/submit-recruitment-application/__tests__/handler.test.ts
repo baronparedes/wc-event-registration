@@ -142,7 +142,9 @@ function mockFetch(options: { settings?: unknown; failRequest?: string; role?: s
     }
 
     if (url.pathname === '/rest/v1/recruitment_applications' && method === 'POST') {
-      return Promise.resolve(Response.json({ id: APPLICATION_ID }));
+      return Promise.resolve(
+        Response.json({ id: APPLICATION_ID, access_token: 'applicant-token' }),
+      );
     }
 
     if (url.pathname === '/rest/v1/approval_requests' && method === 'POST') {
@@ -191,6 +193,8 @@ Deno.test(
         const result = await response.json();
         assertEquals(result.success, true);
         assertEquals(result.application_id, APPLICATION_ID);
+        assertEquals(result.access_token, 'applicant-token');
+        assertEquals(typeof result.tracking_url, 'string');
         assertEquals('survey_score' in result, false);
 
         const applicationInsert = mock.calls.find(

@@ -157,8 +157,9 @@ export async function handleRequestEndorsement(
 
   const authorName =
     memberUser?.full_name ||
-    (authUser.user_metadata?.full_name as string | undefined) ||
-    authUser.email?.split('@')[0] ||
+    (authUser?.user_metadata?.full_name as string | undefined) ||
+    authUser?.email?.split('@')[0] ||
+    application.full_name ||
     'Recruitment Reviewer';
   const authorRole = adminRole ? adminRole.toUpperCase() : null;
 
@@ -189,9 +190,9 @@ export async function handleRequestEndorsement(
 export async function handleResendEndorsement(
   context: RecruitmentActionContext,
 ): Promise<Response> {
-  const { supabase, application, userId, isReviewer, corsHeaders } = context;
+  const { supabase, request, application, userId, isReviewer, corsHeaders } = context;
 
-  if (!isReviewer && application.auth_user_id !== userId) {
+  if (!isReviewer && !request.token && application.auth_user_id !== userId) {
     return response(
       404,
       { success: false, error: 'Recruitment application not found' },

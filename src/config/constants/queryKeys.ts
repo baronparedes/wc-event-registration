@@ -5,6 +5,8 @@ export const QUERY_KEYS = {
     authUserId
       ? (['my-recruitment-application', authUserId] as const)
       : (['my-recruitment-application'] as const),
+  recruitmentApplicationByToken: (token: string | null | undefined) =>
+    ['recruitment-application-by-token', token ?? ''] as const,
   adminRecruitmentApplications: () => ['admin-recruitment-applications'] as const,
   adminRecruitmentApplication: (applicationId: string | undefined) =>
     ['admin-recruitment-application', applicationId] as const,

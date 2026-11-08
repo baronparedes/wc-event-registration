@@ -6,6 +6,15 @@ import type { RecruitmentApplication } from '@/lib/domain/recruitment';
 
 import { ApplicantProfilePanel } from '../ApplicantProfilePanel';
 
+const toastSuccessMock = vi.fn();
+const toastErrorMock = vi.fn();
+vi.mock('sonner', () => ({
+  toast: {
+    success: (...args: unknown[]) => toastSuccessMock(...args),
+    error: (...args: unknown[]) => toastErrorMock(...args),
+  },
+}));
+
 const useAdminAuthQueryMock = vi.fn();
 vi.mock('@/hooks/domain/auth', () => ({
   useAdminAuthQuery: () => useAdminAuthQueryMock(),
@@ -98,6 +107,7 @@ const mockApplication: RecruitmentApplication = {
   assigned_rfid_member_id: null,
   promoted_user_id: null,
   deployed_at: null,
+  access_token: 'test-access-token-123',
   created_at: '2026-03-01T08:00:00Z',
   updated_at: '2026-03-01T08:00:00Z',
 };
@@ -115,6 +125,44 @@ describe('ApplicantProfilePanel', () => {
     render(<ApplicantProfilePanel application={mockApplication} />);
 
     expect(screen.getByRole('button', { name: /edit details/i })).toBeInTheDocument();
+  });
+
+  it('renders "Copy Tracking Link" button when access_token is present', () => {
+    render(<ApplicantProfilePanel application={mockApplication} />);
+
+    expect(screen.getByRole('button', { name: /copy tracking link/i })).toBeInTheDocument();
+  });
+
+  it('copies tracking link to clipboard and triggers success toast when clicked', async () => {
+    const user = userEvent.setup();
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+
+    render(<ApplicantProfilePanel application={mockApplication} />);
+
+    const copyBtn = screen.getByRole('button', { name: /copy tracking link/i });
+    await user.click(copyBtn);
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      `${window.location.origin}/recruitment?token=test-access-token-123`,
+    );
+    expect(toastSuccessMock).toHaveBeenCalledWith('Applicant tracking link copied to clipboard');
+  });
+
+  it('hides "Copy Tracking Link" button when access_token is absent', () => {
+    render(
+      <ApplicantProfilePanel
+        application={{
+          ...mockApplication,
+          access_token: undefined,
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /copy tracking link/i })).not.toBeInTheDocument();
   });
 
   it('opens EditApplicantDetailsDialog when "Edit Details" button is clicked', async () => {

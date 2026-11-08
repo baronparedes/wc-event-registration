@@ -3,6 +3,7 @@ import { assertEquals } from '@std/assert';
 import {
   buildApprovalOutcomeEmail,
   buildApprovalReviewEmail,
+  buildRecruitmentReceivedEmail,
   renderBaseEmailLayout,
 } from '../index.ts';
 
@@ -85,3 +86,59 @@ Deno.test('buildApprovalOutcomeEmail formats rejected decision with red theme', 
   assertEquals(result.text.includes('declined'), true);
   assertEquals(result.text.includes('Incomplete information'), true);
 });
+
+Deno.test(
+  'buildRecruitmentReceivedEmail formats application received email with tracking link',
+  () => {
+    const result = buildRecruitmentReceivedEmail({
+      firstName: 'Bryan',
+      fullName: 'Bryan Daniel G. Paredes',
+      desiredRole: 'IMT Support',
+      trackingUrl: 'https://welcomehub.app/recruitment?token=test-token-xyz',
+    });
+
+    assertEquals(result.subject, 'Welcome Center Volunteer Application Received');
+    assertEquals(result.html.includes('Application Received'), true);
+    assertEquals(result.html.includes('Bryan'), true);
+    assertEquals(result.html.includes('Bryan Daniel G. Paredes'), true);
+    assertEquals(result.html.includes('IMT Support'), true);
+    assertEquals(
+      result.html.includes('https://welcomehub.app/recruitment?token=test-token-xyz'),
+      true,
+    );
+    assertEquals(result.html.includes('Track My Application'), true);
+    assertEquals(result.text.includes('Bryan Daniel G. Paredes'), true);
+    assertEquals(
+      result.text.includes('https://welcomehub.app/recruitment?token=test-token-xyz'),
+      true,
+    );
+  },
+);
+
+Deno.test(
+  'buildRecruitmentReceivedEmail formats application received email with tracking link',
+  () => {
+    const result = buildRecruitmentReceivedEmail({
+      firstName: 'Bryan',
+      fullName: 'Bryan Daniel G. Paredes',
+      desiredRole: 'IMT Support',
+      trackingUrl: 'https://welcomehub.app/recruitment?token=test-token-xyz',
+    });
+
+    assertEquals(result.subject, 'Welcome Center Volunteer Application Received');
+    assertEquals(result.html.includes('Application Received'), true);
+    assertEquals(result.html.includes('Bryan'), true);
+    assertEquals(result.html.includes('Bryan Daniel G. Paredes'), true);
+    assertEquals(result.html.includes('IMT Support'), true);
+    assertEquals(
+      result.html.includes('https://welcomehub.app/recruitment?token=test-token-xyz'),
+      true,
+    );
+    assertEquals(result.html.includes('Track My Application'), true);
+    assertEquals(result.text.includes('Bryan Daniel G. Paredes'), true);
+    assertEquals(
+      result.text.includes('https://welcomehub.app/recruitment?token=test-token-xyz'),
+      true,
+    );
+  },
+);

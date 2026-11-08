@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Pencil, RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
+import { Copy, Pencil, RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
@@ -52,6 +52,17 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
   const isDeployed = application.status === 'deployed';
   const canResend = !isEndorsed && !isDeclined && !isDeployed && application.status === 'active';
 
+  const handleCopyTrackingLink = async () => {
+    if (!application.access_token) return;
+    const trackingUrl = `${window.location.origin}/recruitment?token=${application.access_token}`;
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      toast.success('Applicant tracking link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy tracking link to clipboard');
+    }
+  };
+
   const handleResendEndorsement = () => {
     updateStageMutation.mutate(
       {
@@ -76,31 +87,47 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
   return (
     <div className="space-y-5 pr-1 text-xs">
       {/* Identity Header */}
-      <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
-        <EditableApplicantAvatar
-          applicationId={application.id}
-          name={application.full_name}
-          avatarObjectKey={application.avatar_object_key}
-        />
-        <div className="min-w-0">
-          <h3 className="truncate font-heading text-base font-bold text-text">
-            {application.full_name} {application.nickname ? `(${application.nickname})` : ''}
-          </h3>
-          <p className="text-muted">{application.email}</p>
-          <p className="text-muted">{application.phone}</p>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <EditableApplicantAvatar
+            applicationId={application.id}
+            name={application.full_name}
+            avatarObjectKey={application.avatar_object_key}
+          />
+          <div className="min-w-0">
+            <h3 className="truncate font-heading text-base font-bold text-text">
+              {application.full_name} {application.nickname ? `(${application.nickname})` : ''}
+            </h3>
+            <p className="text-muted">{application.email}</p>
+            <p className="text-muted">{application.phone}</p>
+          </div>
         </div>
-        {canWrite && !isDeployed && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditDialogOpen(true)}
-            className="gap-1.5 ml-auto shrink-0"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            <span>Edit Details</span>
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto shrink-0">
+          {application.access_token && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyTrackingLink}
+              className="gap-1.5 flex-1 sm:flex-initial"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              <span>Copy Tracking Link</span>
+            </Button>
+          )}
+          {canWrite && !isDeployed && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditDialogOpen(true)}
+              className="gap-1.5 flex-1 sm:flex-initial"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span>Edit Details</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Demographics & Personal Details */}

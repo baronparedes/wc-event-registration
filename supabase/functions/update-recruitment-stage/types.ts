@@ -48,7 +48,7 @@ export type RecruitmentActionContext = {
   supabase: SupabaseClient;
   request: UpdateRecruitmentStageRequest;
   application: RecruitmentApplication;
-  authUser: User;
+  authUser: User | null;
   userId: string;
   normalizedEmail: string;
   adminRole: string | null;
