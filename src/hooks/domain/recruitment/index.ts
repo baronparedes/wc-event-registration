@@ -8,5 +8,6 @@ export * from './queries/useAdminRecruitmentApplicationDetailQuery';
 export * from './queries/useAdminRecruitmentApplicationsInfiniteQuery';
 export * from './queries/useMyRecruitmentApplicationQuery';
 export * from './queries/usePublicRecruitmentConfigQuery';
+export * from './queries/useRecruitmentApplicationByTokenQuery';
 export * from './queries/useRecruitmentSettingsQuery';
 export * from './queries/useReviewerUsersQuery';

@@ -1,6 +1,8 @@
 import { createApprovalRequest, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
+import { enqueueEmailNotification, triggerEmailProcessor } from '../_shared/emailQueue.ts';
+import { buildRecruitmentReceivedEmail } from '../_shared/emailTemplates/index.ts';
 import { AVATAR_BUCKET, MAX_IMAGE_BYTES, decodeJpegDataUrl } from '../_shared/image.ts';
 import { z } from '../_shared/validation.ts';
 import { calculateAge, hasMinimumTenure, submitRecruitmentApplicationSchema } from './schemas.ts';
@@ -261,7 +263,7 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
       current_step: 2,
       status: 'active',
     })
-    .select('id')
+    .select('id, access_token')
     .single();
 
   if (applicationError || !createdApplication) {
@@ -410,11 +412,49 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
     );
   }
 
+  const appUrl = (
+    Deno.env.get('APP_URL') ??
+    Deno.env.get('SITE_URL') ??
+    'http://localhost:5173'
+  ).replace(/\/+$/, '');
+  const trackingUrl = `${appUrl}/recruitment?token=${createdApplication.access_token}`;
+
+  const emailData = buildRecruitmentReceivedEmail({
+    firstName: application.first_name,
+    fullName,
+    desiredRole: application.desired_role,
+    trackingUrl,
+  });
+
+  await enqueueEmailNotification(supabase, {
+    recipient: application.email,
+    category: 'approval',
+    event_type: 'email_notification',
+    template_slug: 'recruitment-application-received',
+    subject: emailData.subject,
+    text: emailData.text,
+    html: emailData.html,
+    metadata: {
+      target_type: 'recruitment_tracking',
+      application_id: createdApplication.id,
+      first_name: application.first_name,
+      full_name: fullName,
+      desired_role: application.desired_role,
+      tracking_url: trackingUrl,
+      action_url: trackingUrl,
+      url: trackingUrl,
+      access_token: createdApplication.access_token,
+    },
+  });
+  await triggerEmailProcessor(supabase);
+
   return jsonResponse(
     201,
     {
       success: true,
       application_id: createdApplication.id,
+      access_token: createdApplication.access_token,
+      tracking_url: trackingUrl,
       current_step: 2,
       status: 'active',
     },

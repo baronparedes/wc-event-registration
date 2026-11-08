@@ -18,6 +18,7 @@ import type {
   PublicRecruitmentConfig,
   RecruiterNote,
   RecruitmentApplication,
+  RecruitmentApplicationByTokenResult,
   RecruitmentApplicationDetail,
   RecruitmentSettings,
   RecruitmentStepNumber,
@@ -116,6 +117,41 @@ export async function fetchMyRecruitmentApplication(): Promise<ApplicantRecruitm
     throw new Error('Applicant recruitment response is invalid');
   }
   return result.data;
+}
+
+export async function fetchRecruitmentApplicationByToken(
+  token: string,
+): Promise<RecruitmentApplicationByTokenResult | null> {
+  const { data, error } = await supabase.rpc('get_recruitment_application_by_token', {
+    p_token: token,
+  });
+  if (error) throw new Error(`Failed to fetch recruitment application: ${error.message}`);
+  if (data === null) return null;
+
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'expired' in data &&
+    Boolean((data as { expired: unknown }).expired)
+  ) {
+    return {
+      expired: true,
+      status: (data as { status: RecruitmentApplication['status'] }).status,
+    };
+  }
+
+  const result = applicantRecruitmentViewSchema.safeParse(data);
+  if (!result.success) {
+    logger.error('Failed to parse applicant recruitment view by token', {
+      error: result.error.format(),
+      data,
+    });
+    throw new Error('Applicant recruitment response is invalid');
+  }
+  return {
+    expired: false,
+    ...result.data,
+  };
 }
 
 export async function submitRecruitmentApplication(

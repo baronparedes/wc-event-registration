@@ -8,13 +8,14 @@ This directory contains standalone, responsive HTML email templates designed for
 
 Welcome Hub tracks 5 email template slugs in `public.email_templates`. Depending on the notification type, template source layouts reside either as **standalone HTML files in this directory**, **hosted directly inside the Resend Dashboard**, or as **programmatic in-code builders**:
 
-| Database Slug                   | Template Name                 | Source / Location                                                              | Configured Resend ID                                        | Purpose                                                                         |
-| :------------------------------ | :---------------------------- | :----------------------------------------------------------------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `volunteer-schedule`            | Volunteer Schedule Reminder   | **Hosted in Resend Dashboard**                                                 | `volunteer-schedule`                                        | Automated Friday email reminder sent to volunteers scheduled for Sunday service |
-| `approval-review-request`       | Approval Review Request       | **[`approval-review-request.html`](approval-review-request.html)**             | `tmpl_approval_review_placeholder` _(or custom Resend ID)_  | Review notice with tokenized link sent to SLOD reviewers and admins             |
-| `approval-outcome-notification` | Approval Outcome Notification | **[`approval-outcome-notification.html`](approval-outcome-notification.html)** | `tmpl_approval_outcome_placeholder` _(or custom Resend ID)_ | Decision outcome (Approved / Declined) sent to requester                        |
-| `broadcast`                     | Broadcast Notification        | **In-code builder** (`_shared/emailTemplate.ts`)                               | `tmpl_broadcast_placeholder` _(or custom Resend ID)_        | Multi-channel broadcast messages sent by administrators                         |
-| `sunday-executive-debrief`      | Sunday Executive Debrief      | **In-code builder** (`_shared/emailTemplate.ts`)                               | `tmpl_sunday_debrief_placeholder` _(or custom Resend ID)_   | Service stats, turnup rate, and executive summary sent to OICs                  |
+| Database Slug                      | Template Name                    | Source / Location                                                                    | Configured Resend ID                                            | Purpose                                                                         |
+| :--------------------------------- | :------------------------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| `volunteer-schedule`               | Volunteer Schedule Reminder      | **Hosted in Resend Dashboard**                                                       | `volunteer-schedule`                                            | Automated Friday email reminder sent to volunteers scheduled for Sunday service |
+| `approval-review-request`          | Approval Review Request          | **[`approval-review-request.html`](approval-review-request.html)**                   | `tmpl_approval_review_placeholder` _(or custom Resend ID)_      | Review notice with tokenized link sent to SLOD reviewers and admins             |
+| `approval-outcome-notification`    | Approval Outcome Notification    | **[`approval-outcome-notification.html`](approval-outcome-notification.html)**       | `tmpl_approval_outcome_placeholder` _(or custom Resend ID)_     | Decision outcome (Approved / Declined) sent to requester                        |
+| `recruitment-application-received` | Recruitment Application Received | **[`recruitment-application-received.html`](recruitment-application-received.html)** | `tmpl_recruitment_received_placeholder` _(or custom Resend ID)_ | Confirmation & magic link tracking email sent to recruitment applicants         |
+| `broadcast`                        | Broadcast Notification           | **In-code builder** (`_shared/emailTemplate.ts`)                                     | `tmpl_broadcast_placeholder` _(or custom Resend ID)_            | Multi-channel broadcast messages sent by administrators                         |
+| `sunday-executive-debrief`         | Sunday Executive Debrief         | **In-code builder** (`_shared/emailTemplate.ts`)                                     | `tmpl_sunday_debrief_placeholder` _(or custom Resend ID)_       | Service stats, turnup rate, and executive summary sent to OICs                  |
 
 ---
 
@@ -86,6 +87,37 @@ The `.html` files in this directory are production-ready email templates designe
   | `decision_label` | `string` | Formatted status badge label: `"Approved"` or `"Declined"` |
   | `notes` | `string` | Reviewer remarks, justifications, or special instructions |
   | `approval_id` | `string` | UUID of the `public.approval_requests` record |
+
+---
+
+### 3. [`recruitment-application-received.html`](recruitment-application-received.html)
+
+- **Database Slug**: `recruitment-application-received`
+- **Purpose**: Sent to volunteer applicants upon completing Step 1 registration, delivering their personalized magic tracking link without requiring Google authentication.
+- **Mustache Tags in HTML**: `{{{first_name}}}`, `{{{full_name}}}`, `{{{desired_role}}}`, `{{{tracking_url}}}`
+- **Metadata Passed via Queue Payload**:
+  ```json
+  {
+    "target_type": "recruitment_tracking",
+    "application_id": "22222222-2222-4222-8222-222222222222",
+    "first_name": "Juan",
+    "full_name": "Juan Dela Cruz",
+    "desired_role": "Usher",
+    "tracking_url": "https://welcomehub.app/recruitment?token=a4d3f58b92...",
+    "action_url": "https://welcomehub.app/recruitment?token=a4d3f58b92...",
+    "url": "https://welcomehub.app/recruitment?token=a4d3f58b92...",
+    "access_token": "a4d3f58b92..."
+  }
+  ```
+- **Metadata Fields**:
+  | Key | Type | Description |
+  | :--- | :--- | :--- |
+  | `first_name` | `string` | Applicant first name for personal greeting |
+  | `full_name` | `string` | Full name of applicant |
+  | `desired_role` | `string` | Target ministry role (e.g. `"Usher"`, `"IMT Support"`, `"Prayer Coach"`) |
+  | `tracking_url` | `string` | Secure magic link URL leading to `/recruitment?token=<TOKEN>` |
+  | `application_id` | `string` | UUID of the recruitment application |
+  | `access_token` | `string` | Secure random access token for applicant portal access |
 
 ---
 

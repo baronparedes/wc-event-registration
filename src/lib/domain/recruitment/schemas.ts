@@ -363,6 +363,7 @@ export const adminUpdateStageSchema = z
       'update_profile',
     ]),
     application_id: z.string().uuid(),
+    token: z.string().trim().min(1).optional(),
     step_number: z.number().int().min(1).max(9).optional(),
     status: z
       .enum([
@@ -572,6 +573,7 @@ export const recruitmentApplicationRecordSchema = z
     gender: z.enum(['Male', 'Female']),
     life_stage: z.string().min(1),
     avatar_object_key: z.string().nullable(),
+    access_token: z.string().optional(),
     desired_role: z.enum(RECRUITMENT_ROLES),
     confirmed_role: z.enum(RECRUITMENT_ROLES).nullable(),
     personal_details: z.object({

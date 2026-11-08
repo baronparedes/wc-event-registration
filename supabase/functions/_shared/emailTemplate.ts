@@ -161,6 +161,9 @@ export function resolveActionText(url?: string | null): string {
   if (clean.includes('/forms/') || clean.includes('/form/')) {
     return 'Open Form';
   }
+  if (clean.includes('/recruitment')) {
+    return 'Track Application';
+  }
   if (clean.includes('/admin/')) {
     return 'Open Admin Dashboard';
   }

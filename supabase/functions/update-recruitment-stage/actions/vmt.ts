@@ -13,11 +13,13 @@ export async function handleCompleteVmt(context: RecruitmentActionContext): Prom
     );
   }
 
+  const actorUserId = userId && userId !== '00000000-0000-0000-0000-000000000000' ? userId : null;
+
   const { data: completionData, error: completionError } = await supabase.rpc(
     'complete_recruitment_vmt_registration',
     {
       p_application_id: application.id,
-      p_actor_user_id: userId,
+      p_actor_user_id: actorUserId,
       p_actor_email: normalizedEmail,
     },
   );

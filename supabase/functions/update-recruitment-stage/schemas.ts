@@ -36,6 +36,7 @@ export const updateRecruitmentStageSchema = z
   .object({
     action: z.enum(recruitmentStageActions),
     application_id: z.string().uuid(),
+    token: z.string().trim().min(1).optional(),
     step_number: z.number().int().min(1).max(9).optional(),
     status: z
       .enum([

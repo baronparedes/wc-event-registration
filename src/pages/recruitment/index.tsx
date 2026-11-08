@@ -1,15 +1,14 @@
 import { useState } from 'react';
 
-import { ArrowRight, CheckCircle2, ExternalLink, LogIn } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, Clock, ExternalLink, Mail } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Avatar, Badge, Button, Skeleton } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
-import { useAuthSessionQuery, useGoogleLoginMutation } from '@/hooks/domain/auth';
 import {
-  useMyRecruitmentApplicationQuery,
   usePublicRecruitmentConfigQuery,
+  useRecruitmentApplicationByTokenQuery,
   useUpdateRecruitmentStageMutation,
 } from '@/hooks/domain/recruitment';
 import { RECRUITMENT_STEPS } from '@/lib/domain/recruitment';
@@ -54,27 +53,32 @@ function formatCommitments(commitments: Record<string, string[]>): string[] {
 }
 
 export function RecruitmentProgressPage() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token')?.trim() ?? null;
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const { data: session, isLoading: isSessionLoading } = useAuthSessionQuery();
-  const userId = session?.user.id;
+
   const {
-    data: application,
+    data: applicationResult,
     isLoading: isApplicationLoading,
     isError: isApplicationError,
     error: applicationError,
-  } = useMyRecruitmentApplicationQuery(userId, Boolean(userId));
+  } = useRecruitmentApplicationByTokenQuery(token);
   const { data: config } = usePublicRecruitmentConfigQuery();
-  const googleLogin = useGoogleLoginMutation();
   const updateStage = useUpdateRecruitmentStageMutation();
 
   const runApplicantAction = (
     action: 'complete_vmt' | 'resend_endorsement',
     actionLabel: string,
   ) => {
-    if (!application) return;
+    if (!applicationResult || applicationResult.expired) return;
     setSelectedAction(action);
     updateStage.mutate(
-      { action, application_id: application.id, override_endorsement_gate: false },
+      {
+        action,
+        application_id: applicationResult.id,
+        token: token ?? undefined,
+        override_endorsement_gate: false,
+      },
       {
         onSuccess: () => {
           toast.success(
@@ -93,12 +97,13 @@ export function RecruitmentProgressPage() {
   };
 
   const saveCommitments = (serviceCommitments: Record<string, string[] | undefined>) => {
-    if (!application) return;
+    if (!applicationResult || applicationResult.expired) return;
     setSelectedAction('save_commitments');
     updateStage.mutate(
       {
         action: 'save_commitments',
-        application_id: application.id,
+        application_id: applicationResult.id,
+        token: token ?? undefined,
         override_endorsement_gate: false,
         service_commitments: serviceCommitments,
       },
@@ -115,42 +120,35 @@ export function RecruitmentProgressPage() {
     );
   };
 
-  if (isSessionLoading || (userId && isApplicationLoading)) {
+  if (!token) {
+    return (
+      <main className="mx-auto max-w-xl px-4 py-12 sm:px-6">
+        <section className="space-y-5 border-l-4 border-primary bg-surface p-6 sm:p-8">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-text">
+            <Mail aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-text">Application Tracking Link Required</h1>
+            <p className="mt-2 text-sm text-muted">
+              Please open the personalized application tracking link sent to your registered email
+              when you submitted your application.
+            </p>
+          </div>
+          <div className="rounded-md border border-border bg-background p-4 text-xs text-muted">
+            If you did not receive the email or misplaced your tracking link, please contact Welcome
+            Center staff or a team reviewer to resend it.
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (isApplicationLoading) {
     return (
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-8 sm:px-6">
         <Skeleton className="h-12 w-2/3" />
         <Skeleton className="h-36 w-full" />
         <Skeleton className="h-80 w-full" />
-      </main>
-    );
-  }
-
-  if (!session) {
-    return (
-      <main className="mx-auto max-w-xl px-4 py-12 sm:px-6">
-        <section className="space-y-5 border-l-4 border-primary bg-surface p-6 sm:p-8">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-text">
-            <LogIn aria-hidden="true" className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-text">Your Recruitment Progress</h1>
-            <p className="mt-2 text-sm text-muted">
-              Sign in with Google using the email address from your application to view your status.
-            </p>
-          </div>
-          <Button
-            disabled={googleLogin.isPending}
-            onClick={() =>
-              googleLogin.mutate(
-                { redirectTo: ROUTE_PATHS.recruitment },
-                { onError: (error) => toast.error(error.message || 'Google sign-in failed.') },
-              )
-            }
-          >
-            {googleLogin.isPending ? 'Connecting...' : 'Continue with Google'}
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Button>
-        </section>
       </main>
     );
   }
@@ -168,17 +166,47 @@ export function RecruitmentProgressPage() {
     );
   }
 
-  if (!application) {
+  if (!applicationResult) {
     return (
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold text-text">No application found</h1>
         <p className="text-sm text-muted">
-          There is currently no linked application for this email account. Thank you for your
-          interest in serving—please contact the Welcome Center VMT team if you need assistance.
+          There is currently no linked application for this tracking link. Please check that you
+          used the complete URL from your confirmation email.
         </p>
       </main>
     );
   }
+
+  if (applicationResult.expired) {
+    return (
+      <main className="mx-auto max-w-xl px-4 py-12 sm:px-6">
+        <section className="space-y-4 border-l-4 border-muted bg-surface p-6 sm:p-8">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-text">
+            <Clock aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-text">Application Link Expired</h1>
+            <p className="mt-2 text-sm text-muted">
+              {applicationResult.status === 'deployed'
+                ? 'Your volunteer recruitment process is complete and you have been deployed!'
+                : `This recruitment tracking link is no longer active (status: ${applicationResult.status}). Tracking links expire when an application is completed, archived, or withdrawn.`}
+            </p>
+          </div>
+          {applicationResult.status === 'deployed' && (
+            <Link
+              to={ROUTE_PATHS.profile}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+            >
+              Open my member profile <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  const application = applicationResult;
 
   const transactions: Partial<Record<RecruitmentStepNumber, ApplicantRecruitmentTimelineItem>> = {};
   for (const transaction of application.transactions) {
@@ -206,15 +234,48 @@ export function RecruitmentProgressPage() {
             </Badge>
           </div>
           <p className="mt-1 text-sm text-muted">Target role: {application.desired_role}</p>
-          <div
-            aria-label={`Overall recruitment progress: ${progress}%`}
-            aria-valuemax={100}
-            aria-valuemin={0}
-            aria-valuenow={progress}
-            className="mt-4 h-2 max-w-md overflow-hidden rounded-full bg-background"
-            role="progressbar"
-          >
-            <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+          <div className="mt-4 max-w-md space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-text">
+                {application.status === 'deployed'
+                  ? 'All 9 steps completed'
+                  : `Step ${application.current_step} of 9`}
+              </span>
+              <span className="rounded-full bg-accent/40 px-2 py-0.5 font-medium text-text">
+                {progress}% complete
+              </span>
+            </div>
+
+            <div
+              aria-label={`Overall recruitment progress: ${progress}%`}
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={progress}
+              className="grid grid-cols-9 gap-1.5"
+              role="progressbar"
+            >
+              {RECRUITMENT_STEPS.map((step) => {
+                const isStepCompleted =
+                  application.status === 'deployed' || step.stepNumber < application.current_step;
+                const isStepActive =
+                  application.status !== 'deployed' && step.stepNumber === application.current_step;
+
+                let segmentClass = 'border border-border bg-border/40';
+                if (isStepCompleted) {
+                  segmentClass = 'bg-primary';
+                } else if (isStepActive) {
+                  segmentClass = 'bg-primary ring-2 ring-primary/30';
+                }
+
+                return (
+                  <div
+                    key={step.stepNumber}
+                    title={`Step ${step.stepNumber}: ${step.title}`}
+                    className={`h-2.5 rounded-full transition-all ${segmentClass}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </header>
@@ -250,7 +311,7 @@ export function RecruitmentProgressPage() {
       )}
 
       <section aria-labelledby="recruitment-timeline-heading">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-4">
           <div>
             <h2 id="recruitment-timeline-heading" className="text-xl font-semibold text-text">
               Application steps
@@ -261,8 +322,8 @@ export function RecruitmentProgressPage() {
           </div>
           <span className="text-sm font-medium text-muted">{progress}% complete</span>
         </div>
-        <ol className="relative ml-3 border-l border-border">
-          {RECRUITMENT_STEPS.map((step) => {
+        <ol className="relative">
+          {RECRUITMENT_STEPS.map((step, index) => {
             const transaction = transactions[step.stepNumber];
             const status = getStepStatus(
               step.stepNumber,
@@ -274,6 +335,11 @@ export function RecruitmentProgressPage() {
               step.stepNumber === 6 && status === 'skipped'
                 ? `Skipped (Not Required for ${targetRole})`
                 : undefined;
+            const isCompletedStep = status === 'completed';
+            const isPathActive =
+              application.status === 'deployed' ||
+              (isCompletedStep && step.stepNumber < application.current_step) ||
+              (status === 'skipped' && step.stepNumber < application.current_step);
 
             return (
               <RecruitmentTimelineStep
@@ -284,20 +350,26 @@ export function RecruitmentProgressPage() {
                 status={status}
                 statusLabel={statusLabel}
                 transaction={transaction}
-                isCurrent={step.stepNumber === application.current_step}
+                isCurrent={
+                  step.stepNumber === application.current_step && application.status !== 'deployed'
+                }
+                isLast={index === RECRUITMENT_STEPS.length - 1}
+                isPathActive={isPathActive}
               >
                 {step.stepNumber === 1 && (
                   <div className="flex flex-wrap items-center gap-3">
                     <Badge
                       variant={
-                        application.dgroup_approval_status === 'approved' ? 'default' : 'accent'
+                        application.dgroup_approval_status === 'approved' ||
+                        application.dgroup_approval_status === 'rejected'
+                          ? 'default'
+                          : 'accent'
                       }
                     >
-                      {application.dgroup_approval_status === 'approved'
-                        ? `Endorsed by ${application.dgroup_leader_name}`
-                        : application.dgroup_approval_status === 'rejected'
-                          ? 'DGroup Leader Declined'
-                          : 'Pending DGroup Leader Review'}
+                      {application.dgroup_approval_status === 'approved' ||
+                      application.dgroup_approval_status === 'rejected'
+                        ? 'Endorsement: Submitted'
+                        : 'Endorsement: Pending'}
                     </Badge>
                     {application.dgroup_approval_status === 'pending' &&
                       application.status === 'active' && (

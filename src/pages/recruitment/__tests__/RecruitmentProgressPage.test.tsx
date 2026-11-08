@@ -6,36 +6,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecruitmentProgressPage } from '../index';
 
 const {
-  mockUseAuthSessionQuery,
-  mockUseGoogleLoginMutation,
-  mockUseMyRecruitmentApplicationQuery,
+  mockUseRecruitmentApplicationByTokenQuery,
   mockUsePublicRecruitmentConfigQuery,
   mockUseUpdateRecruitmentStageMutation,
 } = vi.hoisted(() => ({
-  mockUseAuthSessionQuery: vi.fn(),
-  mockUseGoogleLoginMutation: vi.fn(),
-  mockUseMyRecruitmentApplicationQuery: vi.fn(),
+  mockUseRecruitmentApplicationByTokenQuery: vi.fn(),
   mockUsePublicRecruitmentConfigQuery: vi.fn(),
   mockUseUpdateRecruitmentStageMutation: vi.fn(),
 }));
 
-vi.mock('@/hooks/domain/auth', () => ({
-  useAuthSessionQuery: () => mockUseAuthSessionQuery(),
-  useGoogleLoginMutation: () => mockUseGoogleLoginMutation(),
-}));
-
 vi.mock('@/hooks/domain/recruitment', () => ({
-  useMyRecruitmentApplicationQuery: (...args: unknown[]) =>
-    mockUseMyRecruitmentApplicationQuery(...args),
+  useRecruitmentApplicationByTokenQuery: (...args: unknown[]) =>
+    mockUseRecruitmentApplicationByTokenQuery(...args),
   usePublicRecruitmentConfigQuery: () => mockUsePublicRecruitmentConfigQuery(),
   useUpdateRecruitmentStageMutation: () => mockUseUpdateRecruitmentStageMutation(),
 }));
 
-function renderPage() {
+function renderPage(initialEntry = '/recruitment?token=test-token-123') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <RecruitmentProgressPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -43,6 +34,7 @@ function renderPage() {
 }
 
 const activeApplication = {
+  expired: false as const,
   id: '22222222-2222-4222-8222-222222222222',
   email: 'applicant@example.com',
   first_name: 'Test Taylor',
@@ -65,50 +57,66 @@ const activeApplication = {
 
 describe('RecruitmentProgressPage', () => {
   const mockMutate = vi.fn();
-  const mockGoogleMutate = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockUsePublicRecruitmentConfigQuery.mockReturnValue({ data: null });
     mockUseUpdateRecruitmentStageMutation.mockReturnValue({ mutate: mockMutate, isPending: false });
-    mockUseGoogleLoginMutation.mockReturnValue({ mutate: mockGoogleMutate, isPending: false });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
       data: activeApplication,
       isLoading: false,
       isError: false,
     });
   });
 
-  it('prompts signed-out applicants to use Google sign-in', () => {
-    mockUseAuthSessionQuery.mockReturnValue({ data: null, isLoading: false });
+  it('prompts applicants to open the tracking link when token is missing', () => {
+    renderPage('/recruitment');
 
-    renderPage();
-
-    fireEvent.click(screen.getByRole('button', { name: /Continue with Google/i }));
-    expect(mockGoogleMutate).toHaveBeenCalledWith(
-      { redirectTo: '/recruitment' },
-      expect.any(Object),
-    );
+    expect(
+      screen.getByRole('heading', { name: 'Application Tracking Link Required' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Please open the personalized application tracking link sent to your registered email when you submitted your application\./i,
+      ),
+    ).toBeInTheDocument();
   });
 
-  it('shows identity-matched progress and permits the Step 7 self-attestation', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
+  it('shows expired message when the application link has expired', () => {
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
+      data: {
+        id: '22222222-2222-4222-8222-222222222222',
+        status: 'deployed',
+        expired: true,
+      },
       isLoading: false,
+      isError: false,
     });
 
-    renderPage();
+    renderPage('/recruitment?token=expired-token');
 
-    expect(screen.getByText('Endorsed by Test Casey Leader')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Application Link Expired' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Your volunteer recruitment process is complete and you have been deployed!/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows token-matched progress and permits the Step 7 self-attestation', () => {
+    renderPage('/recruitment?token=test-token-123');
+
+    expect(mockUseRecruitmentApplicationByTokenQuery).toHaveBeenCalledWith('test-token-123');
+    expect(screen.getByText('Endorsement: Submitted')).toBeInTheDocument();
     expect(screen.getByText('Skipped (Not Required for Usher)')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'CCF VMT Registration' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'I Have Completed CCF VMT Registration' }));
 
-    expect(mockUseMyRecruitmentApplicationQuery).toHaveBeenCalledWith('auth-user-1', true);
     expect(mockMutate).toHaveBeenCalledWith(
       {
         action: 'complete_vmt',
         application_id: activeApplication.id,
+        token: 'test-token-123',
         override_endorsement_gate: false,
       },
       expect.any(Object),
@@ -116,11 +124,7 @@ describe('RecruitmentProgressPage', () => {
   });
 
   it('keeps Prayer Coach onboarding upcoming until the applicant reaches Step 6', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
       data: { ...activeApplication, current_step: 2, confirmed_role: null },
       isLoading: false,
       isError: false,
@@ -133,32 +137,8 @@ describe('RecruitmentProgressPage', () => {
     ).toHaveTextContent('Upcoming');
   });
 
-  it('shows the no-application state for a signed-in account without an application', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: false,
-    });
-
-    renderPage();
-
-    expect(screen.getByRole('heading', { name: 'No application found' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/There is currently no linked application for this email account\./),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-  });
-
   it('shows a useful error when the application query fails without a message', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
       data: null,
       isLoading: false,
       isError: true,
@@ -173,14 +153,10 @@ describe('RecruitmentProgressPage', () => {
   });
 
   it('shows pending endorsement actions and orientation instructions', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
     mockUsePublicRecruitmentConfigQuery.mockReturnValue({
       data: { orientation_instructions: 'Test orientation instructions.' },
     });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
       data: {
         ...activeApplication,
         current_step: 6,
@@ -191,9 +167,9 @@ describe('RecruitmentProgressPage', () => {
       isError: false,
     });
 
-    renderPage();
+    renderPage('/recruitment?token=test-token-123');
 
-    expect(screen.getByText('Pending DGroup Leader Review')).toBeInTheDocument();
+    expect(screen.getByText('Endorsement: Pending')).toBeInTheDocument();
     expect(screen.getByText('Test orientation instructions.')).toBeInTheDocument();
     expect(
       screen.getAllByText('Serve one Sunday service as an Usher before Prayer Coach service.'),
@@ -204,6 +180,7 @@ describe('RecruitmentProgressPage', () => {
       {
         action: 'resend_endorsement',
         application_id: activeApplication.id,
+        token: 'test-token-123',
         override_endorsement_gate: false,
       },
       expect.any(Object),
@@ -211,10 +188,6 @@ describe('RecruitmentProgressPage', () => {
   });
 
   it('offers the VMT database link when a registration URL is available', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
     mockUsePublicRecruitmentConfigQuery.mockReturnValue({
       data: { vmt_registration_url: 'https://example.com/vmt' },
     });
@@ -228,11 +201,7 @@ describe('RecruitmentProgressPage', () => {
   });
 
   it('shows deployment details and the applicant service schedule', () => {
-    mockUseAuthSessionQuery.mockReturnValue({
-      data: { user: { id: 'auth-user-1' } },
-      isLoading: false,
-    });
-    mockUseMyRecruitmentApplicationQuery.mockReturnValue({
+    mockUseRecruitmentApplicationByTokenQuery.mockReturnValue({
       data: {
         ...activeApplication,
         confirmed_role: null,
@@ -257,7 +226,7 @@ describe('RecruitmentProgressPage', () => {
     expect(
       screen.getByText('Sunday schedule: 1st Sunday: 9AM, 4th Sunday: 3PM'),
     ).toBeInTheDocument();
-    expect(screen.getByText('DGroup Leader Declined')).toBeInTheDocument();
+    expect(screen.getByText('Endorsement: Submitted')).toBeInTheDocument();
     expect(screen.getByText('CCF VMT registration confirmed')).toBeInTheDocument();
   });
 });

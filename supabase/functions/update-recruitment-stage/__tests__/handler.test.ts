@@ -47,6 +47,7 @@ const applicationRecord = {
   promoted_user_id: null,
   vmt_registered_at: null,
   vmt_verified_by: null,
+  access_token: 'valid-applicant-token',
 };
 
 async function withEnv(run: () => Promise<void>) {
@@ -2004,6 +2005,79 @@ Deno.test(
           body.error,
           'An assigned reviewer / coach is required before completing Step 4',
         );
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage allows applicant to save commitments using magic link token without auth header',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        application: {
+          ...applicationRecord,
+          auth_user_id: null,
+          access_token: 'applicant-magic-token',
+        },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest(
+            {
+              action: 'save_commitments',
+              application_id: APPLICATION_ID,
+              token: 'applicant-magic-token',
+              service_commitments: { first_sunday: ['9AM'] },
+            },
+            USER_ID,
+            null, // No authorization header
+          ),
+        );
+
+        assertEquals(response.status, 200);
+        const update = mock.calls.find(
+          (call) => call.path === '/rest/v1/recruitment_applications' && call.method === 'PATCH',
+        );
+        assertEquals((update?.body as Record<string, unknown>).service_commitments, {
+          first_sunday: ['9AM'],
+        });
+      } finally {
+        mock.restore();
+      }
+    });
+  },
+);
+
+Deno.test(
+  'update-recruitment-stage rejects reviewer actions when requested with applicant token',
+  async () => {
+    await withEnv(async () => {
+      const mock = mockFetch({
+        application: {
+          ...applicationRecord,
+          auth_user_id: null,
+          access_token: 'applicant-magic-token',
+        },
+      });
+      try {
+        const response = await handleUpdateRecruitmentStage(
+          createRequest(
+            {
+              action: 'update_stage',
+              application_id: APPLICATION_ID,
+              token: 'applicant-magic-token',
+              step_number: 2,
+              status: 'completed',
+            },
+            USER_ID,
+            null, // No authorization header
+          ),
+        );
+
+        assertEquals(response.status, 403);
       } finally {
         mock.restore();
       }

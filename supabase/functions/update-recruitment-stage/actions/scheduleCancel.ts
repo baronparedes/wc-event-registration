@@ -87,7 +87,7 @@ export async function handleCancelSchedule({
   const { data: memberUser } = await supabase
     .from('users')
     .select('full_name, avatar_object_key')
-    .or(`auth_user_id.eq.${userId},email.ilike.${authUser.email ?? ''}`)
+    .or(`auth_user_id.eq.${userId},email.ilike.${authUser?.email ?? ''}`)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -95,9 +95,9 @@ export async function handleCancelSchedule({
   const authorName =
     request.assigned_reviewer_name?.trim() ||
     memberUser?.full_name ||
-    (authUser.user_metadata?.full_name as string | undefined) ||
-    (authUser.user_metadata?.name as string | undefined) ||
-    authUser.email?.split('@')[0] ||
+    (authUser?.user_metadata?.full_name as string | undefined) ||
+    (authUser?.user_metadata?.name as string | undefined) ||
+    authUser?.email?.split('@')[0] ||
     'Recruitment Reviewer';
   const authorRole = adminRole ? adminRole.toUpperCase() : null;
   const avatarObjectKey = memberUser?.avatar_object_key ?? null;

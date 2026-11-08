@@ -12,6 +12,7 @@ type RecruitmentSettingsRow = {
 };
 
 type RecruitmentApplicationRow = {
+  access_token: string;
   applicant_attested_at: string;
   application_history: Json;
   assigned_rfid_member_id: string | null;
@@ -1846,8 +1847,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      get_recruitment_application_by_token: {
+        Args: { p_token: string };
+        Returns: Json;
+      };
       complete_recruitment_vmt_registration: {
-        Args: { p_application_id: string; p_actor_user_id: string; p_actor_email: string };
+        Args: {
+          p_application_id: string;
+          p_actor_user_id?: string | null;
+          p_actor_email?: string | null;
+        };
         Returns: Json;
       };
       apply_approval_decision: {

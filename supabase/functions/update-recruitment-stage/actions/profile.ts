@@ -75,15 +75,15 @@ export async function handleUpdateProfile(context: RecruitmentActionContext): Pr
   const { data: memberUser } = await supabase
     .from('users')
     .select('full_name')
-    .or(`auth_user_id.eq.${userId},email.ilike.${authUser.email ?? ''}`)
+    .or(`auth_user_id.eq.${userId},email.ilike.${authUser?.email ?? ''}`)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
   const authorName =
     memberUser?.full_name ||
-    (authUser.user_metadata?.full_name as string | undefined) ||
-    authUser.email?.split('@')[0] ||
+    (authUser?.user_metadata?.full_name as string | undefined) ||
+    authUser?.email?.split('@')[0] ||
     normalizedEmail;
 
   const stepKey = getStepKeyForNumber(application.current_step);
