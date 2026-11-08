@@ -1912,6 +1912,13 @@ export type Database = {
           updated_count: number;
         }[];
       };
+      apply_bulk_recruitment_import: {
+        Args: { p_rows: Json };
+        Returns: {
+          inserted_count: number;
+          skipped_count: number;
+        }[];
+      };
       apply_bulk_public_registration_upsert: {
         Args: { p_answers: Json; p_event_id: string; p_field_ids: string[]; p_rows: Json };
         Returns: {
