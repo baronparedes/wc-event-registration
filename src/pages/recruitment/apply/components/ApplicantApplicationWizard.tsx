@@ -4,8 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type DefaultValues, type FieldPath, useForm } from 'react-hook-form';
 
-import { Button, StepIndicator, WizardStep } from '@/components/ui';
-import { useWizardStepScroll } from '@/hooks/utils';
+import { Button, FormErrorSummary, StepIndicator, WizardStep } from '@/components/ui';
+import { useFormErrorFocus, useWizardStepScroll } from '@/hooks/utils';
 import {
   type DynamicFieldLike,
   type DynamicFieldResponseValues,
@@ -37,6 +37,7 @@ type ApplicantApplicationWizardProps = {
 
 const applicationSections = [
   [
+    'avatar_image_base64',
     'first_name',
     'middle_name',
     'last_name',
@@ -74,6 +75,10 @@ const applicationSections = [
 
 function getDefaultValues(): DefaultValues<RecruitmentStep1Input> {
   return {
+    avatar_image_base64: null,
+    desired_role: '' as unknown as RecruitmentStep1Input['desired_role'],
+    gender: '' as unknown as RecruitmentStep1Input['gender'],
+    life_stage: '',
     email: '',
     first_name: '',
     middle_name: null,
@@ -106,10 +111,14 @@ function getVisibleSurveyFields(fields: DynamicFieldLike[], values: DynamicField
   return fields.filter((field) => isFieldVisible(field, fields, values));
 }
 
+type SurveyValidationResult =
+  | { success: true; data: Record<string, unknown> }
+  | { success: false; errorKeys: string[] };
+
 function validateVisibleSurvey(
   fields: DynamicFieldLike[],
   form: ReturnType<typeof useForm<DynamicFieldResponseValues>>,
-): Record<string, unknown> | null {
+): SurveyValidationResult {
   const values = form.getValues();
   const visibleFields = getVisibleSurveyFields(fields, values);
   const visibleValues = Object.fromEntries(
@@ -117,22 +126,49 @@ function validateVisibleSurvey(
       .filter((field) => field.field_key in values)
       .map((field) => [field.field_key, values[field.field_key]]),
   );
-  const result = buildDynamicFieldResponseSchema(visibleFields).safeParse(visibleValues);
+  const result = buildDynamicFieldResponseSchema(visibleFields, {
+    requiredMessage: 'Required',
+  }).safeParse(visibleValues);
 
   form.clearErrors();
   if (!result.success) {
+    const errorKeys: string[] = [];
     const fieldsWithErrors = new Set<string>();
     for (const issue of result.error.issues) {
       const fieldKey = issue.path[0];
       if (typeof fieldKey === 'string' && !fieldsWithErrors.has(fieldKey)) {
-        form.setError(fieldKey, { type: 'validate', message: issue.message });
+        form.setError(fieldKey, { type: 'validate', message: 'Required' });
         fieldsWithErrors.add(fieldKey);
+        errorKeys.push(fieldKey);
       }
     }
-    return null;
+    return { success: false, errorKeys };
   }
 
-  return result.data;
+  return { success: true, data: result.data };
+}
+
+function getSectionInvalidKeys(
+  sectionFields: FieldPath<RecruitmentStep1Input>[],
+  errors: Record<string, unknown>,
+): string[] {
+  const invalidKeys: string[] = [];
+  for (const fieldPath of sectionFields) {
+    const parts = fieldPath.split('.');
+    let current: unknown = errors;
+    for (const part of parts) {
+      if (current && typeof current === 'object' && part in current) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        current = undefined;
+        break;
+      }
+    }
+    if (current && typeof current === 'object' && 'message' in current) {
+      invalidKeys.push(fieldPath);
+    }
+  }
+  return invalidKeys;
 }
 
 export function ApplicantApplicationWizard({
@@ -143,6 +179,14 @@ export function ApplicantApplicationWizard({
 }: ApplicantApplicationWizardProps) {
   const [activeSection, setActiveSection] = useState(1);
   const activeSectionRef = useRef<HTMLDivElement | null>(null);
+  const { focusFirstError } = useFormErrorFocus();
+  const [errorSummary, setErrorSummary] = useState<{
+    section: number;
+    count: number;
+    title?: string;
+    firstFieldKeys: string[];
+  } | null>(null);
+
   useWizardStepScroll(activeSection, [
     activeSectionRef,
     activeSectionRef,
@@ -165,7 +209,10 @@ export function ApplicantApplicationWizard({
     [activeSurveyFields],
   );
   const surveyResolverSchema = useMemo(
-    () => buildDynamicFieldResponseSchema(conditionalSurveyFields),
+    () =>
+      buildDynamicFieldResponseSchema(conditionalSurveyFields, {
+        requiredMessage: 'Required',
+      }),
     [conditionalSurveyFields],
   );
   const applicationSchema = useMemo(
@@ -198,31 +245,92 @@ export function ApplicantApplicationWizard({
 
   const continueFromSection = async () => {
     if (activeSection <= 2) {
-      const valid = await applicationForm.trigger(applicationSections[activeSection - 1]);
-      if (valid) setActiveSection((section) => section + 1);
+      const sectionFields = applicationSections[activeSection - 1];
+      const valid = await applicationForm.trigger(sectionFields);
+      if (valid) {
+        setErrorSummary(null);
+        setActiveSection((section) => section + 1);
+        return;
+      }
+
+      const invalidKeys = getSectionInvalidKeys(
+        sectionFields,
+        applicationForm.formState.errors as Record<string, unknown>,
+      );
+      const errorCount = invalidKeys.length || 1;
+      setErrorSummary({
+        section: activeSection,
+        count: errorCount,
+        firstFieldKeys: invalidKeys,
+      });
+      focusFirstError(invalidKeys);
       return;
     }
 
     if (activeSection === 3) {
-      const valid = validateVisibleSurvey(activeSurveyFields, surveyForm);
-      if (valid) setActiveSection(4);
+      const surveyResult = validateVisibleSurvey(activeSurveyFields, surveyForm);
+      if (surveyResult.success) {
+        setErrorSummary(null);
+        setActiveSection(4);
+        return;
+      }
+
+      const { errorKeys } = surveyResult;
+      const errorCount = errorKeys.length;
+      setErrorSummary({
+        section: 3,
+        count: errorCount,
+        title:
+          errorCount === 1
+            ? '1 unanswered question needs attention before continuing.'
+            : `${errorCount} unanswered questions need attention before continuing.`,
+        firstFieldKeys: errorKeys,
+      });
+      focusFirstError(errorKeys);
+      return;
     }
   };
 
   const submitApplication = async () => {
     for (let section = 1; section <= 2; section += 1) {
-      const valid = await applicationForm.trigger(applicationSections[section - 1]);
+      const sectionFields = applicationSections[section - 1];
+      const valid = await applicationForm.trigger(sectionFields);
       if (!valid) {
+        const invalidKeys = getSectionInvalidKeys(
+          sectionFields,
+          applicationForm.formState.errors as Record<string, unknown>,
+        );
+        const errorCount = invalidKeys.length || 1;
+        setErrorSummary({
+          section,
+          count: errorCount,
+          firstFieldKeys: invalidKeys,
+        });
         setActiveSection(section);
+        focusFirstError(invalidKeys);
         return;
       }
     }
 
-    const surveyAnswers = validateVisibleSurvey(activeSurveyFields, surveyForm);
-    if (!surveyAnswers) {
+    const surveyResult = validateVisibleSurvey(activeSurveyFields, surveyForm);
+    if (!surveyResult.success) {
+      const { errorKeys } = surveyResult;
+      const errorCount = errorKeys.length;
+      setErrorSummary({
+        section: 3,
+        count: errorCount,
+        title:
+          errorCount === 1
+            ? '1 unanswered question needs attention before continuing.'
+            : `${errorCount} unanswered questions need attention before continuing.`,
+        firstFieldKeys: errorKeys,
+      });
       setActiveSection(3);
+      focusFirstError(errorKeys);
       return;
     }
+
+    const surveyAnswers = surveyResult.data;
 
     const mappedSurveyAnswers: Record<string, 'true' | 'false'> = {};
     for (const field of getVisibleSurveyFields(activeSurveyFields, surveyAnswers)) {
@@ -240,7 +348,14 @@ export function ApplicantApplicationWizard({
         type: 'validate',
         message: 'Each survey response must be True or False.',
       });
+      setErrorSummary({
+        section: 3,
+        count: 1,
+        title: 'Each survey response must be True or False.',
+        firstFieldKeys: [],
+      });
       setActiveSection(3);
+      focusFirstError();
       return;
     }
 
@@ -260,7 +375,18 @@ export function ApplicantApplicationWizard({
           paths.includes(issue.path.join('.') as FieldPath<RecruitmentStep1Input>),
         ),
       );
-      setActiveSection(firstInvalidSection >= 0 ? firstInvalidSection + 1 : 1);
+      const targetSection = firstInvalidSection >= 0 ? firstInvalidSection + 1 : 1;
+      const invalidSectionPaths = applicationSections[targetSection - 1];
+      const invalidKeys = invalidSectionPaths.filter((path) =>
+        parsedApplication.error.issues.some((issue) => issue.path.join('.') === path),
+      );
+      setErrorSummary({
+        section: targetSection,
+        count: invalidKeys.length || 1,
+        firstFieldKeys: invalidKeys,
+      });
+      setActiveSection(targetSection);
+      focusFirstError(invalidKeys);
       return;
     }
 
@@ -307,13 +433,28 @@ export function ApplicantApplicationWizard({
           <div ref={activeSectionRef} className="scroll-mt-24">
             {sectionContent[activeSection - 1]}
           </div>
+          {errorSummary && errorSummary.section === activeSection && (
+            <FormErrorSummary
+              errorCount={errorSummary.count}
+              title={errorSummary.title}
+              onJumpToFirstError={() => focusFirstError(errorSummary.firstFieldKeys)}
+              actionLabel={
+                activeSection === 3 ? 'Jump to first unanswered question' : 'Jump to first error'
+              }
+            />
+          )}
           {activeSection < 4 && (
             <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
               <Button
                 disabled={isSubmitting}
-                onClick={() =>
-                  activeSection === 1 ? onBackToGates() : setActiveSection((section) => section - 1)
-                }
+                onClick={() => {
+                  setErrorSummary(null);
+                  if (activeSection === 1) {
+                    onBackToGates();
+                  } else {
+                    setActiveSection((section) => section - 1);
+                  }
+                }}
                 type="button"
                 variant="outline"
               >
@@ -333,7 +474,10 @@ export function ApplicantApplicationWizard({
             <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
               <Button
                 disabled={isSubmitting}
-                onClick={() => setActiveSection(4)}
+                onClick={() => {
+                  setErrorSummary(null);
+                  setActiveSection(4);
+                }}
                 type="button"
                 variant="outline"
               >

@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ROUTE_PATHS } from '@/config/constants';
+
 import { RecruitmentApplyPage } from '../index';
 
 const {
@@ -30,6 +32,7 @@ function renderPage() {
       <Routes>
         <Route path="/recruitment/apply" element={<RecruitmentApplyPage />} />
         <Route path="/login" element={<div data-testid="login-page" />} />
+        <Route path={ROUTE_PATHS.notFound} element={<div data-testid="not-found-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -156,6 +159,7 @@ describe('RecruitmentApplyPage', () => {
     fireEvent.click(
       screen.getByLabelText("I confirm that I have completed CCF's GLC Level 1 (Book 1 to 4)."),
     );
+    fireEvent.click(screen.getByLabelText('I confirm that I can commit for 4 Services.'));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('heading', { name: 'Step 2: Data Privacy and Liability Waiver' }),
@@ -181,7 +185,7 @@ describe('RecruitmentApplyPage', () => {
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 
-  it('blocks signed-in users outside the intake roles', () => {
+  it('redirects signed-in users outside the intake roles to 404', () => {
     mockUseAdminAuthQuery.mockReturnValue({
       data: {
         isAuthenticated: false,
@@ -193,7 +197,7 @@ describe('RecruitmentApplyPage', () => {
 
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Authorized device required' })).toBeInTheDocument();
+    expect(screen.getByTestId('not-found-page')).toBeInTheDocument();
     expect(mockUsePublicRecruitmentConfigQuery).toHaveBeenCalledWith(false);
   });
 });

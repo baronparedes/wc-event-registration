@@ -22,6 +22,7 @@ export {
   useInfiniteScrollTrigger,
   type UseInfiniteScrollTriggerOptions,
 } from './useInfiniteScrollTrigger';
+export { useFormErrorFocus, type UseFormErrorFocusOptions } from './useFormErrorFocus';
 export {
   usePwaInstallPrompt,
   isStandaloneMode,

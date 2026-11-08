@@ -82,6 +82,21 @@ export default defineConfig([
       'import-x/no-duplicates': 'error',
       'import-x/first': 'error',
       'no-restricted-syntax': ['error', ...jsxConditionalRestrictions],
+      'no-nested-ternary': 'warn',
+    },
+  },
+  {
+    files: [
+      'src/pages/admin/recruitment/**/*.{ts,tsx}',
+      'src/pages/admin/settings/recruitment/**/*.{ts,tsx}',
+      'src/lib/domain/recruitment/**/*.{ts,tsx}',
+      'src/hooks/domain/recruitment/**/*.{ts,tsx}',
+      'supabase/functions/update-recruitment-stage/**/*.{ts,tsx}',
+      'supabase/functions/submit-recruitment-application/**/*.{ts,tsx}',
+      'supabase/functions/deploy-recruitment-applicant/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-nested-ternary': 'error',
     },
   },
   {

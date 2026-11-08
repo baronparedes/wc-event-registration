@@ -14,6 +14,7 @@ export type RecruitmentStepNumber = (typeof RECRUITMENT_STEPS)[number]['stepNumb
 export type RecruitmentStepKey = (typeof RECRUITMENT_STEPS)[number]['key'];
 export type RecruitmentApplicationStatus =
   | 'active'
+  | 'archived'
   | 'on_hold'
   | 'deployed'
   | 'declined'
@@ -25,6 +26,8 @@ export type RecruitmentStageStatus =
   | 'in_progress'
   | 'completed'
   | 'skipped'
+  | 'on_hold'
+  | 'archived'
   | 'declined';
 export type RecruitmentSurveyAnswer = 'true' | 'false';
 
@@ -106,6 +109,7 @@ export type RecruitmentApplicationStatusData = {
   current_step: RecruitmentStepNumber;
   status: RecruitmentApplicationStatus;
   dgroup_approval_id: string | null;
+  dgroup_approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | string | null;
   vmt_registered: boolean;
   ccf_vmt_id: string | null;
   ccf_vmt_date: string | null;
@@ -133,8 +137,11 @@ export type RecruitmentPipelineTransaction = {
     | 'completed'
     | 'repeated_step'
     | 'returned_to_observation'
+    | 'returned_to_interview'
     | 'skipped'
     | 'on_hold'
+    | 'archived'
+    | 'restored'
     | 'declined';
   from_step: RecruitmentStepNumber | null;
   to_step: RecruitmentStepNumber | null;
@@ -194,9 +201,37 @@ export type ApplicantRecruitmentTimelineItem = Pick<
   | 'created_at'
 >;
 
+export type RecruiterNote = {
+  id: string;
+  application_id: string;
+  step_number: RecruitmentStepNumber;
+  attempt_number: number;
+  transaction_id?: string | null;
+  author_id?: string | null;
+  author_name: string;
+  author_role?: string | null;
+  avatar_object_key?: string | null;
+  content: string;
+  created_at: string;
+};
+
+export type EndorsementRecord = {
+  approval_id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  decision_notes?: string | null;
+  decided_at?: string | null;
+  decided_by_email?: string | null;
+  assigned_to_email?: string | null;
+  created_at?: string | null;
+  attestation_answers?: Record<string, unknown> | null;
+};
+
 export type RecruitmentApplicationDetail = {
   application: RecruitmentApplication;
   transactions: RecruitmentPipelineTransaction[];
+  step_notes: RecruiterNote[];
+  dgroup_endorsement?: EndorsementRecord | null;
+  dgroup_endorsement_history?: EndorsementRecord[];
 };
 
 export type PublicRecruitmentConfig = {
@@ -213,6 +248,17 @@ export type RecruitmentEndorsementReviewDetails = {
   nickname: string;
   desired_role: RecruitmentRole;
   created_at: string;
+  avatar_object_key?: string | null;
   endorsement_questions: EndorsementQuestionItem[];
   attestation_answers: Record<string, unknown>;
+};
+
+export type ReviewerUserItem = {
+  id: string;
+  name: string;
+  full_name: string;
+  nickname: string | null;
+  email: string | null;
+  role: string | null;
+  avatar_object_key: string | null;
 };

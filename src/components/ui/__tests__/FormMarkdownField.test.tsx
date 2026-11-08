@@ -52,4 +52,23 @@ describe('FormMarkdownField', () => {
     fireEvent.change(textarea, { target: { value: 'Updated text' } });
     expect(textarea).toHaveValue('Updated text');
   });
+
+  it('renders without required indicator when not required', () => {
+    render(<Wrapper required={false} />);
+
+    expect(screen.getByText('Notes Field')).toBeInTheDocument();
+    expect(screen.queryByText(/^\*$/)).not.toBeInTheDocument();
+  });
+
+  it('updates field value when textarea content changes', () => {
+    render(<Wrapper />);
+
+    const textarea = screen.getByTestId('mock-simplemde') as HTMLTextAreaElement;
+
+    fireEvent.change(textarea, { target: { value: 'New content' } });
+    expect(textarea.value).toBe('New content');
+
+    fireEvent.change(textarea, { target: { value: 'More content' } });
+    expect(textarea.value).toBe('More content');
+  });
 });

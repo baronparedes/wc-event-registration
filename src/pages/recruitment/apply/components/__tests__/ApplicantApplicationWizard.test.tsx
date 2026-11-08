@@ -159,7 +159,10 @@ describe('ApplicantApplicationWizard', () => {
     expect(onBackToGates).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Invalid email address')).toBeInTheDocument();
+    expect(await screen.findByText('Email address is required')).toBeInTheDocument();
+    const jumpBtn = screen.getByRole('button', { name: 'Jump to first error' });
+    expect(jumpBtn).toBeInTheDocument();
+    fireEvent.click(jumpBtn);
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -196,8 +199,96 @@ describe('ApplicantApplicationWizard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(await screen.findByText('Test survey question is required.')).toBeInTheDocument();
+    expect(await screen.findByText('Required')).toBeInTheDocument();
+    expect(
+      screen.getByText('1 unanswered question needs attention before continuing.'),
+    ).toBeInTheDocument();
+    const jumpSurveyBtn = screen.getByRole('button', {
+      name: 'Jump to first unanswered question',
+    });
+    expect(jumpSurveyBtn).toBeInTheDocument();
+    fireEvent.click(jumpSurveyBtn);
     expect(screen.getByRole('heading', { name: 'Application: Section 3 of 5' })).toBeVisible();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('displays correct count and simplified "Required" messages when multiple survey questions are unanswered', async () => {
+    const multiQuestionConfig: PublicRecruitmentConfig = {
+      ...config,
+      survey_questions: [
+        {
+          field_key: 'survey_q1',
+          label: 'Survey question 1',
+          field_type: 'radio',
+          is_required: true,
+          is_active: true,
+          options: [
+            { label: 'True', value: 'true' },
+            { label: 'False', value: 'false' },
+          ],
+        },
+        {
+          field_key: 'survey_q2',
+          label: 'Survey question 2',
+          field_type: 'radio',
+          is_required: true,
+          is_active: true,
+          options: [
+            { label: 'True', value: 'true' },
+            { label: 'False', value: 'false' },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <ApplicantApplicationWizard
+        config={multiQuestionConfig}
+        isSubmitting={false}
+        onBackToGates={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    selectOption('Desired Role *', 'Prayer Coach');
+    changeField('first_name', 'Test Applicant');
+    changeField('last_name', 'Test Member');
+    changeField('nickname', 'Test');
+    changeField('date_of_birth', '1990-01-01');
+    selectOption('Gender *', 'Female');
+    selectOption('Life Stage *', 'Married');
+    changeField('personal_details.wedding_anniversary', '2020-01-01');
+    changeField('email', 'test.applicant@example.com');
+    changeField('phone', '09171234567');
+    changeField('personal_details.occupation', 'Teacher');
+    changeField('emergency_contact.name', 'Test Contact');
+    changeField('emergency_contact.phone', '09179876543');
+    selectOption('Relation to the Applicant *', 'Sibling');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await screen.findByRole('heading', { name: 'Application: Section 2 of 5' });
+
+    changeLabeledField(/CCF Member Since/, '2010-01');
+    selectOption('GLC 1 Course Status *', 'Completed');
+    selectOption('GLC 2 Course Status *', 'Ongoing');
+    selectOption('Constant DGroup Attendee *', 'Yes');
+    changeLabeledField(/DGroup Member Since/, '2010-01');
+    changeField('dgroup_info.leader_name', 'Test Leader');
+    changeField('dgroup_info.leader_email', 'test.leader@example.com');
+    changeField('dgroup_info.leader_phone', '09171112222');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await screen.findByRole('heading', { name: 'Application: Section 3 of 5' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(
+      await screen.findByText('2 unanswered questions need attention before continuing.'),
+    ).toBeInTheDocument();
+    const requiredMessages = screen.getAllByText('Required');
+    expect(requiredMessages).toHaveLength(2);
+    const jumpSurveyBtn = screen.getByRole('button', {
+      name: 'Jump to first unanswered question',
+    });
+    expect(jumpSurveyBtn).toBeInTheDocument();
+    fireEvent.click(jumpSurveyBtn);
   });
 });

@@ -96,6 +96,7 @@ export {
   type DuplicateEntityFormValues,
 } from './DuplicateEntityDialog';
 export { AlertBanner, type AlertBannerProps, type AlertBannerVariant } from './AlertBanner';
+export { FormErrorSummary, type FormErrorSummaryProps } from './FormErrorSummary';
 export {
   LifecycleStatusBadge,
   RegistrationStatusBadge,
@@ -173,4 +174,26 @@ export {
 } from './ContactButtons';
 export { StatCard, type StatCardProps, type StatCardVariant } from './StatCard';
 export { SundayCalendarPicker, type SundayCalendarPickerProps } from './SundayCalendarPicker';
+export { SundayDateTimePicker, type SundayDateTimePickerProps } from './SundayDateTimePicker';
+export {
+  SundayAvailabilityTable,
+  type SundayAvailabilityTableProps,
+} from './SundayAvailabilityTable';
+export {
+  SUNDAY_KEYS,
+  SUNDAY_TIME_SLOTS,
+  SUNDAY_LABELS,
+  SUNDAY_SHORT_LABELS,
+  type SundayAvailabilityValue,
+  type SundayKey,
+  type SundayTimeSlot,
+} from './sundayAvailabilityConstants';
+export {
+  DEFAULT_SUNDAY_TIME_SLOTS,
+  formatDisplayDateTime,
+  formatTime12Hour,
+  parse12HourTimeString,
+  parseDateTimeParts,
+  split24HourTime,
+} from './sundayDateTimeUtils';
 export { ApproverSelectField, type ApproverSelectFieldProps } from './ApproverSelectField';

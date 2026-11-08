@@ -46,6 +46,7 @@ This file contains the core principles, architecture rules, and domain logic con
     - **Colocate Scrolling to Inner Dynamic Lists**: When rendering long, dynamic item lists inside a modal (e.g., question/field lists, attendee lists), keep `Dialog.Body` natural and apply scroll classes (`max-h-[...] overflow-y-auto pr-1`) directly to the inner list container. This keeps modal headers, tab toolbars, and action footers sticky and visible at all times.
     - **Form Hierarchy & Dropdown Occlusion**: In modal forms, order fields so primary content inputs (e.g. prompt textareas) come first, followed by secondary dropdowns/settings. This prevents open dropdown menus from obscuring primary inputs. Set `textareaClassName="resize-none"` on textareas within dialogs to avoid breaking modal geometry.
     - **Dialog Footer Buttons Full Width on Mobile**: Keep action buttons as direct children (or inside React fragments `<>`) of `Dialog.Footer` without unnecessary intermediate wrapping `<div>`s. `Dialog.Footer` automatically provides `flex-col-reverse sm:flex-row [&>button]:w-full sm:[&>button]:w-auto` so buttons are 100% full-width on mobile viewports.
+    - **Responsive Alert & Error Summary Banners**: Alert and validation banners (`AlertBanner`, `FormErrorSummary`) must use responsive flex direction (`flex-col sm:flex-row`). On mobile devices, message content and bulleted checklists must occupy 100% card width to prevent cramped multi-line text wrapping, with action buttons placed below the message and stretched full width (`[&>button]:w-full justify-center`).
 
 ## 3. Architecture & Code Organization
 
@@ -69,7 +70,7 @@ This file contains the core principles, architecture rules, and domain logic con
 - **Authorization, RBAC & Routing**:
   - **Backend-Driven RBAC**: Role-to-permission grants live in PostgreSQL (`public.admin_role_permissions`), evaluated on the backend via `public.has_admin_permission(p_permission)` (which also powers `is_super_admin()`, `is_admin()`, `is_admin_viewer()`, and `is_admin_member_viewer()`) and in Edge Functions via `requiredPermission` on `useEdgeHook` / `requireAdminAccess`.
   - **Frontend Permission Resolution**: `fetchAdminAuthState` calls the `get_my_admin_auth_context` RPC to retrieve `{ role, permissions }` from the database. `useAdminAuthQuery()` exposes a memoized `can(permission)` helper backed by `canAdminPerform`. Route definitions in `src/config/constants/routes.ts` and `RequireAdminAuth` gate access via `requiredPermission` and `can(requiredPermission)`.
-  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to the home page (`/`).
+  - Access to admin-restricted routes (`RequireAdminAuth`) automatically redirects non-admin sessions to `/404` to mask admin routes.
   - The `/profile` route displays a read-only view of member details and event history for non-admin users. This is authorized via session email matching (`lower(email) = lower(auth.jwt() ->> 'email')`) on `public.users` RLS and the `get_member_event_history` RPC.
   - See [`docs/guides/rbac-architecture.md`](docs/guides/rbac-architecture.md).
 - **Super-Admin Role Management**:
@@ -144,14 +145,36 @@ This file contains the core principles, architecture rules, and domain logic con
   - **`cron-process-email-queue`**: Consumes `email_queue` messages and dispatches via Resend API (`/emails`).
   - **Local Broadcast Safety Harness (`_shared/resend.ts`)**: When running in local development (`LOCAL_BROADCAST=true` or non-production environment without Resend API keys), all email dispatches through `sendResendEmail` are safely simulated and logged locally (`./local-broadcasts.log`) instead of reaching real email addresses. Output files are gitignored.
 
-## 10. Testing
+## 10. Domain Logic: Volunteer Recruitment Pipeline & Applicant Lifecycle
+
+- **9-Step Recruitment Lifecycle**:
+  - Step 1 (Registration & 20-Q Doctrinal Survey), Step 2 (Interview), Step 3 (Orientation), Step 4 (Observation), Step 5 (Evaluation), Step 6 (Onboarding — Usher service, required only for Prayer Coach candidates; automatically skipped for other roles), Step 7 (CCF VMT Registration), Step 8 (RFID Releasing & Sunday Commitments), Step 9 (Deployment).
+  - Walk-in applications are submitted via staff-authenticated kiosk (`/recruitment/apply`). Applicants monitor live progress on their own phone (`/recruitment`) by signing in with Google using their Step 1 email (`lower(email) = lower(auth.jwt() ->> 'email')`).
+- **Endorsement Gate & Multi-Endorsement Lifecycle**:
+  - DGroup Leader endorsement approval is strictly required before Step 4 (Observation) and final Step 9 (Deployment), unless an administrator explicitly provides an override.
+  - Authorized reviewers (`admin`, `super_admin`, `slod`, `vmt`) can change the DGroup Leader via "Change DGroup Leader", even if the candidate was already endorsed.
+  - Changing the leader resets endorsement status back to `'pending'`, dispatches a new endorsement link to the updated leader, re-locks Step 4 and Step 9 gates, and re-enables "Resend Endorsement Email". Prior endorsements and attestation answers are preserved in endorsement history.
+- **Recruiter Profile Editing (`EditApplicantDetailsDialog`)**:
+  - Reviewers can update applicant profile details (contact info, emergency contacts, CCF/GLC background, life stage, etc.) via `action: 'update_profile'` on `update-recruitment-stage`.
+  - If the applicant's email address is modified, they simply sign in with the new email address on `/recruitment` to access their progress portal.
+- **Lifecycle & Archive Protection**:
+  - Reviewers can archive active applicants with a mandatory archive reason, which is automatically recorded in the step notes thread.
+  - Deployed volunteers (`application.status === 'deployed'`) CANNOT be archived; the archive action is hidden in the UI to protect active member audit trails.
+- **Session Scheduling with Optional Coach & Completion Gate**:
+  - Schedulable coaching steps (Step 2 Interview, Step 3 Orientation, Step 4 Observation, Step 5 Evaluation) can be scheduled with date & time while leaving the coach blank (`assigned_reviewer_id: null`). Sessions scheduled without a coach render an `Unassigned (Assign on service day)` badge.
+  - Reviewer assignment is strictly required before completing the step: the "Complete Step" button remains disabled and backend validation returns 400 Bad Request if completion is attempted without an assigned coach.
+- **Stepper Navigation & Dialog Ergonomics**:
+  - Stepper navigation pills must use semantic theme tokens (`border-primary bg-surface text-primary font-semibold` for active step) without Tailwind opacity modifiers (`/80`, `/10`), ensuring full 2px border rendering without vertical clipping.
+  - Scroll tracks must provide vertical breathing room (`py-1.5`) and sanitized focus styles (`outline-none`) to prevent browser-native focus rings from obscuring tab geometry.
+
+## 11. Testing
 
 - **Unit Tests (React/Frontend)**: Executed with `npm run test:unit` using Vitest.
 - **Unit Tests (Edge Functions)**: Executed with Deno test runner (`npm run test:edge` or `npm run precommit`). Tests reside in `supabase/functions/<name>/__tests__/`. AI Agents modifying or adding Edge Functions MUST always author or update corresponding Deno unit tests.
 - **Environment**: Vitest expects Supabase environment variables to be defined in `.env.local`.
 - **Coverage**: Supabase Edge Functions (`supabase/functions/**`) are intentionally excluded from Vitest test coverage reporting as they are tested via Deno.
 
-## 11. Repository Skills & Specialized Guides (`.agent/skills/`)
+## 12. Repository Skills & Specialized Guides (`.agent/skills/`)
 
 The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 

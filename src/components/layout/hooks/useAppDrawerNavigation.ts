@@ -16,6 +16,7 @@ import {
   Sliders,
   User,
   UserCheck,
+  UserPlus,
   UserX,
   Users,
 } from 'lucide-react';
@@ -159,6 +160,11 @@ export function useAppDrawerNavigation({
         to: ROUTE_PATHS.adminApprovals,
         label: 'Approvals',
         icon: CheckSquare,
+      });
+      items.push({
+        to: ROUTE_PATHS.adminRecruitment,
+        label: 'Recruitment',
+        icon: UserPlus,
       });
     }
 

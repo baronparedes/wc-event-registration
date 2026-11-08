@@ -164,6 +164,16 @@ const RecruitmentApplyPage = lazy(() =>
     default: module.RecruitmentApplyPage,
   })),
 );
+const AdminRecruitmentPage = lazy(() =>
+  import('../pages/admin/recruitment').then((module) => ({
+    default: module.AdminRecruitmentPage,
+  })),
+);
+const AdminRecruitmentSettingsPage = lazy(() =>
+  import('../pages/admin/settings/recruitment').then((module) => ({
+    default: module.AdminRecruitmentSettingsPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -384,6 +394,8 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
   adminApprovals: AdminApprovalsPage,
   approvalReview: ApprovalReviewPage,
+  adminRecruitment: AdminRecruitmentPage,
+  adminSettingsRecruitment: AdminRecruitmentSettingsPage,
   recruitment: RecruitmentProgressPage,
   recruitmentApply: RecruitmentApplyPage,
 };
@@ -465,11 +477,11 @@ function RequireAdminAuth({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTE_PATHS.home} replace />;
+    return <Navigate to={ROUTE_PATHS.notFound} replace />;
   }
 
   if (requiredPermission ? !can(requiredPermission) : !can('canReadAdminData')) {
-    return <Navigate to={ROUTE_PATHS.home} replace />;
+    return <Navigate to={ROUTE_PATHS.notFound} replace />;
   }
 
   return children;
@@ -556,6 +568,10 @@ export const appRoutes = [
       </LazyRoute>
     ),
     errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: '*',
+    element: <Navigate to={ROUTE_PATHS.notFound} replace />,
   },
 ];
 

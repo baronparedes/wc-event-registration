@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 interface TabsContextValue {
   value: string;
@@ -172,9 +173,12 @@ export function TabsList({
   };
 
   return (
-    <div className={`flex w-full justify-center ${containerClassName}`.trim()}>
+    <div className={twMerge('flex w-full justify-center', containerClassName)}>
       <div
-        className={`relative inline-flex max-w-full items-center overflow-hidden rounded-full border border-border bg-surface p-1 shadow-xs isolate ${className}`.trim()}
+        className={twMerge(
+          'relative inline-flex max-w-full items-center overflow-hidden rounded-full border border-border bg-surface p-1 shadow-xs isolate',
+          className,
+        )}
       >
         {/* Floating Left Scroll Button */}
         {hasOverflow && (
@@ -183,7 +187,7 @@ export function TabsList({
             aria-label="Scroll tabs left"
             disabled={!canScrollLeft}
             onClick={() => handleScroll('left')}
-            className={`absolute left-1 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-muted transition-all hover:text-text focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-hidden ${
+            className={`absolute left-1 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-muted transition-all hover:text-text focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
               canScrollLeft ? 'cursor-pointer opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
@@ -197,7 +201,7 @@ export function TabsList({
           onScroll={checkScroll}
           role="tablist"
           onKeyDown={handleKeyDown}
-          className="flex min-w-0 w-full items-center gap-1 overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
+          className="flex min-w-0 w-full items-center gap-1 overflow-x-auto overflow-y-hidden py-1.5 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
           {...props}
         >
           {children}
@@ -210,7 +214,7 @@ export function TabsList({
             aria-label="Scroll tabs right"
             disabled={!canScrollRight}
             onClick={() => handleScroll('right')}
-            className={`absolute right-1 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-muted transition-all hover:text-text focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-hidden ${
+            className={`absolute right-1 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-muted transition-all hover:text-text focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
               canScrollRight ? 'cursor-pointer opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
@@ -277,11 +281,13 @@ export function TabsTrigger({
           onValueChange(value);
         }
       }}
-      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 ${
+      className={twMerge(
+        'inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
         isSelected
           ? 'bg-primary font-semibold text-white shadow-xs'
-          : 'text-muted hover:bg-background/50 hover:text-text'
-      } ${className}`.trim()}
+          : 'text-muted hover:bg-background/50 hover:text-text',
+        className,
+      )}
       {...props}
     >
       {children}
@@ -311,7 +317,7 @@ export function TabsContent({ value, children, className = '', ...props }: TabsC
       id={panelId}
       aria-labelledby={triggerId}
       tabIndex={0}
-      className={`mt-4 focus-visible:outline-hidden ${className}`.trim()}
+      className={`mt-4 focus-visible:outline-none ${className}`.trim()}
       {...props}
     >
       {children}

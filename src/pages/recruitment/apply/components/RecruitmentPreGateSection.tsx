@@ -19,6 +19,9 @@ import {
 const preGateSchema = z.object({
   roles_acknowledged: z.boolean().refine(Boolean, 'Please confirm that you understand the roles.'),
   glc1_completed: z.boolean().refine(Boolean, 'GLC Level 1 completion is required.'),
+  service_commitment_confirmed: z
+    .boolean()
+    .refine(Boolean, 'Commitment for 4 Services is required.'),
   privacy_acknowledged: z.boolean().refine(Boolean, 'Please agree to the notice to continue.'),
   dgroup_attendance: z.string().refine((value) => value === 'yes', {
     message: 'Applicants must be part of a regularly attended DGroup for more than six months.',
@@ -32,6 +35,7 @@ type PreGateValues = z.infer<typeof preGateSchema>;
 type PreGateFormInput = {
   roles_acknowledged: boolean;
   glc1_completed: boolean;
+  service_commitment_confirmed: boolean;
   privacy_acknowledged: boolean;
   dgroup_attendance: string;
   age_range: string;
@@ -60,6 +64,7 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
     defaultValues: {
       roles_acknowledged: false,
       glc1_completed: false,
+      service_commitment_confirmed: false,
       privacy_acknowledged: false,
       dgroup_attendance: '',
       age_range: '',
@@ -67,13 +72,13 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
   });
   const { errors } = form.formState;
   const gateFields: FieldPath<PreGateFormInput>[][] = [
-    ['roles_acknowledged', 'glc1_completed'],
+    ['roles_acknowledged', 'glc1_completed', 'service_commitment_confirmed'],
     ['privacy_acknowledged'],
     ['dgroup_attendance'],
     ['age_range'],
   ];
   const gateTitles = [
-    'Roles and GLC Level 1',
+    'Roles',
     'Data Privacy and Liability Waiver',
     'DGroup Eligibility',
     'Demographics',
@@ -121,14 +126,14 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
               <section className="space-y-4" aria-labelledby="roles-heading">
                 <div>
                   <h2 id="roles-heading" className="font-heading text-lg font-semibold text-text">
-                    Roles and GLC Level 1
+                    Roles
                   </h2>
                   <p className="mt-1 text-sm text-muted">{RECRUITMENT_ROLE_OVERVIEW_INTRO}</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   {RECRUITMENT_ROLES.filter((role) => role !== 'Backroom Support').map((role) => (
                     <article key={role} className="border-b border-border pb-3 last:border-0">
-                      <h3 className="font-semibold text-text">{role}</h3>
+                      <h2 className="text-lg font-semibold text-primary">{role}</h2>
                       <ReactMarkdown
                         components={{
                           p: ({ children }) => (
@@ -152,28 +157,58 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
                     </article>
                   ))}
                 </div>
-                <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
-                  <input
-                    className="mt-0.5 h-4 w-4 min-h-0 shrink-0 self-start rounded border-border text-primary focus:ring-primary"
-                    type="checkbox"
-                    {...form.register('roles_acknowledged')}
-                  />
-                  <span>I have read and understood the roles available at the Welcome Center.</span>
-                </label>
-                {errors.roles_acknowledged?.message && (
-                  <p className="text-sm text-danger">{errors.roles_acknowledged.message}</p>
-                )}
-                <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
-                  <input
-                    className="mt-0.5 h-4 w-4 min-h-0 shrink-0 self-start rounded border-border text-primary focus:ring-primary"
-                    type="checkbox"
-                    {...form.register('glc1_completed')}
-                  />
-                  <span>I confirm that I have completed CCF&apos;s GLC Level 1 (Book 1 to 4).</span>
-                </label>
-                {errors.glc1_completed?.message && (
-                  <p className="text-sm text-danger">{errors.glc1_completed.message}</p>
-                )}
+                <div className="mt-6 space-y-4 border-t border-border pt-5">
+                  <div className="space-y-1">
+                    <h3 className="font-heading text-sm font-semibold text-text">
+                      Applicant Confirmation
+                    </h3>
+                    <p className="text-xs text-muted">
+                      Please confirm the eligibility requirements below to proceed with your
+                      application.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
+                      <input
+                        className="mt-0.5 h-4 w-4 min-h-0 shrink-0 self-start rounded border-border text-primary focus:ring-primary"
+                        type="checkbox"
+                        {...form.register('roles_acknowledged')}
+                      />
+                      <span>
+                        I have read and understood the roles available at the Welcome Center.
+                      </span>
+                    </label>
+                    {errors.roles_acknowledged?.message && (
+                      <p className="text-sm text-danger">{errors.roles_acknowledged.message}</p>
+                    )}
+                    <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
+                      <input
+                        className="mt-0.5 h-4 w-4 min-h-0 shrink-0 self-start rounded border-border text-primary focus:ring-primary"
+                        type="checkbox"
+                        {...form.register('glc1_completed')}
+                      />
+                      <span>
+                        I confirm that I have completed CCF&apos;s GLC Level 1 (Book 1 to 4).
+                      </span>
+                    </label>
+                    {errors.glc1_completed?.message && (
+                      <p className="text-sm text-danger">{errors.glc1_completed.message}</p>
+                    )}
+                    <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
+                      <input
+                        className="mt-0.5 h-4 w-4 min-h-0 shrink-0 self-start rounded border-border text-primary focus:ring-primary"
+                        type="checkbox"
+                        {...form.register('service_commitment_confirmed')}
+                      />
+                      <span>I confirm that I can commit for 4 Services.</span>
+                    </label>
+                    {errors.service_commitment_confirmed?.message && (
+                      <p className="text-sm text-danger">
+                        {errors.service_commitment_confirmed.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </section>
             )}
 

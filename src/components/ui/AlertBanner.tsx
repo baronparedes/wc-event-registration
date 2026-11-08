@@ -6,12 +6,15 @@ export type AlertBannerVariant = 'info' | 'warning' | 'error' | 'success';
 
 export interface AlertBannerProps {
   variant?: AlertBannerVariant;
+  align?: 'start' | 'center';
   title?: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
   icon?: ReactNode | boolean;
   action?: ReactNode;
   className?: string;
+  /** Whether to stack the action element below the content rather than side-by-side on wide screens. */
+  stackAction?: boolean;
 }
 
 const variantStyles: Record<
@@ -59,12 +62,14 @@ const variantStyles: Record<
  */
 export function AlertBanner({
   variant = 'info',
+  align,
   title,
   description,
   children,
   icon = true,
   action,
   className = '',
+  stackAction = false,
 }: AlertBannerProps) {
   const config = variantStyles[variant];
 
@@ -75,20 +80,38 @@ export function AlertBanner({
     renderedIcon = icon;
   }
 
+  const effectiveAlign = align ?? (!description && !children ? 'center' : 'start');
+  const alignmentClass = effectiveAlign === 'center' ? 'items-center' : 'items-start';
+  const iconPadding = effectiveAlign === 'center' ? '' : 'pt-0.5';
+
   return (
     <div
       role="alert"
-      className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${config.container} ${className}`}
+      className={`flex ${stackAction ? 'flex-col' : 'flex-col sm:flex-row'} ${action && !stackAction ? 'sm:items-start' : alignmentClass} gap-3 rounded-xl border p-3.5 sm:p-4 text-sm ${config.container} ${className}`}
     >
-      {renderedIcon && <div className={`shrink-0 pt-0.5 ${config.icon}`}>{renderedIcon}</div>}
-      <div className="min-w-0 flex-1 space-y-1">
-        {title && <div className={config.title}>{title}</div>}
-        {description && (
-          <div className={`text-xs sm:text-sm ${config.description}`}>{description}</div>
+      <div className={`flex ${alignmentClass} gap-2.5 sm:gap-3 min-w-0 flex-1 w-full`}>
+        {renderedIcon && (
+          <div className={`shrink-0 ${iconPadding} ${config.icon}`}>{renderedIcon}</div>
         )}
-        {children}
+        <div className="min-w-0 flex-1 space-y-1">
+          {title && <div className={config.title}>{title}</div>}
+          {description && (
+            <div className={`text-xs sm:text-sm ${config.description}`}>{description}</div>
+          )}
+          {children}
+        </div>
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && (
+        <div
+          className={
+            stackAction
+              ? 'w-full pt-1.5 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto'
+              : 'w-full sm:w-auto shrink-0 sm:self-start pt-1 sm:pt-0 [&>button]:w-full sm:[&>button]:w-auto [&>a]:w-full sm:[&>a]:w-auto'
+          }
+        >
+          {action}
+        </div>
+      )}
     </div>
   );
 }

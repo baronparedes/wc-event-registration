@@ -1,4 +1,5 @@
 export { ApplicantAttestationSection } from './ApplicantAttestationSection';
+export { ApplicantAvatarPicker } from './ApplicantAvatarPicker';
 export { BiblicalSurveySection } from './BiblicalSurveySection';
 export { EmergencyContactSection } from './EmergencyContactSection';
 export { MonthYearField } from './MonthYearField';

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { MemberScheduleEntry } from '@/hooks/domain/members';
-import type { AdminMember } from '@/lib/domain/members';
+import type { ExcusedMemberMap, MilestoneEntry } from '@/lib/domain/hub-calendar/types';
+import { type AdminMember, MEMBER_EXTRA_METADATA_KEYS } from '@/lib/domain/members';
 
 import {
   buildMonthMilestoneCsvExport,
   buildSundaySchedulesCsvExport,
   escapeCsvValue,
 } from '../export';
-import type { MilestoneEntry } from '../types';
 
 function makeMember(overrides?: Partial<AdminMember>): AdminMember {
   return {
@@ -180,5 +180,142 @@ describe('hub-calendar export functions', () => {
     expect(lines[3]).toContain('12:00 NN,MEM-EXC,Test Bravo');
     expect(lines[3]).toContain(',Moderate,50%,');
     expect(lines[3]).toContain(',No,');
+  });
+
+  it('sorts mixed milestones by month/day, type, then name without mutating input', () => {
+    const makeEntry = (id: string, type: MilestoneEntry['type'], date: string): MilestoneEntry => ({
+      id,
+      type,
+      member: makeMember({
+        member_id: id,
+        full_name: `Test ${id}`,
+        date_of_birth: date,
+        extra_metadata: { [MEMBER_EXTRA_METADATA_KEYS.weddingAnniversaryDate]: date },
+      }),
+    });
+    const entries = [
+      makeEntry('Late', 'birthday', '1990-09-20'),
+      makeEntry('Anniversary', 'wedding_anniversary', '2015-09-10'),
+      makeEntry('Bravo', 'birthday', '1990-09-10'),
+      makeEntry('Alpha', 'birthday', '1990-09-10'),
+      makeEntry('Early', 'birthday', '1990-09-01'),
+    ];
+    const original = entries.map((entry) => entry.id);
+    for (const milestoneEntries of [entries, [...entries].reverse()]) {
+      const { csvText } = buildMonthMilestoneCsvExport({
+        milestoneEntries,
+        year: 2026,
+        monthIndex: 8,
+      });
+      expect(
+        csvText
+          .split('\n')
+          .slice(1)
+          .map((row) => row.split(',')[0]),
+      ).toEqual(['Early', 'Alpha', 'Bravo', 'Anniversary', 'Late']);
+      expect(csvText).toContain('Wedding Anniversary,2015-09-10');
+    }
+    expect(entries.map((entry) => entry.id)).toEqual(original);
+  });
+
+  it('exports missing or invalid milestone dates and nullable contact details safely', () => {
+    const entries: MilestoneEntry[] = [
+      {
+        id: 'invalid',
+        type: 'birthday',
+        member: makeMember({ member_id: 'INVALID', date_of_birth: 'invalid' }),
+      },
+      {
+        id: 'missing',
+        type: 'birthday',
+        member: makeMember({
+          member_id: 'MISSING',
+          full_name: 'Test Missing',
+          date_of_birth: null,
+          nickname: null,
+          email: null,
+          phone: null,
+        }),
+      },
+      {
+        id: 'anniversary',
+        type: 'wedding_anniversary',
+        member: makeMember({
+          member_id: 'ANNIVERSARY',
+          extra_metadata: {},
+        }),
+      },
+    ];
+    const { csvText, filename } = buildMonthMilestoneCsvExport({
+      milestoneEntries: entries,
+      year: 2026,
+      monthIndex: 0,
+    });
+    expect(filename).toBe('member-milestones-2026-01.csv');
+    expect(csvText).toContain('MISSING,Test Missing,,Birthday,,,,Usher,adult');
+    expect(csvText).toContain('INVALID,Test Member,Test Nick,Birthday,invalid');
+    expect(csvText).toContain('ANNIVERSARY,Test Member,Test Nick,Wedding Anniversary,,');
+  });
+
+  it('exports headers only when there are no milestones or schedule assignments', () => {
+    const milestones = buildMonthMilestoneCsvExport({
+      milestoneEntries: [],
+      year: 2026,
+      monthIndex: 0,
+    });
+    expect(milestones.csvText.split('\n')).toHaveLength(1);
+    const schedule = buildSundaySchedulesCsvExport({
+      selectedEntries: [{ member: makeMember(), sundayKey: 'first_sunday', timeSlots: [] }],
+      year: 2026,
+      monthIndex: 0,
+      dayNumber: 4,
+    });
+    expect(schedule.csvText.split('\n')).toHaveLength(1);
+    expect(schedule.filename).toBe('service-schedules-2026-01-04.csv');
+  });
+
+  it('exports at-risk turnup and contact fallbacks without exposing internal scores', () => {
+    const member = makeMember({ id: 'risk', nickname: null, email: null, phone: null });
+    const { csvText } = buildSundaySchedulesCsvExport({
+      selectedEntries: [{ member, sundayKey: 'first_sunday', timeSlots: ['3PM'] }],
+      year: 2026,
+      monthIndex: 0,
+      dayNumber: 4,
+      attendanceScoreMap: new Map([
+        ['risk', { attendanceScore: -999, committed: 10, attended: 2, turnupRate: 0.234 }],
+      ]),
+    });
+    expect(csvText.split('\n')[1]).toBe(
+      '3:00 PM,MEM-001,Test Member,,Usher,adult,At Risk,23%,,,No,',
+    );
+    expect(csvText).not.toContain('-999');
+    expect(csvText).not.toContain('Attendance Score');
+  });
+
+  it('uses the default forecast for members without a database id', () => {
+    const { csvText } = buildSundaySchedulesCsvExport({
+      selectedEntries: [
+        { member: makeMember({ id: '' }), sundayKey: 'first_sunday', timeSlots: ['9AM'] },
+      ],
+      year: 2026,
+      monthIndex: 0,
+      dayNumber: 4,
+      attendanceScoreMap: new Map(),
+    });
+    expect(csvText.split('\n')[1]).toContain(',Solid,80%,');
+  });
+
+  it('exports legacy excused slots without requiring a reason', () => {
+    const excusedMap: ExcusedMemberMap = new Map([
+      ['2026-01-04', new Map([['m1', new Set(['9AM'])]])],
+    ]);
+    const { csvText } = buildSundaySchedulesCsvExport({
+      selectedEntries: [{ member: makeMember(), sundayKey: 'first_sunday', timeSlots: ['9AM'] }],
+      year: 2026,
+      monthIndex: 0,
+      dayNumber: 4,
+      excusedMap,
+    });
+    expect(csvText.split('\n')[1]).toContain(',Excused,0%,member@example.com,123-456,Yes,');
   });
 });
