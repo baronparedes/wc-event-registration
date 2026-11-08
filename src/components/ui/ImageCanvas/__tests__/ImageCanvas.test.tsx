@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { ImageCanvas } from '../ImageCanvas';
 
@@ -65,7 +65,7 @@ describe('ImageCanvas', () => {
   });
 
   it('assigns canvasRef properly', () => {
-    const ref = { current: null };
+    const ref = { current: null as HTMLDivElement | null };
     render(
       <ImageCanvas canvasRef={ref}>
         <div>Ref Content</div>
