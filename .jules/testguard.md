@@ -99,3 +99,7 @@ expect(result.current).toBe(false);
 **Challenge:** Components lacked coverage or hooks lacked coverage
 **Learning:** Testing hooks directly provides confidence that state transitions operate correctly without relying on internal UI details.
 **Pattern:** Provide a valid `createWrapper` using QueryClientProvider when testing hooks that leverage react-query to prevent context errors during testing.
+## 2024-11-08 - Testing structural elements in purely structural wrapper components
+**Challenge:** Adding tests for `ImageCanvas`, which is a purely structural component primarily rendering `children` and modifying its own structural CSS based on props (like `hidden`).
+**Learning:** For components that strictly control structure (wrappers/containers) and avoid injecting `data-testid` properties into their children, checking for `container.firstChild` styles and classes is pragmatic and standard in RTL.
+**Pattern:** It is acceptable to use `container.firstChild` to assert styles and structural adjustments (like `pointer-events-none`) for structural wrapper components, as long as it does not rely on fragile DOM structures of internal business logic elements.
