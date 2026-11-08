@@ -100,7 +100,11 @@ export function StepCoachingSessionPanel({
     // ⚡ Bolt: Performance Improvement
     // Use native string comparison for ISO-8601 dates instead of Date.parse
     // to avoid significant overhead in the sorting loop.
-    .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
+    .sort((a, b) => {
+      if (a.created_at > b.created_at) return -1;
+      if (a.created_at < b.created_at) return 1;
+      return 0;
+    });
 
   const latestStepTransaction = stepTransactions[0];
   const previousStepAttempts = stepTransactions.slice(1);
