@@ -1,6 +1,7 @@
 import { createEdgeFunctionCaller, logger, supabase } from '@/lib/infrastructure';
 
 import type { RecruitmentCsvRecord } from './csv';
+import type { RecruitmentImportApplicationPayload } from './importCsv';
 import {
   type AddRecruiterNotePayload,
   type AdminUpdateStageInput,
@@ -42,6 +43,19 @@ export type DeployRecruitmentApplicantResponse = RecruitmentEdgeResponse & {
   member_id?: string;
   already_deployed?: boolean;
 };
+
+export type BulkImportRecruitmentResponse = {
+  success: boolean;
+  inserted_count: number;
+  skipped_count: number;
+  total_count: number;
+  error?: string;
+};
+
+const callBulkImportRecruitmentApplications = createEdgeFunctionCaller<
+  { rows: RecruitmentImportApplicationPayload[] },
+  BulkImportRecruitmentResponse
+>('bulk-import-recruitment-applications');
 
 const callSubmitRecruitmentApplication = createEdgeFunctionCaller<
   RecruitmentStep1Input,
@@ -564,4 +578,25 @@ export async function fetchReviewerUserById(id: string): Promise<ReviewerUserIte
     role: data.role,
     avatar_object_key: data.avatar_object_key,
   };
+}
+
+export async function bulkImportRecruitmentApplications(
+  rows: RecruitmentImportApplicationPayload[],
+): Promise<BulkImportRecruitmentResponse> {
+  const response = await callBulkImportRecruitmentApplications({ rows });
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to import recruitment applications');
+  }
+  return response;
+}
+
+export async function fetchExistingRecruitmentEmails(): Promise<Set<string>> {
+  const { data, error } = await supabase.from('recruitment_applications').select('email');
+
+  if (error) {
+    logger.warn('Failed to fetch existing recruitment emails for deduplication', error);
+    return new Set();
+  }
+
+  return new Set((data ?? []).map((row) => row.email.toLowerCase()));
 }

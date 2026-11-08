@@ -28,6 +28,7 @@ import {
 
 import {
   ExportRecruitmentCsvButton,
+  ImportRecruitmentCsvButton,
   RecruitmentApplicantDetailDialog,
   RecruitmentMobileList,
   RecruitmentTable,
@@ -116,6 +117,7 @@ export function AdminRecruitmentPage() {
               currentStep={currentStep}
               role={roleParam}
             />
+            {canWrite && <ImportRecruitmentCsvButton />}
             {canWrite && (
               <Button
                 variant="primaryOutline"
