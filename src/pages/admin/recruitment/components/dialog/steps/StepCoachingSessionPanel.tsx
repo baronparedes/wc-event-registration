@@ -97,7 +97,10 @@ export function StepCoachingSessionPanel({
 
   const stepTransactions = [...transactions]
     .filter((t) => t.step_number === stepNumber)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // ⚡ Bolt: Performance Improvement
+    // Use native string comparison for ISO-8601 dates instead of Date.parse
+    // to avoid significant overhead in the sorting loop.
+    .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
   const latestStepTransaction = stepTransactions[0];
   const previousStepAttempts = stepTransactions.slice(1);
