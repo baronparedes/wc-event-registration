@@ -57,6 +57,19 @@ export type ServiceAttendance = {
   } | null;
 };
 
+export type ServiceAttendanceRealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
+
+export type ServiceAttendanceRealtimeEvent = {
+  eventType: ServiceAttendanceRealtimeEventType;
+  id: string | null;
+  user_id: string | null;
+  service_date: string | null;
+  time_slot: string | null;
+  checked_in_at: string | null;
+  is_walk_in: boolean;
+  is_override: boolean;
+};
+
 export type UserCommitmentSnapshot = {
   id: string;
   user_id: string;

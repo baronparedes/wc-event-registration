@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { endOfMonth, format, parseISO } from 'date-fns';
 import { ChartArea, SearchX, Share2, Table, TrendingUp, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +9,7 @@ import { AdminPageShell } from '@/components/layout';
 import { AiBrandIcon, Button, EmptyState, LoadingState } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
-import { useServiceDashboardQuery } from '@/hooks/domain/services';
+import { useServiceAttendanceRealtime, useServiceDashboardQuery } from '@/hooks/domain/services';
 
 import {
   MissedCommitmentsModal,
@@ -63,6 +64,32 @@ export function AdminServicesPage() {
   }, [filterMode, selectedSunday, selectedYear, selectedMonth]);
 
   const { data: stats, isLoading, isError } = useServiceDashboardQuery(queryFilters);
+
+  const queryClient = useQueryClient();
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAttendanceChange = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+    refreshTimerRef.current = setTimeout(() => {
+      refreshTimerRef.current = null;
+      void queryClient.invalidateQueries({ queryKey: ['service-dashboard-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['missed-service-commitments'] });
+    }, 1000);
+  }, [queryClient]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, []);
+
+  useServiceAttendanceRealtime(filterMode === 'sunday' ? selectedSunday : undefined, {
+    onAttendanceChange: handleAttendanceChange,
+  });
 
   const dateFilterParams = useMemo(() => {
     const params = new URLSearchParams();

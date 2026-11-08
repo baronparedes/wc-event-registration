@@ -26,6 +26,7 @@ vi.mock('@/hooks/domain/auth', () => ({
 
 const mockUseServiceDashboardQuery = vi.fn();
 const mockUseMissedServiceCommitmentsQuery = vi.fn();
+const mockUseServiceAttendanceRealtime = vi.fn();
 vi.mock('@/hooks/domain/services', () => ({
   useServiceDashboardQuery: (...args: unknown[]) => mockUseServiceDashboardQuery(...args),
   useMissedServiceCommitmentsQuery: (...args: unknown[]) =>
@@ -33,6 +34,7 @@ vi.mock('@/hooks/domain/services', () => ({
   useServiceWeeklyBriefByDateQuery: () => ({ data: null, isLoading: false }),
   useServiceWeeklyBriefsQuery: () => ({ data: [], isLoading: false }),
   useTriggerWeeklyDebriefMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useServiceAttendanceRealtime: (...args: unknown[]) => mockUseServiceAttendanceRealtime(...args),
 }));
 
 const queryClient = new QueryClient();
@@ -405,9 +407,11 @@ describe('AdminServicesPage', () => {
 
   it('opens share dashboard modal when Share Dashboard is clicked and closes on Cancel', () => {
     render(
-      <MemoryRouter>
-        <AdminServicesPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <AdminServicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     // Default stats loaded mock
@@ -435,12 +439,47 @@ describe('AdminServicesPage', () => {
     });
 
     render(
-      <MemoryRouter>
-        <AdminServicesPage />
-      </MemoryRouter>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <AdminServicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     const shareBtn = screen.getByRole('button', { name: /Share Dashboard/i });
     expect(shareBtn).toBeDisabled();
+  });
+
+  it('subscribes to realtime service attendance updates and invalidates queries on data change', () => {
+    vi.useFakeTimers();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[ROUTE_PATHS.adminServices]}>
+          <AdminServicesPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(mockUseServiceAttendanceRealtime).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        onAttendanceChange: expect.any(Function),
+      }),
+    );
+
+    const realtimeOptions = mockUseServiceAttendanceRealtime.mock.calls[0][1];
+    realtimeOptions.onAttendanceChange();
+
+    // Debounced by 1000ms
+    expect(invalidateSpy).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1000);
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['service-dashboard-stats'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['missed-service-commitments'] });
+
+    invalidateSpy.mockRestore();
+    vi.useRealTimers();
   });
 });

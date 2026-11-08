@@ -25,3 +25,4 @@ export * from './mutations/useCancelExcuseMutation';
 export * from './queries/useMemberServiceExcusesQuery';
 export * from './queries/useServiceWeeklyBriefQuery';
 export * from './mutations/useTriggerWeeklyDebriefMutation';
+export * from './state/useServiceAttendanceRealtime';
