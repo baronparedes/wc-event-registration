@@ -39,3 +39,8 @@
 **Discovery:** Found an undocumented feature: the AI Generator for events and forms.
 **Learning:** The AI generator functionality (Hub AI) is deeply integrated into creating entities and configuring fields, but lacked explicit documentation on its behavior, blueprint structure, and usage modes.
 **Standard:** Documented under `19-admin-settings` as it represents an administrative capability. Future AI-related admin tools should be documented here as well.
+## 2026-11-09 - App Notifications Documentation
+
+**Discovery:** The App Notifications settings features (located at `src/pages/admin/settings/notifications`) were completely undocumented in the feature specs.
+**Learning:** This is a major admin tool for composing and broadcasting app notifications, viewing dashboard metrics, and managing Sunday service reminder dispatch. It clearly belongs under the `19-admin-settings` epic since it affects broad application capabilities.
+**Standard:** Documented under `docs/features/19-admin-settings/19.4-app-notifications.feature` following standard Gherkin syntax. Included scenarios for composing/sending notifications, generating drafts with AI, viewing dashboard metrics, and managing Sunday Reminders dispatch.
