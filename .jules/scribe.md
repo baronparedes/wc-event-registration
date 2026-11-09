@@ -39,6 +39,7 @@
 **Discovery:** Found an undocumented feature: the AI Generator for events and forms.
 **Learning:** The AI generator functionality (Hub AI) is deeply integrated into creating entities and configuring fields, but lacked explicit documentation on its behavior, blueprint structure, and usage modes.
 **Standard:** Documented under `19-admin-settings` as it represents an administrative capability. Future AI-related admin tools should be documented here as well.
+
 ## 2026-11-09 - App Notifications Documentation
 
 **Discovery:** The App Notifications settings features (located at `src/pages/admin/settings/notifications`) were completely undocumented in the feature specs.
