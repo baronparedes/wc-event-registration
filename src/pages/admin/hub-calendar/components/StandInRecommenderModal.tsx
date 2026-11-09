@@ -645,22 +645,15 @@ export function StandInRecommenderModal({
                   });
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={member.id}
                       onClick={() => handleToggleCandidate(member.id)}
-                      className={`w-full flex items-start justify-between gap-3 rounded-xl border p-3.5 text-left transition cursor-pointer ${
+                      className={`w-full text-left flex items-start justify-between gap-3 rounded-xl border p-3.5 transition cursor-pointer ${
                         isSelected
                           ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
                           : 'border-border bg-surface hover:bg-surface-hover/60'
                       }`}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === ' ' || e.key === 'Enter') {
-                          e.preventDefault();
-                          handleToggleCandidate(member.id);
-                        }
-                      }}
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <input
@@ -725,7 +718,7 @@ export function StandInRecommenderModal({
                           <span className="text-xs text-muted hover:text-text">Select</span>
                         )}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
