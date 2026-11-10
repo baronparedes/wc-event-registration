@@ -519,7 +519,7 @@ describe('StandInRecommenderModal', () => {
     fireEvent.click(selectTopBtn);
 
     // Click candidate 1 row to deselect
-    const graceRow = screen.getAllByText('Test Grace Sample')[0].closest('div[role="button"]')!;
+    const graceRow = screen.getAllByText('Test Grace Sample')[0].closest('button')!;
     fireEvent.click(graceRow);
 
     // Keyboard Space to re-select
@@ -747,7 +747,7 @@ describe('StandInRecommenderModal', () => {
     });
 
     // Deselect candidate
-    const graceRow = screen.getAllByText('Test Grace Sample')[0].closest('div[role="button"]')!;
+    const graceRow = screen.getAllByText('Test Grace Sample')[0].closest('button')!;
     fireEvent.click(graceRow);
 
     // Copy with 0 selected volunteers triggers error toast
