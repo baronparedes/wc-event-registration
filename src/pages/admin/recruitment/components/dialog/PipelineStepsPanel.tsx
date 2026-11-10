@@ -327,9 +327,18 @@ export function PipelineStepsPanel({
   };
 
   const stepTransactions = useMemo(() => {
-    return transactions
-      .filter((t) => t.step_number === selectedStep)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return (
+      transactions
+        .filter((t) => t.step_number === selectedStep)
+        // ⚡ Bolt: Performance Improvement
+        // Use native string comparison for ISO-8601 dates instead of Date.parse
+        // to avoid significant overhead in the sorting loop.
+        .sort((a, b) => {
+          if (a.created_at > b.created_at) return -1;
+          if (a.created_at < b.created_at) return 1;
+          return 0;
+        })
+    );
   }, [transactions, selectedStep]);
 
   const latestStepTransaction = stepTransactions[0];

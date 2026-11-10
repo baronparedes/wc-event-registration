@@ -12,3 +12,8 @@
 
 **Learning:** Using `localeCompare` inside `Array.prototype.sort()` to compare zero-padded numerical strings (like `YYYY-MM-DD` or `MM-DD`) or internal constant literal strings introduces unnecessary localization overhead. The codebase's architecture frequently sorts large datasets on the client using these strings.
 **Action:** Extend the string comparison optimization (`a < b ? -1 : a > b ? 1 : 0`) beyond just ISO-8601 datetimes to include sorting of all zero-padded predictable dates, literal keys, and other predictable ASCII strings. Save `localeCompare` strictly for user-facing localized text such as names or labels.
+
+## 2024-11-08 - [Optimize Object Allocation in Sort Callbacks]
+
+**Learning:** Using `new Date().getTime()` directly inside `Array.prototype.sort()` callbacks for ISO-8601 strings causes significant memory allocation and garbage collection overhead, especially when sorting large transaction arrays.
+**Action:** When sorting ISO-8601 date strings chronologically on the client, always use native string comparison (e.g. `a > b ? -1 : a < b ? 1 : 0`) instead of parsing into Date objects inside the `.sort()` callback to avoid excessive object allocation overhead.
