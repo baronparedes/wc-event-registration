@@ -4,6 +4,7 @@ import {
   type MemberUpdatePayload,
   addMemberNote,
   deleteMemberNote,
+  fetchActiveMembers,
   fetchMemberEventHistory,
   fetchMemberMetadata,
   fetchMembersAttendanceScores,
@@ -449,6 +450,49 @@ describe('Members Domain API', () => {
           p_end_date: '2026-09-30',
         }),
       );
+    });
+  });
+
+  describe('fetchActiveMembers', () => {
+    it('selects active members including last_activity ordered by full_name and member_id', async () => {
+      const mockSecondOrder = vi.fn().mockResolvedValueOnce({
+        data: [
+          {
+            id: 'u-1',
+            member_id: 'RFID-001',
+            full_name: 'Test Active Member',
+            is_active: true,
+            last_activity: '2026-07-05T02:00:00Z',
+          },
+        ],
+        error: null,
+      });
+      const mockFirstOrder = vi.fn().mockReturnValue({ order: mockSecondOrder });
+      const mockEq = vi.fn().mockReturnValue({ order: mockFirstOrder });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      mockFrom.mockReturnValue({ select: mockSelect });
+
+      const result = await fetchActiveMembers();
+
+      expect(mockFrom).toHaveBeenCalledWith('users');
+      expect(mockSelect).toHaveBeenCalledWith(expect.stringContaining('last_activity'));
+      expect(mockEq).toHaveBeenCalledWith('is_active', true);
+      expect(mockFirstOrder).toHaveBeenCalledWith('full_name', { ascending: true });
+      expect(mockSecondOrder).toHaveBeenCalledWith('member_id', { ascending: true });
+      expect(result).toHaveLength(1);
+      expect(result[0].last_activity).toBe('2026-07-05T02:00:00Z');
+    });
+
+    it('throws error when supabase query fails', async () => {
+      const mockSecondOrder = vi.fn().mockResolvedValueOnce({
+        data: null,
+        error: new Error('Query failed'),
+      });
+      const mockFirstOrder = vi.fn().mockReturnValue({ order: mockSecondOrder });
+      const mockEq = vi.fn().mockReturnValue({ order: mockFirstOrder });
+      mockFrom.mockReturnValue({ select: vi.fn().mockReturnValue({ eq: mockEq }) });
+
+      await expect(fetchActiveMembers()).rejects.toThrow('Query failed');
     });
   });
 });

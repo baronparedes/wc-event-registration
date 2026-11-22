@@ -167,6 +167,25 @@ const mockDashboardData: MemberDashboardData = {
       },
     ],
   },
+  inactivityAnalytics: {
+    thresholdSundays: 13,
+    inactiveCount: 1,
+    percentage: 33.3,
+    members: [
+      {
+        id: 'm-3',
+        memberId: 'RFID-3',
+        fullName: 'Test No Group Person',
+        role: 'Volunteer',
+        email: 'nogroup@example.com',
+        phone: null,
+        avatarObjectKey: null,
+        lastActivity: '2026-07-05T02:00:00Z',
+        sundaysInactive: 20,
+        neverAttended: false,
+      },
+    ],
+  },
 };
 
 describe('AdminMembersDashboardPage', () => {
@@ -251,6 +270,12 @@ describe('AdminMembersDashboardPage', () => {
           coveragePercentage: 0,
           dgroupLeaderCount: 0,
           statusBreakdown: [],
+          members: [],
+        },
+        inactivityAnalytics: {
+          thresholdSundays: 13,
+          inactiveCount: 0,
+          percentage: 0,
           members: [],
         },
       },
@@ -369,6 +394,60 @@ describe('AdminMembersDashboardPage', () => {
     fireEvent.click(closeBtn);
 
     expect(screen.queryByText(/1st Sunday — 9:00 AM/i)).not.toBeInTheDocument();
+  });
+
+  it('opens and closes inactive volunteers modal when Inactive Volunteers KPI card is clicked', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    const inactiveCardBtn = screen.getByRole('button', {
+      name: /view 1 inactive volunteers/i,
+    });
+    fireEvent.click(inactiveCardBtn);
+
+    expect(screen.getByText('Inactive Volunteers (> 13 Sundays)')).toBeInTheDocument();
+    expect(
+      screen.getByText(/1 active volunteer with no service attendance for more than 13 Sundays/i),
+    ).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByText('Inactive Volunteers (> 13 Sundays)')).not.toBeInTheDocument();
+  });
+
+  it('opens inactive volunteers modal automatically when navigated with #inactive hash', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/admin/members/dashboard#inactive']}>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Inactive Volunteers (> 13 Sundays)')).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByText('Inactive Volunteers (> 13 Sundays)')).not.toBeInTheDocument();
   });
 
   it('renders default error description when error has no message', () => {

@@ -1,14 +1,21 @@
-import { Cake, CalendarCheck, ShieldCheck, UserCheck, Users } from 'lucide-react';
+import { Cake, CalendarCheck, ShieldCheck, UserCheck, UserX, Users } from 'lucide-react';
 
 import { StatCard } from '@/components/ui';
 import type { MemberDashboardData } from '@/lib/domain/members';
 
 interface DashboardKpiCardsProps {
   data: MemberDashboardData;
+  onInactiveVolunteersClick?: () => void;
 }
 
-export function DashboardKpiCards({ data }: DashboardKpiCardsProps) {
-  const { totalActiveMembers, dgroupAnalytics, commitmentHeatmap, ageDemographics } = data;
+export function DashboardKpiCards({ data, onInactiveVolunteersClick }: DashboardKpiCardsProps) {
+  const {
+    totalActiveMembers,
+    dgroupAnalytics,
+    commitmentHeatmap,
+    ageDemographics,
+    inactivityAnalytics,
+  } = data;
 
   const ageSubtitle =
     ageDemographics.totalWithDob > 0
@@ -16,7 +23,7 @@ export function DashboardKpiCards({ data }: DashboardKpiCardsProps) {
       : 'No DOB recorded';
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       <StatCard
         title="Active Members"
         value={totalActiveMembers}
@@ -45,6 +52,21 @@ export function DashboardKpiCards({ data }: DashboardKpiCardsProps) {
         icon={<CalendarCheck className="h-4 w-4" />}
         variant="tertiary"
       />
+      <button
+        type="button"
+        onClick={onInactiveVolunteersClick}
+        aria-label={`View ${inactivityAnalytics.inactiveCount} inactive volunteers (> ${inactivityAnalytics.thresholdSundays} Sundays)`}
+        className="group text-left rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+      >
+        <StatCard
+          title="Inactive Volunteers"
+          value={inactivityAnalytics.inactiveCount}
+          subtitle={`> ${inactivityAnalytics.thresholdSundays} Sundays · View list`}
+          icon={<UserX className="h-4 w-4" />}
+          variant="danger"
+          className="h-full transition-colors group-hover:border-danger/60 group-hover:bg-danger/5"
+        />
+      </button>
       <StatCard
         title="Average Age"
         value={ageDemographics.averageAge !== null ? `${ageDemographics.averageAge} yrs` : 'N/A'}

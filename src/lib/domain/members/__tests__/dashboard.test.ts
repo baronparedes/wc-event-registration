@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { MemberUserRow } from '../api';
 import {
+  INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD,
+  buildInactiveVolunteersCsvExport,
   calculateAge,
   computeMemberDashboardData,
+  countSundaysSince,
   extractPrimaryRole,
   getMetadataStringValue,
   normalizeDGroupStatus,
@@ -487,5 +490,196 @@ describe('parseSundayTimeSlots variants', () => {
     expect(parseSundayTimeSlots('9:00AM, 12:00NN, 3:00PM')).toEqual(['9AM', '12NN', '3PM']);
     expect(parseSundayTimeSlots('12:00PM')).toEqual(['12NN']);
     expect(parseSundayTimeSlots('12NN / 9AM')).toEqual(['12NN', '9AM']);
+  });
+});
+
+describe('countSundaysSince', () => {
+  // Sunday, Nov 22, 2026 10:00 AM Manila (02:00 UTC)
+  const asOfSunday = new Date('2026-11-22T02:00:00Z');
+
+  it('returns null for missing or invalid reference dates', () => {
+    expect(countSundaysSince(null, asOfSunday)).toBeNull();
+    expect(countSundaysSince(undefined, asOfSunday)).toBeNull();
+    expect(countSundaysSince('invalid-date', asOfSunday)).toBeNull();
+  });
+
+  it('returns 0 when reference date is on or after asOf', () => {
+    expect(countSundaysSince('2026-11-22T01:00:00Z', asOfSunday)).toBe(0);
+    expect(countSundaysSince('2026-11-29T01:00:00Z', asOfSunday)).toBe(0);
+  });
+
+  it('counts exact calendar Sundays elapsed since a prior Sunday', () => {
+    // 1 Sunday ago: Nov 15, 2026
+    expect(countSundaysSince('2026-11-15T02:00:00Z', asOfSunday)).toBe(1);
+    // Exactly 13 Sundays ago: Aug 23, 2026 (91 days)
+    expect(countSundaysSince('2026-08-23T02:00:00Z', asOfSunday)).toBe(13);
+    // 14 Sundays ago: Aug 16, 2026 (98 days) -> strictly > 13
+    expect(countSundaysSince('2026-08-16T02:00:00Z', asOfSunday)).toBe(14);
+  });
+
+  it('counts Sundays accurately when asOf is mid-week', () => {
+    // Wednesday, Nov 25, 2026 10:00 AM Manila
+    const asOfWednesday = new Date('2026-11-25T02:00:00Z');
+    // Saturday before Sunday Nov 22 -> 1 Sunday (Nov 22)
+    expect(countSundaysSince('2026-11-21T02:00:00Z', asOfWednesday)).toBe(1);
+    // Monday after Sunday Nov 22 -> 0 Sundays
+    expect(countSundaysSince('2026-11-23T02:00:00Z', asOfWednesday)).toBe(0);
+  });
+});
+
+describe('computeMemberDashboardData inactivityAnalytics', () => {
+  const asOf = new Date('2026-11-22T02:00:00Z'); // Sun, Nov 22, 2026 Manila
+
+  function buildMember(overrides: Partial<MemberUserRow>): MemberUserRow {
+    return {
+      id: 'm-default',
+      member_id: 'RFID-DEFAULT',
+      avatar_object_key: null,
+      is_active: true,
+      full_name: 'Test Member',
+      first_name: 'Test',
+      last_name: 'Test Member',
+      nickname: null,
+      email: 'test@example.com',
+      phone: null,
+      date_of_birth: null,
+      role: 'Prayer Coach',
+      category: 'Adult',
+      metadata: null,
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z',
+      notes: [],
+      ...overrides,
+    };
+  }
+
+  it('identifies active volunteers inactive for more than 13 Sundays and sorts longest-inactive first', () => {
+    const members: MemberUserRow[] = [
+      // Exactly 13 Sundays ago -> NOT inactive (> 13 required)
+      buildMember({
+        id: 'm-exact-13',
+        full_name: 'Test Exact Thirteen',
+        last_activity: '2026-08-23T02:00:00Z',
+      }),
+      // 14 Sundays ago -> inactive
+      buildMember({
+        id: 'm-14',
+        full_name: 'Test Fourteen Sundays',
+        role: 'Usher / IMT Support',
+        last_activity: '2026-08-16T02:00:00Z',
+      }),
+      // 20 Sundays ago -> inactive (should sort above 14)
+      buildMember({
+        id: 'm-20',
+        full_name: 'Test Twenty Sundays',
+        role: 'Prayer Coach',
+        last_activity: '2026-07-05T02:00:00Z',
+      }),
+      // Never attended, created > 13 Sundays ago -> inactive
+      buildMember({
+        id: 'm-never-old',
+        full_name: 'Test Never Attended Old',
+        last_activity: null,
+        created_at: '2026-01-01T00:00:00Z',
+      }),
+      // Never attended, recently created (within 13 Sundays) -> NOT inactive
+      buildMember({
+        id: 'm-never-new',
+        full_name: 'Test Brand New Volunteer',
+        last_activity: null,
+        created_at: '2026-11-01T00:00:00Z',
+      }),
+      // Soft-deleted member -> excluded from active members
+      buildMember({
+        id: 'm-deleted',
+        full_name: 'Test Deleted Member',
+        is_active: false,
+        last_activity: '2025-01-01T00:00:00Z',
+      }),
+    ];
+
+    const data = computeMemberDashboardData(members, asOf);
+    const { inactivityAnalytics } = data;
+
+    expect(inactivityAnalytics.thresholdSundays).toBe(INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD);
+    expect(inactivityAnalytics.inactiveCount).toBe(3);
+    expect(inactivityAnalytics.percentage).toBe(60); // 3 of 5 active members
+    expect(inactivityAnalytics.members.map((m) => m.id)).toEqual(['m-never-old', 'm-20', 'm-14']);
+
+    expect(inactivityAnalytics.members[0]).toMatchObject({
+      id: 'm-never-old',
+      neverAttended: true,
+      lastActivity: null,
+    });
+    expect(inactivityAnalytics.members[2]).toMatchObject({
+      id: 'm-14',
+      role: 'Usher',
+      sundaysInactive: 14,
+      neverAttended: false,
+      lastActivity: '2026-08-16T02:00:00Z',
+    });
+  });
+
+  it('sorts inactive volunteers alphabetically by fullName when sundaysInactive are tied', () => {
+    const members: MemberUserRow[] = [
+      buildMember({
+        id: 'm-z',
+        full_name: 'Test Zara Cruz',
+        last_activity: '2026-07-05T02:00:00Z',
+      }),
+      buildMember({
+        id: 'm-a',
+        full_name: 'Test Anna Reyes',
+        last_activity: '2026-07-05T02:00:00Z',
+      }),
+    ];
+
+    const data = computeMemberDashboardData(members, asOf);
+    expect(data.inactivityAnalytics.members.map((m) => m.id)).toEqual(['m-a', 'm-z']);
+  });
+});
+
+describe('buildInactiveVolunteersCsvExport', () => {
+  it('generates properly escaped CSV text and Manila-dated filename', () => {
+    const asOf = new Date('2026-11-22T02:00:00Z');
+    const { csvText, filename } = buildInactiveVolunteersCsvExport(
+      [
+        {
+          id: 'm-1',
+          memberId: 'RFID-001',
+          fullName: 'Test Santos, Alice "Ali"',
+          role: 'Prayer Coach',
+          email: 'alice@example.com',
+          phone: '09171234567',
+          avatarObjectKey: null,
+          lastActivity: null,
+          sundaysInactive: 30,
+          neverAttended: true,
+        },
+        {
+          id: 'm-2',
+          memberId: 'RFID-002',
+          fullName: 'Test Bob Cruz',
+          role: 'Usher',
+          email: null,
+          phone: null,
+          avatarObjectKey: null,
+          lastActivity: '2026-07-05T02:00:00Z',
+          sundaysInactive: 20,
+          neverAttended: false,
+        },
+      ],
+      asOf,
+    );
+
+    expect(filename).toBe('inactive-volunteers-2026-11-22.csv');
+    const lines = csvText.split('\n');
+    expect(lines[0]).toBe(
+      'Member ID,Full Name,Role,Email,Phone,Status,Last Attended,Sundays Inactive',
+    );
+    expect(lines[1]).toBe(
+      'RFID-001,"Test Santos, Alice ""Ali""",Prayer Coach,alice@example.com,09171234567,Never attended,Never attended,30',
+    );
+    expect(lines[2]).toBe('RFID-002,Test Bob Cruz,Usher,,,Inactive,2026-07-05,20');
   });
 });

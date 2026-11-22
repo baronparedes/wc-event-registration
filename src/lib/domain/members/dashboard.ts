@@ -87,12 +87,35 @@ export type MemberDGroupAnalytics = {
   members: MemberDGroupRow[];
 };
 
+export const INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD = 13;
+
+export type InactiveVolunteerRow = {
+  id: string;
+  memberId: string;
+  fullName: string;
+  role: string;
+  email: string | null;
+  phone: string | null;
+  avatarObjectKey: string | null;
+  lastActivity: string | null;
+  sundaysInactive: number;
+  neverAttended: boolean;
+};
+
+export type MemberInactivityAnalytics = {
+  thresholdSundays: number;
+  inactiveCount: number;
+  percentage: number;
+  members: InactiveVolunteerRow[];
+};
+
 export type MemberDashboardData = {
   totalActiveMembers: number;
   roleDistributions: MemberRoleStat[];
   ageDemographics: MemberAgeDemographics;
   commitmentHeatmap: MemberSundayCommitmentHeatmap;
   dgroupAnalytics: MemberDGroupAnalytics;
+  inactivityAnalytics: MemberInactivityAnalytics;
 };
 
 const PROMOTED_DGROUP_KEYS = {
@@ -224,6 +247,46 @@ export function extractPrimaryRole(rawRole?: unknown): string {
   const trimmed = rawRole.trim();
   const parts = trimmed.split(/\s*[/,]\s*/).filter(Boolean);
   return parts[0]?.trim() || 'General Volunteer';
+}
+
+const MANILA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Manila',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function toManilaUtcDayIndex(date: Date): { dayIndex: number; dayOfWeek: number } | null {
+  if (Number.isNaN(date.getTime())) return null;
+  const formatted = MANILA_DATE_FORMATTER.format(date);
+  const [yearStr, monthStr, dayStr] = formatted.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return null;
+  const utcMs = Date.UTC(year, month - 1, day);
+  return {
+    dayIndex: Math.floor(utcMs / 86_400_000),
+    dayOfWeek: new Date(utcMs).getUTCDay(),
+  };
+}
+
+export function countSundaysSince(
+  referenceIso: string | null | undefined,
+  asOf: Date = new Date(),
+): number | null {
+  if (!referenceIso) return null;
+  const refDate = new Date(referenceIso);
+  const refDay = toManilaUtcDayIndex(refDate);
+  const asOfDay = toManilaUtcDayIndex(asOf);
+  if (!refDay || !asOfDay) return null;
+  if (asOfDay.dayIndex <= refDay.dayIndex) return 0;
+
+  // Days until the first Sunday strictly after refDay (0 = Sun -> +7, 6 = Sat -> +1)
+  const firstSundayIndex = refDay.dayIndex + (7 - refDay.dayOfWeek);
+  if (firstSundayIndex > asOfDay.dayIndex) return 0;
+
+  return Math.floor((asOfDay.dayIndex - firstSundayIndex) / 7) + 1;
 }
 
 export function normalizeDGroupStatus(val: string | null): string | null {
@@ -516,11 +579,104 @@ export function computeMemberDashboardData(
     members: dgroupRows,
   };
 
+  // 5. Volunteer Inactivity (> 13 Calendar Sundays since last service attendance)
+  const inactiveMembers: InactiveVolunteerRow[] = [];
+
+  for (const member of activeMembers) {
+    const hasActivity =
+      typeof member.last_activity === 'string' && member.last_activity.trim() !== '';
+    const referenceIso = hasActivity ? member.last_activity : member.created_at;
+    const sundaysElapsed = countSundaysSince(referenceIso, asOf);
+
+    if (sundaysElapsed !== null && sundaysElapsed > INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD) {
+      inactiveMembers.push({
+        id: member.id,
+        memberId: member.member_id,
+        fullName: member.full_name,
+        role: extractPrimaryRole(member.role),
+        email: member.email ?? null,
+        phone: member.phone ?? null,
+        avatarObjectKey: member.avatar_object_key,
+        lastActivity: hasActivity ? (member.last_activity ?? null) : null,
+        sundaysInactive: sundaysElapsed,
+        neverAttended: !hasActivity,
+      });
+    }
+  }
+
+  inactiveMembers.sort((a, b) => {
+    if (b.sundaysInactive !== a.sundaysInactive) {
+      return b.sundaysInactive - a.sundaysInactive;
+    }
+    return (a.fullName ?? '').localeCompare(b.fullName ?? '');
+  });
+
+  const inactiveCount = inactiveMembers.length;
+  const inactivityAnalytics: MemberInactivityAnalytics = {
+    thresholdSundays: INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD,
+    inactiveCount,
+    percentage:
+      totalActiveMembers > 0 ? Math.round((inactiveCount / totalActiveMembers) * 1000) / 10 : 0,
+    members: inactiveMembers,
+  };
+
   return {
     totalActiveMembers,
     roleDistributions,
     ageDemographics,
     commitmentHeatmap,
     dgroupAnalytics,
+    inactivityAnalytics,
+  };
+}
+
+function escapeCsvCell(value: string | number | null | undefined): string {
+  const str = value == null ? '' : String(value);
+  if (/[",\r\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+export function buildInactiveVolunteersCsvExport(
+  members: InactiveVolunteerRow[],
+  asOf: Date = new Date(),
+): { csvText: string; filename: string } {
+  const headers = [
+    'Member ID',
+    'Full Name',
+    'Role',
+    'Email',
+    'Phone',
+    'Status',
+    'Last Attended',
+    'Sundays Inactive',
+  ];
+
+  const rows = members.map((member) => {
+    const lastAttendedDate = member.lastActivity
+      ? MANILA_DATE_FORMATTER.format(new Date(member.lastActivity))
+      : 'Never attended';
+
+    return [
+      member.memberId,
+      member.fullName,
+      member.role,
+      member.email ?? '',
+      member.phone ?? '',
+      member.neverAttended ? 'Never attended' : 'Inactive',
+      lastAttendedDate,
+      String(member.sundaysInactive),
+    ];
+  });
+
+  const csvText = [headers, ...rows]
+    .map((row) => row.map((cell) => escapeCsvCell(cell)).join(','))
+    .join('\n');
+
+  const dateStamp = MANILA_DATE_FORMATTER.format(asOf);
+  return {
+    csvText,
+    filename: `inactive-volunteers-${dateStamp}.csv`,
   };
 }

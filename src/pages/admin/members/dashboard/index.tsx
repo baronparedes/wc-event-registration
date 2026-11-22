@@ -1,4 +1,5 @@
 import { RefreshCw, Users } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { AlertBanner, Button, EmptyState } from '@/components/ui';
@@ -8,14 +9,39 @@ import { MembersNavigationTabs } from '@/pages/admin/members/components';
 
 import {
   DashboardKpiCards,
+  InactiveVolunteersModal,
   MemberAgeDemographicsCard,
   MemberCommitmentHeatmapCard,
   MemberDGroupSection,
   MemberRoleDistributionCard,
 } from './components';
 
+const INACTIVE_MODAL_HASH = '#inactive';
+
 export function AdminMembersDashboardPage() {
   const { data, isLoading, error, refetch, isRefetching } = useAdminMembersDashboardQuery();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isInactiveModalOpen = location.hash.toLowerCase() === INACTIVE_MODAL_HASH;
+
+  const handleOpenInactiveModal = () => {
+    if (!isInactiveModalOpen) {
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: INACTIVE_MODAL_HASH },
+        { replace: true },
+      );
+    }
+  };
+
+  const handleCloseInactiveModal = () => {
+    if (isInactiveModalOpen) {
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: '' },
+        { replace: true },
+      );
+    }
+  };
 
   return (
     <AdminPageShell>
@@ -44,8 +70,8 @@ export function AdminMembersDashboardPage() {
       <AdminPageShell.Content>
         {isLoading ? (
           <div className="flex flex-col gap-6 animate-pulse py-4">
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-              {[...Array(5)].map((_, i) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {[...Array(6)].map((_, i) => (
                 <div key={i} className="h-28 rounded-2xl bg-surface/80 border border-border" />
               ))}
             </div>
@@ -81,7 +107,7 @@ export function AdminMembersDashboardPage() {
         ) : (
           <div className="flex flex-col gap-6">
             {/* Top KPIs */}
-            <DashboardKpiCards data={data} />
+            <DashboardKpiCards data={data} onInactiveVolunteersClick={handleOpenInactiveModal} />
 
             {/* Role Distributions & Age Demographics */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -97,6 +123,13 @@ export function AdminMembersDashboardPage() {
 
             {/* DGroup Analytics & Directory Section */}
             <MemberDGroupSection analytics={data.dgroupAnalytics} />
+
+            {/* Inactive Volunteers Modal */}
+            <InactiveVolunteersModal
+              isOpen={isInactiveModalOpen}
+              onClose={handleCloseInactiveModal}
+              analytics={data.inactivityAnalytics}
+            />
           </div>
         )}
       </AdminPageShell.Content>

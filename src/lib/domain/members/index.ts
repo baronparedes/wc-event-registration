@@ -68,10 +68,15 @@ export type {
   MemberDGroupRow,
   MemberDGroupStatusStat,
   MemberDGroupAnalytics,
+  InactiveVolunteerRow,
+  MemberInactivityAnalytics,
   MemberDashboardData,
 } from './dashboard';
 export {
+  INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD,
+  buildInactiveVolunteersCsvExport,
   calculateAge,
+  countSundaysSince,
   parseSundayTimeSlots,
   computeMemberDashboardData,
   getMetadataStringValue,
