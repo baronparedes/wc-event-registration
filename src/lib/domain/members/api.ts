@@ -20,13 +20,12 @@ export type MemberUserRow = {
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  last_activity?: string | null;
   has_account?: boolean;
   notes: MemberNote[];
 };
 
-export type MemberUserListRow = MemberUserRow & {
-  last_activity?: string | null;
-};
+export type MemberUserListRow = MemberUserRow;
 
 export type MemberLatestServiceAttendanceRow = {
   checked_in_at: string;
@@ -187,7 +186,7 @@ export async function fetchMemberLatestServiceAttendance(
 export async function fetchActiveMembers(): Promise<MemberUserRow[]> {
   const { data, error } = await supabase
     .from('users')
-    .select(MEMBER_USER_SELECT)
+    .select(`${MEMBER_USER_SELECT}, last_activity`)
     .eq('is_active', true)
     .order('full_name', { ascending: true })
     .order('member_id', { ascending: true });

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { MemberDashboardData } from '@/lib/domain/members';
 
@@ -34,6 +34,12 @@ describe('DashboardKpiCards', () => {
       statusBreakdown: [],
       members: [],
     },
+    inactivityAnalytics: {
+      thresholdSundays: 13,
+      inactiveCount: 8,
+      percentage: 16,
+      members: [],
+    },
   };
 
   it('renders all KPI cards with formatted values and subtitles', () => {
@@ -51,9 +57,25 @@ describe('DashboardKpiCards', () => {
     expect(screen.getByText('Sunday Volunteers')).toBeInTheDocument();
     expect(screen.getByText('30')).toBeInTheDocument();
 
+    expect(screen.getByText('Inactive Volunteers')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('> 13 Sundays · View list')).toBeInTheDocument();
+
     expect(screen.getByText('Average Age')).toBeInTheDocument();
     expect(screen.getByText('29.5 yrs')).toBeInTheDocument();
     expect(screen.getByText('40 of 50 records (80%)')).toBeInTheDocument();
+  });
+
+  it('invokes onInactiveVolunteersClick when Inactive Volunteers card is clicked', () => {
+    const onInactiveClick = vi.fn();
+    render(<DashboardKpiCards data={sampleData} onInactiveVolunteersClick={onInactiveClick} />);
+
+    const inactiveCardButton = screen.getByRole('button', {
+      name: /view 8 inactive volunteers/i,
+    });
+    fireEvent.click(inactiveCardButton);
+
+    expect(onInactiveClick).toHaveBeenCalledTimes(1);
   });
 
   it('renders fallback values when no birth dates are recorded', () => {
