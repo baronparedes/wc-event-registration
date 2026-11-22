@@ -17,6 +17,7 @@ flowchart TD
         C4["Monday 08:00 PHT<br/>(Sunday debrief cron)"]
         C5["Every 15 Minutes<br/>(email sweeper)"]
         C6["Every 15 Minutes<br/>(push sweeper)"]
+        C7["Daily 02:00 PHT<br/>(Google Sheet member sync)"]
     end
 
     subgraph Dispatch["pg_net & Immediate Dispatch"]
@@ -28,6 +29,7 @@ flowchart TD
         C4 -->|Direct HTTP POST| E4[Edge Function:<br/>cron-weekly-sunday-debrief]
         C5 -.->|Fallback Sweeper POST| E1
         C6 -.->|Fallback Sweeper POST| E2
+        C7 -->|Direct HTTP POST| E5[Edge Function:<br/>cron-sync-members-sheet]
     end
 
     subgraph Queues["Message Queues & Processing"]
@@ -41,6 +43,7 @@ flowchart TD
         E3 -->|Summary + CSV| RESEND
         E4 -->|AI Analysis| GEMINI[Google Gemini API]
         E4 -->|Enqueue Brief Email| Q1
+        E5 -->|Read Sheet Rows| GSHEETS[Google Sheets API v4]
     end
 ```
 
@@ -52,14 +55,16 @@ All cron schedules defined in PostgreSQL migrations run against **UTC**. The app
 
 ### 2.1 Database & Edge Function Cron Jobs (`pg_cron`)
 
-| Job Identifier                                    | Cron Expression | UTC Schedule     | Asia/Manila (PHT) | Worker / Target                                                                                      | Idempotency / Deduplication                                              |
-| :------------------------------------------------ | :-------------- | :--------------- | :---------------- | :--------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| `generate_upcoming_sunday_email_reminders_friday` | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `public.generate_and_dispatch_upcoming_sunday_email_reminders()` &rarr; `cron-process-email-queue`   | Checked via `public.email_reminder_logs.sunday_date` (unique constraint) |
-| `process_email_queue_15m`                         | `*/15 * * * *`  | Every 15 minutes | Every 15 minutes  | `cron-process-email-queue` via `net.http_post`                                                       | PGMQ visibility timeout (30s) + message archiving                        |
-| `generate_upcoming_sunday_push_reminders_friday`  | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `public.generate_and_dispatch_upcoming_sunday_push_reminders()` &rarr; `cron-process-push-reminders` | Checked via `public.push_reminder_logs.sunday_date` (unique constraint)  |
-| `process_push_reminders_15m`                      | `*/15 * * * *`  | Every 15 minutes | Every 15 minutes  | `cron-process-push-reminders` via `net.http_post`                                                    | PGMQ visibility timeout (30s) + message archiving                        |
-| `upcoming_sunday_excused_export_email_friday`     | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `cron-upcoming-sunday-excused-export-email` via `net.http_post`                                      | Rate limited (`1 hit/60s`) + generated once per Friday trigger           |
-| `weekly_sunday_debrief_monday_morning`            | `0 0 * * 1`     | Monday 00:00     | Monday 08:00      | `cron-weekly-sunday-debrief` via `net.http_post`                                                     | Deduplicated by target Sunday in `public.service_weekly_briefs`          |
+| Job Identifier                                    | Cron Expression | UTC Schedule     | Asia/Manila (PHT) | Worker / Target                                                                                      | Idempotency / Deduplication                                               |
+| :------------------------------------------------ | :-------------- | :--------------- | :---------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `generate_upcoming_sunday_email_reminders_friday` | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `public.generate_and_dispatch_upcoming_sunday_email_reminders()` &rarr; `cron-process-email-queue`   | Checked via `public.email_reminder_logs.sunday_date` (unique constraint)  |
+| `process_email_queue_15m`                         | `*/15 * * * *`  | Every 15 minutes | Every 15 minutes  | `cron-process-email-queue` via `net.http_post`                                                       | PGMQ visibility timeout (30s) + message archiving                         |
+| `generate_upcoming_sunday_push_reminders_friday`  | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `public.generate_and_dispatch_upcoming_sunday_push_reminders()` &rarr; `cron-process-push-reminders` | Checked via `public.push_reminder_logs.sunday_date` (unique constraint)   |
+| `process_push_reminders_15m`                      | `*/15 * * * *`  | Every 15 minutes | Every 15 minutes  | `cron-process-push-reminders` via `net.http_post`                                                    | PGMQ visibility timeout (30s) + message archiving                         |
+| `upcoming_sunday_excused_export_email_friday`     | `0 22 * * 4`    | Thursday 22:00   | Friday 06:00      | `cron-upcoming-sunday-excused-export-email` via `net.http_post`                                      | Rate limited (`1 hit/60s`) + generated once per Friday trigger            |
+| `weekly_sunday_debrief_monday_morning`            | `0 0 * * 1`     | Monday 00:00     | Monday 08:00      | `cron-weekly-sunday-debrief` via `net.http_post`                                                     | Deduplicated by target Sunday in `public.service_weekly_briefs`           |
+| `sync_members_google_sheet_daily`                 | `0 18 * * *`    | Daily 18:00      | Daily 02:00       | `cron-sync-members-sheet` via `net.http_post`                                                        | Upsert by `member_id` (RFID) or name triplet; rate limited (`5 hits/60s`) |
+| `sync_members_google_sheet_daily`                 | `0 18 * * *`    | Daily 18:00      | Daily 02:00       | `cron-sync-members-sheet` via `net.http_post`                                                        | Upsert by `member_id` (RFID) or name triplet; rate limited (`5 hits/60s`) |
 
 ### 2.2 Maintenance & On-Demand Cron Functions
 
@@ -174,6 +179,34 @@ Edge functions that handle cron jobs configure `useEdgeHook` with:
   2. Submits anonymized metrics to Google Gemini AI to analyze volunteer turnout rates, deficit patterns, and key operational takeaways.
   3. Upserts the debrief into `public.service_weekly_briefs`.
   4. Enqueues a notification email to administrators with the executive summary and a direct link to the Services Dashboard ([`/admin/services`](/admin/services)).
+
+### 4.4 Daily Google Sheet Member Sync (`cron-sync-members-sheet`)
+
+- **Schedule**: Daily at 02:00 AM PHT (`0 18 * * *` UTC).
+- **Required Edge Function Secrets**:
+  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`: Google Cloud Service Account email with **Viewer** access on the Sheet.
+  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: PKCS8 private key from the Service Account JSON key (escaped `\n` supported).
+  - `GOOGLE_SHEETS_SPREADSHEET_ID`: Spreadsheet ID from the Sheet URL (`/d/<ID>/edit`).
+  - `GOOGLE_SHEETS_GID` _(optional; defaults to the first tab)_: Permanent numeric tab ID from the Sheet URL (`#gid=<GID>`). The function resolves the tab's current title at runtime and reads all populated rows and columns—surviving tab renames and added/reordered columns.
+- **Process**:
+  1. Signs a short-lived Google OAuth2 JWT (`RS256`) using Web Crypto, resolves the target tab title via Sheets metadata, and fetches the full tab from Google Sheets API v4.
+  2. Maps core columns (`RFID` &rarr; `member_id`, `Firstname`, `Surname`, `Nickname`, `Role`, `Category`) and Sheet metadata columns (`1st Sunday`–`5th Sunday`, `SR_PWD`, `IsOIC`, `VolunteerID`, `Blockage Count`, `Manual Entry Count`, `Pref_Tables`), ignoring `Timestamp` and `__PowerAppsId__`.
+  3. Marks blank Sheet metadata cells in `clear_metadata_keys` so emptied commitments/flags are cleanly removed from `public.users.metadata` without overwriting app-managed fields (`email`, `phone`, `date_of_birth`, avatars, recruitment/DGroup metadata).
+  4. Skips invalid or conflicting rows (duplicates, missing required fields) instead of aborting the batch, applies all valid upserts via `apply_bulk_member_upsert`, and logs/returns `{ inserted_count, updated_count, skipped_count, total_sheet_rows, errors }`.
+
+### 4.4 Daily Google Sheet Member Sync (`cron-sync-members-sheet`)
+
+- **Schedule**: Daily at 02:00 AM PHT (`0 18 * * *` UTC).
+- **Required Edge Function Secrets**:
+  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`: Google Cloud Service Account email with **Viewer** access on the Sheet.
+  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: PKCS8 private key from the Service Account JSON key (escaped `\n` supported).
+  - `GOOGLE_SHEETS_SPREADSHEET_ID`: Spreadsheet ID from the Sheet URL (`/d/<ID>/edit`).
+  - `GOOGLE_SHEETS_GID` _(optional; defaults to the first tab)_: Permanent numeric tab ID from the Sheet URL (`#gid=<GID>`). The function resolves the tab's current title at runtime and reads all populated rows and columns—surviving tab renames and added/reordered columns.
+- **Process**:
+  1. Signs a short-lived Google OAuth2 JWT (`RS256`) using Web Crypto, resolves the target tab title via Sheets metadata, and fetches the full tab from Google Sheets API v4.
+  2. Maps core columns (`RFID` &rarr; `member_id`, `Firstname`, `Surname`, `Nickname`, `Role`, `Category`) and Sheet metadata columns (`1st Sunday`–`5th Sunday`, `SR_PWD`, `IsOIC`, `VolunteerID`, `Blockage Count`, `Manual Entry Count`, `Pref_Tables`), ignoring `Timestamp` and `__PowerAppsId__`.
+  3. Marks blank Sheet metadata cells in `clear_metadata_keys` so emptied commitments/flags are cleanly removed from `public.users.metadata` without overwriting app-managed fields (`email`, `phone`, `date_of_birth`, avatars, recruitment/DGroup metadata).
+  4. Skips invalid or conflicting rows (duplicates, missing required fields) instead of aborting the batch, applies all valid upserts via `apply_bulk_member_upsert`, and logs/returns `{ inserted_count, updated_count, skipped_count, total_sheet_rows, errors }`.
 
 ---
 
