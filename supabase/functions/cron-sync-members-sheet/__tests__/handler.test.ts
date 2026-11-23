@@ -1,6 +1,10 @@
 import { assertEquals } from '@std/assert';
 
-import { handleCronSyncMembersSheet } from '../handler.ts';
+import {
+  type SyncMembersStreamEvent,
+  UPSERT_BATCH_SIZE,
+  handleCronSyncMembersSheet,
+} from '../handler.ts';
 
 const SERVICE_ROLE_KEY = 'test-service-role-key';
 const CRON_ROLE_KEY = 'test-cron-role-key';
@@ -85,11 +89,17 @@ async function withFunctionEnv(
 
 let requestCounter = 0;
 
-function buildRequest(options: { cronKey?: string; serviceRole?: boolean } = {}) {
+function buildRequest(
+  options: { cronKey?: string; serviceRole?: boolean; stream?: boolean; dryRun?: boolean } = {},
+) {
   const headers = new Headers({
     'content-type': 'application/json',
     'x-forwarded-for': `198.51.100.${++requestCounter}`,
   });
+
+  if (options.stream) {
+    headers.set('accept', 'application/x-ndjson');
+  }
 
   if (options.cronKey) {
     headers.set('x-cron-key', options.cronKey);
@@ -97,10 +107,14 @@ function buildRequest(options: { cronKey?: string; serviceRole?: boolean } = {})
     headers.set('authorization', `Bearer ${SERVICE_ROLE_KEY}`);
   }
 
+  const bodyPayload: Record<string, boolean> = {};
+  if (options.stream) bodyPayload.stream = true;
+  if (options.dryRun) bodyPayload.dry_run = true;
+
   return new Request('https://example.functions/cron-sync-members-sheet', {
     method: 'POST',
     headers,
-    body: '{}',
+    body: JSON.stringify(bodyPayload),
   });
 }
 
@@ -358,3 +372,258 @@ Deno.test('cron-sync-members-sheet returns 500 when Google Sheets API fails', as
     }
   });
 });
+
+Deno.test(
+  'cron-sync-members-sheet streams NDJSON progress across batched upserts and returns full skipped_rows',
+  async () => {
+    await withFunctionEnv({}, async () => {
+      const originalFetch = globalThis.fetch;
+      const batchSizes: number[] = [];
+
+      const totalValidRows = UPSERT_BATCH_SIZE + 5;
+      const sheetRows: string[][] = [
+        ['RFID', 'Firstname', 'Surname', 'Nickname', 'Role', 'Category'],
+      ];
+      for (let i = 1; i <= totalValidRows; i += 1) {
+        sheetRows.push([
+          `RFID-${String(i).padStart(3, '0')}`,
+          `First${i}`,
+          `Last${i}`,
+          `Nick${i}`,
+          'Usher',
+          'Adults',
+        ]);
+      }
+      // Add one invalid row missing RFID
+      sheetRows.push(['', 'BadFirst', 'BadLast', 'BadNick', 'Usher', 'Adults']);
+
+      globalThis.fetch = async (input, init) => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+
+        if (url.hostname === 'oauth2.googleapis.com') {
+          return Response.json({ access_token: 'mock-token' });
+        }
+        if (url.hostname === 'sheets.googleapis.com' && !url.pathname.includes('/values/')) {
+          return Response.json({
+            sheets: [{ properties: { sheetId: 0, title: 'Members' } }],
+          });
+        }
+        if (url.hostname === 'sheets.googleapis.com' && url.pathname.includes('/values/')) {
+          return Response.json({ values: sheetRows });
+        }
+        if (url.pathname === '/rest/v1/users') {
+          return Response.json([]);
+        }
+        if (url.pathname === '/rest/v1/rpc/apply_bulk_member_upsert') {
+          const rawBody =
+            typeof init?.body === 'string'
+              ? init.body
+              : input instanceof Request
+                ? await input.text()
+                : '{}';
+          const parsed = JSON.parse(rawBody) as { p_rows: unknown[] };
+          batchSizes.push(parsed.p_rows.length);
+          return Response.json([{ inserted_count: parsed.p_rows.length, updated_count: 0 }]);
+        }
+
+        return new Response(`Unexpected request: ${url.toString()}`, { status: 500 });
+      };
+
+      try {
+        const response = await handleCronSyncMembersSheet(
+          buildRequest({ cronKey: CRON_ROLE_KEY, stream: true }),
+        );
+        assertEquals(response.status, 200);
+        assertEquals(response.headers.get('content-type')?.includes('application/x-ndjson'), true);
+
+        const rawText = await response.text();
+        const events = rawText
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as SyncMembersStreamEvent);
+
+        const stages = events
+          .filter((event) => event.type === 'progress')
+          .map((event) => event.stage);
+
+        assertEquals(stages.includes('fetching_sheet'), true);
+        assertEquals(stages.includes('parsing_rows'), true);
+        assertEquals(stages.includes('loading_members'), true);
+        assertEquals(stages.includes('resolving_rows'), true);
+        assertEquals(stages.includes('upserting_batches'), true);
+        assertEquals(batchSizes, [UPSERT_BATCH_SIZE, 5]);
+
+        const finalEvent = events[events.length - 1];
+        assertEquals(finalEvent.type, 'complete');
+        if (finalEvent.type === 'complete' && !finalEvent.result.dry_run) {
+          assertEquals(finalEvent.result.inserted_count, totalValidRows);
+          assertEquals(finalEvent.result.updated_count, 0);
+          assertEquals(finalEvent.result.skipped_count, 1);
+          assertEquals(finalEvent.result.total_sheet_rows, totalValidRows + 1);
+          assertEquals(finalEvent.result.skipped_rows.length, 1);
+          assertEquals(finalEvent.result.skipped_rows[0].row_number, totalValidRows + 2);
+        }
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-sync-members-sheet emits NDJSON error event when sync fails mid-stream',
+  async () => {
+    await withFunctionEnv({}, async () => {
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = (input) => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.hostname === 'oauth2.googleapis.com') {
+          return Promise.resolve(Response.json({ access_token: 'mock-token' }));
+        }
+        if (url.hostname === 'sheets.googleapis.com') {
+          return Promise.resolve(new Response('Forbidden', { status: 403 }));
+        }
+        return Promise.resolve(new Response('Unexpected', { status: 500 }));
+      };
+
+      try {
+        const response = await handleCronSyncMembersSheet(
+          buildRequest({ cronKey: CRON_ROLE_KEY, stream: true }),
+        );
+        assertEquals(response.status, 200);
+        const rawText = await response.text();
+        const events = rawText
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as SyncMembersStreamEvent);
+
+        const finalEvent = events[events.length - 1];
+        assertEquals(finalEvent.type, 'error');
+        if (finalEvent.type === 'error') {
+          assertEquals(finalEvent.message, 'Failed to sync members from Google Sheet');
+        }
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);
+
+Deno.test(
+  'cron-sync-members-sheet supports dry_run preview with field diffs without calling apply_bulk_member_upsert',
+  async () => {
+    await withFunctionEnv({}, async () => {
+      const originalFetch = globalThis.fetch;
+      let rpcCalled = false;
+
+      globalThis.fetch = (input) => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.hostname === 'oauth2.googleapis.com') {
+          return Promise.resolve(Response.json({ access_token: 'mock-token' }));
+        }
+        if (url.hostname === 'sheets.googleapis.com' && !url.pathname.includes('/values/')) {
+          return Promise.resolve(
+            Response.json({
+              sheets: [{ properties: { sheetId: 0, title: 'Members' } }],
+            }),
+          );
+        }
+        if (url.hostname === 'sheets.googleapis.com' && url.pathname.includes('/values/')) {
+          return Promise.resolve(
+            Response.json({
+              values: [
+                ['RFID', 'Firstname', 'Surname', 'Nickname', 'Role', 'Category', '1st Sunday'],
+                ['RFID-001', 'Juan', 'Dela Cruz', 'Johnny', 'Prayer Coach', 'Adults', ''],
+                ['RFID-002', 'Maria', 'Santos', 'Mia', 'Usher', 'Adults', '9AM'],
+                ['RFID-003', 'New', 'Member', 'Newbie', 'Usher', 'Youth', '12NN'],
+                ['', 'Invalid', 'Row', 'Bad', 'Usher', 'Adults', ''],
+              ],
+            }),
+          );
+        }
+        if (url.pathname === '/rest/v1/users') {
+          return Promise.resolve(
+            Response.json([
+              {
+                id: 'user-1',
+                member_id: 'RFID-001',
+                first_name: 'Juan',
+                last_name: 'Dela Cruz',
+                nickname: 'Johnny',
+                email: 'juan@example.com',
+                phone: null,
+                date_of_birth: null,
+                role: 'Usher',
+                category: 'Adults',
+                metadata: { first_sunday: '9AM' },
+              },
+              {
+                id: 'user-2',
+                member_id: 'RFID-002',
+                first_name: 'Maria',
+                last_name: 'Santos',
+                nickname: 'Mia',
+                email: null,
+                phone: null,
+                date_of_birth: null,
+                role: 'Usher',
+                category: 'Adults',
+                metadata: { first_sunday: '9AM' },
+              },
+            ]),
+          );
+        }
+        if (url.pathname.includes('apply_bulk_member_upsert')) {
+          rpcCalled = true;
+        }
+        return Promise.resolve(new Response('Unexpected', { status: 500 }));
+      };
+
+      try {
+        const response = await handleCronSyncMembersSheet(
+          buildRequest({ cronKey: CRON_ROLE_KEY, stream: true, dryRun: true }),
+        );
+        assertEquals(response.status, 200);
+        assertEquals(rpcCalled, false);
+
+        const rawText = await response.text();
+        const events = rawText
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as SyncMembersStreamEvent);
+
+        const finalEvent = events[events.length - 1];
+        assertEquals(finalEvent.type, 'complete');
+        if (finalEvent.type === 'complete' && finalEvent.result.dry_run) {
+          assertEquals(finalEvent.result.summary.total_rows, 4);
+          assertEquals(finalEvent.result.summary.insert_count, 1);
+          assertEquals(finalEvent.result.summary.update_count, 1);
+          assertEquals(finalEvent.result.summary.unchanged_count, 1);
+          assertEquals(finalEvent.result.summary.error_count, 1);
+
+          const updatedRow = finalEvent.result.preview_rows.find(
+            (row) => row.member_id === 'RFID-001',
+          );
+          assertEquals(updatedRow?.operation, 'update');
+          assertEquals(updatedRow?.field_changes.length, 2);
+          assertEquals(
+            updatedRow?.field_changes.some(
+              (c) =>
+                c.field === 'role' && c.old_value === 'Usher' && c.new_value === 'Prayer Coach',
+            ),
+            true,
+          );
+          assertEquals(
+            updatedRow?.field_changes.some(
+              (c) => c.field === 'first_sunday' && c.old_value === '9AM' && c.new_value === null,
+            ),
+            true,
+          );
+        }
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);

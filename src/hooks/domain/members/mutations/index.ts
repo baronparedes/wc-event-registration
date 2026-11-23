@@ -8,3 +8,4 @@ export * from './useUpdateMemberMutation';
 export * from './useUploadMemberAvatarMutation';
 export * from './useAddMemberNoteMutation';
 export * from './useDeleteMemberNoteMutation';
+export * from './useSyncMembersFromSheetMutation';

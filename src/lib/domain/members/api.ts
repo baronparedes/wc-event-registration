@@ -1,7 +1,18 @@
 import { DEFAULT_MEMBER_TURNUP_RATE } from '@/lib/domain/hub-calendar/constants';
-import { supabase } from '@/lib/infrastructure';
+import {
+  type StreamCallerOptions,
+  createEdgeFunctionNdjsonStreamCaller,
+  supabase,
+} from '@/lib/infrastructure';
 
-import type { MemberNote } from './types';
+import type {
+  GoogleMemberSyncPreviewResult,
+  GoogleMemberSyncPreviewStreamEvent,
+  GoogleMemberSyncProgress,
+  GoogleMemberSyncResult,
+  GoogleMemberSyncStreamEvent,
+  MemberNote,
+} from './types';
 
 export type MemberUserRow = {
   id: string;
@@ -401,4 +412,104 @@ export async function deleteMemberNote(memberId: string, noteId: string): Promis
   });
 
   if (error) throw error;
+}
+
+export async function syncMembersFromGoogleSheet(
+  onProgress: (progress: GoogleMemberSyncProgress) => void,
+  options?: StreamCallerOptions,
+): Promise<GoogleMemberSyncResult> {
+  const caller = createEdgeFunctionNdjsonStreamCaller<
+    { stream: true },
+    GoogleMemberSyncStreamEvent
+  >('cron-sync-members-sheet');
+
+  let finalResult: GoogleMemberSyncResult | null = null;
+  let streamError: string | null = null;
+
+  await caller(
+    { stream: true },
+    (event) => {
+      if (event.type === 'progress') {
+        onProgress({
+          stage: event.stage,
+          message: event.message,
+          percent: event.percent,
+          total_sheet_rows: event.total_sheet_rows,
+          parsed_rows: event.parsed_rows,
+          resolved_rows: event.resolved_rows,
+          processed_rows: event.processed_rows,
+          total_batches: event.total_batches,
+          current_batch: event.current_batch,
+          inserted_count: event.inserted_count,
+          updated_count: event.updated_count,
+          skipped_count: event.skipped_count,
+        });
+      } else if (event.type === 'complete') {
+        finalResult = event.result;
+      } else if (event.type === 'error') {
+        streamError = event.message;
+      }
+    },
+    options,
+  );
+
+  if (streamError) {
+    throw new Error(streamError);
+  }
+
+  if (!finalResult) {
+    throw new Error('Sync stream ended before a final result was received.');
+  }
+
+  return finalResult;
+}
+
+export async function previewMembersFromGoogleSheet(
+  onProgress: (progress: GoogleMemberSyncProgress) => void,
+  options?: StreamCallerOptions,
+): Promise<GoogleMemberSyncPreviewResult> {
+  const caller = createEdgeFunctionNdjsonStreamCaller<
+    { stream: true; dry_run: true },
+    GoogleMemberSyncPreviewStreamEvent
+  >('cron-sync-members-sheet');
+
+  let finalPreview: GoogleMemberSyncPreviewResult | null = null;
+  let streamError: string | null = null;
+
+  await caller(
+    { stream: true, dry_run: true },
+    (event) => {
+      if (event.type === 'progress') {
+        onProgress({
+          stage: event.stage,
+          message: event.message,
+          percent: event.percent,
+          total_sheet_rows: event.total_sheet_rows,
+          parsed_rows: event.parsed_rows,
+          resolved_rows: event.resolved_rows,
+          processed_rows: event.processed_rows,
+          total_batches: event.total_batches,
+          current_batch: event.current_batch,
+          inserted_count: event.inserted_count,
+          updated_count: event.updated_count,
+          skipped_count: event.skipped_count,
+        });
+      } else if (event.type === 'complete') {
+        finalPreview = event.result;
+      } else if (event.type === 'error') {
+        streamError = event.message;
+      }
+    },
+    options,
+  );
+
+  if (streamError) {
+    throw new Error(streamError);
+  }
+
+  if (!finalPreview) {
+    throw new Error('Preview stream ended before a result was received.');
+  }
+
+  return finalPreview;
 }

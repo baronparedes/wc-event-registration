@@ -5,6 +5,11 @@ export interface ExistingMember {
   last_name: string | null;
   nickname: string | null;
   email: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  role?: string | null;
+  category?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ParsedSheetMemberRow {
@@ -103,8 +108,9 @@ function canonicalizeMetadataHeaderKey(value: string): string {
   switch (value) {
     case 'isoic':
       return 'is_oic';
+    case 'volunteer_id':
     case 'volunteerid':
-      return 'volunteer_id';
+      return 'volunteerid';
     case 'startdate':
     case 'start_date':
     case 'date_joined':
@@ -510,4 +516,330 @@ export function resolveSyncRows(
   }
 
   return { resolvedRows, skipped };
+}
+
+export type SyncPreviewOperation = 'insert' | 'update' | 'update_member_id' | 'error';
+
+export interface SyncPreviewFieldChange {
+  field: string;
+  label: string;
+  old_value: string | null;
+  new_value: string | null;
+}
+
+export interface SyncPreviewNewDetail {
+  field: string;
+  label: string;
+  value: string;
+}
+
+export interface SyncPreviewRow {
+  row_number: number;
+  member_id: string;
+  first_name: string;
+  last_name: string;
+  nickname: string;
+  role: string;
+  category: string;
+  operation: SyncPreviewOperation;
+  target_user_id?: string;
+  target_member_id?: string;
+  errors: string[];
+  field_changes: SyncPreviewFieldChange[];
+  new_member_details: SyncPreviewNewDetail[];
+}
+
+export interface SyncPreviewSummary {
+  total_rows: number;
+  insert_count: number;
+  update_count: number;
+  update_member_id_count: number;
+  unchanged_count: number;
+  error_count: number;
+}
+
+export interface SyncPreviewBuildResult {
+  rows: SyncPreviewRow[];
+  summary: SyncPreviewSummary;
+}
+
+const PREVIEW_FIELD_LABELS: Record<string, string> = {
+  member_id: 'RFID / Member ID',
+  first_name: 'First Name',
+  last_name: 'Last Name',
+  nickname: 'Nickname',
+  email: 'Email',
+  phone: 'Phone',
+  date_of_birth: 'Date of Birth',
+  role: 'Role',
+  category: 'Category',
+  first_sunday: '1st Sunday',
+  second_sunday: '2nd Sunday',
+  third_sunday: '3rd Sunday',
+  fourth_sunday: '4th Sunday',
+  fifth_sunday: '5th Sunday',
+  is_oic: 'Is OIC',
+  sr_pwd: 'SR/PWD',
+  volunteerid: 'Volunteer ID',
+  start_date: 'Start Date',
+};
+
+function formatPreviewFieldLabel(key: string): string {
+  if (PREVIEW_FIELD_LABELS[key]) {
+    return PREVIEW_FIELD_LABELS[key];
+  }
+  return key
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatComparableValue(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  const text = String(value).trim();
+  return text.length > 0 ? text : null;
+}
+
+export function buildSyncPreview(params: {
+  parsedRows: ParsedSheetMemberRow[];
+  parseSkipped: SkippedSyncRow[];
+  existingMembers: ExistingMember[];
+  resolvedRows: ResolvedSheetUpsertRow[];
+  resolveSkipped: SkippedSyncRow[];
+}): SyncPreviewBuildResult {
+  const { parsedRows, parseSkipped, existingMembers, resolvedRows, resolveSkipped } = params;
+
+  const existingById = new Map(existingMembers.map((member) => [member.id, member]));
+  const parsedByMemberId = new Map<string, ParsedSheetMemberRow>();
+  for (const row of parsedRows) {
+    if (!parsedByMemberId.has(row.member_id)) {
+      parsedByMemberId.set(row.member_id, row);
+    }
+  }
+  const parsedByRowNumber = new Map(parsedRows.map((row) => [row.row_number, row]));
+
+  const previewRows: SyncPreviewRow[] = [];
+
+  for (const resolved of resolvedRows) {
+    const parsedRow = parsedByMemberId.get(resolved.member_id);
+    const rowNumber = parsedRow?.row_number ?? 0;
+
+    if (resolved.operation === 'insert') {
+      const newMemberDetails: SyncPreviewNewDetail[] = [
+        {
+          field: 'member_id',
+          label: formatPreviewFieldLabel('member_id'),
+          value: resolved.member_id,
+        },
+        {
+          field: 'first_name',
+          label: formatPreviewFieldLabel('first_name'),
+          value: resolved.first_name,
+        },
+        {
+          field: 'last_name',
+          label: formatPreviewFieldLabel('last_name'),
+          value: resolved.last_name,
+        },
+        { field: 'nickname', label: formatPreviewFieldLabel('nickname'), value: resolved.nickname },
+        { field: 'role', label: formatPreviewFieldLabel('role'), value: resolved.role },
+        { field: 'category', label: formatPreviewFieldLabel('category'), value: resolved.category },
+      ];
+
+      if (resolved.email) {
+        newMemberDetails.push({
+          field: 'email',
+          label: formatPreviewFieldLabel('email'),
+          value: resolved.email,
+        });
+      }
+      if (resolved.phone) {
+        newMemberDetails.push({
+          field: 'phone',
+          label: formatPreviewFieldLabel('phone'),
+          value: resolved.phone,
+        });
+      }
+      if (resolved.date_of_birth) {
+        newMemberDetails.push({
+          field: 'date_of_birth',
+          label: formatPreviewFieldLabel('date_of_birth'),
+          value: resolved.date_of_birth,
+        });
+      }
+
+      for (const [key, val] of Object.entries(resolved.metadata)) {
+        const formatted = formatComparableValue(val);
+        if (formatted !== null) {
+          newMemberDetails.push({
+            field: key,
+            label: formatPreviewFieldLabel(key),
+            value: formatted,
+          });
+        }
+      }
+
+      previewRows.push({
+        row_number: rowNumber,
+        member_id: resolved.member_id,
+        first_name: resolved.first_name,
+        last_name: resolved.last_name,
+        nickname: resolved.nickname,
+        role: resolved.role,
+        category: resolved.category,
+        operation: 'insert',
+        errors: [],
+        field_changes: [],
+        new_member_details: newMemberDetails,
+      });
+      continue;
+    }
+
+    const existing = resolved.target_id ? existingById.get(resolved.target_id) : undefined;
+    const isMemberIdChange = Boolean(
+      existing && normalizeText(existing.member_id) !== normalizeText(resolved.member_id),
+    );
+    const operation: SyncPreviewOperation = isMemberIdChange ? 'update_member_id' : 'update';
+    const fieldChanges: SyncPreviewFieldChange[] = [];
+
+    if (existing) {
+      const compareCore = (
+        field: string,
+        oldRaw: string | null | undefined,
+        newRaw: string | null | undefined,
+        options: { ignoreIfNewNull?: boolean; caseInsensitive?: boolean } = {},
+      ) => {
+        if (options.ignoreIfNewNull && (newRaw === null || newRaw === undefined)) {
+          return;
+        }
+        const oldVal = formatComparableValue(oldRaw);
+        const newVal = formatComparableValue(newRaw);
+        const oldCmp = options.caseInsensitive ? (oldVal?.toLowerCase() ?? null) : oldVal;
+        const newCmp = options.caseInsensitive ? (newVal?.toLowerCase() ?? null) : newVal;
+        if (oldCmp !== newCmp) {
+          fieldChanges.push({
+            field,
+            label: formatPreviewFieldLabel(field),
+            old_value: oldVal,
+            new_value: newVal,
+          });
+        }
+      };
+
+      compareCore('member_id', existing.member_id, resolved.member_id);
+      compareCore('first_name', existing.first_name, resolved.first_name);
+      compareCore('last_name', existing.last_name, resolved.last_name);
+      compareCore('nickname', existing.nickname, resolved.nickname);
+      compareCore('role', existing.role, resolved.role);
+      compareCore('category', existing.category, resolved.category);
+      compareCore('email', existing.email, resolved.email, {
+        ignoreIfNewNull: true,
+        caseInsensitive: true,
+      });
+      compareCore('phone', existing.phone, resolved.phone, { ignoreIfNewNull: true });
+      compareCore('date_of_birth', existing.date_of_birth, resolved.date_of_birth, {
+        ignoreIfNewNull: true,
+      });
+
+      const existingMeta =
+        existing.metadata && typeof existing.metadata === 'object' ? existing.metadata : {};
+
+      for (const [key, nextRaw] of Object.entries(resolved.metadata)) {
+        const oldVal = formatComparableValue(existingMeta[key]);
+        const newVal = formatComparableValue(nextRaw);
+        if (oldVal !== newVal) {
+          fieldChanges.push({
+            field: key,
+            label: formatPreviewFieldLabel(key),
+            old_value: oldVal,
+            new_value: newVal,
+          });
+        }
+      }
+
+      for (const clearedKey of resolved.clear_metadata_keys) {
+        if (clearedKey in resolved.metadata) continue;
+        const oldVal = formatComparableValue(existingMeta[clearedKey]);
+        if (oldVal !== null) {
+          fieldChanges.push({
+            field: clearedKey,
+            label: formatPreviewFieldLabel(clearedKey),
+            old_value: oldVal,
+            new_value: null,
+          });
+        }
+      }
+    }
+
+    previewRows.push({
+      row_number: rowNumber,
+      member_id: resolved.member_id,
+      first_name: resolved.first_name,
+      last_name: resolved.last_name,
+      nickname: resolved.nickname,
+      role: resolved.role,
+      category: resolved.category,
+      operation,
+      target_user_id: existing?.id ?? resolved.target_id,
+      target_member_id: existing?.member_id,
+      errors: [],
+      field_changes: fieldChanges,
+      new_member_details: [],
+    });
+  }
+
+  for (const skippedEntry of [...parseSkipped, ...resolveSkipped]) {
+    const parsed = parsedByRowNumber.get(skippedEntry.row_number);
+    previewRows.push({
+      row_number: skippedEntry.row_number,
+      member_id: skippedEntry.member_id || parsed?.member_id || '',
+      first_name: parsed?.first_name ?? '',
+      last_name: parsed?.last_name ?? '',
+      nickname: parsed?.nickname ?? '',
+      role: parsed?.role ?? '',
+      category: parsed?.category ?? '',
+      operation: 'error',
+      errors: skippedEntry.reasons,
+      field_changes: [],
+      new_member_details: [],
+    });
+  }
+
+  previewRows.sort((a, b) => a.row_number - b.row_number);
+
+  let insertCount = 0;
+  let updateCount = 0;
+  let updateMemberIdCount = 0;
+  let unchangedCount = 0;
+  let errorCount = 0;
+
+  for (const row of previewRows) {
+    if (row.operation === 'insert') {
+      insertCount += 1;
+    } else if (row.operation === 'update_member_id') {
+      updateMemberIdCount += 1;
+    } else if (row.operation === 'update') {
+      if (row.field_changes.length === 0) {
+        unchangedCount += 1;
+      } else {
+        updateCount += 1;
+      }
+    } else if (row.operation === 'error') {
+      errorCount += 1;
+    }
+  }
+
+  return {
+    rows: previewRows,
+    summary: {
+      total_rows: previewRows.length,
+      insert_count: insertCount,
+      update_count: updateCount,
+      update_member_id_count: updateMemberIdCount,
+      unchanged_count: unchangedCount,
+      error_count: errorCount,
+    },
+  };
 }

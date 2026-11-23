@@ -3,8 +3,9 @@ export {
   createEdgeFunctionCaller,
   createEdgeFunctionTextCaller,
   createEdgeFunctionStreamCaller,
+  createEdgeFunctionNdjsonStreamCaller,
 } from './supabase';
-export type { EdgeFunctionTextResponse } from './supabase';
+export type { EdgeFunctionTextResponse, StreamCallerOptions } from './supabase';
 export {
   ATTENDANCE_DATA_SNAPSHOT_TTL_MS,
   clearAttendanceDataSnapshot,
