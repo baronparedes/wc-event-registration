@@ -53,3 +53,12 @@ wc_attend.db
 tools/attendance-sync/bin/
 *.exe
 .*_sync_snapshot*
+
+# Local database backup/restore dumps (may contain production data)
+backup.sql
+backup.sql.gz
+backup.sql.gz.gpg
+supabase-backup-*.sql
+supabase-backup-*.sql.gz
+supabase-backup-*.sql.gz.gpg
+restore-errors.log

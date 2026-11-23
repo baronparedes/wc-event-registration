@@ -39,16 +39,40 @@ The automated restoration workflow allows you to restore directly from GitHub wi
 
 ---
 
-## Method 2: Manual Restore via Command Line (Local Machine)
+## Method 2: One-Command Restore to Local Supabase (Recommended for Local Dev)
 
-Use this method if you wish to run the restore locally or from an administrative server.
+To restore a production backup onto your local machine (`supabase start`), use the built-in npm script. It automatically handles decryption, decompression, clean schema reset (`supabase db reset --no-seed`), `auth.users`/`auth.identities` + `public` data loading, disabling local `pg_cron` jobs, and cleaning up temporary unencrypted files.
+
+### From a local backup file (`.sql.gz.gpg`, `.sql.gz`, or `.sql`)
+
+```bash
+npm run supabase:db:restore -- ./supabase-backup-YYYYMMDD-HHMMSS.sql.gz.gpg
+```
+
+### Directly from Cloudflare R2
+
+```bash
+# Restore the latest backup in R2
+npm run supabase:db:restore -- --latest
+
+# Or restore a specific backup file from R2
+npm run supabase:db:restore -- --r2 supabase-backup-YYYYMMDD-HHMMSS.sql.gz.gpg
+```
+
+> **Tip:** For `--latest` / `--r2`, you can save `CF_R2_ACCOUNT_ID`, `CF_R2_BUCKET_NAME`, `CF_R2_ACCESS_KEY_ID`, `CF_R2_SECRET_ACCESS_KEY`, and optionally `BACKUP_ENCRYPTION_PASSPHRASE` in your gitignored `.env`, `.env.local`, or `.env.backup.local` file in the project root.
+
+---
+
+## Method 3: Manual Restore via Command Line (Remote / Custom Postgres)
+
+Use this method if you wish to restore directly to a remote Postgres instance from the CLI.
 
 ### Required Tools
 
 - `aws-cli` (or `rclone` / Cloudflare Dashboard download)
 - `gpg` (GnuPG)
 - `gzip` / `gunzip`
-- `psql` (PostgreSQL client)
+- `psql` (PostgreSQL 17 client)
 
 ### Step-by-Step CLI Instructions:
 
@@ -62,28 +86,16 @@ aws s3 cp "s3://<CF_R2_BUCKET_NAME>/supabase-backup-YYYYMMDD-HHMMSS.sql.gz.gpg" 
   --region auto
 ```
 
-#### Step 2: Decrypt the Backup Archive
-
-Decrypt the `.gpg` file using GPG:
+#### Step 2: Decrypt & Decompress the Backup Archive
 
 ```bash
-gpg --decrypt --batch --yes --passphrase "<YOUR_BACKUP_ENCRYPTION_PASSPHRASE>" backup.sql.gz.gpg > backup.sql.gz
+gpg --decrypt backup.sql.gz.gpg | gunzip -c > backup.sql
 ```
 
-#### Step 3: Decompress the Backup SQL File
-
-Decompress the `.sql.gz` file:
+#### Step 3: Strip PostgreSQL 17.6+ `\restrict` Guards & Apply SQL Dump
 
 ```bash
-gunzip backup.sql.gz
-```
-
-#### Step 4: Apply SQL Dump to Target Supabase Postgres Instance
-
-Execute `psql` against your target Supabase connection string:
-
-```bash
-psql "<TARGET_SUPABASE_DB_URL>" -f backup.sql
+grep -vE '^\\(un)?restrict ' backup.sql | psql "<TARGET_SUPABASE_DB_URL>"
 ```
 
 Example connection string format:

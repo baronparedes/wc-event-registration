@@ -96,7 +96,10 @@ jobs:
           echo "Uncompressing backup file..."
           gunzip backup.sql.gz
 
+          # Strip pg_dump 17.6+ \restrict/\unrestrict guards so non-fatal statements never cascade into backslash errors
+          grep -vE '^\\(un)?restrict ' backup.sql > backup.sanitized.sql
+
           echo "Restoring SQL database to Supabase..."
-          "${PSQL}" "${SUPABASE_DB_URL}" -f backup.sql
+          "${PSQL}" "${SUPABASE_DB_URL}" -f backup.sanitized.sql
 
           echo "Database restoration completed successfully!"
