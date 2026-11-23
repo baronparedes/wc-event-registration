@@ -8,7 +8,7 @@ This guide details the automated database backup and manual restoration architec
 
 - **Schedule**: Every Monday at 01:00 AM PHT (Sunday 17:00 UTC) or manually on-demand via `workflow_dispatch`.
 - **Pipeline**:
-  1. Dumps full database schema and data from Supabase Postgres using `pg_dump`.
+  1. Dumps `auth.users` & `auth.identities` (data-only) plus the full `public` schema (DDL, grants, sequences, and data) from Supabase Postgres using `pg_dump` v17, avoiding conflicts with Supabase-managed internal schemas.
   2. Compresses the dump using `gzip`.
   3. Encrypts the compressed file using `gpg` symmetric AES256 encryption.
   4. Securely uploads the resulting archive (`supabase-backup-YYYYMMDD-HHMMSS.sql.gz.gpg`) to a Cloudflare R2 bucket.

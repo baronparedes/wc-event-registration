@@ -57,12 +57,28 @@ jobs:
           TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
           BACKUP_FILE="supabase-backup-${TIMESTAMP}.sql.gz.gpg"
 
-          echo "Starting Supabase database backup..."
-          "${PG_DUMP}" "${SUPABASE_DB_URL}" \
-            --clean \
-            --if-exists \
-            --no-owner \
-            --no-privileges \
+          echo "Starting Supabase database backup (auth users/identities + public schema)..."
+          {
+            echo "SET session_replication_role = replica;"
+            echo "TRUNCATE TABLE auth.identities, auth.users CASCADE;"
+
+            # 1. Data-only dump of auth.users & auth.identities (avoids touching Supabase-managed auth DDL)
+            "${PG_DUMP}" "${SUPABASE_DB_URL}" \
+              --data-only \
+              --table=auth.users \
+              --table=auth.identities \
+              --no-owner \
+              --no-privileges
+
+            # 2. Full schema + data + grants dump of public schema
+            "${PG_DUMP}" "${SUPABASE_DB_URL}" \
+              --schema=public \
+              --clean \
+              --if-exists \
+              --no-owner
+
+            echo "SET session_replication_role = origin;"
+          } \
             | gzip -c \
             | gpg --symmetric --batch --yes --passphrase "${BACKUP_ENCRYPTION_PASSPHRASE}" --cipher-algo AES256 -o "${BACKUP_FILE}"
 
