@@ -160,6 +160,10 @@ import_map = "./functions/deno.json"
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.cron-sync-members-sheet]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [functions.delete-attendance-saved-view]
 verify_jwt = true
 import_map = "./functions/deno.json"

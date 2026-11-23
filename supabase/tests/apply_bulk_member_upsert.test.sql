@@ -1,7 +1,7 @@
 begin;
 
 select
-  extensions.plan (9);
+  extensions.plan (11);
 
 create temporary table member_upsert_test_fixture (
   user_id uuid not null default gen_random_uuid(),
@@ -369,6 +369,80 @@ select
       false
     ),
     'explicit metadata update overwrites specified key and preserves other keys'
+  );
+
+-- 10. Update clearing first_sunday via clear_metadata_keys while preserving start_date
+select
+  extensions.is (
+    (
+      select
+        updated_count
+      from
+        public.apply_bulk_member_upsert (
+          jsonb_build_array(
+            jsonb_build_object(
+              'operation',
+              'update',
+              'target_id',
+              (
+                select
+                  user_id
+                from
+                  member_upsert_test_fixture
+              )::text,
+              'member_id',
+              (
+                select
+                  member_id
+                from
+                  member_upsert_test_fixture
+              ),
+              'first_name',
+              'Test Updated',
+              'last_name',
+              'User',
+              'nickname',
+              'Tester',
+              'email',
+              null,
+              'phone',
+              null,
+              'date_of_birth',
+              null,
+              'role',
+              'Usher',
+              'category',
+              'Adults',
+              'metadata',
+              '{}'::jsonb,
+              'clear_metadata_keys',
+              jsonb_build_array('first_sunday')
+            )
+          )
+        )
+    ),
+    1,
+    'update with clear_metadata_keys executes successfully'
+  );
+
+-- 11. Verify first_sunday was removed while start_date and is_oic remain intact
+select
+  extensions.is (
+    (
+      select
+        metadata
+      from
+        public.users
+      where
+        id = (
+          select
+            user_id
+          from
+            member_upsert_test_fixture
+        )
+    ),
+    jsonb_build_object('start_date', '2026-01-01', 'is_oic', false),
+    'clear_metadata_keys removes specified keys without touching unrelated metadata'
   );
 
 select
