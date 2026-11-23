@@ -254,5 +254,163 @@ describe('GoogleSheetSyncPanel', () => {
     expect(screen.getByText(/Sync completed with 1 skipped row/i)).toBeInTheDocument();
     expect(screen.getByText('Row 9')).toBeInTheDocument();
     expect(screen.getByText('Email is invalid.')).toBeInTheDocument();
+
+    // Preview Again resets sync and refetches preview
+    fireEvent.click(screen.getByRole('button', { name: /Preview Again/i }));
+    expect(mockResetSync).toHaveBeenCalledTimes(1);
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles preview error state with retry and back navigation', () => {
+    setupMocks({
+      isError: true,
+      error: new Error('Missing Google Sheets credentials'),
+    });
+
+    render(
+      <MemoryRouter>
+        <GoogleSheetSyncPanel />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Failed to load Google Sheet preview')).toBeInTheDocument();
+    expect(screen.getByText('Missing Google Sheets credentials')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Retry Preview/i }));
+    expect(mockResetSync).toHaveBeenCalledTimes(1);
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /Back to Members/i }));
+  });
+
+  it('handles empty sheet, all-unchanged filter, expand/collapse all, and sync errors', async () => {
+    // 1. Empty sheet
+    setupMocks({
+      data: {
+        dry_run: true,
+        total_sheet_rows: 0,
+        skipped_count: 0,
+        summary: {
+          total_rows: 0,
+          insert_count: 0,
+          update_count: 0,
+          update_member_id_count: 0,
+          unchanged_count: 0,
+          error_count: 0,
+        },
+        preview_rows: [],
+        errors: [],
+        skipped_rows: [],
+        timestamp: '2026-11-23T05:00:00.000Z',
+      },
+    });
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <GoogleSheetSyncPanel />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('No data rows found in Google Sheet')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Confirm & Sync/i })).toBeDisabled();
+
+    // 2. All unchanged rows + sync error banner
+    mockMutateAsync.mockRejectedValueOnce(new Error('Network timeout'));
+    setupMocks(
+      {
+        data: {
+          dry_run: true,
+          total_sheet_rows: 1,
+          skipped_count: 0,
+          summary: {
+            total_rows: 1,
+            insert_count: 0,
+            update_count: 0,
+            update_member_id_count: 0,
+            unchanged_count: 1,
+            error_count: 0,
+          },
+          preview_rows: [
+            {
+              row_number: 2,
+              member_id: 'RFID-002',
+              first_name: 'Test Maria',
+              last_name: 'Test Santos',
+              nickname: 'Test Mia',
+              role: 'Usher',
+              category: 'Adults',
+              operation: 'update',
+              target_user_id: 'u-2',
+              target_member_id: 'RFID-002',
+              errors: [],
+              field_changes: [],
+              new_member_details: [],
+            },
+          ],
+          errors: [],
+          skipped_rows: [],
+          timestamp: '2026-11-23T05:00:00.000Z',
+        },
+      },
+      {
+        error: new Error('Network timeout'),
+      },
+    );
+
+    rerender(
+      <MemoryRouter>
+        <GoogleSheetSyncPanel />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Google Sheet sync failed')).toBeInTheDocument();
+    expect(screen.getByText('Network timeout')).toBeInTheDocument();
+    expect(screen.getByText(/no field changes detected/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Show All Rows/i }));
+    expect(screen.getByText('RFID-002')).toBeInTheDocument();
+
+    // Expand all and collapse all
+    fireEvent.click(screen.getByRole('button', { name: /Expand All Details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Collapse All Details/i }));
+
+    // Test filter buttons: Insert, Update, Skipped
+    fireEvent.click(screen.getByRole('button', { name: /Insert \(0\)/i }));
+    expect(screen.getByText('No rows match the selected filter.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Update \(0\)$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Skipped \(0\)$/i }));
+
+    // Trigger confirm & sync rejection path
+    fireEvent.click(screen.getByRole('button', { name: /Confirm & Sync/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start Sync/i }));
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('renders clean success banner when sync completes with zero skipped rows', () => {
+    setupMocks(
+      {},
+      {
+        data: {
+          inserted_count: 5,
+          updated_count: 10,
+          skipped_count: 0,
+          total_sheet_rows: 15,
+          errors: [],
+          skipped_rows: [],
+          timestamp: '2026-11-23T05:01:00.000Z',
+        },
+      },
+    );
+
+    render(
+      <MemoryRouter>
+        <GoogleSheetSyncPanel />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Google Sheet sync completed successfully')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Back to Members/i }));
   });
 });

@@ -35,6 +35,22 @@ vi.mock('@/hooks/domain/members', async () => {
     ...actual,
     useAdminMembersImportSnapshotQuery: () => mockUseAdminMembersImportSnapshotQuery(),
     useBulkUpsertMembersMutation: () => mockUseBulkUpsertMembersMutation(),
+    useGoogleSheetMembersPreviewQuery: () => ({
+      data: undefined,
+      isFetching: false,
+      isError: false,
+      error: null,
+      progress: null,
+      refetch: vi.fn(),
+    }),
+    useSyncMembersFromSheetMutation: () => ({
+      mutateAsync: vi.fn(),
+      resetSync: vi.fn(),
+      isPending: false,
+      data: undefined,
+      error: null,
+      progress: null,
+    }),
   };
 });
 
@@ -650,5 +666,32 @@ describe('AdminMembersImportPage Component', () => {
       screen.getByText('Row 2: Member ID appears multiple times in this CSV batch.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Commit Import' })).toBeDisabled();
+  });
+
+  it('switches between Upload CSV and Sync from Google Sheet modes', () => {
+    mockUseAdminMembersImportSnapshotQuery.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      data: [],
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/admin/members/import?source=google-sheet']}>
+        <AdminMembersImportPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Sync Members from Google Sheet' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Upload CSV/i }));
+    expect(screen.getByRole('heading', { name: 'Import Members CSV' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Sync from Google Sheet/i }));
+    expect(
+      screen.getByRole('heading', { name: 'Sync Members from Google Sheet' }),
+    ).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createEdgeFunctionCaller,
+  createEdgeFunctionNdjsonStreamCaller,
   createEdgeFunctionStreamCaller,
   createEdgeFunctionTextCaller,
 } from '../supabase';
@@ -579,6 +580,121 @@ describe('supabase edge function callers', () => {
     const callStream = createEdgeFunctionStreamCaller<{ prompt: string }>('chat');
     await expect(callStream({ prompt: 'hi' }, vi.fn())).rejects.toThrow(
       "I'm on a coffee break, you can come back later.",
+    );
+  });
+
+  it('streams NDJSON events across split chunks and trailing lines with auth headers', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'ndjson-token' } },
+    });
+
+    const encoder = new TextEncoder();
+    const chunks = [
+      '{"type":"progress","percent":10}\n{"type":"pro',
+      'gress","percent":50}\n\n{"type":"complete","ok":true}',
+    ];
+    let index = 0;
+
+    const stream = new ReadableStream({
+      pull(controller) {
+        if (index < chunks.length) {
+          controller.enqueue(encoder.encode(chunks[index]));
+          index++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: stream,
+    } as unknown as Response);
+
+    const callNdjson = createEdgeFunctionNdjsonStreamCaller<
+      { stream: true },
+      { type: string; percent?: number; ok?: boolean }
+    >('cron-sync-members-sheet');
+    const events: Array<{ type: string; percent?: number; ok?: boolean }> = [];
+
+    await callNdjson({ stream: true }, (event) => events.push(event));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/functions/v1/cron-sync-members-sheet',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/x-ndjson',
+          Authorization: 'Bearer ndjson-token',
+        },
+        body: JSON.stringify({ stream: true }),
+      }),
+    );
+    expect(events).toEqual([
+      { type: 'progress', percent: 10 },
+      { type: 'progress', percent: 50 },
+      { type: 'complete', ok: true },
+    ]);
+  });
+
+  it('handles NDJSON caller without auth token or response body', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      body: null,
+    } as unknown as Response);
+
+    const callNdjson = createEdgeFunctionNdjsonStreamCaller<{ stream: true }, { type: string }>(
+      'cron-sync-members-sheet',
+    );
+    const onEvent = vi.fn();
+
+    await expect(callNdjson({ stream: true }, onEvent)).resolves.toBeUndefined();
+    expect(onEvent).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[cron-sync-members-sheet] No auth token available for Edge Function call',
+    );
+  });
+
+  it('parses JSON, plain text, and unreadable error responses in NDJSON stream caller', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'ndjson-token' } },
+    });
+
+    const callNdjson = createEdgeFunctionNdjsonStreamCaller<{ stream: true }, { type: string }>(
+      'cron-sync-members-sheet',
+    );
+    const fetchMock = vi.mocked(fetch);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => JSON.stringify({ error: 'Sheets not configured' }),
+    } as unknown as Response);
+    await expect(callNdjson({ stream: true }, vi.fn())).rejects.toThrow('Sheets not configured');
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      text: async () => 'Bad Gateway',
+    } as unknown as Response);
+    await expect(callNdjson({ stream: true }, vi.fn())).rejects.toThrow('Bad Gateway');
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      text: async () => {
+        throw new Error('stream read failed');
+      },
+    } as unknown as Response);
+    await expect(callNdjson({ stream: true }, vi.fn())).rejects.toThrow(
+      'Edge function failed: 503',
     );
   });
 });

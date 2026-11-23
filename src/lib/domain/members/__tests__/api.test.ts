@@ -9,20 +9,29 @@ import {
   fetchMemberMetadata,
   fetchMembersAttendanceScores,
   fetchMembersImportSnapshot,
+  previewMembersFromGoogleSheet,
   setMemberActiveStatus,
+  syncMembersFromGoogleSheet,
   updateMember,
 } from '@/lib/domain/members/api';
 
-const { mockFrom, mockRpc } = vi.hoisted(() => ({
-  mockFrom: vi.fn(),
-  mockRpc: vi.fn(),
-}));
+const { mockFrom, mockRpc, mockNdjsonCaller, mockCreateEdgeFunctionNdjsonStreamCaller } =
+  vi.hoisted(() => {
+    const ndjsonCaller = vi.fn();
+    return {
+      mockFrom: vi.fn(),
+      mockRpc: vi.fn(),
+      mockNdjsonCaller: ndjsonCaller,
+      mockCreateEdgeFunctionNdjsonStreamCaller: vi.fn(() => ndjsonCaller),
+    };
+  });
 
 vi.mock('@/lib/infrastructure', () => ({
   supabase: {
     from: mockFrom,
     rpc: mockRpc,
   },
+  createEdgeFunctionNdjsonStreamCaller: mockCreateEdgeFunctionNdjsonStreamCaller,
 }));
 
 describe('Members Domain API', () => {
@@ -493,6 +502,109 @@ describe('Members Domain API', () => {
       mockFrom.mockReturnValue({ select: vi.fn().mockReturnValue({ eq: mockEq }) });
 
       await expect(fetchActiveMembers()).rejects.toThrow('Query failed');
+    });
+  });
+
+  describe('syncMembersFromGoogleSheet', () => {
+    it('forwards progress events and resolves final sync result', async () => {
+      mockNdjsonCaller.mockImplementationOnce(async (_payload, onEvent) => {
+        onEvent({
+          type: 'progress',
+          stage: 'fetching_sheet',
+          message: 'Fetching...',
+          percent: 10,
+        });
+        onEvent({
+          type: 'complete',
+          result: {
+            inserted_count: 3,
+            updated_count: 4,
+            skipped_count: 1,
+            total_sheet_rows: 8,
+            errors: ['Row 2: missing RFID'],
+            skipped_rows: [{ row_number: 2, member_id: '', reasons: ['missing RFID'] }],
+            timestamp: '2026-11-23T05:00:00.000Z',
+          },
+        });
+      });
+
+      const onProgress = vi.fn();
+      const result = await syncMembersFromGoogleSheet(onProgress);
+
+      expect(mockCreateEdgeFunctionNdjsonStreamCaller).toHaveBeenCalledWith(
+        'cron-sync-members-sheet',
+      );
+      expect(onProgress).toHaveBeenCalledWith(
+        expect.objectContaining({ stage: 'fetching_sheet', percent: 10 }),
+      );
+      expect(result.inserted_count).toBe(3);
+      expect(result.updated_count).toBe(4);
+    });
+
+    it('throws on stream error event or missing complete event', async () => {
+      mockNdjsonCaller.mockImplementationOnce(async (_payload, onEvent) => {
+        onEvent({ type: 'error', message: 'Sync failed mid-stream' });
+      });
+      await expect(syncMembersFromGoogleSheet(vi.fn())).rejects.toThrow('Sync failed mid-stream');
+
+      mockNdjsonCaller.mockImplementationOnce(async () => undefined);
+      await expect(syncMembersFromGoogleSheet(vi.fn())).rejects.toThrow(
+        'Sync stream ended before a final result was received.',
+      );
+    });
+  });
+
+  describe('previewMembersFromGoogleSheet', () => {
+    it('forwards progress events and resolves dry-run preview result', async () => {
+      mockNdjsonCaller.mockImplementationOnce(async (_payload, onEvent) => {
+        onEvent({
+          type: 'progress',
+          stage: 'parsing_rows',
+          message: 'Parsing...',
+          percent: 40,
+        });
+        onEvent({
+          type: 'complete',
+          result: {
+            dry_run: true,
+            total_sheet_rows: 5,
+            skipped_count: 0,
+            summary: {
+              total_rows: 5,
+              insert_count: 2,
+              update_count: 2,
+              update_member_id_count: 0,
+              unchanged_count: 1,
+              error_count: 0,
+            },
+            preview_rows: [],
+            errors: [],
+            skipped_rows: [],
+            timestamp: '2026-11-23T05:00:00.000Z',
+          },
+        });
+      });
+
+      const onProgress = vi.fn();
+      const result = await previewMembersFromGoogleSheet(onProgress);
+
+      expect(onProgress).toHaveBeenCalledWith(
+        expect.objectContaining({ stage: 'parsing_rows', percent: 40 }),
+      );
+      expect(result.dry_run).toBe(true);
+      expect(result.summary.insert_count).toBe(2);
+    });
+
+    it('throws on stream error event or missing preview result', async () => {
+      mockNdjsonCaller.mockImplementationOnce(async (_payload, onEvent) => {
+        onEvent({ type: 'error', message: 'Preview failed' });
+      });
+      await expect(previewMembersFromGoogleSheet(vi.fn())).rejects.toThrow('Preview failed');
+
+      mockNdjsonCaller.mockImplementationOnce(async () => undefined);
+      await expect(previewMembersFromGoogleSheet(vi.fn())).rejects.toThrow(
+        'Preview stream ended before a result was received.',
+      );
     });
   });
 });
