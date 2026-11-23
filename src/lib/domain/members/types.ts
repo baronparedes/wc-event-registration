@@ -96,3 +96,72 @@ export type AdminMember = {
   has_account?: boolean;
   notes: MemberNote[];
 };
+
+export type GoogleMemberSyncStage =
+  | 'fetching_sheet'
+  | 'parsing_rows'
+  | 'loading_members'
+  | 'resolving_rows'
+  | 'upserting_batches';
+
+export type GoogleMemberSyncProgress = {
+  stage: GoogleMemberSyncStage;
+  message: string;
+  percent: number;
+  total_sheet_rows?: number;
+  parsed_rows?: number;
+  resolved_rows?: number;
+  processed_rows?: number;
+  total_batches?: number;
+  current_batch?: number;
+  inserted_count?: number;
+  updated_count?: number;
+  skipped_count?: number;
+};
+
+export type GoogleMemberSyncSkippedRow = {
+  row_number: number;
+  member_id: string;
+  reasons: string[];
+};
+
+export type GoogleMemberSyncResult = {
+  dry_run?: false;
+  inserted_count: number;
+  updated_count: number;
+  skipped_count: number;
+  total_sheet_rows: number;
+  errors: string[];
+  skipped_rows: GoogleMemberSyncSkippedRow[];
+  timestamp: string;
+};
+
+export type GoogleMemberSyncPreviewSummary = {
+  total_rows: number;
+  insert_count: number;
+  update_count: number;
+  update_member_id_count: number;
+  unchanged_count: number;
+  error_count: number;
+};
+
+export type GoogleMemberSyncPreviewResult = {
+  dry_run: true;
+  total_sheet_rows: number;
+  skipped_count: number;
+  summary: GoogleMemberSyncPreviewSummary;
+  preview_rows: import('./csv-import').MemberCsvPreviewRow[];
+  errors: string[];
+  skipped_rows: GoogleMemberSyncSkippedRow[];
+  timestamp: string;
+};
+
+export type GoogleMemberSyncStreamEvent =
+  | ({ type: 'progress' } & GoogleMemberSyncProgress)
+  | { type: 'complete'; result: GoogleMemberSyncResult }
+  | { type: 'error'; message: string };
+
+export type GoogleMemberSyncPreviewStreamEvent =
+  | ({ type: 'progress' } & GoogleMemberSyncProgress)
+  | { type: 'complete'; result: GoogleMemberSyncPreviewResult }
+  | { type: 'error'; message: string };

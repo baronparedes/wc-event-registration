@@ -21,6 +21,10 @@ export { useGetExcusedMembers } from './queries/useGetExcusedMembers';
 export type { ExcusedMemberRecord } from './queries/useGetExcusedMembers';
 export { useGetMemberExcusedSchedule } from './queries/useGetMemberExcusedSchedule';
 export { useMembersAttendanceScoresQuery } from './queries/useMembersAttendanceScoresQuery';
+export {
+  useGoogleSheetMembersPreviewQuery,
+  GOOGLE_SHEET_MEMBERS_PREVIEW_QUERY_KEY,
+} from './queries/useGoogleSheetMembersPreviewQuery';
 
 // Mutations
 export { useUpdateMemberMutation } from './mutations/useUpdateMemberMutation';
@@ -31,6 +35,7 @@ export { useExportMembersCSVMutation } from './mutations/useExportMembersCSVMuta
 export { useSoftDeleteMemberMutation } from './mutations/useSoftDeleteMemberMutation';
 export { useRestoreMemberMutation } from './mutations/useRestoreMemberMutation';
 export { useUploadMemberAvatarMutation } from './mutations/useUploadMemberAvatarMutation';
+export { useSyncMembersFromSheetMutation } from './mutations/useSyncMembersFromSheetMutation';
 
 // State
 export {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { BadgeCheck, Download, Edit, Upload, User, Users } from 'lucide-react';
+import { BadgeCheck, Download, Edit, RefreshCw, Upload, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -211,6 +211,15 @@ export function AdminMembersPage() {
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   Upload CSV
+                </Button>
+                <Button
+                  className="w-full sm:w-auto sm:inline-flex"
+                  type="button"
+                  variant="primaryOutline"
+                  onClick={() => navigate(`${ROUTE_PATHS.adminMembersImport}?source=google-sheet`)}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Sync Google Sheet
                 </Button>
                 <AddMemberDialog className="w-full sm:w-auto sm:inline-flex" />
               </>

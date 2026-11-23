@@ -230,3 +230,91 @@ export function createEdgeFunctionStreamCaller<TRequest>(functionName: string) {
     }
   };
 }
+
+/**
+ * Factory for Edge Function callers that stream newline-delimited JSON (NDJSON) events.
+ * Automatically includes the current session's auth token and Accept: application/x-ndjson header.
+ */
+export function createEdgeFunctionNdjsonStreamCaller<TRequest, TEvent>(functionName: string) {
+  return async (
+    payload: TRequest,
+    onEvent: (event: TEvent) => void,
+    options?: StreamCallerOptions,
+  ): Promise<void> => {
+    const { data: session } = await supabase.auth.getSession();
+    const token = session?.session?.access_token;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/x-ndjson',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn(`[${functionName}] No auth token available for Edge Function call`);
+    }
+
+    const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/${functionName}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: options?.signal,
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Edge function failed: ${response.status}`;
+      try {
+        const errorData = await response.text();
+        console.error(`[Edge Function ${functionName}] ${response.status}:`, errorData);
+        if (errorData) {
+          try {
+            const parsed = JSON.parse(errorData) as { error?: string; message?: string };
+            errorMessage = parsed.error || parsed.message || errorData;
+          } catch {
+            errorMessage = errorData;
+          }
+        }
+      } catch (e) {
+        console.error(`[Edge Function ${functionName}] Failed to parse error response`, e);
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (!response.body) {
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let pendingLine = '';
+    let done = false;
+
+    const processLine = (line: string) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      const parsed = JSON.parse(trimmed) as TEvent;
+      onEvent(parsed);
+    };
+
+    while (!done) {
+      const { value, done: readerDone } = await reader.read();
+      done = readerDone;
+
+      if (value) {
+        pendingLine += decoder.decode(value, { stream: true });
+        const lines = pendingLine.split('\n');
+        pendingLine = lines.pop() ?? '';
+
+        for (const line of lines) {
+          processLine(line);
+        }
+      }
+    }
+
+    pendingLine += decoder.decode();
+    if (pendingLine.trim()) {
+      processLine(pendingLine);
+    }
+  };
+}

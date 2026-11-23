@@ -121,6 +121,9 @@ function canonicalizeMetadataHeaderKey(value: string): string {
   switch (value) {
     case 'isoic':
       return 'is_oic';
+    case 'volunteer_id':
+    case 'volunteerid':
+      return 'volunteerid';
     case 'startdate':
     case 'start_date':
     case 'date_joined':
@@ -159,6 +162,7 @@ const FIELD_LABELS: Record<string, string> = {
   phone: 'Phone',
   date_of_birth: 'Date of Birth',
   is_oic: 'Officer In Charge (OIC)',
+  volunteerid: 'Volunteer ID',
   start_date: 'Start Date',
   first_sunday: '1st Sunday Schedule',
   second_sunday: '2nd Sunday Schedule',

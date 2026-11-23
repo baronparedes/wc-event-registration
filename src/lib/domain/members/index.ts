@@ -9,6 +9,14 @@ export type {
   MemberEventHistoryRegistrationAnswer,
   MemberEventHistorySlotRecord,
   MemberNote,
+  GoogleMemberSyncStage,
+  GoogleMemberSyncProgress,
+  GoogleMemberSyncSkippedRow,
+  GoogleMemberSyncResult,
+  GoogleMemberSyncPreviewSummary,
+  GoogleMemberSyncPreviewResult,
+  GoogleMemberSyncStreamEvent,
+  GoogleMemberSyncPreviewStreamEvent,
 } from './types';
 export {
   updateMemberSchema,
@@ -57,6 +65,8 @@ export {
   type FetchMembersAttendanceScoresOptions,
   addMemberNote,
   deleteMemberNote,
+  syncMembersFromGoogleSheet,
+  previewMembersFromGoogleSheet,
 } from './api';
 export type {
   MemberRoleStat,

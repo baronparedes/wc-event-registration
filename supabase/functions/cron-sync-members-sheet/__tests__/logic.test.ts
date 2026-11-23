@@ -67,7 +67,7 @@ Deno.test(
     assertEquals(row.role, 'Prayer Coach');
     assertEquals(row.category, 'Adults');
     assertEquals(row.metadata, {
-      volunteer_id: 'VOL-101',
+      volunteerid: 'VOL-101',
       sr_pwd: true,
       first_sunday: '9AM',
       second_sunday: '12NN',
