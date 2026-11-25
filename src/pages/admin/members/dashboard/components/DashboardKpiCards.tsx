@@ -1,4 +1,4 @@
-import { Cake, CalendarCheck, ShieldCheck, UserCheck, UserX, Users } from 'lucide-react';
+import { Cake, CalendarCheck, Database, ShieldCheck, UserCheck, UserX, Users } from 'lucide-react';
 
 import { StatCard } from '@/components/ui';
 import type { MemberDashboardData } from '@/lib/domain/members';
@@ -6,15 +6,21 @@ import type { MemberDashboardData } from '@/lib/domain/members';
 interface DashboardKpiCardsProps {
   data: MemberDashboardData;
   onInactiveVolunteersClick?: () => void;
+  onVmtMigrationClick?: () => void;
 }
 
-export function DashboardKpiCards({ data, onInactiveVolunteersClick }: DashboardKpiCardsProps) {
+export function DashboardKpiCards({
+  data,
+  onInactiveVolunteersClick,
+  onVmtMigrationClick,
+}: DashboardKpiCardsProps) {
   const {
     totalActiveMembers,
     dgroupAnalytics,
     commitmentHeatmap,
     ageDemographics,
     inactivityAnalytics,
+    vmtMigrationAnalytics,
   } = data;
 
   const ageSubtitle =
@@ -23,7 +29,7 @@ export function DashboardKpiCards({ data, onInactiveVolunteersClick }: Dashboard
       : 'No DOB recorded';
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       <StatCard
         title="Active Members"
         value={totalActiveMembers}
@@ -65,6 +71,21 @@ export function DashboardKpiCards({ data, onInactiveVolunteersClick }: Dashboard
           icon={<UserX className="h-4 w-4" />}
           variant="danger"
           className="h-full transition-colors group-hover:border-danger/60 group-hover:bg-danger/5"
+        />
+      </button>
+      <button
+        type="button"
+        onClick={onVmtMigrationClick}
+        aria-label={`View ${vmtMigrationAnalytics.missingCount} members missing CCF VMT data`}
+        className="group text-left rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+      >
+        <StatCard
+          title="Missing CCF VMT"
+          value={vmtMigrationAnalytics.missingCount}
+          subtitle={`${vmtMigrationAnalytics.migratedPercentage}% migrated · View list`}
+          icon={<Database className="h-4 w-4" />}
+          variant={vmtMigrationAnalytics.missingCount > 0 ? 'accent' : 'secondary'}
+          className="h-full transition-colors group-hover:border-primary/60 group-hover:bg-primary/5"
         />
       </button>
       <StatCard

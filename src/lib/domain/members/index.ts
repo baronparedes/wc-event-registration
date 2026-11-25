@@ -80,11 +80,14 @@ export type {
   MemberDGroupAnalytics,
   InactiveVolunteerRow,
   MemberInactivityAnalytics,
+  VmtMigrationMissingMemberRow,
+  MemberVmtMigrationAnalytics,
   MemberDashboardData,
 } from './dashboard';
 export {
   INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD,
   buildInactiveVolunteersCsvExport,
+  buildMissingVmtMembersCsvExport,
   calculateAge,
   countSundaysSince,
   parseSundayTimeSlots,

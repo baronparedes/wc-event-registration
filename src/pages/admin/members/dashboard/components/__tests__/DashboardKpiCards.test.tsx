@@ -40,6 +40,17 @@ describe('DashboardKpiCards', () => {
       percentage: 16,
       members: [],
     },
+    vmtMigrationAnalytics: {
+      totalMembers: 50,
+      migratedCount: 35,
+      missingCount: 15,
+      missingBothCount: 10,
+      missingIdOnlyCount: 3,
+      missingDateOnlyCount: 2,
+      migratedPercentage: 70,
+      missingPercentage: 30,
+      missingMembers: [],
+    },
   };
 
   it('renders all KPI cards with formatted values and subtitles', () => {
@@ -61,6 +72,10 @@ describe('DashboardKpiCards', () => {
     expect(screen.getByText('8')).toBeInTheDocument();
     expect(screen.getByText('> 13 Sundays · View list')).toBeInTheDocument();
 
+    expect(screen.getByText('Missing CCF VMT')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('70% migrated · View list')).toBeInTheDocument();
+
     expect(screen.getByText('Average Age')).toBeInTheDocument();
     expect(screen.getByText('29.5 yrs')).toBeInTheDocument();
     expect(screen.getByText('40 of 50 records (80%)')).toBeInTheDocument();
@@ -76,6 +91,18 @@ describe('DashboardKpiCards', () => {
     fireEvent.click(inactiveCardButton);
 
     expect(onInactiveClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('invokes onVmtMigrationClick when Missing CCF VMT card is clicked', () => {
+    const onVmtClick = vi.fn();
+    render(<DashboardKpiCards data={sampleData} onVmtMigrationClick={onVmtClick} />);
+
+    const vmtCardButton = screen.getByRole('button', {
+      name: /view 15 members missing ccf vmt data/i,
+    });
+    fireEvent.click(vmtCardButton);
+
+    expect(onVmtClick).toHaveBeenCalledTimes(1);
   });
 
   it('renders fallback values when no birth dates are recorded', () => {
