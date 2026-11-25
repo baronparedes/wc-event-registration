@@ -14,16 +14,20 @@ import {
   MemberCommitmentHeatmapCard,
   MemberDGroupSection,
   MemberRoleDistributionCard,
+  MissingVmtMembersModal,
 } from './components';
 
 const INACTIVE_MODAL_HASH = '#inactive';
+const MISSING_VMT_MODAL_HASH = '#missing-vmt';
 
 export function AdminMembersDashboardPage() {
   const { data, isLoading, error, refetch, isRefetching } = useAdminMembersDashboardQuery();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isInactiveModalOpen = location.hash.toLowerCase() === INACTIVE_MODAL_HASH;
+  const normalizedHash = location.hash.toLowerCase();
+  const isInactiveModalOpen = normalizedHash === INACTIVE_MODAL_HASH;
+  const isMissingVmtModalOpen = normalizedHash === MISSING_VMT_MODAL_HASH;
 
   const handleOpenInactiveModal = () => {
     if (!isInactiveModalOpen) {
@@ -36,6 +40,24 @@ export function AdminMembersDashboardPage() {
 
   const handleCloseInactiveModal = () => {
     if (isInactiveModalOpen) {
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: '' },
+        { replace: true },
+      );
+    }
+  };
+
+  const handleOpenMissingVmtModal = () => {
+    if (!isMissingVmtModalOpen) {
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: MISSING_VMT_MODAL_HASH },
+        { replace: true },
+      );
+    }
+  };
+
+  const handleCloseMissingVmtModal = () => {
+    if (isMissingVmtModalOpen) {
       navigate(
         { pathname: location.pathname, search: location.search, hash: '' },
         { replace: true },
@@ -70,8 +92,8 @@ export function AdminMembersDashboardPage() {
       <AdminPageShell.Content>
         {isLoading ? (
           <div className="flex flex-col gap-6 animate-pulse py-4">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              {[...Array(7)].map((_, i) => (
                 <div key={i} className="h-28 rounded-2xl bg-surface/80 border border-border" />
               ))}
             </div>
@@ -107,7 +129,11 @@ export function AdminMembersDashboardPage() {
         ) : (
           <div className="flex flex-col gap-6">
             {/* Top KPIs */}
-            <DashboardKpiCards data={data} onInactiveVolunteersClick={handleOpenInactiveModal} />
+            <DashboardKpiCards
+              data={data}
+              onInactiveVolunteersClick={handleOpenInactiveModal}
+              onVmtMigrationClick={handleOpenMissingVmtModal}
+            />
 
             {/* Role Distributions & Age Demographics */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -129,6 +155,13 @@ export function AdminMembersDashboardPage() {
               isOpen={isInactiveModalOpen}
               onClose={handleCloseInactiveModal}
               analytics={data.inactivityAnalytics}
+            />
+
+            {/* Missing CCF VMT Data Modal */}
+            <MissingVmtMembersModal
+              isOpen={isMissingVmtModalOpen}
+              onClose={handleCloseMissingVmtModal}
+              analytics={data.vmtMigrationAnalytics}
             />
           </div>
         )}

@@ -109,6 +109,32 @@ export type MemberInactivityAnalytics = {
   members: InactiveVolunteerRow[];
 };
 
+export type VmtMigrationMissingMemberRow = {
+  id: string;
+  memberId: string;
+  fullName: string;
+  role: string;
+  email: string | null;
+  phone: string | null;
+  avatarObjectKey: string | null;
+  hasCcfVmtId: boolean;
+  hasCcfVmtDate: boolean;
+  ccfVmtId: string | null;
+  ccfVmtDate: string | null;
+};
+
+export type MemberVmtMigrationAnalytics = {
+  totalMembers: number;
+  migratedCount: number;
+  missingCount: number;
+  missingBothCount: number;
+  missingIdOnlyCount: number;
+  missingDateOnlyCount: number;
+  migratedPercentage: number;
+  missingPercentage: number;
+  missingMembers: VmtMigrationMissingMemberRow[];
+};
+
 export type MemberDashboardData = {
   totalActiveMembers: number;
   roleDistributions: MemberRoleStat[];
@@ -116,7 +142,13 @@ export type MemberDashboardData = {
   commitmentHeatmap: MemberSundayCommitmentHeatmap;
   dgroupAnalytics: MemberDGroupAnalytics;
   inactivityAnalytics: MemberInactivityAnalytics;
+  vmtMigrationAnalytics: MemberVmtMigrationAnalytics;
 };
+
+const VMT_METADATA_KEYS = {
+  id: ['ccf_vmt_id', 'ccf-vmt-id', 'CCF VMT ID'],
+  date: ['ccf_vmt_date', 'ccf-vmt-date', 'CCF VMT Date'],
+} as const;
 
 const PROMOTED_DGROUP_KEYS = {
   leader: ['dgroup_leader', 'dgroupleader', 'd_group_leader', 'DGroup Leader'],
@@ -620,6 +652,73 @@ export function computeMemberDashboardData(
     members: inactiveMembers,
   };
 
+  // 6. CCF VMT Migration Tracking (ccf_vmt_id and ccf_vmt_date metadata)
+  const vmtMissingMembers: VmtMigrationMissingMemberRow[] = [];
+  let migratedCount = 0;
+  let missingBothCount = 0;
+  let missingIdOnlyCount = 0;
+  let missingDateOnlyCount = 0;
+
+  for (const member of activeMembers) {
+    const metadata = (member.metadata as Record<string, unknown> | null) ?? {};
+    const ccfVmtId = getMetadataStringValue(metadata, VMT_METADATA_KEYS.id) ?? null;
+    const ccfVmtDate = getMetadataStringValue(metadata, VMT_METADATA_KEYS.date) ?? null;
+    const hasCcfVmtId = Boolean(ccfVmtId);
+    const hasCcfVmtDate = Boolean(ccfVmtDate);
+
+    if (hasCcfVmtId && hasCcfVmtDate) {
+      migratedCount++;
+      continue;
+    }
+
+    if (!hasCcfVmtId && !hasCcfVmtDate) {
+      missingBothCount++;
+    } else if (!hasCcfVmtId) {
+      missingIdOnlyCount++;
+    } else {
+      missingDateOnlyCount++;
+    }
+
+    vmtMissingMembers.push({
+      id: member.id,
+      memberId: member.member_id,
+      fullName: member.full_name,
+      role: extractPrimaryRole(member.role),
+      email: member.email ?? null,
+      phone: member.phone ?? null,
+      avatarObjectKey: member.avatar_object_key,
+      hasCcfVmtId,
+      hasCcfVmtDate,
+      ccfVmtId,
+      ccfVmtDate,
+    });
+  }
+
+  // Sort missing-both first, then partial records, then alphabetically by full name
+  vmtMissingMembers.sort((a, b) => {
+    const aMissingBoth = !a.hasCcfVmtId && !a.hasCcfVmtDate ? 0 : 1;
+    const bMissingBoth = !b.hasCcfVmtId && !b.hasCcfVmtDate ? 0 : 1;
+    if (aMissingBoth !== bMissingBoth) {
+      return aMissingBoth - bMissingBoth;
+    }
+    return (a.fullName ?? '').localeCompare(b.fullName ?? '');
+  });
+
+  const missingCount = vmtMissingMembers.length;
+  const vmtMigrationAnalytics: MemberVmtMigrationAnalytics = {
+    totalMembers: totalActiveMembers,
+    migratedCount,
+    missingCount,
+    missingBothCount,
+    missingIdOnlyCount,
+    missingDateOnlyCount,
+    migratedPercentage:
+      totalActiveMembers > 0 ? Math.round((migratedCount / totalActiveMembers) * 1000) / 10 : 0,
+    missingPercentage:
+      totalActiveMembers > 0 ? Math.round((missingCount / totalActiveMembers) * 1000) / 10 : 0,
+    missingMembers: vmtMissingMembers,
+  };
+
   return {
     totalActiveMembers,
     roleDistributions,
@@ -627,6 +726,7 @@ export function computeMemberDashboardData(
     commitmentHeatmap,
     dgroupAnalytics,
     inactivityAnalytics,
+    vmtMigrationAnalytics,
   };
 }
 
@@ -678,5 +778,51 @@ export function buildInactiveVolunteersCsvExport(
   return {
     csvText,
     filename: `inactive-volunteers-${dateStamp}.csv`,
+  };
+}
+
+export function buildMissingVmtMembersCsvExport(
+  members: VmtMigrationMissingMemberRow[],
+  asOf: Date = new Date(),
+): { csvText: string; filename: string } {
+  const headers = [
+    'Member ID',
+    'Full Name',
+    'Role',
+    'Email',
+    'Phone',
+    'Missing Status',
+    'CCF VMT ID',
+    'CCF VMT Date',
+  ];
+
+  const rows = members.map((member) => {
+    let missingStatus = 'Missing VMT Date';
+    if (!member.hasCcfVmtId && !member.hasCcfVmtDate) {
+      missingStatus = 'Missing ID & Date';
+    } else if (!member.hasCcfVmtId) {
+      missingStatus = 'Missing VMT ID';
+    }
+
+    return [
+      member.memberId,
+      member.fullName,
+      member.role,
+      member.email ?? '',
+      member.phone ?? '',
+      missingStatus,
+      member.ccfVmtId ?? '',
+      member.ccfVmtDate ?? '',
+    ];
+  });
+
+  const csvText = [headers, ...rows]
+    .map((row) => row.map((cell) => escapeCsvCell(cell)).join(','))
+    .join('\n');
+
+  const dateStamp = MANILA_DATE_FORMATTER.format(asOf);
+  return {
+    csvText,
+    filename: `missing-ccf-vmt-${dateStamp}.csv`,
   };
 }

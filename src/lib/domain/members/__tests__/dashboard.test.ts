@@ -4,6 +4,7 @@ import type { MemberUserRow } from '../api';
 import {
   INACTIVE_VOLUNTEER_SUNDAYS_THRESHOLD,
   buildInactiveVolunteersCsvExport,
+  buildMissingVmtMembersCsvExport,
   calculateAge,
   computeMemberDashboardData,
   countSundaysSince,
@@ -681,5 +682,189 @@ describe('buildInactiveVolunteersCsvExport', () => {
       'RFID-001,"Test Santos, Alice ""Ali""",Prayer Coach,alice@example.com,09171234567,Never attended,Never attended,30',
     );
     expect(lines[2]).toBe('RFID-002,Test Bob Cruz,Usher,,,Inactive,2026-07-05,20');
+  });
+});
+
+describe('computeMemberDashboardData vmtMigrationAnalytics', () => {
+  const asOf = new Date('2026-11-25T02:00:00Z');
+
+  function buildMember(overrides: Partial<MemberUserRow> = {}): MemberUserRow {
+    return {
+      id: 'm-default',
+      member_id: 'RFID-DEFAULT',
+      avatar_object_key: null,
+      is_active: true,
+      full_name: 'Test Member',
+      first_name: 'Test',
+      last_name: 'Test Last',
+      nickname: 'Test',
+      email: 'test@example.com',
+      phone: null,
+      date_of_birth: null,
+      role: 'Usher',
+      category: 'Adult',
+      metadata: null,
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z',
+      notes: [],
+      ...overrides,
+    };
+  }
+
+  it('tracks migrated, missing both, missing ID only, and missing date only members', () => {
+    const members: MemberUserRow[] = [
+      buildMember({
+        id: 'm-migrated-exact',
+        full_name: 'Test Migrated Exact',
+        metadata: { ccf_vmt_id: 'VMT-001', ccf_vmt_date: '2026-10-01' },
+      }),
+      buildMember({
+        id: 'm-migrated-variant',
+        full_name: 'Test Migrated Variant',
+        metadata: { 'CCF VMT ID': 'VMT-002', 'ccf-vmt-date': '2026-10-05' },
+      }),
+      buildMember({
+        id: 'm-missing-both',
+        full_name: 'Test Zara Missing Both',
+        metadata: {},
+      }),
+      buildMember({
+        id: 'm-whitespace',
+        full_name: 'Test Anna Whitespace',
+        metadata: { ccf_vmt_id: '   ', ccf_vmt_date: '' },
+      }),
+      buildMember({
+        id: 'm-missing-id',
+        full_name: 'Test Charlie Missing ID',
+        metadata: { ccf_vmt_date: '2026-10-10' },
+      }),
+      buildMember({
+        id: 'm-missing-date',
+        full_name: 'Test Bella Missing Date',
+        role: 'Prayer Coach / Usher',
+        metadata: { ccf_vmt_id: 'VMT-003' },
+      }),
+      buildMember({
+        id: 'm-inactive',
+        full_name: 'Test Inactive Member',
+        is_active: false,
+        metadata: null,
+      }),
+    ];
+
+    const { vmtMigrationAnalytics } = computeMemberDashboardData(members, asOf);
+
+    expect(vmtMigrationAnalytics.totalMembers).toBe(6);
+    expect(vmtMigrationAnalytics.migratedCount).toBe(2);
+    expect(vmtMigrationAnalytics.missingCount).toBe(4);
+    expect(vmtMigrationAnalytics.missingBothCount).toBe(2);
+    expect(vmtMigrationAnalytics.missingIdOnlyCount).toBe(1);
+    expect(vmtMigrationAnalytics.missingDateOnlyCount).toBe(1);
+    expect(vmtMigrationAnalytics.migratedPercentage).toBe(33.3);
+    expect(vmtMigrationAnalytics.missingPercentage).toBe(66.7);
+
+    // Missing both sorted first alphabetically, then partial sorted alphabetically
+    expect(vmtMigrationAnalytics.missingMembers.map((m) => m.id)).toEqual([
+      'm-whitespace',
+      'm-missing-both',
+      'm-missing-date',
+      'm-missing-id',
+    ]);
+
+    expect(vmtMigrationAnalytics.missingMembers[2]).toMatchObject({
+      id: 'm-missing-date',
+      role: 'Prayer Coach',
+      hasCcfVmtId: true,
+      hasCcfVmtDate: false,
+      ccfVmtId: 'VMT-003',
+      ccfVmtDate: null,
+    });
+
+    expect(vmtMigrationAnalytics.missingMembers[3]).toMatchObject({
+      id: 'm-missing-id',
+      hasCcfVmtId: false,
+      hasCcfVmtDate: true,
+      ccfVmtId: null,
+      ccfVmtDate: '2026-10-10',
+    });
+  });
+
+  it('handles empty member list safely', () => {
+    const { vmtMigrationAnalytics } = computeMemberDashboardData([], asOf);
+
+    expect(vmtMigrationAnalytics).toEqual({
+      totalMembers: 0,
+      migratedCount: 0,
+      missingCount: 0,
+      missingBothCount: 0,
+      missingIdOnlyCount: 0,
+      missingDateOnlyCount: 0,
+      migratedPercentage: 0,
+      missingPercentage: 0,
+      missingMembers: [],
+    });
+  });
+});
+
+describe('buildMissingVmtMembersCsvExport', () => {
+  it('generates properly escaped CSV text and Manila-dated filename', () => {
+    const asOf = new Date('2026-11-25T02:00:00Z');
+    const { csvText, filename } = buildMissingVmtMembersCsvExport(
+      [
+        {
+          id: 'm-1',
+          memberId: 'RFID-001',
+          fullName: 'Test Santos, Alice "Ali"',
+          role: 'Prayer Coach',
+          email: 'alice@example.com',
+          phone: '09171234567',
+          avatarObjectKey: null,
+          hasCcfVmtId: false,
+          hasCcfVmtDate: false,
+          ccfVmtId: null,
+          ccfVmtDate: null,
+        },
+        {
+          id: 'm-2',
+          memberId: 'RFID-002',
+          fullName: 'Test Bob Cruz',
+          role: 'Usher',
+          email: null,
+          phone: null,
+          avatarObjectKey: null,
+          hasCcfVmtId: false,
+          hasCcfVmtDate: true,
+          ccfVmtId: null,
+          ccfVmtDate: '2026-10-10',
+        },
+        {
+          id: 'm-3',
+          memberId: 'RFID-003',
+          fullName: 'Test Cara Reyes',
+          role: 'IMT Support',
+          email: 'cara@example.com',
+          phone: '09180001111',
+          avatarObjectKey: null,
+          hasCcfVmtId: true,
+          hasCcfVmtDate: false,
+          ccfVmtId: 'VMT-300',
+          ccfVmtDate: null,
+        },
+      ],
+      asOf,
+    );
+
+    expect(filename).toBe('missing-ccf-vmt-2026-11-25.csv');
+    const lines = csvText.split('\n');
+    expect(lines[0]).toBe(
+      'Member ID,Full Name,Role,Email,Phone,Missing Status,CCF VMT ID,CCF VMT Date',
+    );
+    expect(lines[1]).toBe(
+      'RFID-001,"Test Santos, Alice ""Ali""",Prayer Coach,alice@example.com,09171234567,Missing ID & Date,,',
+    );
+    expect(lines[2]).toBe('RFID-002,Test Bob Cruz,Usher,,,Missing VMT ID,,2026-10-10');
+    expect(lines[3]).toBe(
+      'RFID-003,Test Cara Reyes,IMT Support,cara@example.com,09180001111,Missing VMT Date,VMT-300,',
+    );
   });
 });

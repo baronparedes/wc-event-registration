@@ -186,6 +186,44 @@ const mockDashboardData: MemberDashboardData = {
       },
     ],
   },
+  vmtMigrationAnalytics: {
+    totalMembers: 3,
+    migratedCount: 1,
+    missingCount: 2,
+    missingBothCount: 1,
+    missingIdOnlyCount: 0,
+    missingDateOnlyCount: 1,
+    migratedPercentage: 33.3,
+    missingPercentage: 66.7,
+    missingMembers: [
+      {
+        id: 'm-3',
+        memberId: 'RFID-3',
+        fullName: 'Test No Group Person',
+        role: 'Volunteer',
+        email: 'nogroup@example.com',
+        phone: null,
+        avatarObjectKey: null,
+        hasCcfVmtId: false,
+        hasCcfVmtDate: false,
+        ccfVmtId: null,
+        ccfVmtDate: null,
+      },
+      {
+        id: 'm-2',
+        memberId: 'RFID-2',
+        fullName: 'Test John Smith',
+        role: 'Volunteer',
+        email: 'john@example.com',
+        phone: null,
+        avatarObjectKey: null,
+        hasCcfVmtId: true,
+        hasCcfVmtDate: false,
+        ccfVmtId: 'VMT-2',
+        ccfVmtDate: null,
+      },
+    ],
+  },
 };
 
 describe('AdminMembersDashboardPage', () => {
@@ -277,6 +315,17 @@ describe('AdminMembersDashboardPage', () => {
           inactiveCount: 0,
           percentage: 0,
           members: [],
+        },
+        vmtMigrationAnalytics: {
+          totalMembers: 0,
+          migratedCount: 0,
+          missingCount: 0,
+          missingBothCount: 0,
+          missingIdOnlyCount: 0,
+          missingDateOnlyCount: 0,
+          migratedPercentage: 0,
+          missingPercentage: 0,
+          missingMembers: [],
         },
       },
       isLoading: false,
@@ -448,6 +497,62 @@ describe('AdminMembersDashboardPage', () => {
     fireEvent.click(closeBtn);
 
     expect(screen.queryByText('Inactive Volunteers (> 13 Sundays)')).not.toBeInTheDocument();
+  });
+
+  it('opens and closes missing CCF VMT modal when Missing CCF VMT KPI card is clicked', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    const vmtCardBtn = screen.getByRole('button', {
+      name: /view 2 members missing ccf vmt data/i,
+    });
+    fireEvent.click(vmtCardBtn);
+
+    expect(screen.getByText('Missing CCF VMT Data')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /2 of 3 active members missing ccf_vmt_id or ccf_vmt_date \(33.3% migrated\)/i,
+      ),
+    ).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByText('Missing CCF VMT Data')).not.toBeInTheDocument();
+  });
+
+  it('opens missing CCF VMT modal automatically when navigated with #missing-vmt hash', () => {
+    mockUseAdminMembersDashboardQuery.mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isRefetching: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/admin/members/dashboard#missing-vmt']}>
+        <AdminMembersDashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Missing CCF VMT Data')).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole('button', { name: /^Close$/i });
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByText('Missing CCF VMT Data')).not.toBeInTheDocument();
   });
 
   it('renders default error description when error has no message', () => {
