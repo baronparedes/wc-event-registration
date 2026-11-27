@@ -57,9 +57,10 @@ export function Switch({
   const checkedTrackClass =
     variant === 'primary'
       ? 'border-primary bg-primary hover:bg-primary/90'
-      : 'border-green-200 bg-green-100 hover:bg-green-200';
+      : 'border-green-200 bg-green-100 hover:bg-green-200 dark:border-emerald-700 dark:bg-emerald-900/60 dark:hover:bg-emerald-900/80';
 
-  const checkedTextClass = variant === 'primary' ? 'text-white' : 'text-green-800';
+  const checkedTextClass =
+    variant === 'primary' ? 'text-white' : 'text-green-800 dark:text-emerald-200';
 
   return (
     <label
@@ -68,7 +69,7 @@ export function Switch({
         !disabled && 'cursor-pointer',
         isLabeled && 'relative overflow-hidden',
         sizeClasses.track,
-        checked ? checkedTrackClass : 'border-slate-300 bg-slate-200 hover:bg-slate-300',
+        checked ? checkedTrackClass : 'border-border bg-surface-hover hover:bg-border/60',
         disabled && 'cursor-not-allowed opacity-60',
         className,
       )}
@@ -91,7 +92,7 @@ export function Switch({
             'pointer-events-none absolute inset-y-0 flex items-center transition-opacity select-none',
             sizeClasses.text,
             checked ? 'left-1 right-5 justify-start' : 'left-5 right-1 justify-end',
-            checked ? checkedTextClass : 'text-slate-500',
+            checked ? checkedTextClass : 'text-muted',
             checked ? 'opacity-100' : 'opacity-90',
           )}
         >

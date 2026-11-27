@@ -111,7 +111,7 @@ export function FormMultiSelectDropdownField({
                 onClearSelection();
                 setIsOpen(false);
               }}
-              className="mb-1 w-full rounded-lg px-2 py-1 text-left text-sm text-text transition hover:bg-slate-50"
+              className="mb-1 w-full rounded-lg px-2 py-1 text-left text-sm text-text transition hover:bg-surface-hover"
             >
               {clearButtonLabel}
             </button>
@@ -122,7 +122,7 @@ export function FormMultiSelectDropdownField({
                 normalizedOptions.map((option) => (
                   <label
                     key={option.value}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-text transition hover:bg-slate-50"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-text transition hover:bg-surface-hover"
                   >
                     <input
                       type="checkbox"

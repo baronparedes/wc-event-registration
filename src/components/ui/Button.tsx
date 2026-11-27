@@ -38,7 +38,8 @@ const variantClassName: Record<ButtonVariant, string> = {
     'bg-primary text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60',
   secondary:
     'bg-secondary text-white hover:bg-secondary/90 disabled:cursor-not-allowed disabled:opacity-60',
-  accent: 'bg-accent text-text hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60',
+  accent:
+    'bg-accent text-text dark:text-slate-900 hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60',
   outline: 'border border-border bg-background text-text hover:bg-background disabled:opacity-60',
   primaryOutline:
     'border border-primary bg-background text-primary shadow-xs hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60',

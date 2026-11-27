@@ -93,7 +93,7 @@ export function AttendanceDataCardView({
         return (
           <article
             key={rowKey}
-            className="cursor-pointer border-b border-border/80 bg-white px-3 py-3 last:border-b-0 hover:bg-slate-100 print:break-inside-avoid print:px-1 print:py-0.5 print:[break-inside:avoid] print:[page-break-inside:avoid]"
+            className="cursor-pointer border-b border-border/80 bg-surface px-3 py-3 last:border-b-0 hover:bg-surface-hover print:break-inside-avoid print:px-1 print:py-0.5 print:[break-inside:avoid] print:[page-break-inside:avoid]"
             onClick={() => onViewRegistrant(registrant)}
           >
             <div className="flex items-start justify-between gap-2">

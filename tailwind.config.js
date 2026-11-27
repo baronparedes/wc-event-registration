@@ -2,6 +2,7 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     screens: {
@@ -16,6 +17,8 @@ export default {
         accent: 'var(--color-accent)',
         background: 'var(--color-background)',
         surface: 'var(--color-surface)',
+        'surface-hover': 'var(--color-surface-hover)',
+        'surface-subtle': 'var(--color-surface-subtle)',
         text: 'var(--color-text)',
         muted: 'var(--color-muted)',
         border: 'var(--color-border)',

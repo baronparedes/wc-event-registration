@@ -28,31 +28,35 @@ const variantStyles: Record<
   }
 > = {
   info: {
-    container: 'border-blue-200 bg-blue-50 text-blue-900',
-    title: 'text-blue-900 font-medium',
-    description: 'text-blue-700',
-    icon: 'text-blue-600',
+    container:
+      'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800/60 dark:bg-blue-950/45 dark:text-blue-100',
+    title: 'text-blue-900 dark:text-blue-100 font-medium',
+    description: 'text-blue-700 dark:text-blue-300',
+    icon: 'text-blue-600 dark:text-blue-400',
     defaultIcon: <Info className="h-5 w-5" />,
   },
   warning: {
-    container: 'border-amber-200 bg-amber-50 text-amber-900',
-    title: 'text-amber-900 font-medium',
-    description: 'text-amber-700',
-    icon: 'text-amber-600',
+    container:
+      'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/45 dark:text-amber-100',
+    title: 'text-amber-900 dark:text-amber-100 font-medium',
+    description: 'text-amber-700 dark:text-amber-300',
+    icon: 'text-amber-600 dark:text-amber-400',
     defaultIcon: <AlertTriangle className="h-5 w-5" />,
   },
   error: {
-    container: 'border-red-200 bg-red-50 text-red-900',
-    title: 'text-red-900 font-medium',
-    description: 'text-red-700',
-    icon: 'text-red-600',
+    container:
+      'border-red-200 bg-red-50 text-red-900 dark:border-red-800/60 dark:bg-red-950/45 dark:text-red-100',
+    title: 'text-red-900 dark:text-red-100 font-medium',
+    description: 'text-red-700 dark:text-red-300',
+    icon: 'text-red-600 dark:text-red-400',
     defaultIcon: <AlertCircle className="h-5 w-5" />,
   },
   success: {
-    container: 'border-green-200 bg-green-50 text-green-900',
-    title: 'text-green-900 font-medium',
-    description: 'text-green-700',
-    icon: 'text-green-600',
+    container:
+      'border-green-200 bg-green-50 text-green-900 dark:border-emerald-800/60 dark:bg-emerald-950/45 dark:text-emerald-100',
+    title: 'text-green-900 dark:text-emerald-100 font-medium',
+    description: 'text-green-700 dark:text-emerald-300',
+    icon: 'text-green-600 dark:text-emerald-400',
     defaultIcon: <CheckCircle2 className="h-5 w-5" />,
   },
 };

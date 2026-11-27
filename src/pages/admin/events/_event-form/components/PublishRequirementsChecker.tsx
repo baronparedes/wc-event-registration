@@ -20,7 +20,7 @@ export function PublishRequirementsChecker({ formValues }: PublishRequirementsCh
   const filledCount = requirements.filter((req) => req.filled).length;
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800/60 dark:bg-blue-950/45">
       <h3 className="mb-3 font-semibold text-sm text-blue-900">
         Publish Requirements ({filledCount}/{requirements.length})
       </h3>
@@ -37,7 +37,7 @@ export function PublishRequirementsChecker({ formValues }: PublishRequirementsCh
         ))}
       </ul>
       {allFilled && (
-        <div className="mt-3 rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+        <div className="mt-3 rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-emerald-950/60 dark:text-emerald-200">
           ✓ Event is ready to publish
         </div>
       )}

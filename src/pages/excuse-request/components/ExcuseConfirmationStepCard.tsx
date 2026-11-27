@@ -43,7 +43,7 @@ export function ExcuseConfirmationStepCard({
 
           <div
             aria-live="polite"
-            className="flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md text-left"
+            className="flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md text-left dark:border-emerald-500/60 dark:bg-emerald-950/50 dark:text-emerald-100"
           >
             <span
               aria-hidden="true"

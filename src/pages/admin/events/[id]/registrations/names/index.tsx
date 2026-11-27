@@ -51,7 +51,7 @@ export function AdminRegistrationNamesPage() {
   const visibleAnswerFields = selectedAnswerFieldIds.filter((id) => answerFieldMap.has(id));
 
   return (
-    <div className="min-h-screen bg-white font-body">
+    <div className="min-h-screen bg-surface font-body">
       <title>
         {payload?.event_title
           ? `${payload.event_title} \u2014 Registrations \u2014 ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`

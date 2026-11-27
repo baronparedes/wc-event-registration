@@ -223,7 +223,7 @@ export function EventCountdownPage() {
 
         {qrCodeDataUrl && (
           <div className="flex flex-col items-center justify-center gap-3 text-center">
-            <div className="rounded-3xl border border-border bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-border bg-surface p-4 shadow-sm">
               <img
                 src={qrCodeDataUrl}
                 alt="Scan QR code to register for the event"

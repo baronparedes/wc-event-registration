@@ -147,7 +147,7 @@ export function AdminPaginationControls(props: AdminPaginationControlsProps) {
             onChange={(event) => handlePageInputChange(event.target.value)}
             onBlur={() => commitPage(displayedPageInput)}
             disabled={isLoading || totalPages <= 1}
-            className="w-10 border-0 bg-transparent px-0 py-0 text-center text-sm text-text focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-gray-600"
+            className="w-10 border-0 bg-transparent px-0 py-0 text-center text-sm text-text focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-muted"
             aria-label="Go to page"
           />
           <span className="text-xs text-muted">/ {totalPages}</span>

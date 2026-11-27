@@ -68,9 +68,9 @@ export function NotificationBell({ compact = false }: NotificationBellProps) {
         title={`Notifications (${unreadCount} unread)`}
         aria-expanded={isOpen}
       >
-        <Bell className={`notification-bell-icon h-6 w-6 ${compact ? '' : 'text-black'}`} />
+        <Bell className="notification-bell-icon h-6 w-6 text-text" />
         {unreadCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-danger ring-2 ring-background" />
+          <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-danger ring-2 ring-surface" />
         )}
       </Button>
 

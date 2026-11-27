@@ -177,7 +177,7 @@ export function SundayCommitmentChart({ title, sessions }: SundayCommitmentChart
                 dot={{
                   r: 5,
                   fill: FORECAST_CHART_COLORS.target,
-                  stroke: '#ffffff',
+                  stroke: 'var(--color-surface)',
                   strokeWidth: 2,
                 }}
                 activeDot={{ r: 7 }}

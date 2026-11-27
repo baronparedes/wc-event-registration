@@ -38,7 +38,11 @@ export function ImageCanvas({
 
   if (!hidden) {
     return (
-      <div ref={effectiveRef} className={className} style={width ? { width } : undefined}>
+      <div
+        ref={effectiveRef}
+        className={className ? `theme-light ${className}` : 'theme-light'}
+        style={width ? { width } : undefined}
+      >
         {children}
       </div>
     );
@@ -62,7 +66,7 @@ export function ImageCanvas({
     >
       <div
         ref={effectiveRef}
-        className={className ? `bg-white ${className}` : 'bg-white'}
+        className={className ? `theme-light bg-white ${className}` : 'theme-light bg-white'}
         style={{ width, maxWidth: width }}
       >
         {children}

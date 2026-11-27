@@ -88,7 +88,7 @@ export function ApprovalReviewPage() {
   if (isError || !reviewData?.approval) {
     return (
       <div className="mx-auto max-w-lg py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
           <ShieldAlert className="h-8 w-8" />
         </div>
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-text">
@@ -171,8 +171,8 @@ export function ApprovalReviewPage() {
         <div
           className={`rounded-2xl border p-5 ${
             approval.status === 'approved'
-              ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
-              : 'border-rose-200 bg-rose-50/70 text-rose-950'
+              ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-950/45 dark:text-emerald-100'
+              : 'border-rose-200 bg-rose-50/70 text-rose-950 dark:border-rose-800/60 dark:bg-rose-950/45 dark:text-rose-100'
           }`}
         >
           <div className="flex items-start gap-3.5">
@@ -202,7 +202,7 @@ export function ApprovalReviewPage() {
       )}
 
       {approval.status === 'pending' && approval.is_expired && (
-        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/45 dark:text-amber-100">
           <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600" />
           <p className="text-sm">
             This review link expired on {new Date(approval.token_expires_at).toLocaleDateString()}.

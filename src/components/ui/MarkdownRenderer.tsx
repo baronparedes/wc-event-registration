@@ -16,15 +16,15 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       className={twMerge(
         clsx(
           'prose prose-sm sm:prose-base max-w-none',
-          'prose-headings:font-bold prose-headings:text-slate-900',
+          'prose-headings:font-bold prose-headings:text-text',
           'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
-          'prose-p:text-slate-600 prose-p:leading-relaxed',
-          'prose-li:text-slate-600',
-          'prose-strong:text-slate-900 prose-strong:font-semibold',
+          'prose-p:text-muted prose-p:leading-relaxed',
+          'prose-li:text-muted',
+          'prose-strong:text-text prose-strong:font-semibold',
           'prose-ul:list-disc prose-ul:pl-5',
           'prose-ol:list-decimal prose-ol:pl-5',
-          'prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-700',
-          'prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-slate-800 prose-code:font-mono',
+          'prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-muted',
+          'prose-code:bg-surface-subtle prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-text prose-code:font-mono',
           className,
         ),
       )}

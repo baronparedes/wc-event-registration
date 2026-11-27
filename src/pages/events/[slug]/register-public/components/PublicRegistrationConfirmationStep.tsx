@@ -56,7 +56,7 @@ export function PublicRegistrationConfirmationStep({
 
         <div
           aria-live="polite"
-          className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md"
+          className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-green-600 bg-green-100 px-4 py-3 text-green-950 shadow-md dark:border-emerald-500/60 dark:bg-emerald-950/50 dark:text-emerald-100"
         >
           <span
             aria-hidden="true"

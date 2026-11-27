@@ -87,7 +87,7 @@ export function AttendanceDataMobileView({
         return (
           <article
             key={rowKey}
-            className="cursor-pointer border-b border-border/80 bg-white px-3 py-3 last:border-b-0 hover:bg-slate-100"
+            className="cursor-pointer border-b border-border/80 bg-surface px-3 py-3 last:border-b-0 hover:bg-surface-hover"
             onClick={() => onViewRegistrant(registrant)}
           >
             <div className="flex items-start justify-between gap-2">

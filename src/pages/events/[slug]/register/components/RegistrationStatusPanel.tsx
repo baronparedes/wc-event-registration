@@ -12,9 +12,11 @@ export function RegistrationStatusPanel(props: RegistrationStatusPanelProps) {
   const panelVariant = isRegistrationBlocked ? 'blocked' : isUpdateMode ? 'update' : 'new';
 
   const panelClassNameByVariant = {
-    blocked: 'border-green-600 bg-green-100 text-green-950',
-    update: 'border-green-600 bg-green-100 text-green-950',
-    new: 'border-blue-600 bg-blue-100 text-green-950',
+    blocked:
+      'border-green-600 bg-green-100 text-green-950 dark:border-emerald-500/60 dark:bg-emerald-950/50 dark:text-emerald-100',
+    update:
+      'border-green-600 bg-green-100 text-green-950 dark:border-emerald-500/60 dark:bg-emerald-950/50 dark:text-emerald-100',
+    new: 'border-blue-600 bg-blue-100 text-blue-950 dark:border-blue-500/60 dark:bg-blue-950/50 dark:text-blue-100',
   } as const;
 
   const iconClassNameByVariant = {
