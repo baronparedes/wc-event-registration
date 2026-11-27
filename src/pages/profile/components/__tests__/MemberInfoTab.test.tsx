@@ -100,11 +100,12 @@ describe('MemberInfoTab', () => {
     expect(screen.getByText('Never updated')).toBeInTheDocument();
   });
 
-  it('promotes Civil Status to Personal Details and displays DGroup details in its own section', () => {
+  it('promotes Civil Status and Wedding Anniversary to Personal Details and displays DGroup details in its own section', () => {
     const leaderName = faker.person.fullName();
     const member = makeAdminMember({
       extra_metadata: {
-        civil_status: 'Married',
+        civil_status: 'married',
+        wedanniv_date: '1/14/95',
         dgroup_leader: leaderName,
         dgroup_status: 'leader',
         dgroup_member_since: '2020-05-01',
@@ -116,6 +117,8 @@ describe('MemberInfoTab', () => {
     // Promoted under Personal Details
     expect(screen.getByText('Civil Status')).toBeInTheDocument();
     expect(screen.getByText('Married')).toBeInTheDocument();
+    expect(screen.getByText('Wedding Anniversary')).toBeInTheDocument();
+    expect(screen.getByText('Jan 14, 1995')).toBeInTheDocument();
 
     // First class DGroup section
     expect(screen.getByText('Discipleship Group (DGroup)')).toBeInTheDocument();

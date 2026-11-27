@@ -133,6 +133,8 @@ describe('AdminMemberDetailPage', () => {
 
     expect(screen.getByText('Edit Member')).toBeInTheDocument();
     expect(screen.getByDisplayValue('MEM-001')).toBeInTheDocument();
+    expect(screen.getByText('Civil Status & Anniversary')).toBeInTheDocument();
+    expect(screen.getByLabelText('Wedding Anniversary Date')).toBeInTheDocument();
     expect(screen.getByText('Discipleship Group (DGroup)')).toBeInTheDocument();
     expect(screen.getByLabelText('DGroup Leader')).toBeInTheDocument();
 

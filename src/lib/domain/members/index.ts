@@ -104,3 +104,17 @@ export {
   type DGroupStatusOption,
   type DGroupValues,
 } from './dgroup';
+export {
+  CIVIL_STATUS_METADATA_KEYS,
+  CIVIL_STATUS_CANDIDATE_KEYS,
+  CIVIL_STATUS_VALUES,
+  CIVIL_STATUS_OPTIONS,
+  isCivilStatusKey,
+  detectCivilStatus,
+  normalizeWeddingAnniversaryDate,
+  extractCivilStatusValues,
+  updateMetadataWithCivilStatusField,
+  type CivilStatusMetadataKeyType,
+  type CivilStatusOption,
+  type CivilStatusValues,
+} from './civil-status';
