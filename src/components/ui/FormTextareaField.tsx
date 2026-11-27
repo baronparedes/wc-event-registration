@@ -114,7 +114,7 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
           aria-haspopup={ariaHasPopup}
           className={`${
             hasCustomMinHeight ? '' : 'min-h-28 '
-          }w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
+          }w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-muted ${
             error
               ? 'border-red-400 focus:border-red-400 focus:ring-red-300/30 focus:shadow-lg focus:shadow-red-500/20'
               : 'border-border focus:border-primary focus:ring-primary/30 focus:shadow-lg focus:shadow-primary/20'
@@ -130,7 +130,7 @@ export function FormTextareaField(props: FormTextareaFieldProps) {
         />
       </div>
       {helperText && <p className="text-xs text-muted leading-relaxed">{helperText}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

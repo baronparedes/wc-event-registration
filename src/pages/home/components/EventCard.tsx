@@ -173,7 +173,7 @@ export function EventCard({ event }: EventCardProps) {
                       {index === 0 ? 'From' : 'To'}
                     </span>
                   )}
-                  <span className="bg-white px-2 py-1.5 text-xs font-semibold text-text">
+                  <span className="bg-surface px-2 py-1.5 text-xs font-semibold text-text">
                     {dateBadge.labels.get('weekday')}
                   </span>
                   <span className="bg-primary px-2 py-2 text-white">
@@ -184,7 +184,7 @@ export function EventCard({ event }: EventCardProps) {
                       {dateBadge.labels.get('month')} {dateBadge.labels.get('year')}
                     </span>
                   </span>
-                  <span className="bg-gray-100 px-1 py-1.5 text-[10px] font-semibold text-gray-600 sm:text-xs">
+                  <span className="bg-surface-subtle px-1 py-1.5 text-[10px] font-semibold text-muted sm:text-xs">
                     {formatTimeOnly(dateBadge.isoDate)}
                     {showEndTime && ` to ${formatTimeOnly(event.ends_at)}`}
                   </span>
@@ -233,7 +233,7 @@ export function EventCard({ event }: EventCardProps) {
           <div
             className={
               customCoverUrl && !detailsOpen
-                ? 'space-y-2 rounded-xl border border-border bg-white p-3.5 shadow-sm'
+                ? 'space-y-2 rounded-xl border border-border bg-surface p-3.5 shadow-sm'
                 : 'space-y-2'
             }
           >

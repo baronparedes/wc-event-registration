@@ -143,7 +143,7 @@ export function AdminUnregisteredMembersPage() {
       />
 
       {!isLoading && !attendanceEnabled && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800/60 dark:bg-blue-950/45">
           <p className="text-sm font-medium text-blue-800">Attendance tracking is disabled</p>
           <p className="mt-1 text-xs text-blue-700">
             This report still works and shows members who have not yet registered for this event.

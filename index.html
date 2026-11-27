@@ -60,7 +60,26 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="WC Events" />
-    <meta name="theme-color" content="#0b5fff" />
+    <meta name="theme-color" content="#f8fafc" />
+
+    <!-- Prevent flash of incorrect theme before React mounts -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('wc-theme');
+          var theme =
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var prefersDark =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+          document.documentElement.classList.toggle('dark', isDark);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute('content', isDark ? '#0b1120' : '#f8fafc');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

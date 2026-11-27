@@ -67,7 +67,7 @@ export function ListTableHeaderRow({
     muted:
       'border-b border-border bg-muted/30 text-left text-sm font-medium normal-case tracking-normal text-muted',
     plain:
-      'border-b border-gray-200 text-left text-sm font-semibold normal-case tracking-normal text-gray-900',
+      'border-b border-border text-left text-sm font-semibold normal-case tracking-normal text-text',
   };
 
   return <tr className={joinClasses(headerStyles[variant], className)} {...props} />;
@@ -85,9 +85,9 @@ export function ListTableBody({ children, className, divider = 'default' }: List
 export function ListTableRow({ className, hover = 'default', ...props }: ListTableRowProps) {
   const hoverStyles: Record<ListTableRowHover, string> = {
     default:
-      'bg-white even:bg-slate-100 print:bg-transparent print:even:bg-transparent transition-all hover:bg-slate-300 hover:shadow-xs',
+      'bg-surface even:bg-surface-subtle print:bg-transparent print:even:bg-transparent transition-all hover:bg-surface-hover hover:shadow-xs',
     muted:
-      'bg-white even:bg-slate-100/70 print:bg-transparent print:even:bg-transparent transition hover:bg-slate-300/90',
+      'bg-surface even:bg-surface-subtle/70 print:bg-transparent print:even:bg-transparent transition hover:bg-surface-hover/90',
     none: '',
   };
 

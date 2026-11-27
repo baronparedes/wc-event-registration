@@ -48,7 +48,7 @@ export type MobileCardDividerProps = {
 };
 
 export function MobileCardDivider({ className }: MobileCardDividerProps) {
-  return <div className={`border-t border-slate-100 ${className ?? ''}`.trim()} />;
+  return <div className={`border-t border-border/60 ${className ?? ''}`.trim()} />;
 }
 
 export type MobileCardContentProps = {
@@ -92,10 +92,10 @@ export function MobileCardContentItem({
   const spanClass = colSpan === 2 ? 'col-span-2' : 'pr-0 sm:pr-2';
   const defaultLabelClass =
     colSpan === 2
-      ? 'text-xs font-medium uppercase tracking-wider text-slate-500'
-      : 'text-xs font-semibold uppercase tracking-wider text-slate-500';
+      ? 'text-xs font-medium uppercase tracking-wider text-muted'
+      : 'text-xs font-semibold uppercase tracking-wider text-muted';
 
-  const defaultDdClass = `mt-1 text-[15px] font-medium text-slate-700 ${
+  const defaultDdClass = `mt-1 text-[15px] font-medium text-text ${
     isBreakAll ? 'break-all' : 'truncate'
   } ${isMono ? 'font-mono' : ''}`;
 
@@ -106,7 +106,7 @@ export function MobileCardContentItem({
     if (value !== undefined && value !== null && value !== '') {
       return value;
     }
-    return <span className="italic font-normal text-slate-400">{fallbackText}</span>;
+    return <span className="italic font-normal text-muted/70">{fallbackText}</span>;
   };
 
   return (

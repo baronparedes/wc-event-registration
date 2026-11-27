@@ -64,13 +64,13 @@ This document outlines the coding standards, patterns, and conventions for the f
 > See [`DESIGN.md`](../DESIGN.md) for the complete palette, CSS custom properties, typography hierarchy, elevation/motion tokens, and shared UI component catalog.
 
 - **Utility First:** Use Tailwind utility classes for all styling.
-- **Strict Prohibition of `dark:` Modifiers:** NEVER use Tailwind `dark:` variant classes (`dark:bg-*`, `dark:text-*`, etc.). The theme is controlled exclusively via CSS root variables on `:root` and does not support media-query dark mode. `dark:` variants cause severe contrast bugs on OS dark mode.
+- **Class-Based Dark Mode (`darkMode: 'class'`):** Theme mode (`light` | `dark` | `system`, default `system`) is controlled via `<html class="dark">` through `ThemeProvider` / `useTheme` with CSS variables on `:root` and `.dark`. Prefer semantic tokens over `dark:` overrides; use `dark:` only for translucent semantic status tints (alerts, callouts, badges).
 - **Custom Theme Colors & Semantic Tokens:** Use the defined theme colors from `tailwind.config.js`:
-  - `primary`, `secondary`, `accent`
-  - `background`, `surface`
+  - `primary`, `secondary`, `tertiary`, `accent`
+  - `background`, `surface`, `surface-hover`, `surface-subtle`
   - `text`, `muted`
   - `border`, `danger`
-  - Avoid raw hardcoded color palettes (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, tables, borders, and typography.
+  - Avoid raw hardcoded `bg-white` or neutral color palettes (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, tables, borders, and typography.
 - **Class Concatenation:** Use utility functions (like `clsx` and `tailwind-merge`, or custom `cx`) to merge dynamic Tailwind classes safely.
 - **Focus & Accessibility:**
   - Never remove focus outlines without providing a replacement.

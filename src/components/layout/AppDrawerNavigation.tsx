@@ -1,12 +1,14 @@
 import { type ComponentType } from 'react';
 
-import { FileText, LogOut, ShieldCheck, X } from 'lucide-react';
+import { FileText, LogOut, Monitor, Moon, ShieldCheck, Sun, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { ROUTE_PATHS } from '@/config/constants';
+import { type ThemePreference, useTheme } from '@/hooks/utils';
 import type { AdminPermissionKey, AdminRole } from '@/lib/domain/auth';
 
 import { Button } from '../ui/Button';
+import { ButtonGroup, type ButtonGroupOption } from '../ui/ButtonGroup';
 import { UserIdentity } from './UserIdentity';
 import { useAppDrawerNavigation } from './hooks/useAppDrawerNavigation';
 
@@ -52,6 +54,16 @@ function DrawerNavLink({
   );
 }
 
+const THEME_OPTIONS: ButtonGroupOption<ThemePreference>[] = [
+  { value: 'light', label: 'Light', icon: <Sun className="h-3.5 w-3.5" aria-hidden="true" /> },
+  { value: 'dark', label: 'Dark', icon: <Moon className="h-3.5 w-3.5" aria-hidden="true" /> },
+  {
+    value: 'system',
+    label: 'System',
+    icon: <Monitor className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+];
+
 export function AppDrawerNavigation({
   isOpen,
   onClose,
@@ -62,6 +74,8 @@ export function AppDrawerNavigation({
   currentUserLabel = null,
   onLogout,
 }: AppDrawerNavigationProps) {
+  const { theme, setTheme } = useTheme();
+
   const {
     mainNavItems,
     adminNavItems,
@@ -94,7 +108,7 @@ export function AppDrawerNavigation({
           type="button"
           aria-label="Close navigation drawer overlay"
           title="Close navigation drawer overlay"
-          className="fixed inset-0 z-40 bg-text/25 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
           onClick={onClose}
         />
       )}
@@ -217,8 +231,22 @@ export function AppDrawerNavigation({
             )}
           </div>
 
+          <div className="border-t border-border px-4 py-3">
+            <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-muted">
+              Appearance
+            </p>
+            <ButtonGroup
+              value={theme}
+              onChange={setTheme}
+              options={THEME_OPTIONS}
+              size="sm"
+              fullWidth
+              ariaLabel="Theme preference"
+            />
+          </div>
+
           {hasSession && (
-            <div className="p-4">
+            <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-center gap-3 border-b border-border pb-3 text-[11px] text-muted">
                 <NavLink
                   to={ROUTE_PATHS.privacy}

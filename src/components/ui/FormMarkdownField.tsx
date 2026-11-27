@@ -178,7 +178,7 @@ export function FormMarkdownField<T extends FieldValues>({
 
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="block text-sm font-medium text-text">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>

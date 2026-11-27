@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ChevronDown, Menu } from 'lucide-react';
 
 import brandLogo from '@/assets/wc-hub-brand-white.png';
+import brandLogoSvg from '@/assets/wc-hub-brand.svg';
 
 import { Button } from '../ui';
 
@@ -54,7 +55,26 @@ export function AppShellHeader({
     <header className="sticky top-0 z-40 border-b border-border bg-surface print:hidden">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-2 py-1">
         <div className="flex items-center gap-3">
-          <img src={brandLogo} alt="Welcome Hub" className="h-20 object-cover object-center" />
+          <img
+            src={brandLogo}
+            alt="Welcome Hub"
+            className="h-20 object-cover object-center dark:hidden"
+          />
+          <span
+            role="img"
+            aria-label="Welcome Hub"
+            className="hidden h-14 w-20 bg-white dark:inline-block"
+            style={{
+              WebkitMaskImage: `url(${brandLogoSvg})`,
+              maskImage: `url(${brandLogoSvg})`,
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+            }}
+          />
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

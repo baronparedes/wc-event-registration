@@ -9,6 +9,8 @@ import { useAppBadgeSync, useNotificationsQuery } from '@/hooks/domain/notificat
 import { ADMIN_AUTH_QUERY_KEY, AUTH_SESSION_QUERY_KEY } from '@/lib/domain/auth';
 import { supabase } from '@/lib/infrastructure';
 
+import { ThemeProvider } from './ThemeProvider';
+
 function AppBadgeProvider({ children }: PropsWithChildren) {
   const { data: notifications = [] } = useNotificationsQuery();
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -49,8 +51,10 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppBadgeProvider>{children}</AppBadgeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppBadgeProvider>{children}</AppBadgeProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

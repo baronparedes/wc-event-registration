@@ -31,3 +31,9 @@ export {
   type BeforeInstallPromptEvent,
   type BeforeInstallPromptChoice,
 } from './usePwaInstallPrompt';
+export {
+  useTheme,
+  type ResolvedTheme,
+  type ThemeContextValue,
+  type ThemePreference,
+} from './useTheme';

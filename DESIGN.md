@@ -10,8 +10,8 @@ It serves both **human designers/engineers** and **AI agents** building or refin
 
 Welcome Hub is a community-facing event registration, form submission, volunteer recruitment, and attendance platform used across desktop admin dashboards, personal mobile devices, and on-site kiosk tablets.
 
-- **Calm, High-Clarity Light Canvas:** Built on cool slate-white surfaces (`#f8fafc` canvas, `#ffffff` cards) with subtle ambient radial washes and crisp borders (`#d7e0eb`).
-- **Teal-Led Brand Identity:** Primary teal (`#1ca0b3`) drives primary actions, active states, and focus rings; sage secondary (`#51a29a`), indigo tertiary (`#6366f1`), warm amber accent (`#f5bd5c`), and coral danger (`#f2685c`) provide clear semantic differentiation.
+- **Calm, High-Clarity Light & Cool Slate Dark Canvases:** Supports **Light**, **Dark** (Cool Slate Dark), and **System** (default, follows `prefers-color-scheme`) via class-based theming (`darkMode: 'class'`) and `:root` / `.dark` CSS custom properties.
+- **Teal-Led Brand Identity:** Primary teal (`#1ca0b3` light / `#22b8cf` dark) drives primary actions, active states, and focus rings; sage secondary (`#51a29a` / `#38a89d`), indigo tertiary (`#6366f1` / `#818cf8`), warm amber accent (`#f5bd5c`), and coral danger (`#f2685c` / `#f87171`) provide clear semantic differentiation.
 - **Touch-First Ergonomics:** Interactive controls enforce a minimum `40px` (`2.5rem`) hit target globally, with mobile card actions and kiosk wizards scaling up to `48px+` (`min-h-12`) for effortless tap accuracy.
 - **Primitives Over Custom CSS:** Always compose screens from shared primitives in `src/components/ui/` and `src/components/layout/` rather than inventing one-off cards, pills, or modals.
 
@@ -23,37 +23,33 @@ All theme colors are defined as CSS custom properties on `:root` in [`src/index.
 
 ### 2.1 Core Palette
 
-| Semantic Token | CSS Variable         | Hex       | Tailwind Utilities                                             | Usage                                                                          |
-| :------------- | :------------------- | :-------- | :------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| **Primary**    | `--color-primary`    | `#1ca0b3` | `bg-primary`, `text-primary`, `border-primary`, `ring-primary` | Primary CTAs, active tabs/pills, focus rings, current wizard step, links       |
-| **Secondary**  | `--color-secondary`  | `#51a29a` | `bg-secondary`, `text-secondary`                               | Secondary actions, completed steps, pending/upcoming/walk-in badges            |
-| **Tertiary**   | `--color-tertiary`   | `#6366f1` | `bg-tertiary`, `text-tertiary`                                 | Accent categorization, tertiary stat cards, specialty badges                   |
-| **Accent**     | `--color-accent`     | `#f5bd5c` | `bg-accent`, `text-accent`                                     | Highlighted states, excused commitments, warm emphasis (pair with `text-text`) |
-| **Background** | `--color-background` | `#f8fafc` | `bg-background`                                                | Page canvas, input backgrounds, subtle inset containers                        |
-| **Surface**    | `--color-surface`    | `#ffffff` | `bg-surface`                                                   | Cards, dialogs, filter bars, tab tracks, dropdown panels                       |
-| **Text**       | `--color-text`       | `#0f172a` | `text-text`                                                    | Primary headings, body copy, form labels, high-emphasis values                 |
-| **Muted**      | `--color-muted`      | `#475569` | `text-muted`                                                   | Secondary copy, helper text, table headers, placeholders, icons                |
-| **Border**     | `--color-border`     | `#d7e0eb` | `border-border`, `divide-border`                               | Card outlines, input borders, table dividers, dialog footer dividers           |
-| **Danger**     | `--color-danger`     | `#f2685c` | `text-danger`, `bg-danger`, `border-danger`                    | Error states, destructive warnings, danger stat cards                          |
+| Semantic Token     | CSS Variable             | Light (`:root`) | Cool Slate Dark (`.dark`) | Tailwind Utilities                                             | Usage                                                                               |
+| :----------------- | :----------------------- | :-------------- | :------------------------ | :------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **Primary**        | `--color-primary`        | `#1ca0b3`       | `#22b8cf`                 | `bg-primary`, `text-primary`, `border-primary`, `ring-primary` | Primary CTAs, active tabs/pills, focus rings, current wizard step, links            |
+| **Secondary**      | `--color-secondary`      | `#51a29a`       | `#38a89d`                 | `bg-secondary`, `text-secondary`                               | Secondary actions, completed steps, pending/upcoming/walk-in badges                 |
+| **Tertiary**       | `--color-tertiary`       | `#6366f1`       | `#818cf8`                 | `bg-tertiary`, `text-tertiary`                                 | Accent categorization, tertiary stat cards, specialty badges                        |
+| **Accent**         | `--color-accent`         | `#f5bd5c`       | `#f5bd5c`                 | `bg-accent`, `text-accent`                                     | Highlighted states, excused commitments, warm emphasis (pair with `text-slate-900`) |
+| **Background**     | `--color-background`     | `#f8fafc`       | `#0b1120`                 | `bg-background`                                                | Page canvas, input backgrounds, subtle inset containers                             |
+| **Surface**        | `--color-surface`        | `#ffffff`       | `#131c2e`                 | `bg-surface`                                                   | Cards, dialogs, filter bars, tab tracks, dropdown panels                            |
+| **Surface Hover**  | `--color-surface-hover`  | `#f1f5f9`       | `#1e293b`                 | `bg-surface-hover`                                             | Interactive row/menu hover states, segmented control tracks                         |
+| **Surface Subtle** | `--color-surface-subtle` | `#f1f5f9`       | `#162033`                 | `bg-surface-subtle`                                            | Zebra table rows, disabled input backgrounds, muted chips                           |
+| **Text**           | `--color-text`           | `#0f172a`       | `#e2e8f0`                 | `text-text`                                                    | Primary headings, body copy, form labels, high-emphasis values                      |
+| **Muted**          | `--color-muted`          | `#475569`       | `#94a3b8`                 | `text-muted`                                                   | Secondary copy, helper text, table headers, placeholders, icons                     |
+| **Border**         | `--color-border`         | `#d7e0eb`       | `#263348`                 | `border-border`, `divide-border`                               | Card outlines, input borders, table dividers, dialog footer dividers                |
+| **Danger**         | `--color-danger`         | `#f2685c`       | `#f87171`                 | `text-danger`, `bg-danger`, `border-danger`                    | Error states, destructive warnings, danger stat cards                               |
 
-> **Note on Destructive Buttons & Alerts:** Destructive solid buttons (`Button variant="destructive"`) use `bg-red-600 text-white hover:bg-red-700` for WCAG AA contrast against white text, while inline field validation messages use `text-red-600` and `border-red-400`.
+> **Note on Destructive Buttons & Alerts:** Destructive solid buttons (`Button variant="destructive"`) use `bg-red-600 text-white hover:bg-red-700` for WCAG AA contrast against white text, while inline field validation messages use `text-red-600 dark:text-red-400` and `border-red-400`.
 
 ### 2.2 Ambient Page Canvas
 
-The `<body>` background layers two soft radial gradients over `--color-background`:
+The `<body>` background layers two soft radial gradients over `--color-background` (tuned separately for `:root` and `.dark` in `src/index.css`).
 
-```css
-background:
-  radial-gradient(circle at 12% -5%, rgba(11, 95, 255, 0.15), transparent 35%),
-  radial-gradient(circle at 96% 22%, rgba(15, 118, 110, 0.12), transparent 42%),
-  var(--color-background);
-```
+### 2.3 Class-Based Dark Mode & Semantic-Token-First Policy
 
-### 2.3 Strict Light-Only Policy (No `dark:` Modifiers)
-
-- **NEVER use Tailwind `dark:` variant classes** (e.g., `dark:bg-neutral-900`, `dark:text-neutral-100`).
-- The application theme is driven exclusively by `:root` CSS variables and does **not** support media-query dark mode. Adding `dark:` utilities causes unreadable white-on-white text or mismatched black cards on devices with OS dark mode enabled.
-- **Avoid raw neutral palettes** (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, borders, or typography; always prefer `bg-surface`, `bg-background`, `border-border`, `text-text`, and `text-muted`.
+- **Class-Based Switching (`darkMode: 'class'`):** Dark mode is controlled exclusively via `<html class="dark">`, managed by [`ThemeProvider`](src/app/providers/ThemeProvider.tsx) / `useTheme()` (`light` | `dark` | `system`, default `system`, persisted in `localStorage` under `wc-theme`) with a pre-mount script in [`index.html`](index.html) to prevent flash-of-wrong-theme (FOUC) and keep `<meta name="theme-color">` in sync.
+- **Semantic Tokens First:** Always prefer CSS-variable tokens (`bg-surface`, `bg-surface-hover`, `bg-surface-subtle`, `bg-background`, `border-border`, `text-text`, `text-muted`) over scattering `dark:*` classes. Avoid hardcoded `bg-white` or raw neutral palettes (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, tables, borders, or typography.
+- **Scoped `dark:` Overrides:** Use `dark:` modifiers only when a component uses translucent tinted semantic colors that do not map to a single CSS variable (e.g., `AlertBanner` `info`/`warning`/`error`/`success` surfaces, status pills, or icon tints) — and always pair light and dark shades together.
+- **Light-Locked Share Exports (`.theme-light`):** `ImageCanvas` automatically applies `.theme-light` (which re-declares light `:root` variables) so exported PNG share cards always render in crisp light mode regardless of the user's active theme. Print output (`@media print`) also forces light mode.
 
 ### 2.4 Domain Semantic Color Scales
 
@@ -180,8 +176,8 @@ Defined in `tailwind.config.js`:
 
 All standard routes render inside [`AppShell`](src/components/layout/AppShell.tsx):
 
-- **`AppShellHeader`:** Brand identity, slide-out drawer trigger, `NotificationBell` (for authenticated sessions), and `UserIdentity` badge. Supports a compact `isMinimizedShell` mode for focused/kiosk routes.
-- **`AppDrawerNavigation`:** Role- and permission-aware navigation drawer.
+- **`AppShellHeader`:** Brand identity (uses `wc-hub-brand-white.png` in light mode and transparent masked `wc-hub-brand.svg` in `bg-white` in dark mode), slide-out drawer trigger, `NotificationBell` (for authenticated sessions), and `UserIdentity` badge. Supports a compact `isMinimizedShell` mode for focused/kiosk routes.
+- **`AppDrawerNavigation`:** Role- and permission-aware navigation drawer with the **Appearance** theme switcher (`Light` / `Dark` / `System` via `ButtonGroup`) accessible to all users.
 - **`<main>`:** Centered `max-w-7xl` content area with `animate-fadeIn`.
 - **Global Prompts & Footer:** `PWAInstallPromptBanner`, `PushNotificationPromptBanner`, and `AppFooter`.
 
@@ -467,13 +463,13 @@ Configured in [`src/index.css`](src/index.css) (`@page { margin: 12mm; }`):
 
 ## 9. Quick Reference: Do's & Don'ts
 
-| Do                                                                                                                     | Don't                                                                                                               |
-| :--------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| Use semantic tokens (`bg-surface`, `bg-background`, `text-text`, `text-muted`, `border-border`, `bg-primary`).         | Use `dark:*` Tailwind modifiers or hardcoded `gray-*`/`neutral-*` for page surfaces and text.                       |
-| Compose admin pages with `AdminPageShell`, `ListTable` (desktop), and `MobileCard` (mobile via `useIsMobileViewport`). | Build custom ad-hoc table wrappers or hide mobile layouts with fragile CSS-only hacks.                              |
-| Include `<Avatar avatarObjectKey={...} name={...} />` wherever a person is listed.                                     | Render plain text names without avatars in member, volunteer, or attendee lists.                                    |
-| Use `Badge` / `StatusBadge` variants for status chips and `ButtonGroup` / `Tabs` for filter switches.                  | Hand-roll arbitrary colored `<div>` pills or install external headless UI libraries for simple tabs.                |
-| Keep `Dialog.Body` natural and put `overflow-y-auto` only on inner dynamic lists.                                      | Wrap `Dialog.Body` in fixed `max-h` + `overflow-y-auto` that clips `FormSelectField` dropdowns.                     |
-| Place `Dialog.Footer` buttons as direct children (or in `<>...</>`) and order primary inputs above dropdowns.          | Wrap footer buttons in extra `<div>`s (breaks mobile full-width stacking) or put dropdowns above primary textareas. |
-| Pass `label="..."` to `FormInputField` / `FormSelectField` and `placeholder=""` on required selects with defaults.     | Invent new domain labels/options or detach raw `<label>` elements from shared form primitives.                      |
-| Add `min-w-0 appearance-none` on native `<input type="date">` (handled automatically by `FormInputField`).             | Leave native date inputs unguarded against iOS Safari horizontal overflow.                                          |
+| Do                                                                                                                                                      | Don't                                                                                                                                                |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Use semantic tokens (`bg-surface`, `bg-surface-hover`, `bg-surface-subtle`, `bg-background`, `text-text`, `text-muted`, `border-border`, `bg-primary`). | Hardcode `bg-white` or raw `gray-*`/`neutral-*`/`slate-*` for page surfaces and text, or add `dark:` overrides when a semantic token already exists. |
+| Compose admin pages with `AdminPageShell`, `ListTable` (desktop), and `MobileCard` (mobile via `useIsMobileViewport`).                                  | Build custom ad-hoc table wrappers or hide mobile layouts with fragile CSS-only hacks.                                                               |
+| Include `<Avatar avatarObjectKey={...} name={...} />` wherever a person is listed.                                                                      | Render plain text names without avatars in member, volunteer, or attendee lists.                                                                     |
+| Use `Badge` / `StatusBadge` variants for status chips and `ButtonGroup` / `Tabs` for filter switches.                                                   | Hand-roll arbitrary colored `<div>` pills or install external headless UI libraries for simple tabs.                                                 |
+| Keep `Dialog.Body` natural and put `overflow-y-auto` only on inner dynamic lists.                                                                       | Wrap `Dialog.Body` in fixed `max-h` + `overflow-y-auto` that clips `FormSelectField` dropdowns.                                                      |
+| Place `Dialog.Footer` buttons as direct children (or in `<>...</>`) and order primary inputs above dropdowns.                                           | Wrap footer buttons in extra `<div>`s (breaks mobile full-width stacking) or put dropdowns above primary textareas.                                  |
+| Pass `label="..."` to `FormInputField` / `FormSelectField` and `placeholder=""` on required selects with defaults.                                      | Invent new domain labels/options or detach raw `<label>` elements from shared form primitives.                                                       |
+| Add `min-w-0 appearance-none` on native `<input type="date">` (handled automatically by `FormInputField`).                                              | Leave native date inputs unguarded against iOS Safari horizontal overflow.                                                                           |

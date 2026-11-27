@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+.theme-light {
+  color-scheme: light;
   --font-app: 'Arimo', Helvetica, Arial, sans-serif;
   --color-primary: #1ca0b3;
   --color-secondary: #51a29a;
@@ -10,10 +12,28 @@
   --color-accent: #f5bd5c;
   --color-background: #f8fafc;
   --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-surface-subtle: #f1f5f9;
   --color-text: #0f172a;
   --color-muted: #475569;
   --color-border: #d7e0eb;
   --color-danger: #f2685c;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-primary: #22b8cf;
+  --color-secondary: #38a89d;
+  --color-tertiary: #818cf8;
+  --color-accent: #f5bd5c;
+  --color-background: #0b1120;
+  --color-surface: #131c2e;
+  --color-surface-hover: #1e293b;
+  --color-surface-subtle: #162033;
+  --color-text: #e2e8f0;
+  --color-muted: #94a3b8;
+  --color-border: #263348;
+  --color-danger: #f87171;
 }
 
 * {
@@ -39,6 +59,13 @@ body {
   overflow-x: hidden;
 }
 
+.dark body {
+  background:
+    radial-gradient(circle at 12% -5%, rgba(34, 184, 207, 0.14), transparent 38%),
+    radial-gradient(circle at 96% 22%, rgba(99, 102, 241, 0.12), transparent 44%),
+    var(--color-background);
+}
+
 @page {
   margin: 12mm;
 }
@@ -59,6 +86,7 @@ body {
   body,
   #root {
     background: #fff !important;
+    color: #0f172a !important;
   }
 
   body {
@@ -118,6 +146,10 @@ textarea {
   background-color: #c9d4e1;
 }
 
+.dark .skeleton-shimmer {
+  background-color: #1e293b;
+}
+
 .skeleton-shimmer::after {
   content: '';
   position: absolute;
@@ -130,6 +162,15 @@ textarea {
   );
   transform: translateX(-100%);
   animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
 }
 
 @keyframes notification-bell-ring {
@@ -285,8 +326,56 @@ textarea {
   right: 0 !important;
   height: auto !important;
   z-index: 35 !important;
-  background-color: #f8fafc !important;
+  background-color: var(--color-background) !important;
+  color: var(--color-text) !important;
   padding: 16px 20px !important;
+}
+
+/* EasyMDE Dark Mode Overrides */
+.dark .EasyMDEContainer .editor-toolbar {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.dark .editor-toolbar button {
+  color: var(--color-muted);
+}
+
+.dark .editor-toolbar button:hover,
+.dark .editor-toolbar button.active {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover) !important;
+  border-color: var(--color-border) !important;
+}
+
+.dark .editor-toolbar i.separator {
+  border-left-color: var(--color-border);
+}
+
+.dark .EasyMDEContainer .CodeMirror {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.dark .EasyMDEContainer .CodeMirror-cursor {
+  border-left-color: var(--color-text);
+}
+
+.dark .editor-toolbar.fullscreen,
+.dark .EasyMDEContainer .CodeMirror-fullscreen {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+.dark .editor-preview-side {
+  background-color: var(--color-background) !important;
+  border-left-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+.dark .editor-statusbar {
+  color: var(--color-muted);
 }
 
 /* Sonner Toast Container overrides for NotificationPrompt */

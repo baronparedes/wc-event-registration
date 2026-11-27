@@ -25,12 +25,12 @@ const variantClassName: Record<BadgeVariant, string> = {
   default: 'bg-primary text-white',
   secondary: 'bg-secondary text-white',
   tertiary: 'bg-tertiary text-white',
-  accent: 'bg-accent text-text',
+  accent: 'bg-accent text-text dark:text-slate-900',
   outline: 'border border-primary/60 bg-transparent text-text',
   primaryOutline: 'border border-primary bg-background text-primary',
   ghost: 'bg-transparent text-text',
   link: 'bg-transparent text-primary underline',
-  destructive: 'bg-red-600/50 text-text',
+  destructive: 'bg-red-600/50 text-text dark:bg-red-500/30 dark:text-red-100',
 };
 
 /**

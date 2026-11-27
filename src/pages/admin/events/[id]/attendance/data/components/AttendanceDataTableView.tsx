@@ -97,17 +97,17 @@ export function AttendanceDataTableView({
             isCheckedIn && attendee
               ? formatCompactSlotLabelsFromSlotRecords(attendee.slot_records)
               : [];
-          const rowBackgroundClass = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+          const rowBackgroundClass = index % 2 === 0 ? 'bg-surface' : 'bg-surface-subtle';
 
           return (
             <ListTableRow
               key={rowKey}
-              className={`group cursor-pointer border-b border-border/80 ${rowBackgroundClass} hover:bg-slate-100`}
+              className={`group cursor-pointer border-b border-border/80 ${rowBackgroundClass} hover:bg-surface-hover`}
               hover="none"
               onClick={() => onViewRegistrant(registrant)}
             >
               <ListTableCell
-                className={`sticky left-0 z-10 ${rowBackgroundClass} !px-2 !py-2 align-middle group-hover:bg-slate-100`}
+                className={`sticky left-0 z-10 ${rowBackgroundClass} !px-2 !py-2 align-middle group-hover:bg-surface-hover`}
               >
                 <div className="flex items-center gap-1">
                   {shouldShowAvatar && (

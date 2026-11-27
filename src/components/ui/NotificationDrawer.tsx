@@ -77,7 +77,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
         <button
           type="button"
           aria-label="Close notifications drawer overlay"
-          className="fixed inset-0 z-40 bg-text/25 backdrop-blur-[1px] select-none"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] select-none"
           onClick={onClose}
         />
       )}

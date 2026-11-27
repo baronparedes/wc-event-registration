@@ -95,7 +95,7 @@ export function FormInputField(props: FormInputFieldProps) {
           {...controlledProps}
           ref={inputRef ?? (registration ? registration.ref : undefined)}
           aria-label={ariaLabel}
-          className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-600 ${
+          className={`w-full rounded-md border bg-background px-3.5 py-2.5 text-sm leading-6 text-text transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-muted ${
             type === 'date' ? 'min-w-0 appearance-none' : ''
           } ${
             error
@@ -116,7 +116,7 @@ export function FormInputField(props: FormInputFieldProps) {
         />
       </div>
       {helperText && <p className="text-xs text-muted leading-relaxed">{helperText}</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

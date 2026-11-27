@@ -132,7 +132,7 @@ export function MobileEventCard({
                   e.stopPropagation();
                   setIsMenuOpen((isOpen) => !isOpen);
                 }}
-                className="flex min-h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+                className="flex min-h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface text-text shadow-sm transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
                 aria-label={`More actions for ${event.title}`}
                 title="More actions"
               >

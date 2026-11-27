@@ -144,7 +144,7 @@ function renderExpectedDot(props: {
         cy={cy}
         r={5}
         fill={FORECAST_CHART_COLORS.danger}
-        stroke="#ffffff"
+        stroke="var(--color-surface)"
         strokeWidth={2}
         key={`expected-dot-${cx}-${cy}`}
       />
@@ -157,7 +157,7 @@ function renderExpectedDot(props: {
       cy={cy}
       r={3.5}
       fill={FORECAST_CHART_COLORS.expected}
-      stroke="#ffffff"
+      stroke="var(--color-surface)"
       strokeWidth={1.5}
       key={`expected-dot-${cx}-${cy}`}
     />
@@ -493,7 +493,7 @@ export function ForecastMonthlyTrendChart({
                 dot={{
                   r: 3.5,
                   fill: FORECAST_CHART_COLORS.scheduled,
-                  stroke: '#ffffff',
+                  stroke: 'var(--color-surface)',
                   strokeWidth: 1.5,
                 }}
                 activeDot={{ r: 6 }}
@@ -508,7 +508,7 @@ export function ForecastMonthlyTrendChart({
                 dot={{
                   r: 3.5,
                   fill: FORECAST_CHART_COLORS.target,
-                  stroke: '#ffffff',
+                  stroke: 'var(--color-surface)',
                   strokeWidth: 1.5,
                 }}
                 activeDot={{ r: 6 }}

@@ -117,7 +117,7 @@ export function AttendeeDetailsModal({
           <div
             className={`mb-4 inline-flex rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm ${
               isCheckedIn
-                ? 'border-green-300 bg-green-100 text-green-900'
+                ? 'border-green-300 bg-green-100 text-green-900 dark:border-emerald-800/60 dark:bg-emerald-950/50 dark:text-emerald-100'
                 : 'border-slate-300 bg-slate-100 text-slate-900'
             }`}
           >
@@ -126,7 +126,7 @@ export function AttendeeDetailsModal({
 
           {/* Registration Answers */}
           {registrationAnswersWithFields.length > 0 && (
-            <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 p-5 shadow-sm mb-4">
+            <div className="rounded-xl border-2 border-secondary/30 bg-teal-50/70 dark:bg-teal-950/35 p-5 shadow-sm mb-4">
               <p className="text-lg font-semibold text-text mb-4">Registration answers</p>
               <ul className="flex flex-wrap gap-3">
                 {registrationAnswersWithFields.map(({ field, answer }) => {
@@ -156,7 +156,7 @@ export function AttendeeDetailsModal({
 
           {/* Attendance Answers */}
           {attendanceAnswersWithFields.length > 0 ? (
-            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-5 shadow-sm mb-4">
+            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 dark:bg-blue-950/35 p-5 shadow-sm mb-4">
               <p className="text-lg font-semibold text-text mb-4">Attendance Data</p>
               <ul className="flex flex-wrap gap-3">
                 {attendanceAnswersWithFields.map(({ field, answer }) => {
@@ -183,7 +183,7 @@ export function AttendeeDetailsModal({
               </ul>
             </div>
           ) : (
-            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 p-5 shadow-sm mb-4">
+            <div className="rounded-xl border-2 border-primary/30 bg-blue-50/70 dark:bg-blue-950/35 p-5 shadow-sm mb-4">
               <p className="text-base text-muted">No attendance data recorded yet.</p>
             </div>
           )}

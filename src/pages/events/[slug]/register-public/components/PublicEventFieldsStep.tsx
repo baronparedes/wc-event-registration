@@ -196,7 +196,7 @@ export function PublicEventFieldsStep({
         {visibleFields.length === 0 && (
           <div
             aria-live="polite"
-            className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md"
+            className="registration-status-panel flex items-start gap-3 rounded-lg border-2 border-blue-600 bg-blue-100 px-4 py-3 text-sm text-blue-950 shadow-md dark:border-blue-500/60 dark:bg-blue-950/50 dark:text-blue-100"
           >
             <span
               aria-hidden="true"

@@ -139,7 +139,7 @@ export function AttendanceDataEntryList({
             className="relative inline-flex h-7 w-20 items-center rounded-full bg-primary p-0.5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <span
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary shadow-sm transition-transform ${
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-surface text-primary shadow-sm transition-transform ${
                 desktopViewMode === 'table' ? 'translate-x-11' : 'translate-x-1'
               }`}
             >

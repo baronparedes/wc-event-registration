@@ -26,13 +26,12 @@ A specialized AI agent skill designed to enforce the WC Event Registration Platf
 
 ## 2. Tailwind & Styling Rules
 
-- **Strict Prohibition of `dark:` Modifiers:** NEVER use Tailwind `dark:` classes (`dark:bg-*`, `dark:text-*`, etc.). The platform theme is driven exclusively by root CSS variables on `:root` and does NOT support media-query dark mode. Using `dark:` variants triggers severe contrast breaks (e.g., white-on-white text or pitch-black cards) on devices with OS dark mode enabled.
-- **Theme Colors & Semantic Tokens:** Restrict color usage to the CSS variables defined in `tailwind.config.js`:
-  - `bg-background`, `bg-surface`
+- **Class-Based Dark Mode & Semantic Tokens:** Dark mode is controlled via `darkMode: 'class'` (`<html class="dark">`, managed by `ThemeProvider` / `useTheme`) with CSS custom properties on `:root` and `.dark`. Always prefer semantic tokens defined in `tailwind.config.js`:
+  - `bg-background`, `bg-surface`, `bg-surface-hover`, `bg-surface-subtle`
   - `text-text`, `text-muted`
   - `border-border`
   - `text-primary`, `bg-primary`, `bg-secondary`, `bg-accent`, `text-danger`
-  - Do NOT use hardcoded gray/neutral palettes (`neutral-*`, `gray-*`, `slate-*`) for backgrounds, cards, borders, or text.
+  - Do NOT hardcode `bg-white` or raw gray/neutral palettes (`neutral-*`, `gray-*`, `slate-*`) for general containers, cards, borders, or text. Use `dark:` modifiers only for translucent semantic callouts/alerts/badges that don't map to a CSS variable.
 - **Class Merging:** Use utility functions (e.g., `cx`, `clsx`, `twMerge`) to safely compose dynamic classes.
 - **Focus Outlines:** Never use `focus:outline-none` without providing an explicit replacement. The standard pattern is `focus-visible:ring-2 focus-visible:ring-primary/50`.
 - **Responsive Gotchas:**

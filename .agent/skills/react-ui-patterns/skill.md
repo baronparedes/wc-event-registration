@@ -13,13 +13,14 @@ description: 'Repository UI design system patterns, component composition, and l
 
 ## 1. Theme, Colors & Dark Mode Constraints
 
-- **Strict Prohibition of `dark:` Modifiers:** NEVER use Tailwind's `dark:` variant classes (e.g., `dark:bg-neutral-900`, `dark:text-neutral-100`). The application's theme is driven exclusively by CSS variables defined on `:root` (`--color-background`, `--color-surface`, `--color-text`, `--color-primary`, etc.) and does not support media-query dark mode. `dark:` classes break contrast on devices with OS dark mode enabled.
-- **Semantic Color Tokens:** Restrict color classes to design tokens defined in `tailwind.config.js`:
-  - Backgrounds & Surfaces: `bg-background`, `bg-surface`
+- **Class-Based Dark Mode (`darkMode: 'class'`):** The application supports Light, Cool Slate Dark, and System (default) themes via `<html class="dark">` managed by `ThemeProvider` / `useTheme`. Theme tokens live on `:root` and `.dark` in `src/index.css`.
+- **Semantic Color Tokens First:** Restrict surface, border, and typography classes to design tokens defined in `tailwind.config.js`:
+  - Backgrounds & Surfaces: `bg-background`, `bg-surface`, `bg-surface-hover`, `bg-surface-subtle`
   - Typography: `text-text`, `text-muted`
   - Borders: `border-border`
   - Accents & Status: `text-primary`, `bg-primary`, `bg-secondary`, `bg-accent`, `text-danger`
-  - Avoid raw color utilities (`neutral-*`, `gray-*`, `slate-*`) for general page containers, cards, tables, and text.
+  - Avoid hardcoded `bg-white` or raw neutral utilities (`neutral-*`, `gray-*`, `slate-*`) for general page containers, cards, tables, and text. Only use `dark:` modifiers for translucent semantic tints (e.g., `AlertBanner`, status badges) that do not map directly to a CSS variable.
+  - `ImageCanvas` PNG exports are light-locked via `.theme-light`.
 
 ---
 
