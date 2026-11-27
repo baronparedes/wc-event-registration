@@ -467,7 +467,8 @@ The production database is automatically backed up every Monday at 01:00 AM PHT 
 Detailed engineering guides and architectural records are maintained in the repository:
 
 - **AI Guidelines**: [AGENTS.md](AGENTS.md) – Operational guidelines, architectural rules, and TypeScript standards.
-- **Frontend Styleguide**: [docs/STYLEGUIDE.md](docs/STYLEGUIDE.md) – Tailwind token enforcement, accessibility, and component guidelines.
+- **Design System & Style Guide**: [DESIGN.md](DESIGN.md) – Visual tokens, typography, elevation, motion, UI component catalog, and layout/dialog ergonomics.
+- **Frontend Styleguide**: [docs/STYLEGUIDE.md](docs/STYLEGUIDE.md) – React architecture, TypeScript, hooks, and frontend coding standards.
 - **Hub Calendar & MAR Rating**: [docs/guides/hub-calendar-forecast-and-attendance-rating.md](docs/guides/hub-calendar-forecast-and-attendance-rating.md) – Turnup statistical forecasting model.
 - **Unified Approvals & SLOD**: [docs/guides/unified-approval-workflow-and-slod-delegation.md](docs/guides/unified-approval-workflow-and-slod-delegation.md) – Review delegation workflows.
 - **Multi-Channel Notifications**: [docs/guides/notifications-deployment-and-mobile-testing.md](docs/guides/notifications-deployment-and-mobile-testing.md) – Push & Email architecture.

@@ -6,7 +6,7 @@ argument-hint: 'Optional: describe the UI component or specific frontend logic b
 
 # Frontend Style Guide Skill
 
-A specialized AI agent skill designed to enforce the WC Event Registration Platform's frontend conventions. Always refer to this skill before suggesting or implementing UI, state, styling, or form logic.
+A specialized AI agent skill designed to enforce the WC Event Registration Platform's frontend conventions. Always refer to this skill — along with [`DESIGN.md`](../../../DESIGN.md) (visual tokens, typography, component catalog, and layout/dialog ergonomics) and [`docs/STYLEGUIDE.md`](../../../docs/STYLEGUIDE.md) (React/TypeScript engineering standards) — before suggesting or implementing UI, state, styling, or form logic.
 
 ## 1. Component Architecture
 
@@ -67,4 +67,4 @@ A specialized AI agent skill designed to enforce the WC Event Registration Platf
 
 ---
 
-**Execution Check:** Before finalizing a frontend code change, verify it passes all constraints in this document and aligns with the full `docs/STYLEGUIDE.md` specifications.
+**Execution Check:** Before finalizing a frontend code change, verify it passes all constraints in this document and aligns with [`DESIGN.md`](../../../DESIGN.md) (design system tokens, primitives, and UI ergonomics) and [`docs/STYLEGUIDE.md`](../../../docs/STYLEGUIDE.md) (React/TypeScript engineering standards).

@@ -7,6 +7,8 @@ description: 'Repository UI design system patterns, component composition, and l
 
 **Context:** This skill covers the design system, component composition standards, and layout conventions for building frontend user interfaces in this repository.
 
+**Canonical Design Reference:** Always consult [`DESIGN.md`](../../../DESIGN.md) at the repository root as the authoritative source of truth for exact color hex values and `:root` CSS variables, typography and kiosk scales, shadows/motion tokens, full UI component variants/sizes, third-party widget theming, and accessibility/print standards. Follow the core patterns below and verify all new or updated UI against `DESIGN.md`.
+
 ---
 
 ## 1. Theme, Colors & Dark Mode Constraints
@@ -168,3 +170,7 @@ Whenever rendering users, volunteers, requesters, or attendees in lists, tables,
 - **Utilize Existing Primitives:** Make use of the existing shared UI primitives in `src/components/ui/` (`Button`, `Dialog`, `FormInputField`, `SearchInputField`, `ButtonGroup`, `Avatar`, `Badge`) rather than rebuilding them.
 - **Global Toast Notifications:** Use the `sonner` library for global toast notifications. The primary `<Toaster />` provider component is configured and managed in `src/App.tsx`.
 - **Login CTA:** The login page (`/src/pages/login`) strongly prioritizes Google Sign-In as the primary Call-To-Action. Traditional email/password admin login is hidden behind a toggle button.
+
+---
+
+**Verification:** Before finalizing any UI component or page, verify tokens, primitive variants, dialog ergonomics, and accessibility against [`DESIGN.md`](../../../DESIGN.md).

@@ -23,6 +23,7 @@ This file contains the core principles, architecture rules, and domain logic con
   - **Form State with RHF**: Do NOT use `useState` for form fields; use React Hook Form (`register`, `useWatch`) and `useFieldArray` for array structures.
   - See `.agent/skills/react-best-practices/references/anti-patterns.md` for full guidance.
 - **UI Theme & Styling Rules (Strict No `dark:` Modifiers)**:
+  - **Canonical Design System Reference**: Before building or modifying any UI, consult [`DESIGN.md`](DESIGN.md) for the authoritative palette, CSS variables, typography scale, border radii, shadows, animations, component catalog (`Button`, `Badge`, `Dialog`, `Tabs`, `ListTable`, `MobileCard`, etc.), and ergonomics checklist.
   - **No `dark:` Modifiers**: NEVER use Tailwind `dark:` variant classes (e.g., `dark:bg-neutral-900`, `dark:text-neutral-100`). The application uses centralized CSS root variables on `:root` (`--color-primary`, `--color-background`, `--color-surface`, `--color-text`, etc.) and does not support media-query dark mode. Using `dark:` causes unreadable white-on-white text or mismatched jet-black cards on devices with OS dark mode enabled.
   - **Semantic Theme Tokens**: Strictly use semantic design tokens: `text-text`, `text-muted`, `bg-surface`, `bg-background`, `border-border`, `text-primary`, `bg-primary`, `bg-accent`, `text-danger`. Avoid hardcoding arbitrary neutral/gray Tailwind color utilities (`neutral-*`, `gray-*`, `slate-*`) for backgrounds, surfaces, borders, or typography.
 - **Admin UI Layout & Component Standards**:
@@ -179,8 +180,10 @@ This file contains the core principles, architecture rules, and domain logic con
 The repository maintains specialized skills in [`.agent/skills/`](.agent/skills/). AI Agents MUST check and follow these skills when working in their respective domains:
 
 - **React Architecture & Standards**:
+  - [`DESIGN.md`](DESIGN.md): Canonical visual design system — color tokens, typography, elevation, motion, shared UI component catalog, layout/dialog ergonomics, and accessibility standards. Consult before creating or modifying any UI.
   - [`react-best-practices`](.agent/skills/react-best-practices/skill.md): Component decomposition, hook design rules, state colocation, performance, accessibility, and avoiding anti-patterns. Consult when creating, reviewing, or refactoring React components.
-  - [`react-ui-patterns`](.agent/skills/react-ui-patterns/skill.md): Repository UI design system patterns, component composition, and layout conventions.
+  - [`react-ui-patterns`](.agent/skills/react-ui-patterns/skill.md): Repository UI design system patterns, component composition, and layout conventions (backed by `DESIGN.md`).
+  - [`styleguide`](.agent/skills/styleguide/skill.md): Frontend style guide enforcer covering Tailwind utility rules, UI primitives, state boundaries, and form validation (backed by `DESIGN.md` and `docs/STYLEGUIDE.md`).
 - **TypeScript & Planning**:
   - [`typescript-standards`](.agent/skills/typescript-standards/skill.md): Strict typing, Zod schema inference, generic patterns, and zero-linter-override policies.
   - [`deep-planning`](.agent/skills/deep-planning/skill.md): Structured planning requirements, clarifying questions, and risk verification.
