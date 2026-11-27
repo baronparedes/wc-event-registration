@@ -236,4 +236,39 @@ describe('ApplicantProfilePanel', () => {
     expect(screen.getByRole('heading', { name: /change dgroup leader/i })).toBeInTheDocument();
     expect(screen.getByText(/This applicant has already been endorsed/i)).toBeInTheDocument();
   });
+
+  it('renders quick SMS, Viber, Email, and Copy controls for applicant, emergency contact, and DGroup leader', () => {
+    render(<ApplicantProfilePanel application={mockApplication} />);
+
+    // Applicant SMS, Viber, Email
+    expect(screen.getByRole('link', { name: 'Send SMS to +639171234567' })).toHaveAttribute(
+      'href',
+      'sms:+639171234567',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Open Viber chat with +639171234567' }),
+    ).toHaveAttribute('href', 'viber://chat?number=%2B639171234567');
+    expect(
+      screen.getByRole('link', { name: 'Send email to test.applicant@example.com' }),
+    ).toHaveAttribute('href', 'mailto:test.applicant@example.com');
+
+    // Emergency Contact SMS & Viber
+    expect(screen.getByRole('link', { name: 'Send SMS to +639187654321' })).toHaveAttribute(
+      'href',
+      'sms:+639187654321',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Open Viber chat with +639187654321' }),
+    ).toHaveAttribute('href', 'viber://chat?number=%2B639187654321');
+
+    // DGroup Leader SMS, Viber, Email
+    expect(screen.getByRole('link', { name: 'Send SMS to +639191112233' })).toHaveAttribute(
+      'href',
+      'sms:+639191112233',
+    );
+    expect(screen.getByRole('link', { name: 'Send email to leader@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:leader@example.com',
+    );
+  });
 });

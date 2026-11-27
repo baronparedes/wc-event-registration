@@ -32,7 +32,13 @@ export function Step1SurveyReviewPanel({ application, endorsement }: Step1Survey
         </p>
         <p>
           <strong>DGroup Leader:</strong> {application.dgroup_info.leader_name} (
-          {application.dgroup_info.leader_email})
+          <a
+            href={`mailto:${application.dgroup_info.leader_email}`}
+            className="text-primary hover:underline"
+          >
+            {application.dgroup_info.leader_email}
+          </a>
+          )
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           <strong>DGroup Endorsement Status:</strong>

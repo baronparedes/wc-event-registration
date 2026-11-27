@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  buildMailtoUri,
   buildSmsUri,
   buildViberChatUri,
   copyPhoneNumberToClipboard,
@@ -134,6 +135,29 @@ describe('messagingUtils', () => {
     it('returns empty string for invalid phone numbers', () => {
       expect(buildViberChatUri('')).toBe('');
       expect(buildViberChatUri('123')).toBe('');
+    });
+  });
+
+  describe('buildMailtoUri', () => {
+    it('returns mailto: URI without query params when subject and body are omitted', () => {
+      expect(buildMailtoUri('  user@example.com  ')).toBe('mailto:user@example.com');
+    });
+
+    it('includes URL-encoded subject and body parameters when provided', () => {
+      expect(
+        buildMailtoUri('user@example.com', {
+          subject: 'Recruitment Follow-up',
+          body: 'Hi there!\nSee you on Sunday.',
+        }),
+      ).toBe(
+        'mailto:user@example.com?subject=Recruitment%20Follow-up&body=Hi%20there!%0ASee%20you%20on%20Sunday.',
+      );
+    });
+
+    it('returns empty string for blank or invalid email strings', () => {
+      expect(buildMailtoUri('')).toBe('');
+      expect(buildMailtoUri('   ')).toBe('');
+      expect(buildMailtoUri('not-an-email')).toBe('');
     });
   });
 

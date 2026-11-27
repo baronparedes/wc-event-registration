@@ -173,4 +173,29 @@ describe('RecruitmentTable', () => {
 
     expect(handleSelect).toHaveBeenCalledWith(sampleApplications[0]);
   });
+
+  it('renders SMS, Viber, and Email quick-contact controls without Copy button in table rows', () => {
+    const handleSelect = vi.fn();
+    renderWithClient(
+      <RecruitmentTable
+        applications={[sampleApplications[0]]}
+        onSelectApplication={handleSelect}
+      />,
+    );
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+639171234567');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B639171234567',
+    );
+    expect(screen.getByTestId('contact-email-link')).toHaveAttribute(
+      'href',
+      'mailto:maria@example.com',
+    );
+    expect(screen.queryByTestId('contact-copy-button')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'maria@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:maria@example.com',
+    );
+  });
 });

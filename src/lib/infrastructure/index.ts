@@ -57,10 +57,12 @@ export {
   isValidPhoneNumber,
   buildSmsUri,
   buildViberChatUri,
+  buildMailtoUri,
   getMessagingLinks,
   copyPhoneNumberToClipboard,
   type BuildSmsUriOptions,
   type BuildViberChatUriOptions,
+  type BuildMailtoUriOptions,
   type MessagingLinksOptions,
   type MessagingLinks,
 } from './messagingUtils';

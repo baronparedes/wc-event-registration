@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Copy, Pencil, RefreshCw, ShieldCheck, User, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge, Button, ConfirmDialog, Spinner } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, ContactButtons, Spinner } from '@/components/ui';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment';
 import type {
@@ -98,8 +98,25 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
             <h3 className="truncate font-heading text-base font-bold text-text">
               {application.full_name} {application.nickname ? `(${application.nickname})` : ''}
             </h3>
-            <p className="text-muted">{application.email}</p>
-            <p className="text-muted">{application.phone}</p>
+            {application.email && (
+              <a
+                href={`mailto:${application.email}`}
+                className="block truncate text-muted hover:text-primary hover:underline"
+              >
+                {application.email}
+              </a>
+            )}
+            {(application.phone || application.email) && (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                {application.phone && <span className="text-muted">{application.phone}</span>}
+                <ContactButtons
+                  phone={application.phone || undefined}
+                  email={application.email || undefined}
+                  size="sm"
+                  variant="icon"
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto shrink-0">
@@ -185,7 +202,16 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           </div>
           <div>
             <span className="text-muted">Mobile Number:</span>
-            <p className="font-semibold text-text">{application.emergency_contact.phone}</p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-text">{application.emergency_contact.phone}</p>
+              {application.emergency_contact.phone && (
+                <ContactButtons
+                  phone={application.emergency_contact.phone}
+                  size="sm"
+                  variant="icon"
+                />
+              )}
+            </div>
           </div>
           <div>
             <span className="text-muted">Relationship:</span>
@@ -263,11 +289,34 @@ export function ApplicantProfilePanel({ application, endorsement }: ApplicantPro
           </div>
           <div>
             <span className="text-muted">Leader Email:</span>
-            <p className="font-semibold text-text">{application.dgroup_info.leader_email}</p>
+            <p className="font-semibold text-text">
+              {application.dgroup_info.leader_email ? (
+                <a
+                  href={`mailto:${application.dgroup_info.leader_email}`}
+                  className="hover:text-primary hover:underline"
+                >
+                  {application.dgroup_info.leader_email}
+                </a>
+              ) : (
+                '—'
+              )}
+            </p>
           </div>
           <div>
             <span className="text-muted">Leader Mobile:</span>
-            <p className="font-semibold text-text">{application.dgroup_info.leader_phone}</p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-text">
+                {application.dgroup_info.leader_phone || 'None provided'}
+              </p>
+              {(application.dgroup_info.leader_phone || application.dgroup_info.leader_email) && (
+                <ContactButtons
+                  phone={application.dgroup_info.leader_phone || undefined}
+                  email={application.dgroup_info.leader_email || undefined}
+                  size="sm"
+                  variant="icon"
+                />
+              )}
+            </div>
           </div>
         </div>
 
