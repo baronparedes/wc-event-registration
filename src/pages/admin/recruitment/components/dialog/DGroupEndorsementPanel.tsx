@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ContactButtons } from '@/components/ui/ContactButtons';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import { useUpdateRecruitmentStageMutation } from '@/hooks/domain/recruitment/mutations/useUpdateRecruitmentStageMutation';
@@ -152,15 +153,34 @@ export function DGroupEndorsementPanel({
             <span className="text-muted">Leader Email:</span>
             <p className="font-semibold text-text mt-0.5 flex items-center gap-1.5 truncate">
               <Mail className="h-3.5 w-3.5 text-muted shrink-0" />
-              <span className="truncate">{application.dgroup_info.leader_email}</span>
+              {application.dgroup_info.leader_email ? (
+                <a
+                  href={`mailto:${application.dgroup_info.leader_email}`}
+                  className="truncate hover:text-primary hover:underline"
+                >
+                  {application.dgroup_info.leader_email}
+                </a>
+              ) : (
+                <span className="truncate">None provided</span>
+              )}
             </p>
           </div>
           <div>
             <span className="text-muted">Leader Contact:</span>
-            <p className="font-semibold text-text mt-0.5 flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5 text-muted shrink-0" />
-              <span>{application.dgroup_info.leader_phone || 'None provided'}</span>
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-text flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted shrink-0" />
+                <span>{application.dgroup_info.leader_phone || 'None provided'}</span>
+              </p>
+              {(application.dgroup_info.leader_phone || application.dgroup_info.leader_email) && (
+                <ContactButtons
+                  phone={application.dgroup_info.leader_phone || undefined}
+                  email={application.dgroup_info.leader_email || undefined}
+                  size="sm"
+                  variant="icon"
+                />
+              )}
+            </div>
           </div>
           <div>
             <span className="text-muted">Constant DGroup Attendee:</span>

@@ -2,6 +2,7 @@ import {
   Avatar,
   Badge,
   Button,
+  ContactButtons,
   ListTable,
   ListTableBody,
   ListTableCell,
@@ -88,8 +89,32 @@ export function RecruitmentTable({ applications, onSelectApplication }: Recruitm
                       <p className="truncate text-sm font-semibold text-text">
                         {app.full_name} {app.nickname ? `(${app.nickname})` : ''}
                       </p>
-                      <p className="truncate text-xs text-muted">{app.email}</p>
-                      <p className="truncate text-xs text-muted">{app.phone}</p>
+                      {app.email && (
+                        <a
+                          href={`mailto:${app.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="block truncate text-xs text-muted hover:text-primary hover:underline"
+                        >
+                          {app.email}
+                        </a>
+                      )}
+                      {(app.phone || app.email) && (
+                        <div
+                          className="mt-1 flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {app.phone && (
+                            <span className="truncate text-xs text-muted">{app.phone}</span>
+                          )}
+                          <ContactButtons
+                            phone={app.phone || undefined}
+                            email={app.email || undefined}
+                            size="sm"
+                            variant="icon"
+                            showCopyFallback={false}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </ListTableCell>

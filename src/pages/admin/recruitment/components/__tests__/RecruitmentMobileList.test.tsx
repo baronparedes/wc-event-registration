@@ -149,4 +149,29 @@ describe('RecruitmentMobileList', () => {
 
     expect(handleSelect).toHaveBeenCalledWith(sampleApplications[0]);
   });
+
+  it('renders SMS, Viber, Email, and Copy quick-contact controls on mobile cards', () => {
+    const handleSelect = vi.fn();
+    renderWithClient(
+      <RecruitmentMobileList
+        applications={[sampleApplications[0]]}
+        onSelectApplication={handleSelect}
+      />,
+    );
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+639171234567');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B639171234567',
+    );
+    expect(screen.getByTestId('contact-email-link')).toHaveAttribute(
+      'href',
+      'mailto:maria@example.com',
+    );
+    expect(screen.getByTestId('contact-copy-button')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'maria@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:maria@example.com',
+    );
+  });
 });

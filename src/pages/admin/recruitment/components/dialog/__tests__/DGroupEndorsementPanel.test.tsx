@@ -251,4 +251,23 @@ describe('DGroupEndorsementPanel', () => {
     expect(screen.getByText('Attempt #1')).toBeInTheDocument();
     expect(screen.getByText(/Needs spiritual maturity/i)).toBeInTheDocument();
   });
+
+  it('renders quick SMS, Viber, Email, and Copy controls for the DGroup leader', () => {
+    renderPanel(<DGroupEndorsementPanel application={mockApplication} />);
+
+    expect(screen.getByTestId('contact-sms-link')).toHaveAttribute('href', 'sms:+639191234567');
+    expect(screen.getByTestId('contact-viber-link')).toHaveAttribute(
+      'href',
+      'viber://chat?number=%2B639191234567',
+    );
+    expect(screen.getByTestId('contact-email-link')).toHaveAttribute(
+      'href',
+      'mailto:barnabas@example.com',
+    );
+    expect(screen.getByTestId('contact-copy-button')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'barnabas@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:barnabas@example.com',
+    );
+  });
 });

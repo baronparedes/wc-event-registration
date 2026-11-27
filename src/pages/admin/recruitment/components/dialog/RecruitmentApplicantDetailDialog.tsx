@@ -7,6 +7,7 @@ import {
   Avatar,
   Badge,
   Button,
+  ContactButtons,
   Dialog,
   Spinner,
   Tabs,
@@ -121,9 +122,28 @@ export function RecruitmentApplicantDetailDialog({
                   </Badge>
                 )}
               </div>
-              <Dialog.Description className="truncate">
-                {currentApp.email} · {currentApp.phone}
-              </Dialog.Description>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <Dialog.Description className="truncate">
+                  {currentApp.email && (
+                    <a
+                      href={`mailto:${currentApp.email}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {currentApp.email}
+                    </a>
+                  )}
+                  {currentApp.email && currentApp.phone ? ' · ' : ''}
+                  {currentApp.phone}
+                </Dialog.Description>
+                {(currentApp.phone || currentApp.email) && (
+                  <ContactButtons
+                    phone={currentApp.phone || undefined}
+                    email={currentApp.email || undefined}
+                    size="sm"
+                    variant="icon"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </Dialog.Header>

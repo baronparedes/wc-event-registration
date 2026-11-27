@@ -24,6 +24,13 @@ export interface BuildViberChatUriOptions {
   defaultCountryCode?: string;
 }
 
+export interface BuildMailtoUriOptions {
+  /** Optional pre-filled email subject. */
+  subject?: string;
+  /** Optional pre-filled email body. */
+  body?: string;
+}
+
 export interface MessagingLinksOptions {
   /** Optional pre-filled message body / text for both SMS and Viber. */
   message?: string;
@@ -182,6 +189,37 @@ export function buildViberChatUri(phone: string, options: BuildViberChatUriOptio
   }
 
   return uri;
+}
+
+/**
+ * Generates a `mailto:` URI with optional URL-encoded subject and body parameters.
+ *
+ * Example: `mailto:user@example.com?subject=Hello&body=Welcome`
+ *
+ * @param email Target email address.
+ * @param options Optional pre-filled subject and body.
+ * @returns URI string or empty string if email is blank.
+ */
+export function buildMailtoUri(email: string, options: BuildMailtoUriOptions = {}): string {
+  const trimmedEmail = email.trim();
+  if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    return '';
+  }
+
+  const params: string[] = [];
+  const trimmedSubject = options.subject?.trim();
+  const trimmedBody = options.body?.trim();
+
+  if (trimmedSubject) {
+    params.push(`subject=${encodeURIComponent(trimmedSubject)}`);
+  }
+  if (trimmedBody) {
+    params.push(`body=${encodeURIComponent(trimmedBody)}`);
+  }
+
+  return params.length > 0
+    ? `mailto:${trimmedEmail}?${params.join('&')}`
+    : `mailto:${trimmedEmail}`;
 }
 
 /**

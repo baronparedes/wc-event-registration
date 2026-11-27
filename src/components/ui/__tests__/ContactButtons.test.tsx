@@ -154,4 +154,43 @@ describe('ContactButtons', () => {
     const copyBtn = screen.getByTestId('contact-copy-button');
     expect(copyBtn).toHaveClass('border-primary', 'text-primary');
   });
+
+  it('renders Email link alongside SMS and Viber when email prop is provided', () => {
+    const onEmailClick = vi.fn();
+    render(
+      <ContactButtons
+        phone="09171234567"
+        email="applicant@example.com"
+        emailSubject="Interview Schedule"
+        emailBody="See you on Sunday!"
+        variant="icon"
+        size="sm"
+        onEmailClick={onEmailClick}
+      />,
+    );
+
+    const emailLink = screen.getByTestId('contact-email-link');
+    expect(emailLink).toHaveAttribute(
+      'href',
+      'mailto:applicant@example.com?subject=Interview%20Schedule&body=See%20you%20on%20Sunday!',
+    );
+    expect(emailLink).toHaveAttribute('title', 'Send Email');
+    expect(emailLink).toHaveAttribute('aria-label', 'Send email to applicant@example.com');
+    expect(emailLink).toHaveClass('h-6', 'w-6', 'bg-sky-600', 'text-white');
+
+    fireEvent.click(emailLink);
+    expect(onEmailClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders email-only controls when phone is omitted', () => {
+    render(<ContactButtons email="leader@example.com" variant="icon" size="sm" />);
+
+    expect(screen.queryByTestId('contact-sms-link')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contact-viber-link')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('contact-copy-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('contact-email-link')).toHaveAttribute(
+      'href',
+      'mailto:leader@example.com',
+    );
+  });
 });

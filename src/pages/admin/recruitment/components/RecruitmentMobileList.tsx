@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button } from '@/components/ui';
+import { Avatar, Badge, Button, ContactButtons } from '@/components/ui';
 import {
   RECRUITMENT_STEPS,
   type RecruitmentApplication,
@@ -59,14 +59,22 @@ export function RecruitmentMobileList({
             className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <Avatar name={app.full_name} avatarObjectKey={app.avatar_object_key} size="md" />
                 <div className="min-w-0">
                   <h4 className="truncate text-sm font-bold text-text">
                     {app.full_name} {app.nickname ? `(${app.nickname})` : ''}
                   </h4>
-                  <p className="truncate text-xs text-muted">{app.email}</p>
-                  <p className="truncate text-xs text-muted">{app.phone}</p>
+                  {app.email && (
+                    <a
+                      href={`mailto:${app.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="block truncate text-xs text-muted hover:text-primary hover:underline"
+                    >
+                      {app.email}
+                    </a>
+                  )}
+                  {app.phone && <p className="truncate text-xs text-muted">{app.phone}</p>}
                 </div>
               </div>
 
@@ -74,6 +82,17 @@ export function RecruitmentMobileList({
                 {app.status.replace('_', ' ')}
               </Badge>
             </div>
+
+            {(app.phone || app.email) && (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <ContactButtons
+                  phone={app.phone || undefined}
+                  email={app.email || undefined}
+                  size="sm"
+                  variant="icon"
+                />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
               <Badge variant="outline">{role}</Badge>
