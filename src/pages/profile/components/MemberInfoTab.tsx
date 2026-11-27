@@ -7,34 +7,12 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { usePushSubscription } from '@/hooks/domain/notifications';
 import { useUserCommitmentHistoryQuery } from '@/hooks/domain/services';
 import type { AdminMember } from '@/lib/domain/members';
+import { extractCivilStatusValues } from '@/lib/domain/members';
 import { getLastCommitmentUpdatedAt } from '@/lib/domain/services';
 import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 
 import { DGroupDisplay } from './DGroupDisplay';
 import { SundayAvailabilityDisplay } from './SundayAvailabilityDisplay';
-
-const PROMOTED_METADATA_FIELDS = [
-  { label: 'Civil Status', keys: ['civil_status', 'civilstatus', 'Civil Status'] },
-] as const;
-
-function getMetadataValue(
-  metadata: Record<string, string>,
-  candidateKeys: readonly string[],
-): string | undefined {
-  for (const candidate of candidateKeys) {
-    if (metadata[candidate] !== undefined && metadata[candidate].trim() !== '') {
-      return metadata[candidate];
-    }
-  }
-  const normalizedCandidates = candidateKeys.map((k) => k.toLowerCase().replace(/[\s_-]+/g, ''));
-  for (const [key, value] of Object.entries(metadata)) {
-    const normalizedKey = key.toLowerCase().replace(/[\s_-]+/g, '');
-    if (normalizedCandidates.includes(normalizedKey) && value.trim() !== '') {
-      return value;
-    }
-  }
-  return undefined;
-}
 
 interface MemberInfoTabProps {
   member: AdminMember;
@@ -45,11 +23,7 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
   const push = usePushSubscription();
   const { data: commitmentSnapshots } = useUserCommitmentHistoryQuery(member.id);
   const lastCommitmentUpdate = getLastCommitmentUpdatedAt(commitmentSnapshots);
-
-  const promotedFields = PROMOTED_METADATA_FIELDS.map((field) => ({
-    label: field.label,
-    value: getMetadataValue(metadata, field.keys),
-  }));
+  const { civilStatus, weddingAnniversaryDate } = extractCivilStatusValues(metadata);
 
   return (
     <div className="space-y-6">
@@ -83,14 +57,19 @@ export function MemberInfoTab({ member }: MemberInfoTabProps) {
               </dd>
             </div>
           )}
-          {promotedFields.map(
-            ({ label, value }) =>
-              value && (
-                <div key={label} className="min-w-0">
-                  <dt className="text-muted text-sm">{label}</dt>
-                  <dd className="break-words font-medium text-text">{value}</dd>
-                </div>
-              ),
+          {civilStatus && (
+            <div className="min-w-0">
+              <dt className="text-muted text-sm">Civil Status</dt>
+              <dd className="break-words font-medium text-text">{civilStatus}</dd>
+            </div>
+          )}
+          {weddingAnniversaryDate && (
+            <div className="min-w-0">
+              <dt className="text-muted text-sm">Wedding Anniversary</dt>
+              <dd className="break-words font-medium text-text">
+                {formatDateOnly(weddingAnniversaryDate)}
+              </dd>
+            </div>
           )}
         </dl>
       </SectionCard>

@@ -31,6 +31,7 @@ import { formatDateOnly, formatDateTime } from '@/lib/infrastructure';
 import { MemberNavigationLinks } from '@/pages/admin/members/components/MemberNavigationLinks';
 import { RequestLongLeaveModal } from '@/pages/profile/components/service-attendance';
 
+import { CivilStatusEditor } from './components/CivilStatusEditor';
 import { DGroupEditor } from './components/DGroupEditor';
 import { EditableMemberAvatar } from './components/EditableMemberAvatar';
 import { MemberLifecycleActions } from './components/MemberLifecycleActions';
@@ -353,6 +354,19 @@ export function AdminMemberDetailPage() {
               />
             </div>
           </SectionCard>
+
+          {(canWrite || canRead) && (
+            <SectionCard
+              title="Civil Status & Anniversary"
+              subtitle="Manage civil status and wedding anniversary date."
+            >
+              <CivilStatusEditor
+                control={control}
+                setValue={setValue}
+                disabled={!canWrite || isDeletedMember}
+              />
+            </SectionCard>
+          )}
 
           {(canWrite || canRead) && (
             <SectionCard
