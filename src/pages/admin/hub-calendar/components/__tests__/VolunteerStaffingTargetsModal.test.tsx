@@ -1,9 +1,26 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_APP_SETTINGS } from '@/lib/domain/app-settings';
 import { DEFAULT_VOLUNTEER_ROLE_TARGETS } from '@/pages/admin/hub-calendar/utils';
 
 import { VolunteerStaffingTargetsModal } from '../VolunteerStaffingTargetsModal';
+
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => ({
+    can: () => true,
+  }),
+}));
+
+vi.mock('@/hooks/domain/app-settings', () => ({
+  useAppSettingsQuery: () => ({
+    data: DEFAULT_APP_SETTINGS,
+  }),
+  useUpdateAppSettingMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
+  }),
+}));
 
 describe('VolunteerStaffingTargetsModal', () => {
   const defaultTargets = {

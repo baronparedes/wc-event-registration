@@ -2,6 +2,11 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
 import { getGoogleAiApiKey, getGoogleAiModel } from '@/shared/ai.ts';
+import {
+  DEFAULT_WEEKLY_DEBRIEF_CONFIG,
+  getAppSettingValue,
+  weeklyDebriefConfigSchema,
+} from '@/shared/appSettings.ts';
 import { RATE_LIMIT_PRESETS } from '@/shared/constants.ts';
 import type { Json } from '@/shared/database.types.ts';
 import { useEdgeHook } from '@/shared/edge.ts';
@@ -176,6 +181,15 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
         const message = `${briefTeaser}. View complete debrief in Services Dashboard.`;
         const targetUrl = '/admin/services';
 
+        const debriefConfig = await getAppSettingValue(
+          supabase,
+          'weekly_debrief_config',
+          weeklyDebriefConfigSchema,
+          DEFAULT_WEEKLY_DEBRIEF_CONFIG,
+        );
+        const recipientRoles =
+          debriefConfig.recipient_roles.length > 0 ? debriefConfig.recipient_roles : ['OIC'];
+
         // 4a. In-App Notification
         const { data: createdNotificationId, error: broadcastError } = await supabase.rpc(
           'broadcast_app_notification',
@@ -183,8 +197,8 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
             p_title: title,
             p_message: message,
             p_target_type: 'role',
-            p_target_role: 'OIC',
-            p_target_roles: ['OIC'],
+            p_target_role: recipientRoles[0],
+            p_target_roles: recipientRoles,
             p_created_by: userId ?? undefined,
             p_target_url: targetUrl,
           },
@@ -237,8 +251,8 @@ export async function handleCronWeeklySundayDebrief(req: Request): Promise<Respo
           }
         }
 
-        // 4c. Email Notification to role OIC
-        const oicEmails = await resolveRoleEmails(supabase, ['OIC']);
+        // 4c. Email Notification to configured debrief recipient roles
+        const oicEmails = await resolveRoleEmails(supabase, recipientRoles);
         if (oicEmails.length > 0) {
           const emailSubject = title;
           const absoluteUrl = toAbsoluteUrl(targetUrl);

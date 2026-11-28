@@ -14,7 +14,12 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
+import { useAppSettingsQuery } from '@/hooks/domain/app-settings';
 import type { MemberScheduleEntry, TimeSlot } from '@/hooks/domain/members';
+import {
+  DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS,
+  DEFAULT_SERVICE_STAFFING_TARGETS,
+} from '@/lib/domain/app-settings';
 import {
   type ExcusedMemberMap,
   type MilestoneEntry,
@@ -34,8 +39,6 @@ import {
   getConfidenceTierLabel,
   getMemberConfidenceTier,
   getMemberConfidenceTooltip,
-  getStoredConfidenceThresholds,
-  getStoredVolunteerTargets,
   isMemberInactiveWithoutAttendance,
   normalizeStaffingRole,
 } from '../utils';
@@ -120,12 +123,20 @@ export function SelectedDateDetails({
   const [selectedMemberForQuickView, setSelectedMemberForQuickView] = useState<AdminMember | null>(
     null,
   );
-  const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
-    getStoredVolunteerTargets(),
-  );
-  const [confidenceThresholds, setConfidenceThresholds] = useState<ConfidenceThresholds>(() =>
-    getStoredConfidenceThresholds(),
-  );
+  const { data: appSettings } = useAppSettingsQuery();
+  const dbTargets = appSettings?.service_staffing_targets ?? DEFAULT_SERVICE_STAFFING_TARGETS;
+  const volunteerTargets: VolunteerTargetsBySlot = {
+    '9AM': dbTargets['9AM'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['9AM'],
+    '12NN': dbTargets['12NN'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['12NN'],
+    '3PM': dbTargets['3PM'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['3PM'],
+  };
+  const dbThresholds =
+    appSettings?.forecast_confidence_thresholds ?? DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS;
+  const confidenceThresholds: ConfidenceThresholds = {
+    solid: dbThresholds.solid,
+    moderate: dbThresholds.moderate,
+    defaultTurnupRate: dbThresholds.default_turnup_rate,
+  };
   const [standInTarget, setStandInTarget] = useState<{
     role: string;
     slot: TimeSlot;
@@ -666,9 +677,9 @@ export function SelectedDateDetails({
                         attendanceScoreMap={attendanceScoreMap}
                         isoDateKey={toIsoDateKey(viewYear, viewMonthIndex + 1, selectedDayNumber)}
                         targets={volunteerTargets}
-                        onSaveTargets={setVolunteerTargets}
+                        onSaveTargets={() => {}}
                         thresholds={confidenceThresholds}
-                        onSaveThresholds={setConfidenceThresholds}
+                        onSaveThresholds={() => {}}
                         onOpenStandIn={(role, slot, neededCount) => {
                           setStandInTarget({
                             role,

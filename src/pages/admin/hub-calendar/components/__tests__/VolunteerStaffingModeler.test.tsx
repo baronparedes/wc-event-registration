@@ -6,6 +6,12 @@ import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
 import { VolunteerStaffingModeler } from '../VolunteerStaffingModeler';
 
+vi.mock('@/hooks/domain/auth', () => ({
+  useAdminAuthQuery: () => ({
+    can: () => true,
+  }),
+}));
+
 function createMockMember(id: string, name: string, role: string): AdminMember {
   return {
     id,

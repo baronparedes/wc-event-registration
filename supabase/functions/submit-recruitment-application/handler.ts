@@ -81,11 +81,13 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
   const application = guard.data;
   const supabase = guard.client;
 
-  const { data: settingsData, error: settingsError } = await supabase
-    .from('recruitment_settings')
-    .select('is_recruitment_open, eligibility_rules, survey_questions')
-    .eq('id', 1)
+  const { data: settingsRow, error: settingsError } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'recruitment')
     .maybeSingle();
+
+  const settingsData = settingsRow?.value;
 
   if (settingsError || !settingsData) {
     console.error('Recruitment settings lookup failed:', settingsError);
@@ -125,6 +127,31 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
       },
       guard.corsHeaders,
     );
+  }
+
+  // Validate desired_role against active recruitment-enabled roles in app_settings
+  const { data: rolesRow } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'volunteer_roles')
+    .maybeSingle();
+
+  if (Array.isArray(rolesRow?.value) && rolesRow.value.length > 0) {
+    const allowedRoles = (rolesRow.value as Array<Record<string, unknown>>)
+      .filter((r) => r.is_active === true && r.is_recruitment_enabled === true)
+      .map((r) => String(r.key));
+
+    if (allowedRoles.length > 0 && !allowedRoles.includes(application.desired_role)) {
+      return jsonResponse(
+        400,
+        {
+          success: false,
+          error: `Role "${application.desired_role}" is not currently open for recruitment`,
+          error_code: 'INVALID_DESIRED_ROLE',
+        },
+        guard.corsHeaders,
+      );
+    }
   }
 
   const age = calculateAge(application.date_of_birth);

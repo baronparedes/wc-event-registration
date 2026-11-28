@@ -331,3 +331,32 @@ Deno.test(
     });
   },
 );
+
+Deno.test(
+  'submit-service-excuse rejects long leave shorter than configured minimum duration',
+  async () => {
+    await withEnv(async () => {
+      const fetchMock = mockFetch();
+      try {
+        const response = await handleSubmitServiceExcuse(
+          request(
+            {
+              user_id: USER_ID,
+              start_date: '2026-11-01',
+              end_date: '2026-11-15', // only 14 days (< 28 default min_days)
+              is_long_leave: true,
+              services: ['9AM'],
+              reason: 'Short trip',
+            },
+            'Bearer valid-session-token',
+          ),
+        );
+        assertEquals(response.status, 400);
+        const data = await response.json();
+        assertEquals(data.error_code, 'LONG_LEAVE_TOO_SHORT');
+      } finally {
+        fetchMock.restore();
+      }
+    });
+  },
+);

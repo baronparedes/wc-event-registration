@@ -1,4 +1,6 @@
 export const QUERY_KEYS = {
+  appSettings: () => ['app-settings'] as const,
+  publicAppSettings: () => ['public-app-settings'] as const,
   recruitmentSettings: () => ['recruitment-settings'] as const,
   publicRecruitmentConfig: () => ['public-recruitment-config'] as const,
   myRecruitmentApplication: (authUserId?: string) =>

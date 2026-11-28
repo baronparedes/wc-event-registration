@@ -12,6 +12,7 @@ type FormInputFieldBaseProps = {
   type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local' | 'tel' | 'number';
   min?: number | string;
   max?: number | string;
+  step?: number | string;
   autoComplete?: string;
   readOnly?: boolean;
   disabled?: boolean;
@@ -55,6 +56,7 @@ export function FormInputField(props: FormInputFieldProps) {
     type = 'text',
     min,
     max,
+    step,
     autoComplete,
     readOnly,
     disabled,
@@ -111,6 +113,7 @@ export function FormInputField(props: FormInputFieldProps) {
           type={type}
           min={min}
           max={max}
+          step={step}
           onKeyDown={onKeyDown}
           onScroll={onScroll}
         />

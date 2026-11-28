@@ -137,8 +137,11 @@ function mockFetch(options: { settings?: unknown; failRequest?: string; role?: s
       return Promise.resolve(Response.json({ id: 'admin-row-1', role: options.role ?? 'admin' }));
     }
 
-    if (url.pathname === '/rest/v1/recruitment_settings') {
-      return Promise.resolve(Response.json(options.settings ?? recruitmentSettings));
+    if (url.pathname === '/rest/v1/app_settings') {
+      if (url.searchParams.get('key') === 'eq.volunteer_roles') {
+        return Promise.resolve(Response.json(null));
+      }
+      return Promise.resolve(Response.json({ value: options.settings ?? recruitmentSettings }));
     }
 
     if (url.pathname === '/rest/v1/recruitment_applications' && method === 'POST') {
@@ -237,7 +240,7 @@ Deno.test('submit-recruitment-application rejects unauthenticated callers', asyn
 
       assertEquals(response.status, 401);
       assertEquals(
-        mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+        mock.calls.some((call) => call.path === '/rest/v1/app_settings'),
         false,
       );
     } finally {
@@ -257,7 +260,7 @@ Deno.test('submit-recruitment-application rejects other authenticated admin role
 
         assertEquals(response.status, 401);
         assertEquals(
-          mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+          mock.calls.some((call) => call.path === '/rest/v1/app_settings'),
           false,
         );
       } finally {
@@ -434,3 +437,64 @@ Deno.test('submit-recruitment-application rejects invalid avatar image format', 
     }
   });
 });
+
+Deno.test(
+  'submit-recruitment-application rejects desired_role when disabled in app_settings volunteer_roles',
+  async () => {
+    await withEnv(async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.pathname === '/auth/v1/user') {
+          return Promise.resolve(Response.json({ id: '11111111-1111-4111-8111-111111111111' }));
+        }
+        if (url.pathname === '/rest/v1/admins') {
+          return Promise.resolve(Response.json({ id: 'admin-row-1', role: 'admin' }));
+        }
+        if (url.pathname === '/rest/v1/app_settings') {
+          if (url.searchParams.get('key') === 'eq.volunteer_roles') {
+            return Promise.resolve(
+              Response.json({
+                value: [
+                  {
+                    key: 'Usher',
+                    label: 'Usher',
+                    sort_order: 1,
+                    is_active: true,
+                    is_recruitment_enabled: true,
+                    is_staffing_target: true,
+                  },
+                  {
+                    key: 'Backroom Support',
+                    label: 'Backroom Support',
+                    sort_order: 2,
+                    is_active: true,
+                    is_recruitment_enabled: false,
+                    is_staffing_target: true,
+                  },
+                ],
+              }),
+            );
+          }
+          return Promise.resolve(Response.json({ value: recruitmentSettings }));
+        }
+        return originalFetch(input, init);
+      };
+
+      try {
+        const response = await handleSubmitRecruitmentApplication(
+          createRequest({
+            ...applicationRequest,
+            desired_role: 'Backroom Support',
+          }),
+        );
+
+        assertEquals(response.status, 400);
+        const result = await response.json();
+        assertEquals(result.error_code, 'INVALID_DESIRED_ROLE');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  },
+);

@@ -1,3 +1,4 @@
-export * from './GeneralSettingsTab';
-export * from './SurveyQuestionsTab';
-export * from './EndorsementQuestionsTab';
+export { EndorsementQuestionsTab } from './EndorsementQuestionsTab';
+export { GeneralSettingsTab } from './GeneralSettingsTab';
+export { RolesAndCopyTab } from './RolesAndCopyTab';
+export { SurveyQuestionsTab } from './SurveyQuestionsTab';

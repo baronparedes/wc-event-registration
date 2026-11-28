@@ -73,6 +73,12 @@ const updateRecruitmentSettingsSchema = z.object({
     .refine((questions) => questions.some((question) => question.is_active === true), {
       message: 'At least one endorsement question must be active',
     }),
+  categories: z.array(z.string().trim().min(1).max(64)).min(1).optional(),
+  role_overview_intro: z.string().trim().max(2000).optional(),
+  role_responsibilities: z.record(z.string().trim().min(1), z.string().max(4000)).optional(),
+  privacy_waiver_notice: z.string().trim().max(5000).optional(),
+  applicant_attestation: z.array(z.string().trim().min(1).max(1000)).optional(),
+  applicant_attestation_confirmation: z.string().trim().max(2000).optional(),
 });
 
 function response(
@@ -103,17 +109,61 @@ export async function handleUpdateRecruitmentSettings(req: Request): Promise<Res
 
   if (!guard.valid) return guard.response;
 
-  const { eligibility_rules, survey_questions, endorsement_questions, ...settings } = guard.data;
+  const { data: existingRow } = await guard.client
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'recruitment')
+    .maybeSingle();
+
+  const existingValue =
+    existingRow &&
+    existingRow.value &&
+    typeof existingRow.value === 'object' &&
+    !Array.isArray(existingRow.value)
+      ? (existingRow.value as Record<string, unknown>)
+      : {};
+
+  const {
+    eligibility_rules,
+    survey_questions,
+    endorsement_questions,
+    categories,
+    role_overview_intro,
+    role_responsibilities,
+    privacy_waiver_notice,
+    applicant_attestation,
+    applicant_attestation_confirmation,
+    ...settings
+  } = guard.data;
+
+  const mergedValue: Record<string, unknown> = {
+    ...existingValue,
+    ...settings,
+    eligibility_rules,
+    survey_questions,
+    endorsement_questions,
+    ...(categories !== undefined ? { categories } : {}),
+    ...(role_overview_intro !== undefined ? { role_overview_intro } : {}),
+    ...(role_responsibilities !== undefined ? { role_responsibilities } : {}),
+    ...(privacy_waiver_notice !== undefined ? { privacy_waiver_notice } : {}),
+    ...(applicant_attestation !== undefined ? { applicant_attestation } : {}),
+    ...(applicant_attestation_confirmation !== undefined
+      ? { applicant_attestation_confirmation }
+      : {}),
+  };
+
   const { data, error } = await guard.client
-    .from('recruitment_settings')
-    .update({
-      ...settings,
-      eligibility_rules: asJson(eligibility_rules),
-      survey_questions: asJson(survey_questions),
-      endorsement_questions: asJson(endorsement_questions),
-    })
-    .eq('id', 1)
-    .select('*')
+    .from('app_settings')
+    .upsert(
+      {
+        key: 'recruitment',
+        value: asJson(mergedValue),
+        is_public: false,
+        updated_by: guard.userId ?? null,
+      },
+      { onConflict: 'key' },
+    )
+    .select('value, updated_at')
     .single();
 
   if (error || !data) {
@@ -125,7 +175,23 @@ export async function handleUpdateRecruitmentSettings(req: Request): Promise<Res
     );
   }
 
-  return response(200, { success: true, settings: data }, guard.corsHeaders);
+  const savedValue =
+    data.value && typeof data.value === 'object' && !Array.isArray(data.value)
+      ? (data.value as Record<string, unknown>)
+      : mergedValue;
+
+  return response(
+    200,
+    {
+      success: true,
+      settings: {
+        id: 1,
+        ...savedValue,
+        updated_at: data.updated_at,
+      },
+    },
+    guard.corsHeaders,
+  );
 }
 
 function asJson(value: unknown): Json {

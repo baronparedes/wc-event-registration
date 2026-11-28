@@ -10,13 +10,15 @@ export type LongLeaveDetailsStepCardProps = {
   onCancel: () => void;
   isSubmitting: boolean;
   submitErrorMessage: string | null;
+  minLeaveDays?: number;
+  minLeaveWeeks?: number;
 };
 
-function getFourWeeksOut(dateStr: string): string {
+function addDaysToDateString(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   if (!y || !m || !d) return dateStr;
   const target = new Date(y, m - 1, d);
-  target.setDate(target.getDate() + 28);
+  target.setDate(target.getDate() + days);
   const year = target.getFullYear();
   const month = String(target.getMonth() + 1).padStart(2, '0');
   const day = String(target.getDate()).padStart(2, '0');
@@ -29,6 +31,8 @@ export function LongLeaveDetailsStepCard({
   onCancel,
   isSubmitting,
   submitErrorMessage,
+  minLeaveDays = 28,
+  minLeaveWeeks = 4,
 }: LongLeaveDetailsStepCardProps) {
   const startDateValue = useWatch({ control: longLeaveForm.control, name: 'start_date' });
   const endDateValue = useWatch({ control: longLeaveForm.control, name: 'end_date' });
@@ -38,7 +42,7 @@ export function LongLeaveDetailsStepCard({
         const [y, m, d] = startDateValue.split('-').map(Number);
         if (!y || !m || !d) return undefined;
         const start = new Date(y, m - 1, d);
-        start.setDate(start.getDate() + 28);
+        start.setDate(start.getDate() + minLeaveDays);
         return start;
       })()
     : undefined;
@@ -73,13 +77,17 @@ export function LongLeaveDetailsStepCard({
                       const [y, m, d] = val.split('-').map(Number);
                       if (y && m && d) {
                         const newMin = new Date(y, m - 1, d);
-                        newMin.setDate(newMin.getDate() + 28);
+                        newMin.setDate(newMin.getDate() + minLeaveDays);
                         const [ey, em, ed] = (endDateValue || '').split('-').map(Number);
                         const currentEnd = ey && em && ed ? new Date(ey, em - 1, ed) : null;
                         if (!currentEnd || currentEnd < newMin) {
-                          longLeaveForm.setValue('end_date', getFourWeeksOut(val), {
-                            shouldValidate: true,
-                          });
+                          longLeaveForm.setValue(
+                            'end_date',
+                            addDaysToDateString(val, minLeaveDays),
+                            {
+                              shouldValidate: true,
+                            },
+                          );
                         }
                       }
                     }}
@@ -116,7 +124,9 @@ export function LongLeaveDetailsStepCard({
                   />
                 )}
               />
-              <p className="text-xs text-muted">Must be at least 4 weeks from start Sunday</p>
+              <p className="text-xs text-muted">
+                Must be at least {minLeaveWeeks} weeks from start Sunday
+              </p>
               {longLeaveForm.formState.errors.end_date && (
                 <p className="text-xs text-danger">
                   {longLeaveForm.formState.errors.end_date.message}

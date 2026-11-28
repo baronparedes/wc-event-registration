@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -7,9 +7,11 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { FORM_MESSAGES, ROUTE_PATHS } from '@/config/constants';
+import { usePublicAppSettingsQuery } from '@/hooks/domain/app-settings';
 import { useCurrentProfileQuery, useMemberLookupState } from '@/hooks/domain/members';
 import { useSubmitExcuseMutation } from '@/hooks/domain/services';
 import { useErrorWithFadeout } from '@/hooks/utils';
+import { DEFAULT_LONG_LEAVE_POLICY } from '@/lib/domain/app-settings';
 import { MATRIX_TIME_SLOTS, type SubmitServiceExcuseInput } from '@/lib/domain/services';
 
 function isSundayDateString(val?: string): boolean {
@@ -20,47 +22,61 @@ function isSundayDateString(val?: string): boolean {
   return date.getDay() === 0;
 }
 
-export const longLeaveFormSchema = z
-  .object({
-    start_date: z
-      .string()
-      .trim()
-      .min(1, 'Please select a start date')
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
-      .refine(isSundayDateString, 'Start date must be a Sunday'),
-    end_date: z
-      .string()
-      .trim()
-      .min(1, 'Please select an end date')
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
-      .refine(isSundayDateString, 'End date must be a Sunday'),
-    reason: z
-      .string()
-      .trim()
-      .min(1, 'Please provide a reason for the leave')
-      .max(500, 'Reason must be 500 characters or less'),
-  })
-  .refine(
-    (data) => {
-      if (!data.start_date || !data.end_date) return true;
-      const [sy, sm, sd] = data.start_date.split('-').map(Number);
-      const [ey, em, ed] = data.end_date.split('-').map(Number);
-      if (!sy || !sm || !sd || !ey || !em || !ed) return true;
-      const start = new Date(sy, sm - 1, sd);
-      const end = new Date(ey, em - 1, ed);
-      const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      return diffDays >= 28;
-    },
-    {
-      message: 'Long leave must span at least 4 weeks (28 days) from start date',
-      path: ['end_date'],
-    },
-  );
+export function createLongLeaveFormSchema(minDays = 28, minWeeks = 4) {
+  return z
+    .object({
+      start_date: z
+        .string()
+        .trim()
+        .min(1, 'Please select a start date')
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
+        .refine(isSundayDateString, 'Start date must be a Sunday'),
+      end_date: z
+        .string()
+        .trim()
+        .min(1, 'Please select an end date')
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Please select a valid date in YYYY-MM-DD format')
+        .refine(isSundayDateString, 'End date must be a Sunday'),
+      reason: z
+        .string()
+        .trim()
+        .min(1, 'Please provide a reason for the leave')
+        .max(500, 'Reason must be 500 characters or less'),
+    })
+    .refine(
+      (data) => {
+        if (!data.start_date || !data.end_date) return true;
+        const [sy, sm, sd] = data.start_date.split('-').map(Number);
+        const [ey, em, ed] = data.end_date.split('-').map(Number);
+        if (!sy || !sm || !sd || !ey || !em || !ed) return true;
+        const start = new Date(sy, sm - 1, sd);
+        const end = new Date(ey, em - 1, ed);
+        const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= minDays;
+      },
+      {
+        message: `Long leave must span at least ${minWeeks} weeks (${minDays} days) from start date`,
+        path: ['end_date'],
+      },
+    );
+}
+
+export const longLeaveFormSchema = createLongLeaveFormSchema();
 
 export type LongLeaveFormValues = z.infer<typeof longLeaveFormSchema>;
 
 export function useLongLeaveRequestPageState() {
   const navigate = useNavigate();
+  const { data: publicSettings } = usePublicAppSettingsQuery();
+  const longLeavePolicy = publicSettings?.long_leave_policy ?? DEFAULT_LONG_LEAVE_POLICY;
+  const activeTimeSlots = publicSettings?.service_time_slots
+    ?.filter((slot) => slot.is_active)
+    .map((slot) => slot.key) ?? [...MATRIX_TIME_SLOTS];
+
+  const dynamicLongLeaveSchema = useMemo(
+    () => createLongLeaveFormSchema(longLeavePolicy.min_days, longLeavePolicy.min_weeks),
+    [longLeavePolicy.min_days, longLeavePolicy.min_weeks],
+  );
 
   const [activeWizardStep, setActiveWizardStep] = useState<1 | 2 | 3>(1);
 
@@ -101,7 +117,7 @@ export function useLongLeaveRequestPageState() {
 
   // Excuse Form (Step 3) - start with nothing selected
   const longLeaveForm = useForm<LongLeaveFormValues>({
-    resolver: zodResolver(longLeaveFormSchema),
+    resolver: zodResolver(dynamicLongLeaveSchema),
     defaultValues: {
       start_date: '',
       end_date: '',
@@ -179,7 +195,7 @@ export function useLongLeaveRequestPageState() {
         start_date: data.start_date,
         end_date: data.end_date,
         is_long_leave: true,
-        services: [...MATRIX_TIME_SLOTS],
+        services: activeTimeSlots.length > 0 ? activeTimeSlots : [...MATRIX_TIME_SLOTS],
         reason: data.reason.trim(),
       };
 
@@ -262,6 +278,7 @@ export function useLongLeaveRequestPageState() {
     handleConfirmProfile,
     // Step 3 Details
     longLeaveForm,
+    longLeavePolicy,
     onSubmitLongLeave,
     isSubmitting: submitMutation.isPending,
     submitErrorMessage,

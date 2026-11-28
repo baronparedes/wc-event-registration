@@ -55,9 +55,7 @@ export const updateRecruitmentStageSchema = z
     assigned_reviewer_name: z.string().trim().max(150).optional().nullable(),
     rubric_data: z.record(z.string(), z.unknown()).optional(),
     notes: z.string().trim().max(5000).optional().nullable(),
-    confirmed_role: z
-      .enum(['Prayer Coach', 'Usher', 'Backroom Support', 'IMT Support', 'VMT Support'])
-      .optional(),
+    confirmed_role: z.string().trim().min(1).max(100).optional(),
     ccf_vmt_id: z.string().trim().max(100).optional().nullable(),
     ccf_vmt_date: z.string().date().optional().nullable(),
     assigned_rfid_member_id: z.string().trim().max(100).optional().nullable(),

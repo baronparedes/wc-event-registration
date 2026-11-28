@@ -1,6 +1,14 @@
 import { tool } from 'ai';
 import { z } from 'chat-zod';
 
+import {
+  DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS,
+  DEFAULT_SERVICE_STAFFING_TARGETS,
+  forecastConfidenceThresholdsSchema,
+  getAppSettingValue,
+  serviceStaffingTargetsSchema,
+} from '@/shared/appSettings.ts';
+
 import { getPrimaryRole } from './roles.ts';
 import { describeDateRange, formatDate, getPhNow, resolveDateRange } from './timeframes.ts';
 import type { ToolContext } from './types.ts';
@@ -92,8 +100,29 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
         return { error: 'Could not resolve a date range for the forecast query.' };
       }
 
-      const targetsToUse =
-        (targetsOverride as VolunteerTargetsBySlot) || DEFAULT_VOLUNTEER_TARGETS_BY_SLOT;
+      const [dbTargets, dbThresholds] = await Promise.all([
+        targetsOverride
+          ? Promise.resolve(targetsOverride as VolunteerTargetsBySlot)
+          : getAppSettingValue(
+              client,
+              'service_staffing_targets',
+              serviceStaffingTargetsSchema,
+              DEFAULT_SERVICE_STAFFING_TARGETS,
+            ),
+        getAppSettingValue(
+          client,
+          'forecast_confidence_thresholds',
+          forecastConfidenceThresholdsSchema,
+          DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS,
+        ),
+      ]);
+
+      const targetsToUse: VolunteerTargetsBySlot = {
+        '9AM': dbTargets['9AM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['9AM'],
+        '12NN': dbTargets['12NN'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['12NN'],
+        '3PM': dbTargets['3PM'] ?? DEFAULT_VOLUNTEER_TARGETS_BY_SLOT['3PM'],
+      };
+      const defaultTurnupRate = dbThresholds.default_turnup_rate ?? DEFAULT_TURNUP_RATE;
 
       try {
         // 1. Fetch Active Members (where their schedules are stored in metadata)
@@ -255,7 +284,7 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
         if (statsData) {
           for (const s of statsData) {
             const scheduled = s.total_count || 0;
-            let rate = DEFAULT_TURNUP_RATE;
+            let rate = defaultTurnupRate;
             if (scheduled > 0) {
               // Turnup rate is checkins + overrides + manual entries / scheduled
               rate = Math.min(
@@ -307,7 +336,7 @@ export function createGetServiceAttendanceForecastTool({ client, requestId }: To
           const userRole = schedule.role;
 
           const normalizedRole = getPrimaryRole(userRole);
-          const userTurnup = statsMap.get(schedule.user_id)?.turnupRate ?? DEFAULT_TURNUP_RATE;
+          const userTurnup = statsMap.get(schedule.user_id)?.turnupRate ?? defaultTurnupRate;
 
           for (const slot of schedule.time_slots) {
             if (slot !== '9AM' && slot !== '12NN' && slot !== '3PM') continue;

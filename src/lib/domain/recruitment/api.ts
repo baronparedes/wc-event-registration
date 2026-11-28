@@ -69,14 +69,23 @@ function escapeOrFilterValue(value: string): string {
 
 export async function fetchRecruitmentSettings(): Promise<RecruitmentSettings> {
   const { data, error } = await supabase
-    .from('recruitment_settings')
-    .select('*')
-    .eq('id', 1)
+    .from('app_settings')
+    .select('value, updated_at')
+    .eq('key', 'recruitment')
     .single();
 
   if (error) throw new Error(`Failed to fetch recruitment settings: ${error.message}`);
 
-  const result = recruitmentSettingsRecordSchema.safeParse(data);
+  const rawValue =
+    data.value && typeof data.value === 'object' && !Array.isArray(data.value)
+      ? (data.value as Record<string, unknown>)
+      : {};
+
+  const result = recruitmentSettingsRecordSchema.safeParse({
+    id: 1,
+    ...rawValue,
+    updated_at: data.updated_at,
+  });
   if (!result.success) throw new Error('Recruitment settings response is invalid');
   return result.data;
 }

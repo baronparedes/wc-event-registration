@@ -220,11 +220,18 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
           );
         }
 
-        const { data: settings, error: settingsError } = await supabase
-          .from('recruitment_settings')
-          .select('endorsement_questions')
-          .eq('id', 1)
+        const { data: settingsRow, error: settingsError } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'recruitment')
           .maybeSingle();
+
+        const settings =
+          settingsRow?.value &&
+          typeof settingsRow.value === 'object' &&
+          !Array.isArray(settingsRow.value)
+            ? (settingsRow.value as Record<string, unknown>)
+            : null;
 
         if (settingsError || !settings) {
           return new Response(
@@ -382,11 +389,19 @@ export async function handleProcessApprovalDecision(req: Request): Promise<Respo
           );
         }
 
-        const { data: settings, error: settingsError } = await supabase
-          .from('recruitment_settings')
-          .select('endorsement_questions')
-          .eq('id', 1)
+        const { data: settingsRow, error: settingsError } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'recruitment')
           .maybeSingle();
+
+        const settings =
+          settingsRow?.value &&
+          typeof settingsRow.value === 'object' &&
+          !Array.isArray(settingsRow.value)
+            ? (settingsRow.value as Record<string, unknown>)
+            : null;
+
         if (settingsError || !settings) {
           return new Response(
             JSON.stringify({

@@ -1,3 +1,8 @@
+import {
+  DEFAULT_LONG_LEAVE_POLICY,
+  getAppSettingValue,
+  longLeavePolicySchema,
+} from '../_shared/appSettings.ts';
 import { createApprovalRequest, enqueueApprovalReviewEmail } from '../_shared/approvals.ts';
 import { RATE_LIMIT_PRESETS } from '../_shared/constants.ts';
 import { useEdgeHook } from '../_shared/edge.ts';
@@ -129,6 +134,34 @@ export async function handleSubmitServiceExcuse(req: Request): Promise<Response>
         headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
       },
     );
+  }
+
+  // 2b. Validate long leave minimum duration against app_settings policy
+  if (isLongLeave) {
+    const longLeavePolicy = await getAppSettingValue(
+      supabase,
+      'long_leave_policy',
+      longLeavePolicySchema,
+      DEFAULT_LONG_LEAVE_POLICY,
+    );
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const [ey, em, ed] = endDate.split('-').map(Number);
+    const startUtc = Date.UTC(sy, sm - 1, sd);
+    const endUtc = Date.UTC(ey, em - 1, ed);
+    const diffDays = Math.round((endUtc - startUtc) / (1000 * 60 * 60 * 24));
+    if (diffDays < longLeavePolicy.min_days) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Long leave must span at least ${longLeavePolicy.min_weeks} weeks (${longLeavePolicy.min_days} days) from start date`,
+          error_code: 'LONG_LEAVE_TOO_SHORT',
+        }),
+        {
+          status: 400,
+          headers: { ...guard.corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
   }
 
   // 3. Upsert excuse request

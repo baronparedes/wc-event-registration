@@ -32,13 +32,7 @@ export const submitRecruitmentApplicationSchema = z
     date_of_birth: dateSchema,
     gender: z.enum(['Male', 'Female']),
     life_stage: z.string().trim().min(1).max(100),
-    desired_role: z.enum([
-      'Prayer Coach',
-      'Usher',
-      'Backroom Support',
-      'IMT Support',
-      'VMT Support',
-    ]),
+    desired_role: z.string().trim().min(1).max(100),
     personal_details: z.object({
       wedding_anniversary: dateSchema.optional().nullable(),
       occupation: z.string().trim().min(1).max(150),

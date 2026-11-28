@@ -1,6 +1,7 @@
 import { Controller, type UseFormReturn, useWatch } from 'react-hook-form';
 
 import { FormInputField, FormSelectField } from '@/components/ui';
+import { usePublicAppSettingsQuery } from '@/hooks/domain/app-settings';
 import { RECRUITMENT_ROLES, type RecruitmentStep1Input } from '@/lib/domain/recruitment';
 
 import { calculateAge } from '../utils';
@@ -21,10 +22,26 @@ const lifeStageOptions = [
 ];
 
 export function PersonalAndWorkSection({ form }: PersonalAndWorkSectionProps) {
+  const { data: publicSettings } = usePublicAppSettingsQuery();
   const dateOfBirth = useWatch({ control: form.control, name: 'date_of_birth' });
   const lifeStage = useWatch({ control: form.control, name: 'life_stage' });
   const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
   const { errors } = form.formState;
+
+  const configuredRoles = publicSettings?.volunteer_roles
+    ? [...publicSettings.volunteer_roles]
+        .filter((role) => role.is_active && role.key !== 'OIC')
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((role) => ({
+          value: role.key,
+          label: role.label,
+          disabled: !role.is_recruitment_enabled,
+        }))
+    : RECRUITMENT_ROLES.map((role) => ({
+        value: role,
+        label: role,
+        disabled: role === 'Backroom Support',
+      }));
 
   return (
     <section className="space-y-5" aria-labelledby="personal-work-heading">
@@ -55,11 +72,7 @@ export function PersonalAndWorkSection({ form }: PersonalAndWorkSectionProps) {
               required
               value={field.value}
               onChange={field.onChange}
-              options={RECRUITMENT_ROLES.map((role) => ({
-                value: role,
-                label: role,
-                disabled: role === 'Backroom Support',
-              }))}
+              options={configuredRoles}
               error={errors.desired_role?.message}
             />
           )}
