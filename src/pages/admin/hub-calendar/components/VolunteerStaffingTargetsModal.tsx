@@ -3,23 +3,23 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Copy, RotateCcw, Save, Settings2, SlidersHorizontal } from 'lucide-react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { Button, Dialog, FormInputField, Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { useAppSettingsQuery, useUpdateAppSettingMutation } from '@/hooks/domain/app-settings';
+import { useAdminAuthQuery } from '@/hooks/domain/auth';
 import type { TimeSlot } from '@/hooks/domain/members';
 
 import {
   type ConfidenceThresholds,
   DEFAULT_CONFIDENCE_THRESHOLDS,
-  getStoredConfidenceThresholds,
-  saveStoredConfidenceThresholds,
 } from '../utils/hubCalendarForecastUtils';
 import {
   DEFAULT_VOLUNTEER_TARGETS_BY_SLOT,
   ORDERED_STANDARD_ROLES,
   type SlotRoleTargets,
   type VolunteerTargetsBySlot,
-  saveStoredVolunteerTargets,
 } from '../utils/volunteerStaffingUtils';
 
 export type VolunteerStaffingTargetsModalProps = {
@@ -78,8 +78,20 @@ function VolunteerStaffingTargetsModalContent({
 }: Omit<VolunteerStaffingTargetsModalProps, 'isOpen'>) {
   const [modalTab, setModalTab] = useState<'quotas' | 'thresholds'>('quotas');
   const [activeSlot, setActiveSlot] = useState<TimeSlot>(initialSlot);
+  const { can } = useAdminAuthQuery();
+  const canWrite = can('canWriteAdminData');
+  const { data: appSettings } = useAppSettingsQuery();
+  const updateAppSettingMutation = useUpdateAppSettingMutation();
 
-  const startingThresholds = initialThresholds ?? getStoredConfidenceThresholds();
+  const startingThresholds: ConfidenceThresholds = initialThresholds ?? {
+    solid: appSettings?.forecast_confidence_thresholds.solid ?? DEFAULT_CONFIDENCE_THRESHOLDS.solid,
+    moderate:
+      appSettings?.forecast_confidence_thresholds.moderate ??
+      DEFAULT_CONFIDENCE_THRESHOLDS.moderate,
+    defaultTurnupRate:
+      appSettings?.forecast_confidence_thresholds.default_turnup_rate ??
+      DEFAULT_CONFIDENCE_THRESHOLDS.defaultTurnupRate,
+  };
 
   const methods = useForm<StaffingTargetsFormData>({
     // @ts-expect-error - zodResolver types can mismatch with complex nested records and coerce
@@ -130,23 +142,40 @@ function VolunteerStaffingTargetsModalContent({
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmit((data) => {
+    if (!canWrite) return;
+    handleSubmit(async (data) => {
       const typedData = data as unknown as StaffingTargetsFormData;
       const newTargets = typedData.quotas as VolunteerTargetsBySlot;
-      saveStoredVolunteerTargets(newTargets);
-      onSaveTargets(newTargets);
-
       const newThresholds: ConfidenceThresholds = {
         solid: typedData.thresholds.solid / 100,
         moderate: typedData.thresholds.moderate / 100,
         defaultTurnupRate: typedData.thresholds.defaultTurnupRate / 100,
       };
-      saveStoredConfidenceThresholds(newThresholds);
-      if (onSaveThresholds) {
-        onSaveThresholds(newThresholds);
-      }
 
-      onClose();
+      try {
+        await Promise.all([
+          updateAppSettingMutation.mutateAsync({
+            key: 'service_staffing_targets',
+            value: newTargets,
+          }),
+          updateAppSettingMutation.mutateAsync({
+            key: 'forecast_confidence_thresholds',
+            value: {
+              solid: newThresholds.solid,
+              moderate: newThresholds.moderate,
+              default_turnup_rate: newThresholds.defaultTurnupRate,
+            },
+          }),
+        ]);
+        onSaveTargets(newTargets);
+        if (onSaveThresholds) {
+          onSaveThresholds(newThresholds);
+        }
+        toast.success('Staffing targets and forecast thresholds saved');
+        onClose();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to save staffing settings');
+      }
     })();
   };
 
@@ -319,6 +348,7 @@ function VolunteerStaffingTargetsModalContent({
           variant="outline"
           size="sm"
           onClick={handleResetToDefaults}
+          disabled={!canWrite || updateAppSettingMutation.isPending}
           className="w-full sm:w-auto text-xs"
         >
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -335,9 +365,15 @@ function VolunteerStaffingTargetsModalContent({
           >
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={onSubmit} className="w-full sm:w-auto">
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSubmit}
+            disabled={!canWrite || updateAppSettingMutation.isPending}
+            className="w-full sm:w-auto"
+          >
             <Save className="mr-1.5 h-3.5 w-3.5" />
-            Save Settings
+            {updateAppSettingMutation.isPending ? 'Saving...' : 'Save Settings'}
           </Button>
         </div>
       </Dialog.Footer>

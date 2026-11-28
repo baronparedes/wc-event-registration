@@ -486,6 +486,12 @@ export const recruitmentSettingsSchema = z.object({
   orientation_instructions: z.string().trim().max(5000),
   survey_questions: surveyQuestionBankSchema,
   endorsement_questions: endorsementQuestionBankSchema,
+  categories: z.array(z.string().trim().min(1).max(64)).min(1).optional(),
+  role_overview_intro: z.string().trim().max(2000).optional(),
+  role_responsibilities: z.record(z.string().trim().min(1), z.string().max(4000)).optional(),
+  privacy_waiver_notice: z.string().trim().max(5000).optional(),
+  applicant_attestation: z.array(z.string().trim().min(1).max(1000)).optional(),
+  applicant_attestation_confirmation: z.string().trim().max(2000).optional(),
 });
 
 export const recruitmentSettingsRecordSchema = recruitmentSettingsSchema.extend({
@@ -499,6 +505,12 @@ export const publicRecruitmentConfigSchema = z.object({
   vmt_registration_url: z.string(),
   orientation_instructions: z.string(),
   survey_questions: publicSurveyQuestionBankSchema,
+  categories: z.array(z.string()).optional(),
+  role_overview_intro: z.string().optional(),
+  role_responsibilities: z.record(z.string(), z.string()).optional(),
+  privacy_waiver_notice: z.string().optional(),
+  applicant_attestation: z.array(z.string()).optional(),
+  applicant_attestation_confirmation: z.string().optional(),
 });
 
 export const recruitmentEndorsementReviewDetailsSchema = z.object({

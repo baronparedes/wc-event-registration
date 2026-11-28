@@ -53,6 +53,12 @@ export type RecruitmentSettings = {
   orientation_instructions: string;
   survey_questions: SurveyQuestionItem[];
   endorsement_questions: EndorsementQuestionItem[];
+  categories?: string[];
+  role_overview_intro?: string;
+  role_responsibilities?: Record<string, string>;
+  privacy_waiver_notice?: string;
+  applicant_attestation?: string[];
+  applicant_attestation_confirmation?: string;
   updated_at: string;
 };
 
@@ -245,6 +251,12 @@ export type PublicRecruitmentConfig = {
   vmt_registration_url: string;
   orientation_instructions: string;
   survey_questions: DynamicFieldLike[];
+  categories?: string[];
+  role_overview_intro?: string;
+  role_responsibilities?: Record<string, string>;
+  privacy_waiver_notice?: string;
+  applicant_attestation?: string[];
+  applicant_attestation_confirmation?: string;
 };
 
 export type RecruitmentEndorsementReviewDetails = {

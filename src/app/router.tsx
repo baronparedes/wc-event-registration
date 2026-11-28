@@ -174,6 +174,11 @@ const AdminRecruitmentSettingsPage = lazy(() =>
     default: module.AdminRecruitmentSettingsPage,
   })),
 );
+const AdminSystemSettingsPage = lazy(() =>
+  import('../pages/admin/settings/system').then((module) => ({
+    default: module.AdminSystemSettingsPage,
+  })),
+);
 
 const AdminEventsPage = lazy(() =>
   import('../pages/admin/events').then((module) => ({ default: module.AdminEventsPage })),
@@ -392,6 +397,7 @@ const routeComponents: Record<AppRouteKey, ComponentType> = {
   adminSundayReminders: AdminSundayRemindersPage,
   adminSettings: AdminSettingsPage,
   adminSettingsEmailTemplates: AdminSettingsEmailTemplatesPage,
+  adminSettingsSystem: AdminSystemSettingsPage,
   adminApprovals: AdminApprovalsPage,
   approvalReview: ApprovalReviewPage,
   adminRecruitment: AdminRecruitmentPage,

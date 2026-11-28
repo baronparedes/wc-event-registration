@@ -63,6 +63,7 @@ export const ROUTE_PATHS = {
   adminSundayReminders: '/admin/settings/notifications/sunday-reminders',
   adminSettings: '/admin/settings',
   adminSettingsEmailTemplates: '/admin/settings/email-templates',
+  adminSettingsSystem: '/admin/settings/system',
   adminApprovals: '/admin/approvals',
   approvalReviewPattern: '/approvals/review/:token',
   adminRecruitment: '/admin/recruitment',
@@ -127,6 +128,7 @@ export type AppRouteKey =
   | 'adminSundayReminders'
   | 'adminSettings'
   | 'adminSettingsEmailTemplates'
+  | 'adminSettingsSystem'
   | 'adminApprovals'
   | 'approvalReview'
   | 'adminRecruitment'
@@ -157,6 +159,12 @@ export const APP_ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   {
     key: 'adminSettingsRecruitment',
     path: ROUTE_PATHS.adminSettingsRecruitment,
+    layout: 'shell',
+    requiredPermission: 'canWriteAdminData',
+  },
+  {
+    key: 'adminSettingsSystem',
+    path: ROUTE_PATHS.adminSettingsSystem,
     layout: 'shell',
     requiredPermission: 'canWriteAdminData',
   },

@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import { z } from 'zod';
 
 import { Button, Dialog, FormSelectField, StepIndicator, WizardStep } from '@/components/ui';
+import { usePublicAppSettingsQuery } from '@/hooks/domain/app-settings';
+import { usePublicRecruitmentConfigQuery } from '@/hooks/domain/recruitment';
 import { RECRUITMENT_ROLES } from '@/lib/domain/recruitment';
 import { PrivacyPolicyPage } from '@/pages/privacy';
 
@@ -57,6 +59,24 @@ const ageRangeOptions = [
 ];
 
 export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSectionProps) {
+  const { data: publicSettings } = usePublicAppSettingsQuery();
+  const { data: recruitmentConfig } = usePublicRecruitmentConfigQuery();
+
+  const roleOverviewIntro =
+    recruitmentConfig?.role_overview_intro || RECRUITMENT_ROLE_OVERVIEW_INTRO;
+  const roleResponsibilitiesMap: Record<string, string> = {
+    ...RECRUITMENT_ROLE_RESPONSIBILITIES,
+    ...(recruitmentConfig?.role_responsibilities ?? {}),
+  };
+  const privacyWaiverNotice =
+    recruitmentConfig?.privacy_waiver_notice || RECRUITMENT_PRIVACY_WAIVER_NOTICE;
+  const openRecruitmentRoles = publicSettings?.volunteer_roles
+    ? [...publicSettings.volunteer_roles]
+        .filter((role) => role.is_active && role.is_recruitment_enabled)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((role) => role.key)
+    : RECRUITMENT_ROLES.filter((role) => role !== 'Backroom Support');
+
   const [activeGate, setActiveGate] = useState(1);
   const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
   const form = useForm<PreGateFormInput, unknown, PreGateValues>({
@@ -128,10 +148,10 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
                   <h2 id="roles-heading" className="font-heading text-lg font-semibold text-text">
                     Roles
                   </h2>
-                  <p className="mt-1 text-sm text-muted">{RECRUITMENT_ROLE_OVERVIEW_INTRO}</p>
+                  <p className="mt-1 text-sm text-muted">{roleOverviewIntro}</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
-                  {RECRUITMENT_ROLES.filter((role) => role !== 'Backroom Support').map((role) => (
+                  {openRecruitmentRoles.map((role) => (
                     <article key={role} className="border-b border-border pb-3 last:border-0">
                       <h2 className="text-lg font-semibold text-primary">{role}</h2>
                       <ReactMarkdown
@@ -152,7 +172,7 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
                           ),
                         }}
                       >
-                        {RECRUITMENT_ROLE_RESPONSIBILITIES[role]}
+                        {roleResponsibilitiesMap[role] ?? ''}
                       </ReactMarkdown>
                     </article>
                   ))}
@@ -219,7 +239,7 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
                     Data Privacy and Liability Waiver
                   </h2>
                   <p className="mt-2 border-l-2 border-accent bg-surface px-4 py-3 text-sm leading-relaxed text-text">
-                    {RECRUITMENT_PRIVACY_WAIVER_NOTICE}
+                    {privacyWaiverNotice}
                   </p>
                   <button
                     type="button"

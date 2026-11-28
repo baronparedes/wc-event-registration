@@ -83,12 +83,20 @@ function mockFetch(options?: { failUpdate?: boolean; role?: string }) {
     if (url.pathname === '/rest/v1/admins') {
       return Promise.resolve(Response.json({ id: USER_ID, role: options?.role ?? 'admin' }));
     }
-    if (url.pathname === '/rest/v1/recruitment_settings') {
+    if (url.pathname === '/rest/v1/app_settings') {
+      if (method === 'GET') {
+        return Promise.resolve(Response.json({ value: settings }));
+      }
       if (options?.failUpdate) {
         return Promise.resolve(Response.json({ message: 'write failed' }, { status: 500 }));
       }
+      const upsertBody = body as { value?: Record<string, unknown> } | null;
       return Promise.resolve(
-        Response.json({ ...settings, id: 1, updated_at: '2026-11-02T00:00:00Z' }),
+        Response.json({
+          key: 'recruitment',
+          value: upsertBody?.value ?? settings,
+          updated_at: '2026-11-02T00:00:00Z',
+        }),
       );
     }
     return Promise.resolve(Response.json([]));
@@ -113,24 +121,26 @@ Deno.test('update-recruitment-settings persists validated settings for an admin'
       assertEquals(body.success, true);
       assertEquals(body.settings.is_recruitment_open, true);
       const updateCall = mock.calls.find(
-        (call) => call.path === '/rest/v1/recruitment_settings' && call.method === 'PATCH',
+        (call) => call.path === '/rest/v1/app_settings' && call.method === 'POST',
       );
-      const updateBody = updateCall?.body as
-        | {
-            endorsement_questions?: Array<{
-              options?: Array<{ toggle_label?: string; toggle_default?: boolean }>;
-            }>;
-          }
-        | undefined;
+      const updateBody = (
+        updateCall?.body as
+          | {
+              value?: {
+                endorsement_questions?: Array<{
+                  options?: Array<{ toggle_label?: string; toggle_default?: boolean }>;
+                }>;
+              };
+            }
+          | undefined
+      )?.value;
       assertEquals(
         updateBody?.endorsement_questions?.[0]?.options?.[0]?.toggle_label,
         'Add details',
       );
       assertEquals(updateBody?.endorsement_questions?.[0]?.options?.[0]?.toggle_default, true);
       assertEquals(
-        mock.calls.some(
-          (call) => call.path === '/rest/v1/recruitment_settings' && call.method === 'PATCH',
-        ),
+        mock.calls.some((call) => call.path === '/rest/v1/app_settings' && call.method === 'POST'),
         true,
       );
     } finally {
@@ -152,7 +162,7 @@ Deno.test('update-recruitment-settings rejects empty question banks before writi
       }
 
       assertEquals(
-        mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+        mock.calls.some((call) => call.path === '/rest/v1/app_settings'),
         false,
       );
     } finally {
@@ -169,7 +179,7 @@ Deno.test('update-recruitment-settings rejects VMT before writing', async () => 
 
       assertEquals(response.status, 401);
       assertEquals(
-        mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+        mock.calls.some((call) => call.path === '/rest/v1/app_settings'),
         false,
       );
     } finally {
@@ -191,7 +201,7 @@ Deno.test('update-recruitment-settings rejects malformed settings before writing
 
       assertEquals(response.status, 400);
       assertEquals(
-        mock.calls.some((call) => call.path === '/rest/v1/recruitment_settings'),
+        mock.calls.some((call) => call.path === '/rest/v1/app_settings'),
         false,
       );
     } finally {

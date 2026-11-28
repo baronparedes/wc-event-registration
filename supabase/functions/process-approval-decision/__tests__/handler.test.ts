@@ -147,10 +147,10 @@ function mockFetch(
       );
     }
 
-    if (url.pathname === '/rest/v1/recruitment_settings') {
+    if (url.pathname === '/rest/v1/app_settings') {
       return Promise.resolve(
-        Response.json(
-          options.recruitmentSettings ?? {
+        Response.json({
+          value: options.recruitmentSettings ?? {
             endorsement_questions: [
               {
                 id: 'eq_1',
@@ -185,7 +185,7 @@ function mockFetch(
               },
             ],
           },
-        ),
+        }),
       );
     }
 

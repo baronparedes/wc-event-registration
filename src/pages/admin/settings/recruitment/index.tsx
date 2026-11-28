@@ -12,14 +12,31 @@ import {
   useRecruitmentSettingsQuery,
   useUpdateRecruitmentSettingsMutation,
 } from '@/hooks/domain/recruitment';
-import { type RecruitmentSettingsInput, recruitmentSettingsSchema } from '@/lib/domain/recruitment';
+import {
+  RECRUITMENT_CATEGORIES,
+  type RecruitmentSettingsInput,
+  recruitmentSettingsSchema,
+} from '@/lib/domain/recruitment';
+import {
+  RECRUITMENT_APPLICANT_ATTESTATION,
+  RECRUITMENT_APPLICANT_ATTESTATION_CONFIRMATION,
+  RECRUITMENT_PRIVACY_WAIVER_NOTICE,
+  RECRUITMENT_ROLE_OVERVIEW_INTRO,
+  RECRUITMENT_ROLE_RESPONSIBILITIES,
+} from '@/pages/recruitment/apply/copy';
 
-import { EndorsementQuestionsTab, GeneralSettingsTab, SurveyQuestionsTab } from './components';
+import {
+  EndorsementQuestionsTab,
+  GeneralSettingsTab,
+  RolesAndCopyTab,
+  SurveyQuestionsTab,
+} from './components';
 
-type SettingsTab = 'general' | 'survey' | 'endorsement';
+type SettingsTab = 'general' | 'roles_copy' | 'survey' | 'endorsement';
 
 const TAB_OPTIONS: ButtonGroupOption<SettingsTab>[] = [
   { value: 'general', label: 'General & Status' },
+  { value: 'roles_copy', label: 'Roles & Applicant Copy' },
   { value: 'survey', label: 'Doctrinal Survey Questions' },
   { value: 'endorsement', label: 'DGroup Endorsement Prompts' },
 ];
@@ -39,6 +56,19 @@ export function AdminRecruitmentSettingsPage() {
           orientation_instructions: settings.orientation_instructions,
           survey_questions: settings.survey_questions,
           endorsement_questions: settings.endorsement_questions,
+          categories: settings.categories ?? [...RECRUITMENT_CATEGORIES],
+          role_overview_intro: settings.role_overview_intro ?? RECRUITMENT_ROLE_OVERVIEW_INTRO,
+          role_responsibilities: settings.role_responsibilities ?? {
+            ...RECRUITMENT_ROLE_RESPONSIBILITIES,
+          },
+          privacy_waiver_notice:
+            settings.privacy_waiver_notice ?? RECRUITMENT_PRIVACY_WAIVER_NOTICE,
+          applicant_attestation: settings.applicant_attestation ?? [
+            ...RECRUITMENT_APPLICANT_ATTESTATION,
+          ],
+          applicant_attestation_confirmation:
+            settings.applicant_attestation_confirmation ??
+            RECRUITMENT_APPLICANT_ATTESTATION_CONFIRMATION,
         }
       : undefined,
     defaultValues: {
@@ -53,12 +83,19 @@ export function AdminRecruitmentSettingsPage() {
       orientation_instructions: '',
       survey_questions: [],
       endorsement_questions: [],
+      categories: [...RECRUITMENT_CATEGORIES],
+      role_overview_intro: RECRUITMENT_ROLE_OVERVIEW_INTRO,
+      role_responsibilities: { ...RECRUITMENT_ROLE_RESPONSIBILITIES },
+      privacy_waiver_notice: RECRUITMENT_PRIVACY_WAIVER_NOTICE,
+      applicant_attestation: [...RECRUITMENT_APPLICANT_ATTESTATION],
+      applicant_attestation_confirmation: RECRUITMENT_APPLICANT_ATTESTATION_CONFIRMATION,
     },
   });
 
   const {
     control,
     register,
+    setValue,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -149,6 +186,14 @@ export function AdminRecruitmentSettingsPage() {
                   register={register}
                   errors={errors}
                   isRecruitmentOpen={isRecruitmentOpen}
+                />
+              )}
+              {activeTab === 'roles_copy' && (
+                <RolesAndCopyTab
+                  control={control}
+                  register={register}
+                  setValue={setValue}
+                  errors={errors}
                 />
               )}
               {activeTab === 'survey' && (

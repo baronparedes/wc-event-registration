@@ -32,6 +32,7 @@ export function LongLeaveRequestPage() {
     isSignedIn,
     handleConfirmProfile,
     longLeaveForm,
+    longLeavePolicy,
     onSubmitLongLeave,
     isSubmitting,
     submitErrorMessage,
@@ -107,6 +108,8 @@ export function LongLeaveRequestPage() {
               onCancel={goHome}
               isSubmitting={isSubmitting}
               submitErrorMessage={submitErrorMessage}
+              minLeaveDays={longLeavePolicy?.min_days}
+              minLeaveWeeks={longLeavePolicy?.min_weeks}
             />
           </div>
         )}

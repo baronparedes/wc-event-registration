@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { Badge, Button, ContactButtons, Dialog } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
+import { useAppSettingsQuery } from '@/hooks/domain/app-settings';
+import { DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS } from '@/lib/domain/app-settings';
 import { getConfidenceTierFromRate } from '@/lib/domain/hub-calendar';
 import type { AdminMember, MemberAttendanceStats } from '@/lib/domain/members';
 
@@ -10,7 +12,6 @@ import {
   type ConfidenceThresholds,
   type ConfidenceTier,
   getMemberConfidenceTooltip,
-  getStoredConfidenceThresholds,
   isMemberInactiveWithoutAttendance,
 } from '../utils';
 import { ServiceScheduleAvatar } from './ServiceScheduleAvatar';
@@ -74,10 +75,17 @@ export function MemberQuickViewDialog({
   thresholds,
 }: MemberQuickViewDialogProps) {
   const navigate = useNavigate();
+  const { data: appSettings } = useAppSettingsQuery(!thresholds);
 
   if (!member) return null;
 
-  const effectiveThresholds = thresholds ?? getStoredConfidenceThresholds();
+  const dbThresholds =
+    appSettings?.forecast_confidence_thresholds ?? DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS;
+  const effectiveThresholds = thresholds ?? {
+    solid: dbThresholds.solid,
+    moderate: dbThresholds.moderate,
+    defaultTurnupRate: dbThresholds.default_turnup_rate,
+  };
   const isInactive = isMemberInactiveWithoutAttendance(member, stats);
   const avatarTurnupRate = isInactive ? undefined : stats?.turnupRate;
 

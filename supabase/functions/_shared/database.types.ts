@@ -1,14 +1,12 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-type RecruitmentSettingsRow = {
-  endorsement_questions: Json;
-  eligibility_rules: Json;
-  id: number;
-  is_recruitment_open: boolean;
-  orientation_instructions: string;
-  survey_questions: Json;
+type AppSettingRow = {
+  description: string;
+  is_public: boolean;
+  key: string;
   updated_at: string;
-  vmt_registration_url: string;
+  updated_by: string | null;
+  value: Json;
 };
 
 type RecruitmentApplicationRow = {
@@ -111,10 +109,11 @@ export type Database = {
   };
   public: {
     Tables: {
-      recruitment_settings: {
-        Row: RecruitmentSettingsRow;
-        Insert: Pick<RecruitmentSettingsRow, 'id'> & Partial<Omit<RecruitmentSettingsRow, 'id'>>;
-        Update: Partial<RecruitmentSettingsRow>;
+      app_settings: {
+        Row: AppSettingRow;
+        Insert: Pick<AppSettingRow, 'key' | 'value'> &
+          Partial<Omit<AppSettingRow, 'key' | 'value'>>;
+        Update: Partial<AppSettingRow>;
         Relationships: [];
       };
       recruitment_applications: {
@@ -1841,6 +1840,10 @@ export type Database = {
       };
       get_my_recruitment_application: {
         Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_public_app_settings: {
+        Args: { p_keys?: string[] | null };
         Returns: Json;
       };
       get_public_recruitment_config: {

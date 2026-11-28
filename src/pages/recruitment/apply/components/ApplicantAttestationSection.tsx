@@ -1,6 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 
 import { Button } from '@/components/ui';
+import { usePublicRecruitmentConfigQuery } from '@/hooks/domain/recruitment';
 
 import {
   RECRUITMENT_APPLICANT_ATTESTATION,
@@ -21,6 +22,15 @@ export function ApplicantAttestationSection({
   onContinue,
   onBack,
 }: ApplicantAttestationSectionProps) {
+  const { data: recruitmentConfig } = usePublicRecruitmentConfigQuery();
+  const attestationStatements =
+    recruitmentConfig?.applicant_attestation && recruitmentConfig.applicant_attestation.length > 0
+      ? recruitmentConfig.applicant_attestation
+      : [...RECRUITMENT_APPLICANT_ATTESTATION];
+  const attestationConfirmation =
+    recruitmentConfig?.applicant_attestation_confirmation ||
+    RECRUITMENT_APPLICANT_ATTESTATION_CONFIRMATION;
+
   return (
     <form className="space-y-5" onSubmit={form.handleSubmit(onContinue)}>
       <header>
@@ -28,11 +38,11 @@ export function ApplicantAttestationSection({
       </header>
       <div className="border-l-2 border-accent bg-surface px-4 py-3 text-sm text-text">
         <ol className="list-decimal space-y-2 pl-5">
-          {RECRUITMENT_APPLICANT_ATTESTATION.map((statement) => (
+          {attestationStatements.map((statement) => (
             <li key={statement}>{statement}</li>
           ))}
         </ol>
-        <p className="mt-4 font-medium">{RECRUITMENT_APPLICANT_ATTESTATION_CONFIRMATION}</p>
+        <p className="mt-4 font-medium">{attestationConfirmation}</p>
       </div>
       <label className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-3 text-sm text-text">
         <input

@@ -7,15 +7,14 @@ import { toast } from 'sonner';
 import { AdminPageShell } from '@/components/layout';
 import { AlertBanner, Button } from '@/components/ui';
 import { ROUTE_PATHS } from '@/config/constants';
+import { useAppSettingsQuery } from '@/hooks/domain/app-settings';
+import {
+  DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS,
+  DEFAULT_SERVICE_STAFFING_TARGETS,
+} from '@/lib/domain/app-settings';
 import { VolunteerStaffingTargetsModal } from '@/pages/admin/hub-calendar/components';
-import {
-  type ConfidenceThresholds,
-  getStoredConfidenceThresholds,
-} from '@/pages/admin/hub-calendar/utils/hubCalendarForecastUtils';
-import {
-  type VolunteerTargetsBySlot,
-  getStoredVolunteerTargets,
-} from '@/pages/admin/hub-calendar/utils/volunteerStaffingUtils';
+import type { ConfidenceThresholds } from '@/pages/admin/hub-calendar/utils/hubCalendarForecastUtils';
+import type { VolunteerTargetsBySlot } from '@/pages/admin/hub-calendar/utils/volunteerStaffingUtils';
 import { ServiceNavigationLinks } from '@/pages/admin/services/components';
 
 import {
@@ -40,12 +39,20 @@ export function AdminServiceAttendanceForecastPage() {
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  const [volunteerTargets, setVolunteerTargets] = useState<VolunteerTargetsBySlot>(() =>
-    getStoredVolunteerTargets(),
-  );
-  const [confidenceThresholds, setConfidenceThresholds] = useState<ConfidenceThresholds>(() =>
-    getStoredConfidenceThresholds(),
-  );
+  const { data: appSettings } = useAppSettingsQuery();
+  const dbTargets = appSettings?.service_staffing_targets ?? DEFAULT_SERVICE_STAFFING_TARGETS;
+  const volunteerTargets: VolunteerTargetsBySlot = {
+    '9AM': dbTargets['9AM'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['9AM'],
+    '12NN': dbTargets['12NN'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['12NN'],
+    '3PM': dbTargets['3PM'] ?? DEFAULT_SERVICE_STAFFING_TARGETS['3PM'],
+  };
+  const dbThresholds =
+    appSettings?.forecast_confidence_thresholds ?? DEFAULT_FORECAST_CONFIDENCE_THRESHOLDS;
+  const confidenceThresholds: ConfidenceThresholds = {
+    solid: dbThresholds.solid,
+    moderate: dbThresholds.moderate,
+    defaultTurnupRate: dbThresholds.default_turnup_rate,
+  };
 
   const viewYear = viewDate.getFullYear();
   const viewMonthIndex = viewDate.getMonth();
@@ -240,9 +247,9 @@ export function AdminServiceAttendanceForecastPage() {
           isOpen={isTargetsModalOpen}
           onClose={() => setIsTargetsModalOpen(false)}
           targets={volunteerTargets}
-          onSaveTargets={setVolunteerTargets}
+          onSaveTargets={() => {}}
           thresholds={confidenceThresholds}
-          onSaveThresholds={setConfidenceThresholds}
+          onSaveThresholds={() => {}}
           initialSlot="9AM"
         />
       </AdminPageShell.Content>

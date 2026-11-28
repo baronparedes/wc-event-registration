@@ -181,11 +181,11 @@ describe('recruitment API', () => {
   });
 
   it('fetches and validates settings and public configuration', async () => {
-    const query = queryFor(settings);
+    const query = queryFor({ value: settingsInput, updated_at: timestamp });
     mocks.from.mockReturnValue(query);
     await expect(fetchRecruitmentSettings()).resolves.toEqual(settings);
-    expect(mocks.from).toHaveBeenCalledWith('recruitment_settings');
-    expect(query.eq).toHaveBeenCalledWith('id', 1);
+    expect(mocks.from).toHaveBeenCalledWith('app_settings');
+    expect(query.eq).toHaveBeenCalledWith('key', 'recruitment');
     const config = {
       is_recruitment_open: settingsInput.is_recruitment_open,
       eligibility_rules: settingsInput.eligibility_rules,

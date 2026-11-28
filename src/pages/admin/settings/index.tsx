@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { BarChart3, Bell, Calendar, Mail, Shield, UserCheck } from 'lucide-react';
+import { BarChart3, Bell, Calendar, Mail, Shield, Sliders, UserCheck } from 'lucide-react';
 
 import { AdminBaseNavigation, AdminPageShell } from '@/components/layout';
 import { Button, EmptyState, SearchInputField } from '@/components/ui';
@@ -84,6 +84,18 @@ const SETTINGS_FEATURES: SettingFeatureItem[] = [
     tagVariant: 'secondary',
     actionLabel: 'Configure Roles',
     requiredPermission: 'canManageAdminRoles',
+  },
+  {
+    id: 'system-service-settings',
+    category: 'System Configuration',
+    title: 'System & Service Settings',
+    description:
+      'Configure staffing targets, forecast confidence thresholds, attendance scoring weights, long leave policy, roles, time slots, and automated debrief recipients.',
+    to: ROUTE_PATHS.adminSettingsSystem,
+    icon: Sliders,
+    tag: 'Defaults & Policies',
+    actionLabel: 'Manage System Settings',
+    requiredPermission: 'canWriteAdminData',
   },
   {
     id: 'volunteer-recruitment',

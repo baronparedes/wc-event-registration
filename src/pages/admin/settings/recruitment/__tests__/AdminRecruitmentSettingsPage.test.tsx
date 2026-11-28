@@ -139,4 +139,15 @@ describe('AdminRecruitmentSettingsPage', () => {
       expect(mockMutate).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('switches to Roles & Applicant Copy tab and renders copy editors', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<AdminRecruitmentSettingsPage />);
+
+    await user.click(screen.getByRole('button', { name: /roles & applicant copy/i }));
+
+    expect(screen.getByText('Role Overview & Responsibilities')).toBeInTheDocument();
+    expect(screen.getByText('Recruitment Categories')).toBeInTheDocument();
+    expect(screen.getByText('Privacy Waiver & Applicant Attestation')).toBeInTheDocument();
+  });
 });
