@@ -51,13 +51,14 @@ export const serviceTimeSlotItemSchema = z.object({
   label: z.string().trim().min(1).max(64),
   sort_order: z.number().int().min(0),
   is_active: z.boolean(),
+  deleted_at: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 export const serviceTimeSlotsSchema = z
   .array(serviceTimeSlotItemSchema)
   .min(1, 'At least one service time slot is required')
-  .refine((items) => items.some((item) => item.is_active), {
-    message: 'At least one service time slot must be active',
+  .refine((items) => items.some((item) => item.is_active && !item.deleted_at), {
+    message: 'At least one active, non-archived service time slot is required',
   })
   .refine((items) => new Set(items.map((item) => item.key)).size === items.length, {
     message: 'Service time slot keys must be unique',
@@ -70,13 +71,14 @@ export const volunteerRoleItemSchema = z.object({
   is_active: z.boolean(),
   is_recruitment_enabled: z.boolean(),
   is_staffing_target: z.boolean(),
+  deleted_at: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 export const volunteerRolesSchema = z
   .array(volunteerRoleItemSchema)
   .min(1, 'At least one volunteer role is required')
-  .refine((items) => items.some((item) => item.is_active), {
-    message: 'At least one volunteer role must be active',
+  .refine((items) => items.some((item) => item.is_active && !item.deleted_at), {
+    message: 'At least one active, non-archived volunteer role is required',
   })
   .refine((items) => new Set(items.map((item) => item.key)).size === items.length, {
     message: 'Volunteer role keys must be unique',
@@ -214,6 +216,7 @@ export async function getAppSettingValue<T>(
       .from('app_settings')
       .select('value')
       .eq('key', key)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (error || !data) {

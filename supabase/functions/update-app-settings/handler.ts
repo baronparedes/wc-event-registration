@@ -86,18 +86,63 @@ export async function handleUpdateAppSettings(req: Request): Promise<Response> {
 
   const { key, value } = guard.data;
 
+  // Prevent hard deletion of existing keys in service_time_slots and volunteer_roles
+  if (key === 'service_time_slots' || key === 'volunteer_roles') {
+    const { data: existingRow } = await guard.client
+      .from('app_settings')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+
+    if (Array.isArray(existingRow?.value)) {
+      const existingKeys = (existingRow.value as Array<Record<string, unknown>>)
+        .map((item) => (typeof item.key === 'string' ? item.key : null))
+        .filter((itemKey): itemKey is string => Boolean(itemKey));
+
+      const incomingKeys = new Set(value.map((item) => item.key));
+      const missingKeys = existingKeys.filter((existingKey) => !incomingKeys.has(existingKey));
+
+      if (missingKeys.length > 0) {
+        return jsonResponse(
+          400,
+          {
+            success: false,
+            error: `Cannot hard-delete existing keys (${missingKeys.join(', ')}). Archive them with deleted_at instead.`,
+            error_code: 'HARD_DELETE_NOT_ALLOWED',
+          },
+          guard.corsHeaders,
+        );
+      }
+    }
+  }
+
+  const normalizedValue =
+    key === 'service_time_slots'
+      ? value.map((item) => ({
+          ...item,
+          is_active: item.deleted_at ? false : item.is_active,
+        }))
+      : key === 'volunteer_roles'
+        ? value.map((item) => ({
+            ...item,
+            is_active: item.deleted_at ? false : item.is_active,
+            is_recruitment_enabled: item.deleted_at ? false : item.is_recruitment_enabled,
+          }))
+        : value;
+
   const { data, error } = await guard.client
     .from('app_settings')
     .upsert(
       {
         key,
-        value: asJson(value),
+        value: asJson(normalizedValue),
         is_public: PUBLIC_SETTING_KEYS.has(key),
+        deleted_at: null,
         updated_by: guard.userId ?? null,
       },
       { onConflict: 'key' },
     )
-    .select('key, value, is_public, description, updated_at, updated_by')
+    .select('key, value, is_public, description, updated_at, updated_by, deleted_at')
     .single();
 
   if (error || !data) {

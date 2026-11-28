@@ -30,11 +30,11 @@ export function StaffingAndForecastTab({ settings }: StaffingAndForecastTabProps
   const updateMutation = useUpdateAppSettingMutation();
 
   const activeSlots = [...settings.service_time_slots]
-    .filter((slot) => slot.is_active)
+    .filter((slot) => slot.is_active && !slot.deleted_at)
     .sort((a, b) => a.sort_order - b.sort_order);
 
   const targetRoles = [...settings.volunteer_roles]
-    .filter((role) => role.is_active && role.is_staffing_target)
+    .filter((role) => role.is_active && role.is_staffing_target && !role.deleted_at)
     .sort((a, b) => a.sort_order - b.sort_order);
 
   const initialTargets: Record<string, Record<string, number>> = {};
