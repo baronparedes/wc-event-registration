@@ -70,7 +70,7 @@ export function useLongLeaveRequestPageState() {
   const { data: publicSettings } = usePublicAppSettingsQuery();
   const longLeavePolicy = publicSettings?.long_leave_policy ?? DEFAULT_LONG_LEAVE_POLICY;
   const activeTimeSlots = publicSettings?.service_time_slots
-    ?.filter((slot) => slot.is_active)
+    ?.filter((slot) => slot.is_active && !slot.deleted_at)
     .map((slot) => slot.key) ?? [...MATRIX_TIME_SLOTS];
 
   const dynamicLongLeaveSchema = useMemo(
