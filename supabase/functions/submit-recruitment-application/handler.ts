@@ -138,7 +138,7 @@ export async function handleSubmitRecruitmentApplication(req: Request): Promise<
 
   if (Array.isArray(rolesRow?.value) && rolesRow.value.length > 0) {
     const allowedRoles = (rolesRow.value as Array<Record<string, unknown>>)
-      .filter((r) => r.is_active === true && r.is_recruitment_enabled === true && !r.deleted_at)
+      .filter((r) => r.is_active === true && r.is_recruitment_enabled === true)
       .map((r) => String(r.key));
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(application.desired_role)) {

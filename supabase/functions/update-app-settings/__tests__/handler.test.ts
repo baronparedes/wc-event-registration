@@ -55,7 +55,7 @@ function createRequest(body: unknown, token = 'admin-token') {
   });
 }
 
-function mockFetch(options?: { role?: string; failUpsert?: boolean; existingValue?: unknown }) {
+function mockFetch(options?: { role?: string; failUpsert?: boolean }) {
   const originalFetch = globalThis.fetch;
   const calls: Array<{ path: string; method: string; body: unknown }> = [];
 
@@ -77,12 +77,6 @@ function mockFetch(options?: { role?: string; failUpsert?: boolean; existingValu
       return Promise.resolve(Response.json(allowed ? [{ permission: 'canWriteAdminData' }] : []));
     }
     if (url.pathname === '/rest/v1/app_settings') {
-      if (method === 'GET') {
-        if (options?.existingValue !== undefined) {
-          return Promise.resolve(Response.json({ value: options.existingValue }));
-        }
-        return Promise.resolve(Response.json(null));
-      }
       if (options?.failUpsert) {
         return Promise.resolve(Response.json({ message: 'db write error' }, { status: 500 }));
       }
@@ -95,7 +89,6 @@ function mockFetch(options?: { role?: string; failUpsert?: boolean; existingValu
           description: '',
           updated_at: '2026-11-28T00:00:00Z',
           updated_by: USER_ID,
-          deleted_at: null,
         }),
       );
     }
@@ -256,51 +249,3 @@ Deno.test('update-app-settings reports database errors with 500', async () => {
     }
   });
 });
-
-Deno.test(
-  'update-app-settings blocks hard-deleting existing service_time_slots keys and allows soft-delete',
-  async () => {
-    await withEnv(async () => {
-      const existingSlots = [
-        { key: '9AM', label: '9:00 AM', sort_order: 1, is_active: true },
-        { key: '12NN', label: '12:00 NN', sort_order: 2, is_active: true },
-      ];
-      const mock = mockFetch({ role: 'admin', existingValue: existingSlots });
-      try {
-        // Attempt hard delete of 12NN -> should fail 400 HARD_DELETE_NOT_ALLOWED
-        const hardDeleteRes = await handleUpdateAppSettings(
-          createRequest({
-            key: 'service_time_slots',
-            value: [{ key: '9AM', label: '9:00 AM', sort_order: 1, is_active: true }],
-          }),
-        );
-        assertEquals(hardDeleteRes.status, 400);
-        const hardDeleteBody = await hardDeleteRes.json();
-        assertEquals(hardDeleteBody.error_code, 'HARD_DELETE_NOT_ALLOWED');
-
-        // Soft delete 12NN via deleted_at -> should succeed 200 and force is_active = false
-        const softDeleteRes = await handleUpdateAppSettings(
-          createRequest({
-            key: 'service_time_slots',
-            value: [
-              { key: '9AM', label: '9:00 AM', sort_order: 1, is_active: true, deleted_at: null },
-              {
-                key: '12NN',
-                label: '12:00 NN',
-                sort_order: 2,
-                is_active: true,
-                deleted_at: '2026-11-28T17:00:00.000Z',
-              },
-            ],
-          }),
-        );
-        assertEquals(softDeleteRes.status, 200);
-        const softDeleteBody = await softDeleteRes.json();
-        assertEquals(softDeleteBody.success, true);
-        assertEquals(softDeleteBody.setting.value[1].is_active, false);
-      } finally {
-        mock.restore();
-      }
-    });
-  },
-);

@@ -26,7 +26,7 @@ export function RolesAndCopyTab({ control, register, setValue, errors }: RolesAn
 
   const roleKeys = appSettings?.volunteer_roles
     ? [...appSettings.volunteer_roles]
-        .filter((role) => role.is_active && !role.deleted_at && role.key !== 'OIC')
+        .filter((role) => role.is_active && role.key !== 'OIC')
         .sort((a, b) => a.sort_order - b.sort_order)
         .map((role) => role.key)
     : [...RECRUITMENT_ROLES];

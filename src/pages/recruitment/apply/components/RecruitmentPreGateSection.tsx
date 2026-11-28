@@ -72,7 +72,7 @@ export function RecruitmentPreGateSection({ onContinue }: RecruitmentPreGateSect
     recruitmentConfig?.privacy_waiver_notice || RECRUITMENT_PRIVACY_WAIVER_NOTICE;
   const openRecruitmentRoles = publicSettings?.volunteer_roles
     ? [...publicSettings.volunteer_roles]
-        .filter((role) => role.is_active && role.is_recruitment_enabled && !role.deleted_at)
+        .filter((role) => role.is_active && role.is_recruitment_enabled)
         .sort((a, b) => a.sort_order - b.sort_order)
         .map((role) => role.key)
     : RECRUITMENT_ROLES.filter((role) => role !== 'Backroom Support');

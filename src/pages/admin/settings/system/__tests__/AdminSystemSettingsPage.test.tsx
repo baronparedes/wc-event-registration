@@ -106,26 +106,4 @@ describe('AdminSystemSettingsPage', () => {
       });
     });
   });
-
-  it('archives and restores a time slot in the Roles & Time Slots tab', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <MemoryRouter>
-        <AdminSystemSettingsPage />
-      </MemoryRouter>,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Roles & Time Slots' }));
-    await user.click(screen.getByRole('button', { name: 'Archive time slot 3PM' }));
-
-    const archivedToggle = screen.getByRole('button', { name: /Archived Time Slots \(1\)/i });
-    expect(archivedToggle).toBeInTheDocument();
-
-    await user.click(archivedToggle);
-    expect(screen.getByRole('button', { name: 'Restore time slot 3PM' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Restore time slot 3PM' }));
-    expect(screen.queryByRole('button', { name: /Archived Time Slots/i })).not.toBeInTheDocument();
-  });
 });

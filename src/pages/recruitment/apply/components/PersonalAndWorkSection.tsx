@@ -30,7 +30,7 @@ export function PersonalAndWorkSection({ form }: PersonalAndWorkSectionProps) {
 
   const configuredRoles = publicSettings?.volunteer_roles
     ? [...publicSettings.volunteer_roles]
-        .filter((role) => role.is_active && !role.deleted_at && role.key !== 'OIC')
+        .filter((role) => role.is_active && role.key !== 'OIC')
         .sort((a, b) => a.sort_order - b.sort_order)
         .map((role) => ({
           value: role.key,
