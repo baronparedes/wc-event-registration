@@ -1,6 +1,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 type AppSettingRow = {
+  deleted_at: string | null;
   description: string;
   is_public: boolean;
   key: string;
